@@ -1,7 +1,9 @@
+import platform
+import time
 from fastapi import FastAPI, Request, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from app.db import BIBLE_BOOKS, BOOK_MAP, get_chapter_verses, search_verses
 
 app = FastAPI(title="Holy Bible - வேதம்")
@@ -9,7 +11,8 @@ app = FastAPI(title="Holy Bible - வேதம்")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Daily verse curator
+START_TIME = time.time()
+
 DAILY_VERSE = {
     "ref_en": "John 3:16",
     "ref_ta": "யோவான் 3:16",
@@ -18,8 +21,144 @@ DAILY_VERSE = {
     "link": "/read/43/1?mode=bilingual"
 }
 
+
+# ==========================================
+# 1. API & Minimal Web Status (Zero DB Touch)
+# ==========================================
+
+@app.get("/api/health")
+async def api_health():
+    """Pure JSON ping for Render health checks and uptime monitors."""
+    uptime_sec = int(time.time() - START_TIME)
+    return JSONResponse(
+        content={
+            "status": "ok",
+            "uptime_seconds": uptime_sec,
+            "version": "1.0.0"
+        },
+        status_code=200
+    )
+
+
+@app.get("/status", response_class=HTMLResponse)
+async def status_page():
+    """Ultra-lightweight standalone HTML status card (< 1.5 KB, 0 external assets)."""
+    uptime_sec = int(time.time() - START_TIME)
+    hours, remainder = divmod(uptime_sec, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    uptime_str = f"{hours}h {minutes}m {seconds}s"
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+            background: #0f172a;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }}
+        .card {{
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 24px;
+            width: 320px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }}
+        .header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }}
+        .pulse {{
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: inline-block;
+            margin-right: 6px;
+        }}
+        .badge {{
+            font-size: 11px;
+            font-weight: bold;
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.15);
+            padding: 2px 8px;
+            border-radius: 99px;
+        }}
+        .row {{
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 6px 0;
+        }}
+        .label {{ color: #94a3b8; }}
+        .val {{ font-weight: 600; font-family: monospace; }}
+        .actions {{
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+        }}
+        .btn {{
+            flex: 1;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 12px;
+            color: #38bdf8;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            text-decoration: none;
+        }}
+        .btn:hover {{ background: #1e293b; border-color: #38bdf8; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <span style="font-weight: bold; font-size: 14px;"><span class="pulse"></span>Service Active</span>
+            <span class="badge">ONLINE</span>
+        </div>
+        <div class="row">
+            <span class="label">Uptime</span>
+            <span class="val">{uptime_str}</span>
+        </div>
+        <div class="row">
+            <span class="label">Runtime</span>
+            <span class="val">Python {platform.python_version()}</span>
+        </div>
+        <div class="row">
+            <span class="label">Host</span>
+            <span class="val">Render / Web</span>
+        </div>
+        <div class="actions">
+            <a href="/api/health" class="btn" target="_blank">JSON</a>
+            <a href="/" class="btn">Open Bible →</a>
+        </div>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html_content)
+
+
+# ==========================================
+# 2. Main Bible Web Pages
+# ==========================================
+
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request):
+    """Editorial landing page with language gateways and book indexes."""
     return templates.TemplateResponse(
         request=request,
         name="landing.html",
@@ -31,8 +170,10 @@ async def landing_page(request: Request):
         }
     )
 
+
 @app.get("/read/{book_id}/{chapter}", response_class=HTMLResponse)
 async def reader(request: Request, book_id: int, chapter: int, mode: str = Query("bilingual")):
+    """Reader interface with parallel/interlinear/single views and chapter pickers."""
     if book_id not in BOOK_MAP:
         book_id = 1
     current_book = BOOK_MAP[book_id]
@@ -59,8 +200,10 @@ async def reader(request: Request, book_id: int, chapter: int, mode: str = Query
         }
     )
 
+
 @app.get("/search", response_class=HTMLResponse)
 async def search_page(request: Request, q: str = Query("", min_length=1)):
+    """Case-insensitive bilingual full-text search."""
     results = search_verses(q) if q.strip() else []
     return templates.TemplateResponse(
         request=request,
@@ -68,10 +211,18 @@ async def search_page(request: Request, q: str = Query("", min_length=1)):
         context={"query": q, "results": results, "books": BIBLE_BOOKS}
     )
 
+
 @app.get("/bookmarks", response_class=HTMLResponse)
 async def bookmarks_page(request: Request):
+    """Client-side saved bookmarks view."""
     return templates.TemplateResponse(
         request=request,
         name="bookmarks.html",
         context={"books": BIBLE_BOOKS}
     )
+
+
+# Backward-compatible redirect for legacy book routes
+@app.get("/book/{book_id}/chapter/{chapter}")
+async def legacy_redirect(book_id: int, chapter: int):
+    return RedirectResponse(url=f"/read/{book_id}/{chapter}?mode=bilingual")
