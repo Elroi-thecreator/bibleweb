@@ -9,6 +9,6 @@ services:
     autoDeploy: true
     envVars:
       - key: DATABASE_PATH
-        value: ./data/bible.sqlite
+        value: ./data/bible.sqlite.db
       - key: PYTHON_VERSION
         value: 3.11.9
