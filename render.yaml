@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: bilingual-bible-app
+    name: elroi-bible
     runtime: python
     plan: free
     region: singapore
