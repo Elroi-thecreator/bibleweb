@@ -1,15 +1,23 @@
 import os
 import sqlite3
-from typing import Dict, List, Optional
+from typing import Dict, List
 
-DB_PATH = os.getenv("DATABASE_PATH", "./data/bible.sqlite")
+# Absolute cross-platform path resolution (handles Windows \ and Linux /)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_DB_PATH = os.path.join(BASE_DIR, "data", "bible.sqlite.db")
+DB_PATH = os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
+
 
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
+    """Returns a thread-safe read-only SQLite connection."""
+    abs_path = os.path.abspath(DB_PATH)
+    # Connect in read-only mode via URI to avoid locking issues on ephemeral hosts
+    conn = sqlite3.connect(f"file:{abs_path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     return conn
 
-# 66 Canon Books Metadata (En + Ta) for clean navigation
+
+# 66 Canon Books Metadata (ID, English Name, Tamil Name, Chapter Count)
 BIBLE_BOOKS = [
     (1, "Genesis", "ஆதியாகமம்", 50),
     (2, "Exodus", "யாத்திராகமம்", 40),
@@ -79,75 +87,158 @@ BIBLE_BOOKS = [
     (66, "Revelation", "வெளிப்படுத்தின விசேஷம்", 22),
 ]
 
-BOOK_MAP = {b[0]: {"id": b[0], "name_en": b[1], "name_ta": b[2], "total_chapters": b[3]} for b in BIBLE_BOOKS}
+BOOK_MAP = {
+    b[0]: {
+        "id": b[0],
+        "name_en": b[1],
+        "name_ta": b[2],
+        "total_chapters": b[3]
+    }
+    for b in BIBLE_BOOKS
+}
+
+
+def _resolve_schema(cursor: sqlite3.Cursor):
+    """
+    Introspects the SQLite schema to detect table structure and column names.
+    Supports single-table and dual-table structures.
+    """
+    tables = [
+        r[0] for r in cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"
+        ).fetchall()
+    ]
+
+    # Look for a single combined table first
+    single_table_candidates = ["verses", "bible", "scripture", "tamil_english", "bilingual"]
+    matched_single = next((t for t in tables if t.lower() in single_table_candidates), None)
+    
+    if not matched_single and len(tables) == 1:
+        matched_single = tables[0]
+
+    if matched_single:
+        cols = [c[1] for c in cursor.execute(f"PRAGMA table_info({matched_single})").fetchall()]
+        cols_lower = [c.lower() for c in cols]
+        
+        b_col = cols[cols_lower.index(next(c for c in ["book_id", "book", "b", "book_number"] if c in cols_lower))]
+        c_col = cols[cols_lower.index(next(c for c in ["chapter", "c", "chapter_number"] if c in cols_lower))]
+        v_col = cols[cols_lower.index(next(c for c in ["verse", "v", "verse_number"] if c in cols_lower))]
+        
+        ta_col_match = next((c for c in ["text_ta", "tamil", "verse_ta", "word_ta", "tamil_text", "ta"] if c in cols_lower), None)
+        en_col_match = next((c for c in ["text_en", "english", "verse_en", "word_en", "kjv", "web", "en"] if c in cols_lower), None)
+
+        if ta_col_match and en_col_match:
+            return {
+                "type": "single",
+                "table": matched_single,
+                "book": b_col,
+                "chapter": c_col,
+                "verse": v_col,
+                "text_ta": cols[cols_lower.index(ta_col_match)],
+                "text_en": cols[cols_lower.index(en_col_match)]
+            }
+
+    # If two separate tables exist (e.g. verses_ta and verses_en)
+    ta_table = next((t for t in tables if any(k in t.lower() for k in ["tam", "_ta", "tamil"])), tables[0])
+    en_table = next((t for t in tables if any(k in t.lower() for k in ["eng", "_en", "kjv", "web"])), tables[-1])
+
+    ta_cols = [c[1] for c in cursor.execute(f"PRAGMA table_info({ta_table})").fetchall()]
+    en_cols = [c[1] for c in cursor.execute(f"PRAGMA table_info({en_table})").fetchall()]
+
+    ta_cols_l = [c.lower() for c in ta_cols]
+    en_cols_l = [c.lower() for c in en_cols]
+
+    return {
+        "type": "dual",
+        "table_ta": ta_table,
+        "table_en": en_table,
+        "book": ta_cols[ta_cols_l.index(next(c for c in ["book_id", "book", "b"] if c in ta_cols_l))],
+        "chapter": ta_cols[ta_cols_l.index(next(c for c in ["chapter", "c"] if c in ta_cols_l))],
+        "verse": ta_cols[ta_cols_l.index(next(c for c in ["verse", "v"] if c in ta_cols_l))],
+        "text_ta": ta_cols[ta_cols_l.index(next(c for c in ["text", "verse_text", "words"] if c in ta_cols_l))],
+        "text_en": en_cols[en_cols_l.index(next(c for c in ["text", "verse_text", "words"] if c in en_cols_l))]
+    }
+
 
 def get_chapter_verses(book_id: int, chapter: int) -> List[Dict]:
-    """
-    Fetches verses matching book and chapter.
-    Adapts to either single unified table or dual tables.
-    """
+    """Retrieves all verses for a given book and chapter in both Tamil and English."""
     with get_connection() as conn:
         cursor = conn.cursor()
-        tables = [r[0].lower() for r in cursor.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
-        
-        # Scenario 1: Single unified table named 'verses' or 'bible'
-        target_table = "verses" if "verses" in tables else ("bible" if "bible" in tables else tables[0])
-        cols = [c[1].lower() for c in cursor.execute(f"PRAGMA table_info({target_table})").fetchall()]
+        schema = _resolve_schema(cursor)
 
-        b_col = next((c for c in cols if c in ["book_id", "book", "b", "book_number"]), "book_id")
-        c_col = next((c for c in cols if c in ["chapter", "c", "chapter_number"]), "chapter")
-        v_col = next((c for c in cols if c in ["verse", "v", "verse_number"]), "verse")
-        ta_col = next((c for c in cols if c in ["text_ta", "tamil", "verse_ta", "word_ta", "tamil_text"]), None)
-        en_col = next((c for c in cols if c in ["text_en", "english", "verse_en", "word_en", "kjv", "web"]), None)
-
-        if ta_col and en_col:
-            query = f"""
-                SELECT {v_col} as verse, {en_col} as text_en, {ta_col} as text_ta 
-                FROM {target_table}
-                WHERE {b_col} = ? AND {c_col} = ?
-                ORDER BY {v_col} ASC
+        if schema["type"] == "single":
+            sql = f"""
+                SELECT {schema['verse']} AS verse,
+                       {schema['text_en']} AS text_en,
+                       {schema['text_ta']} AS text_ta
+                FROM {schema['table']}
+                WHERE {schema['book']} = ? AND {schema['chapter']} = ?
+                ORDER BY {schema['verse']} ASC
             """
-            rows = cursor.execute(query, (book_id, chapter)).fetchall()
-            return [dict(r) for r in rows]
+            rows = cursor.execute(sql, (book_id, chapter)).fetchall()
+        else:
+            sql = f"""
+                SELECT e.{schema['verse']} AS verse,
+                       e.{schema['text_en']} AS text_en,
+                       t.{schema['text_ta']} AS text_ta
+                FROM {schema['table_en']} e
+                JOIN {schema['table_ta']} t 
+                  ON e.{schema['book']} = t.{schema['book']}
+                 AND e.{schema['chapter']} = t.{schema['chapter']}
+                 AND e.{schema['verse']} = t.{schema['verse']}
+                WHERE e.{schema['book']} = ? AND e.{schema['chapter']} = ?
+                ORDER BY e.{schema['verse']} ASC
+            """
+            rows = cursor.execute(sql, (book_id, chapter)).fetchall()
 
-        # Scenario 2: Separate tables for English and Tamil
-        ta_tbl = next((t for t in tables if "tam" in t or "_ta" in t), tables[0])
-        en_tbl = next((t for t in tables if "eng" in t or "_en" in t or "kjv" in t), tables[1] if len(tables) > 1 else tables[0])
+        return [
+            {
+                "verse": row["verse"],
+                "text_en": row["text_en"] or "",
+                "text_ta": row["text_ta"] or ""
+            }
+            for row in rows
+        ]
 
-        query = f"""
-            SELECT e.{v_col} as verse, e.text as text_en, t.text as text_ta
-            FROM {en_tbl} e
-            JOIN {ta_tbl} t ON e.{b_col} = t.{b_col} AND e.{c_col} = t.{c_col} AND e.{v_col} = t.{v_col}
-            WHERE e.{b_col} = ? AND e.{c_col} = ?
-            ORDER BY e.{v_col} ASC
-        """
-        rows = cursor.execute(query, (book_id, chapter)).fetchall()
-        return [dict(r) for r in rows]
 
-def search_verses(query_str: str, limit: int = 50) -> List[Dict]:
-    """Case-insensitive bilingual search."""
+def search_verses(query_str: str, limit: int = 60) -> List[Dict]:
+    """Searches both languages across the Bible using case-insensitive partial match."""
     with get_connection() as conn:
         cursor = conn.cursor()
-        tables = [r[0].lower() for r in cursor.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
-        target_table = "verses" if "verses" in tables else ("bible" if "bible" in tables else tables[0])
-        cols = [c[1].lower() for c in cursor.execute(f"PRAGMA table_info({target_table})").fetchall()]
+        schema = _resolve_schema(cursor)
+        pattern = f"%{query_str.strip()}%"
 
-        b_col = next((c for c in cols if c in ["book_id", "book", "b"]), "book_id")
-        c_col = next((c for c in cols if c in ["chapter", "c"]), "chapter")
-        v_col = next((c for c in cols if c in ["verse", "v"]), "verse")
-        ta_col = next((c for c in cols if c in ["text_ta", "tamil", "verse_ta"]), "text_ta")
-        en_col = next((c for c in cols if c in ["text_en", "english", "verse_en"]), "text_en")
+        if schema["type"] == "single":
+            sql = f"""
+                SELECT {schema['book']} AS book_id,
+                       {schema['chapter']} AS chapter,
+                       {schema['verse']} AS verse,
+                       {schema['text_en']} AS text_en,
+                       {schema['text_ta']} AS text_ta
+                FROM {schema['table']}
+                WHERE {schema['text_en']} LIKE ? OR {schema['text_ta']} LIKE ?
+                ORDER BY {schema['book']}, {schema['chapter']}, {schema['verse']}
+                LIMIT ?
+            """
+            rows = cursor.execute(sql, (pattern, pattern, limit)).fetchall()
+        else:
+            sql = f"""
+                SELECT e.{schema['book']} AS book_id,
+                       e.{schema['chapter']} AS chapter,
+                       e.{schema['verse']} AS verse,
+                       e.{schema['text_en']} AS text_en,
+                       t.{schema['text_ta']} AS text_ta
+                FROM {schema['table_en']} e
+                JOIN {schema['table_ta']} t 
+                  ON e.{schema['book']} = t.{schema['book']}
+                 AND e.{schema['chapter']} = t.{schema['chapter']}
+                 AND e.{schema['verse']} = t.{schema['verse']}
+                WHERE e.{schema['text_en']} LIKE ? OR t.{schema['text_ta']} LIKE ?
+                ORDER BY e.{schema['book']}, e.{schema['chapter']}, e.{schema['verse']}
+                LIMIT ?
+            """
+            rows = cursor.execute(sql, (pattern, pattern, limit)).fetchall()
 
-        sql = f"""
-            SELECT {b_col} as book_id, {c_col} as chapter, {v_col} as verse, 
-                   {en_col} as text_en, {ta_col} as text_ta
-            FROM {target_table}
-            WHERE {en_col} LIKE ? OR {ta_col} LIKE ?
-            LIMIT ?
-        """
-        q = f"%{query_str}%"
-        rows = cursor.execute(sql, (q, q, limit)).fetchall()
-        
         results = []
         for r in rows:
             b_info = BOOK_MAP.get(r["book_id"], {"name_en": f"Book {r['book_id']}", "name_ta": ""})
@@ -157,7 +248,7 @@ def search_verses(query_str: str, limit: int = 50) -> List[Dict]:
                 "book_name_ta": b_info["name_ta"],
                 "chapter": r["chapter"],
                 "verse": r["verse"],
-                "text_en": r["text_en"],
-                "text_ta": r["text_ta"]
+                "text_en": r["text_en"] or "",
+                "text_ta": r["text_ta"] or ""
             })
         return results
