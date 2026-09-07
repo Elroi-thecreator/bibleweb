@@ -1,21 +1,28 @@
 import os
 import sqlite3
-from typing import Dict, List
 
-# Absolute cross-platform path resolution (handles Windows \ and Linux /)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "data", "bible.sqlite.db")
 DB_PATH = os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
 
-
 def get_connection():
-    """Returns a thread-safe read-only SQLite connection."""
     abs_path = os.path.abspath(DB_PATH)
-    # Connect in read-only mode via URI to avoid locking issues on ephemeral hosts
-    conn = sqlite3.connect(f"file:{abs_path}?mode=ro", uri=True)
+    
+    if not os.path.exists(abs_path):
+        # Print diagnostic info directly into Render logs
+        data_dir = os.path.join(BASE_DIR, "data")
+        files_in_data = os.listdir(data_dir) if os.path.exists(data_dir) else "DATA FOLDER NOT FOUND"
+        files_in_root = os.listdir(BASE_DIR)
+        raise FileNotFoundError(
+            f"DB file not found at: '{abs_path}'\n"
+            f"Files in root: {files_in_root}\n"
+            f"Files in data/: {files_in_data}"
+        )
+    
+    # Connect directly without URI syntax for maximum compatibility
+    conn = sqlite3.connect(abs_path)
     conn.row_factory = sqlite3.Row
     return conn
-
 
 # 66 Canon Books Metadata (ID, English Name, Tamil Name, Chapter Count)
 BIBLE_BOOKS = [
