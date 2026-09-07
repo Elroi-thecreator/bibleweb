@@ -1,28 +1,30 @@
 import os
 import sqlite3
+from typing import Dict, List
 
+# Absolute cross-platform path resolution
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "data", "bible.sqlite.db")
 DB_PATH = os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
 
+
 def get_connection():
+    """Returns a connection, raising a clear diagnostic error if the DB file was omitted."""
     abs_path = os.path.abspath(DB_PATH)
-    
     if not os.path.exists(abs_path):
-        # Print diagnostic info directly into Render logs
         data_dir = os.path.join(BASE_DIR, "data")
-        files_in_data = os.listdir(data_dir) if os.path.exists(data_dir) else "DATA FOLDER NOT FOUND"
+        files_in_data = os.listdir(data_dir) if os.path.exists(data_dir) else "FOLDER NOT FOUND"
         files_in_root = os.listdir(BASE_DIR)
         raise FileNotFoundError(
             f"DB file not found at: '{abs_path}'\n"
             f"Files in root: {files_in_root}\n"
             f"Files in data/: {files_in_data}"
         )
-    
-    # Connect directly without URI syntax for maximum compatibility
+
     conn = sqlite3.connect(abs_path)
     conn.row_factory = sqlite3.Row
     return conn
+
 
 # 66 Canon Books Metadata (ID, English Name, Tamil Name, Chapter Count)
 BIBLE_BOOKS = [
@@ -106,33 +108,28 @@ BOOK_MAP = {
 
 
 def _resolve_schema(cursor: sqlite3.Cursor):
-    """
-    Introspects the SQLite schema to detect table structure and column names.
-    Supports single-table and dual-table structures.
-    """
+    """Detects table and column arrangements."""
     tables = [
         r[0] for r in cursor.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"
         ).fetchall()
     ]
 
-    # Look for a single combined table first
-    single_table_candidates = ["verses", "bible", "scripture", "tamil_english", "bilingual"]
-    matched_single = next((t for t in tables if t.lower() in single_table_candidates), None)
-    
+    single_candidates = ["verses", "bible", "scripture", "tamil_english", "bilingual"]
+    matched_single = next((t for t in tables if t.lower() in single_candidates), None)
     if not matched_single and len(tables) == 1:
         matched_single = tables[0]
 
     if matched_single:
         cols = [c[1] for c in cursor.execute(f"PRAGMA table_info({matched_single})").fetchall()]
-        cols_lower = [c.lower() for c in cols]
+        cols_l = [c.lower() for c in cols]
         
-        b_col = cols[cols_lower.index(next(c for c in ["book_id", "book", "b", "book_number"] if c in cols_lower))]
-        c_col = cols[cols_lower.index(next(c for c in ["chapter", "c", "chapter_number"] if c in cols_lower))]
-        v_col = cols[cols_lower.index(next(c for c in ["verse", "v", "verse_number"] if c in cols_lower))]
+        b_col = cols[cols_l.index(next(c for c in ["book_id", "book", "b", "book_number"] if c in cols_l))]
+        c_col = cols[cols_l.index(next(c for c in ["chapter", "c", "chapter_number"] if c in cols_l))]
+        v_col = cols[cols_l.index(next(c for c in ["verse", "v", "verse_number"] if c in cols_l))]
         
-        ta_col_match = next((c for c in ["text_ta", "tamil", "verse_ta", "word_ta", "tamil_text", "ta"] if c in cols_lower), None)
-        en_col_match = next((c for c in ["text_en", "english", "verse_en", "word_en", "kjv", "web", "en"] if c in cols_lower), None)
+        ta_col_match = next((c for c in ["text_ta", "tamil", "verse_ta", "word_ta", "tamil_text", "ta"] if c in cols_l), None)
+        en_col_match = next((c for c in ["text_en", "english", "verse_en", "word_en", "kjv", "web", "en"] if c in cols_l), None)
 
         if ta_col_match and en_col_match:
             return {
@@ -141,11 +138,10 @@ def _resolve_schema(cursor: sqlite3.Cursor):
                 "book": b_col,
                 "chapter": c_col,
                 "verse": v_col,
-                "text_ta": cols[cols_lower.index(ta_col_match)],
-                "text_en": cols[cols_lower.index(en_col_match)]
+                "text_ta": cols[cols_l.index(ta_col_match)],
+                "text_en": cols[cols_l.index(en_col_match)]
             }
 
-    # If two separate tables exist (e.g. verses_ta and verses_en)
     ta_table = next((t for t in tables if any(k in t.lower() for k in ["tam", "_ta", "tamil"])), tables[0])
     en_table = next((t for t in tables if any(k in t.lower() for k in ["eng", "_en", "kjv", "web"])), tables[-1])
 
@@ -168,7 +164,6 @@ def _resolve_schema(cursor: sqlite3.Cursor):
 
 
 def get_chapter_verses(book_id: int, chapter: int) -> List[Dict]:
-    """Retrieves all verses for a given book and chapter in both Tamil and English."""
     with get_connection() as conn:
         cursor = conn.cursor()
         schema = _resolve_schema(cursor)
@@ -209,7 +204,6 @@ def get_chapter_verses(book_id: int, chapter: int) -> List[Dict]:
 
 
 def search_verses(query_str: str, limit: int = 60) -> List[Dict]:
-    """Searches both languages across the Bible using case-insensitive partial match."""
     with get_connection() as conn:
         cursor = conn.cursor()
         schema = _resolve_schema(cursor)
