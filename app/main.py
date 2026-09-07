@@ -11,8 +11,8 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
-    # Redirects to John Chapter 1 by default
-    return RedirectResponse(url="/book/43/chapter/1")
+    # Redirect to Genesis 1 by default (or book 43 for John)
+    return RedirectResponse(url="/book/1/chapter/1")
 
 @app.get("/book/{book_id}/chapter/{chapter}", response_class=HTMLResponse)
 async def read_chapter(request: Request, book_id: int, chapter: int):
@@ -28,9 +28,9 @@ async def read_chapter(request: Request, book_id: int, chapter: int):
     next_chapter = chapter + 1 if chapter < current_book["total_chapters"] else None
 
     return templates.TemplateResponse(
-        "chapter.html",
-        {
-            "request": request,
+        request=request,
+        name="chapter.html",
+        context={
             "books": BIBLE_BOOKS,
             "book": current_book,
             "chapter": chapter,
@@ -44,9 +44,9 @@ async def read_chapter(request: Request, book_id: int, chapter: int):
 async def search_page(request: Request, q: str = Query("", min_length=1)):
     results = search_verses(q) if q.strip() else []
     return templates.TemplateResponse(
-        "search.html",
-        {
-            "request": request,
+        request=request,
+        name="search.html",
+        context={
             "query": q,
             "results": results,
             "books": BIBLE_BOOKS
@@ -55,4 +55,8 @@ async def search_page(request: Request, q: str = Query("", min_length=1)):
 
 @app.get("/bookmarks", response_class=HTMLResponse)
 async def bookmarks_page(request: Request):
-    return templates.TemplateResponse("bookmarks.html", {"request": request, "books": BIBLE_BOOKS})
+    return templates.TemplateResponse(
+        request=request,
+        name="bookmarks.html",
+        context={"books": BIBLE_BOOKS}
+    )
