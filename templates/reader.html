@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.name_en }} {{ chapter }} | {{ book.name_ta }} {{ chapter }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-6">
+
+    <!-- Reading Control Floating Dock -->
+    <div class="sticky top-20 z-30 mb-6 bg-white/95 dark:bg-stone-900/95 backdrop-blur border border-stone-200 dark:border-stone-800 rounded-xl p-3 sm:px-6 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        
+        <!-- Book & Chapter Breadcrumb -->
+        <div class="flex items-center space-x-2">
+            <button onclick="document.getElementById('quick-nav-modal').classList.toggle('hidden')" 
+                    class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100 hover:text-amber-700 flex items-center gap-1.5">
+                <span>{{ book.name_en }} {{ chapter }}</span>
+                <span class="text-xs">▾</span>
+            </button>
+            <span class="text-stone-400 font-tamil text-sm">({{ book.name_ta }})</span>
+        </div>
+
+        <!-- Mode Selectors (Bilingual / Tamil / English) -->
+        <div class="flex items-center bg-stone-100 dark:bg-stone-800 p-1 rounded-lg text-xs font-medium">
+            <a href="/read/{{ book.id }}/{{ chapter }}?mode=bilingual" 
+               class="px-3 py-1 rounded-md transition {% if mode == 'bilingual' %}bg-white dark:bg-stone-700 shadow-sm text-amber-800 dark:text-amber-400 font-bold{% else %}text-stone-600 dark:text-stone-400{% endif %}">
+               Parallel
+            </a>
+            <a href="/read/{{ book.id }}/{{ chapter }}?mode=ta" 
+               class="px-3 py-1 rounded-md transition font-tamil {% if mode == 'ta' %}bg-white dark:bg-stone-700 shadow-sm text-amber-800 dark:text-amber-400 font-bold{% else %}text-stone-600 dark:text-stone-400{% endif %}">
+               தமிழ்
+            </a>
+            <a href="/read/{{ book.id }}/{{ chapter }}?mode=en" 
+               class="px-3 py-1 rounded-md transition {% if mode == 'en' %}bg-white dark:bg-stone-700 shadow-sm text-amber-800 dark:text-amber-400 font-bold{% else %}text-stone-600 dark:text-stone-400{% endif %}">
+               English
+            </a>
+        </div>
+
+        <!-- Font Resizer & Prev/Next -->
+        <div class="flex items-center space-x-2">
+            <div class="flex items-center border border-stone-200 dark:border-stone-700 rounded-md px-2 py-1 text-xs">
+                <button onclick="changeFontSize(-1)" class="px-1.5 hover:font-bold text-stone-500">A-</button>
+                <span class="text-stone-300">|</span>
+                <button onclick="changeFontSize(1)" class="px-1.5 hover:font-bold text-stone-500">A+</button>
+            </div>
+
+            {% if prev_ch %}
+            <a href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="p-1.5 border border-stone-200 dark:border-stone-700 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 text-xs">‹ Prev</a>
+            {% endif %}
+            {% if next_ch %}
+            <a href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="p-1.5 border border-stone-200 dark:border-stone-700 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 text-xs">Next ›</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Verses Container -->
+    <div id="reader-content" class="space-y-4">
+        {% for v in verses %}
+        <div id="v{{ v.verse }}" class="verse-item group p-4 sm:p-5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl transition hover:border-amber-700/50 shadow-sm">
+            
+            <div class="flex items-center justify-between text-xs text-stone-400 mb-3 pb-2 border-b border-stone-100 dark:border-stone-800">
+                <span class="font-cinzel font-bold text-amber-800 dark:text-amber-500 text-sm">{{ chapter }}:{{ v.verse }}</span>
+                
+                <!-- Utilities -->
+                <div class="flex items-center space-x-3 opacity-80 group-hover:opacity-100">
+                    <button class="bookmark-btn hover:text-amber-500"
+                            data-book="{{ book.id }}" data-chapter="{{ chapter }}" data-verse="{{ v.verse }}"
+                            onclick="toggleBookmark({{ book.id }}, '{{ book.name_en }}', '{{ book.name_ta }}', {{ chapter }}, {{ v.verse }}, '{{ v.text_en | escape }}', '{{ v.text_ta | escape }}')">
+                        ☆
+                    </button>
+                    <button onclick="speakVerse('{{ v.text_ta | escape }}', 'ta-IN')" title="Listen in Tamil" class="hover:text-amber-600">🔊 தமிழ்</button>
+                    <button onclick="speakVerse('{{ v.text_en | escape }}', 'en-US')" title="Listen in English" class="hover:text-amber-600">🔊 En</button>
+                    <button onclick="copyBilingualVerse('{{ book.name_en }} {{ chapter }}:{{ v.verse }}', '{{ book.name_ta }} {{ chapter }}:{{ v.verse }}', '{{ v.text_en | escape }}', '{{ v.text_ta | escape }}')" 
+                            class="hover:text-stone-700 dark:hover:text-stone-200">📋</button>
+                </div>
+            </div>
+
+            <!-- Reading Layout Variations -->
+            {% if mode == 'bilingual' %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <p class="verse-text-en font-english text-stone-800 dark:text-stone-200 text-base leading-relaxed">{{ v.text_en }}</p>
+                <p class="verse-text-ta font-tamil text-stone-900 dark:text-stone-100 text-base md:border-l md:border-stone-100 md:dark:border-stone-800 md:pl-6 pt-2 md:pt-0">{{ v.text_ta }}</p>
+            </div>
+            {% elif mode == 'ta' %}
+            <p class="verse-text-ta font-tamil text-stone-900 dark:text-stone-100 text-lg">{{ v.text_ta }}</p>
+            {% elif mode == 'en' %}
+            <p class="verse-text-en font-english text-stone-800 dark:text-stone-200 text-lg">{{ v.text_en }}</p>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="flex justify-between items-center py-10">
+        {% if prev_ch %}
+        <a href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="px-5 py-2.5 bg-white dark:bg-stone-800 border rounded-lg shadow-sm hover:border-amber-700 text-sm font-medium">← Previous Chapter</a>
+        {% else %}<div></div>{% endif %}
+        {% if next_ch %}
+        <a href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="px-5 py-2.5 bg-white dark:bg-stone-800 border rounded-lg shadow-sm hover:border-amber-700 text-sm font-medium">Next Chapter →</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Book Navigator Modal -->
+<div id="quick-nav-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[85vh] flex flex-col border border-stone-200 dark:border-stone-800">
+        <div class="flex justify-between items-center pb-4 border-b border-stone-100 dark:border-stone-800">
+            <h3 class="font-cinzel font-bold text-lg">Jump to Book & Chapter</h3>
+            <button onclick="document.getElementById('quick-nav-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-600 text-2xl">&times;</button>
+        </div>
+        <div class="overflow-y-auto pr-1 py-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+            {% for b in books %}
+            <a href="/read/{{ b[0] }}/1?mode={{ mode }}" class="p-2.5 rounded-lg border border-stone-200 dark:border-stone-800 hover:border-amber-700 hover:bg-amber-50/50 dark:hover:bg-stone-800 block">
+                <span class="font-semibold block text-stone-900 dark:text-stone-100">{{ b[1] }}</span>
+                <span class="font-tamil text-stone-500 text-[11px] block">{{ b[2] }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function changeFontSize(delta) {
+        document.querySelectorAll('.verse-text-en, .verse-text-ta').forEach(el => {
+            const currentSize = parseFloat(window.getComputedStyle(el).fontSize);
+            el.style.fontSize = (currentSize + delta) + 'px';
+        });
+    }
+
+    function speakVerse(text, lang) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+</script>
+{% endblock %}

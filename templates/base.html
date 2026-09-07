@@ -1,74 +1,112 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ta" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Bilingual Bible (Tamil - English){% endblock %}</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tamil and English Fonts -->
+    <title>{% block title %}வேதம் | Holy Bible{% endblock %}</title>
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Mukta+Malar:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+Tamil:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['Lora', 'serif'],
+                        cinzel: ['Cinzel', 'serif'],
+                        tamil: ['"Noto Serif Tamil"', 'serif'],
+                    },
+                    colors: {
+                        sepia: {
+                            50: '#FAF6EE',
+                            100: '#F4ECE0',
+                            200: '#E8DCB8',
+                            800: '#3D3628',
+                            900: '#2A241A'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .tamil-text { font-family: 'Mukta Malar', sans-serif; line-height: 1.85; }
+        .font-tamil { font-family: 'Noto Serif Tamil', serif; line-height: 2.1; }
+        .font-english { font-family: 'Lora', serif; line-height: 1.8; }
+        body.theme-sepia { background-color: #FAF6EE; color: #2A241A; }
+        body.theme-sepia .bg-card { background-color: #F4ECE0; border-color: #E8DCB8; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
-    <!-- Navbar -->
-    <header class="bg-white border-b sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-            <div class="flex items-center space-x-3">
-                <a href="/" class="text-xl font-bold text-blue-700 tracking-tight">வேதம் | Bible</a>
-                <button onclick="document.getElementById('nav-modal').classList.toggle('hidden')" 
-                        class="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md font-medium text-gray-700">
-                    📖 Select Book
-                </button>
-            </div>
+<body class="bg-stone-50 text-stone-900 transition-colors duration-200 min-h-screen flex flex-col font-serif">
 
-            <!-- Search Bar -->
-            <form action="/search" method="get" class="flex-1 max-w-md mx-2">
-                <input type="text" name="q" placeholder="Search / தேடுக (e.g. John 3:16, அன்பு)..."
-                       class="w-full bg-gray-100 border border-gray-300 rounded-full px-4 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-white/90 dark:bg-stone-900/95 dark:text-stone-100 backdrop-blur-md border-b border-stone-200 dark:border-stone-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+            
+            <a href="/" class="flex items-center space-x-2.5">
+                <span class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-sm shadow-sm">†</span>
+                <div>
+                    <span class="font-cinzel tracking-wider text-base font-bold block leading-none">THE BIBLE</span>
+                    <span class="font-tamil text-xs text-amber-800 dark:text-amber-400 leading-none">பரிசுத்த வேதாகமம்</span>
+                </div>
+            </a>
+
+            <!-- Search Form -->
+            <form action="/search" method="get" class="hidden md:flex flex-1 max-w-sm mx-4">
+                <div class="relative w-full">
+                    <input type="text" name="q" placeholder="Search verses... / வசனங்களைத் தேடுக..."
+                           class="w-full text-xs bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-full pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-700">
+                    <span class="absolute left-3 top-2.5 text-stone-400 text-xs">🔍</span>
+                </div>
             </form>
 
-            <div class="flex items-center space-x-2">
-                <a href="/bookmarks" class="text-sm px-3 py-1.5 rounded-md text-gray-600 hover:bg-gray-100">
-                    ★ Saved
+            <!-- Navigation & Theme Settings -->
+            <div class="flex items-center space-x-2 text-xs">
+                <a href="/bookmarks" class="px-3 py-1.5 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center gap-1 font-medium">
+                    <span>★</span> <span class="hidden sm:inline">Bookmarks</span>
                 </a>
+
+                <!-- Theme Pickers -->
+                <div class="flex items-center border border-stone-300 dark:border-stone-700 rounded-full p-1 bg-stone-100 dark:bg-stone-800">
+                    <button onclick="setTheme('light')" class="px-2 py-0.5 rounded-full text-xs hover:bg-white dark:hover:bg-stone-700" title="Light">☀️</button>
+                    <button onclick="setTheme('sepia')" class="px-2 py-0.5 rounded-full text-xs hover:bg-amber-100 dark:hover:bg-amber-900" title="Sepia">📜</button>
+                    <button onclick="setTheme('dark')" class="px-2 py-0.5 rounded-full text-xs hover:bg-stone-600" title="Dark">🌙</button>
+                </div>
             </div>
         </div>
     </header>
 
-    <!-- Quick Navigation Modal -->
-    <div id="nav-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b">
-                <h3 class="font-semibold text-lg">Select a Book (புத்தகத்தைத் தேர்ந்தெடுக்கவும்)</h3>
-                <button onclick="document.getElementById('nav-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
-            </div>
-            <div class="overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm pr-1">
-                {% for b in books %}
-                <a href="/book/{{ b[0] }}/chapter/1" 
-                   class="p-2 rounded hover:bg-blue-50 hover:text-blue-700 border border-gray-100 flex flex-col">
-                    <span class="font-medium text-gray-900">{{ b[1] }}</span>
-                    <span class="tamil-text text-xs text-gray-500">{{ b[2] }}</span>
-                </a>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4">
+    <main class="flex-1">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-white border-t py-4 text-center text-xs text-gray-500">
-        Bilingual Bible Reader • Client-side bookmarks & settings saved in browser
+    <!-- Footer -->
+    <footer class="border-t border-stone-200 dark:border-stone-800 py-8 bg-stone-100 dark:bg-stone-950 text-center text-xs text-stone-500">
+        <p class="font-cinzel tracking-widest text-stone-700 dark:text-stone-400">SOLI DEO GLORIA</p>
+        <p class="mt-1 font-tamil">பரிசுத்த வேதாகமம் • Tamil & English Scripture Reader</p>
     </footer>
 
     <script src="/static/js/storage.js"></script>
+    <script>
+        function setTheme(theme) {
+            document.documentElement.classList.remove('dark');
+            document.body.classList.remove('theme-sepia');
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else if (theme === 'sepia') {
+                document.body.classList.add('theme-sepia');
+            }
+            localStorage.setItem('bible_app_theme', theme);
+        }
+        (function initTheme() {
+            const t = localStorage.getItem('bible_app_theme') || 'light';
+            setTheme(t);
+        })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

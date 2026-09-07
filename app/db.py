@@ -5,33 +5,23 @@ from typing import Dict, List
 # Absolute cross-platform path resolution
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "data", "bible.sqlite.db")
-FALLBACK_DB_PATH = os.path.join(BASE_DIR, "data", "bible.sqlite")
-
-# Prefer env var if supplied, else check default and fallback locations
 DB_PATH = os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
 
 
 def get_connection():
-    """Returns a connection, checking both .sqlite.db and .sqlite extensions."""
-    target_path = os.path.abspath(DB_PATH)
+    """Returns a connection, raising a clear diagnostic error if the DB file was omitted."""
+    abs_path = os.path.abspath(DB_PATH)
+    if not os.path.exists(abs_path):
+        data_dir = os.path.join(BASE_DIR, "data")
+        files_in_data = os.listdir(data_dir) if os.path.exists(data_dir) else "FOLDER NOT FOUND"
+        files_in_root = os.listdir(BASE_DIR)
+        raise FileNotFoundError(
+            f"DB file not found at: '{abs_path}'\n"
+            f"Files in root: {files_in_root}\n"
+            f"Files in data/: {files_in_data}"
+        )
 
-    # Auto-resolve if extension differs between .sqlite.db and .sqlite
-    if not os.path.exists(target_path):
-        if os.path.exists(DEFAULT_DB_PATH):
-            target_path = DEFAULT_DB_PATH
-        elif os.path.exists(FALLBACK_DB_PATH):
-            target_path = FALLBACK_DB_PATH
-        else:
-            data_dir = os.path.join(BASE_DIR, "data")
-            files_in_data = os.listdir(data_dir) if os.path.exists(data_dir) else "FOLDER NOT FOUND"
-            files_in_root = os.listdir(BASE_DIR)
-            raise FileNotFoundError(
-                f"DB file not found at '{target_path}'.\n"
-                f"Files in root: {files_in_root}\n"
-                f"Files in data/: {files_in_data}"
-            )
-
-    conn = sqlite3.connect(target_path)
+    conn = sqlite3.connect(abs_path)
     conn.row_factory = sqlite3.Row
     return conn
 
