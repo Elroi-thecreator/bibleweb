@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: bilingual-bible-app
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_PATH
+        value: ./data/bible.sqlite
+      - key: PYTHON_VERSION
+        value: 3.11.9

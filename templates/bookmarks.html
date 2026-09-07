@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Saved Bookmarks{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Saved Verses (குறிக்கப்பட்ட வசனங்கள்)</h1>
+        <button onclick="clearAllBookmarks()" class="text-xs text-red-600 hover:underline">Clear All</button>
+    </div>
+
+    <div id="bookmarks-list" class="space-y-4">
+        <!-- Rendered client-side via JavaScript -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function renderBookmarks() {
+    const list = document.getElementById('bookmarks-list');
+    const bookmarks = getBookmarks();
+
+    if (bookmarks.length === 0) {
+        list.innerHTML = `<div class="bg-white p-8 rounded-lg text-center text-gray-500 border">No bookmarks saved yet. Click the star icon on any verse while reading.</div>`;
+        return;
+    }
+
+    list.innerHTML = bookmarks.map(b => `
+        <div class="bg-white p-4 rounded-lg shadow-sm border space-y-2">
+            <div class="flex justify-between items-center text-sm font-semibold text-blue-700">
+                <a href="/book/${b.bookId}/chapter/${b.ch}" class="hover:underline">
+                    ${b.bookNameEn} ${b.ch}:${b.v} / ${b.bookNameTa} ${b.ch}:${b.v}
+                </a>
+                <button onclick="toggleBookmark(${b.bookId},'${b.bookNameEn}','${b.bookNameTa}',${b.ch},${b.v},'',''); renderBookmarks();" 
+                        class="text-xs text-red-500 hover:underline">Remove</button>
+            </div>
+            <p class="text-sm text-gray-700">${b.textEn}</p>
+            <p class="tamil-text text-sm text-gray-900">${b.textTa}</p>
+        </div>
+    `).join('');
+}
+
+function clearAllBookmarks() {
+    if (confirm('Remove all saved bookmarks?')) {
+        localStorage.removeItem(KEYS.BOOKMARKS);
+        renderBookmarks();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', renderBookmarks);
+</script>
+{% endblock %}
