@@ -5,53 +5,89 @@
 {% block content %}
 <div class="max-w-6xl mx-auto px-4 py-6">
 
-    <!-- Reading Control Floating Dock -->
-    <div class="sticky top-20 z-30 mb-6 bg-white/95 dark:bg-stone-900/95 backdrop-blur border border-stone-200 dark:border-stone-800 rounded-xl p-3 sm:px-6 shadow-sm flex flex-wrap items-center justify-between gap-3">
+    <!-- Top Sticky Toolbar -->
+    <div class="sticky top-16 z-30 mb-6 bg-white/95 dark:bg-stone-900/95 backdrop-blur border border-stone-200 dark:border-stone-800 rounded-xl p-3 sm:px-6 shadow-sm flex flex-wrap items-center justify-between gap-3">
         
-        <!-- Book & Chapter Breadcrumb -->
+        <!-- Book & Chapter Selectors -->
         <div class="flex items-center space-x-2">
-            <button onclick="document.getElementById('quick-nav-modal').classList.toggle('hidden')" 
-                    class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100 hover:text-amber-700 flex items-center gap-1.5">
-                <span>{{ book.name_en }} {{ chapter }}</span>
+            <!-- Book Switch Button -->
+            <button onclick="document.getElementById('quick-nav-modal').classList.remove('hidden')" 
+                    class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 hover:text-amber-700 flex items-center gap-1">
+                <span>{{ book.name_en }}</span>
                 <span class="text-xs">▾</span>
             </button>
-            <span class="text-stone-400 font-tamil text-sm">({{ book.name_ta }})</span>
+            <span class="text-stone-400 font-tamil text-xs sm:text-sm">({{ book.name_ta }})</span>
+
+            <!-- On-Screen Chapter Dropdown -->
+            <div class="relative inline-block ml-2">
+                <select onchange="window.location.href='/read/{{ book.id }}/' + this.value + '?mode={{ mode }}'" 
+                        class="bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-bold rounded-lg px-2.5 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-700 cursor-pointer">
+                    {% for c in range(1, book.total_chapters + 1) %}
+                    <option value="{{ c }}" {% if c == chapter %}selected{% endif %}>
+                        Ch {{ c }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Chapter Grid Quick Toggle -->
+            <button onclick="document.getElementById('chapter-grid-tray').classList.toggle('hidden')"
+                    class="text-xs border border-stone-300 dark:border-stone-700 rounded-lg px-2 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 font-semibold"
+                    title="View All Chapters">
+                All Chapters
+            </button>
         </div>
 
-        <!-- Mode Selectors (Bilingual / Tamil / English) -->
+        <!-- Mode Selectors (Parallel / Tamil / English) -->
         <div class="flex items-center bg-stone-100 dark:bg-stone-800 p-1 rounded-lg text-xs font-medium">
             <a href="/read/{{ book.id }}/{{ chapter }}?mode=bilingual" 
-               class="px-3 py-1 rounded-md transition {% if mode == 'bilingual' %}bg-white dark:bg-stone-700 shadow-sm text-amber-800 dark:text-amber-400 font-bold{% else %}text-stone-600 dark:text-stone-400{% endif %}">
+               class="px-2.5 py-1 rounded-md transition {% if mode == 'bilingual' %}bg-white dark:bg-stone-700 shadow-sm text-amber-800 dark:text-amber-400 font-bold{% else %}text-stone-600 dark:text-stone-400{% endif %}">
                Parallel
             </a>
             <a href="/read/{{ book.id }}/{{ chapter }}?mode=ta" 
-               class="px-3 py-1 rounded-md transition font-tamil {% if mode == 'ta' %}bg-white dark:bg-stone-700 shadow-sm text-amber-800 dark:text-amber-400 font-bold{% else %}text-stone-600 dark:text-stone-400{% endif %}">
+               class="px-2.5 py-1 rounded-md transition font-tamil {% if mode == 'ta' %}bg-white dark:bg-stone-700 shadow-sm text-amber-800 dark:text-amber-400 font-bold{% else %}text-stone-600 dark:text-stone-400{% endif %}">
                தமிழ்
             </a>
             <a href="/read/{{ book.id }}/{{ chapter }}?mode=en" 
-               class="px-3 py-1 rounded-md transition {% if mode == 'en' %}bg-white dark:bg-stone-700 shadow-sm text-amber-800 dark:text-amber-400 font-bold{% else %}text-stone-600 dark:text-stone-400{% endif %}">
+               class="px-2.5 py-1 rounded-md transition {% if mode == 'en' %}bg-white dark:bg-stone-700 shadow-sm text-amber-800 dark:text-amber-400 font-bold{% else %}text-stone-600 dark:text-stone-400{% endif %}">
                English
             </a>
         </div>
 
         <!-- Font Resizer & Prev/Next -->
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1 sm:space-x-2">
             <div class="flex items-center border border-stone-200 dark:border-stone-700 rounded-md px-2 py-1 text-xs">
-                <button onclick="changeFontSize(-1)" class="px-1.5 hover:font-bold text-stone-500">A-</button>
-                <span class="text-stone-300">|</span>
-                <button onclick="changeFontSize(1)" class="px-1.5 hover:font-bold text-stone-500">A+</button>
+                <button onclick="changeFontSize(-1)" class="px-1 hover:font-bold text-stone-500">A-</button>
+                <span class="text-stone-300 mx-1">|</span>
+                <button onclick="changeFontSize(1)" class="px-1 hover:font-bold text-stone-500">A+</button>
             </div>
 
             {% if prev_ch %}
-            <a href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="p-1.5 border border-stone-200 dark:border-stone-700 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 text-xs">‹ Prev</a>
+            <a href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="p-1 sm:px-2.5 py-1 border border-stone-200 dark:border-stone-700 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 text-xs">‹</a>
             {% endif %}
             {% if next_ch %}
-            <a href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="p-1.5 border border-stone-200 dark:border-stone-700 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 text-xs">Next ›</a>
+            <a href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="p-1 sm:px-2.5 py-1 border border-stone-200 dark:border-stone-700 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 text-xs">›</a>
             {% endif %}
         </div>
     </div>
 
-    <!-- Verses Container -->
+    <!-- Collapsible Direct Chapter Number Grid -->
+    <div id="chapter-grid-tray" class="hidden mb-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl p-4 shadow-sm">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b border-stone-100 dark:border-stone-800">
+            <span class="text-xs font-cinzel font-bold text-stone-500 uppercase tracking-wider">Select Chapter (அத்தியாயத்தைத் தேர்ந்தெடுக்கவும்)</span>
+            <button onclick="document.getElementById('chapter-grid-tray').classList.add('hidden')" class="text-xs text-stone-400 hover:text-stone-600">✕ Close</button>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+            {% for c in range(1, book.total_chapters + 1) %}
+            <a href="/read/{{ book.id }}/{{ c }}?mode={{ mode }}" 
+               class="w-9 h-9 flex items-center justify-center rounded-lg text-xs font-semibold border transition {% if c == chapter %}bg-amber-700 text-white border-amber-700 shadow-sm{% else %}bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border-stone-200 dark:border-stone-700 hover:border-amber-600{% endif %}">
+                {{ c }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Verses List -->
     <div id="reader-content" class="space-y-4">
         {% for v in verses %}
         <div id="v{{ v.verse }}" class="verse-item group p-4 sm:p-5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl transition hover:border-amber-700/50 shadow-sm">
@@ -59,7 +95,6 @@
             <div class="flex items-center justify-between text-xs text-stone-400 mb-3 pb-2 border-b border-stone-100 dark:border-stone-800">
                 <span class="font-cinzel font-bold text-amber-800 dark:text-amber-500 text-sm">{{ chapter }}:{{ v.verse }}</span>
                 
-                <!-- Utilities -->
                 <div class="flex items-center space-x-3 opacity-80 group-hover:opacity-100">
                     <button class="bookmark-btn hover:text-amber-500"
                             data-book="{{ book.id }}" data-chapter="{{ chapter }}" data-verse="{{ v.verse }}"
@@ -73,7 +108,7 @@
                 </div>
             </div>
 
-            <!-- Reading Layout Variations -->
+            <!-- Verse Layout -->
             {% if mode == 'bilingual' %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <p class="verse-text-en font-english text-stone-800 dark:text-stone-200 text-base leading-relaxed">{{ v.text_en }}</p>
@@ -89,22 +124,22 @@
         {% endfor %}
     </div>
 
-    <!-- Bottom Navigation -->
+    <!-- Bottom Prev / Next Nav -->
     <div class="flex justify-between items-center py-10">
         {% if prev_ch %}
-        <a href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="px-5 py-2.5 bg-white dark:bg-stone-800 border rounded-lg shadow-sm hover:border-amber-700 text-sm font-medium">← Previous Chapter</a>
+        <a href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="px-5 py-2.5 bg-white dark:bg-stone-800 border rounded-lg shadow-sm hover:border-amber-700 text-sm font-medium">← Chapter {{ prev_ch }}</a>
         {% else %}<div></div>{% endif %}
         {% if next_ch %}
-        <a href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="px-5 py-2.5 bg-white dark:bg-stone-800 border rounded-lg shadow-sm hover:border-amber-700 text-sm font-medium">Next Chapter →</a>
+        <a href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="px-5 py-2.5 bg-white dark:bg-stone-800 border rounded-lg shadow-sm hover:border-amber-700 text-sm font-medium">Chapter {{ next_ch }} →</a>
         {% endif %}
     </div>
 </div>
 
-<!-- Quick Book Navigator Modal -->
+<!-- Book Switcher Modal -->
 <div id="quick-nav-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[85vh] flex flex-col border border-stone-200 dark:border-stone-800">
         <div class="flex justify-between items-center pb-4 border-b border-stone-100 dark:border-stone-800">
-            <h3 class="font-cinzel font-bold text-lg">Jump to Book & Chapter</h3>
+            <h3 class="font-cinzel font-bold text-lg">Select Book</h3>
             <button onclick="document.getElementById('quick-nav-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-600 text-2xl">&times;</button>
         </div>
         <div class="overflow-y-auto pr-1 py-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
