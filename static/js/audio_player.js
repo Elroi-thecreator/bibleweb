@@ -1,17 +1,39 @@
 class BibleContinuousAudio {
     constructor() {
+        this.audio = new Audio();
         this.isPlaying = false;
         this.isPaused = false;
         this.currentIndex = 0;
         this.verses = [];
-        this.synth = window.speechSynthesis;
-        this.currentUtterance = null;
         this.lang = 'ta'; // 'ta' | 'en'
         this.rate = 1.0;
         this.bookId = null;
         this.chapter = null;
         this.nextChapter = null;
         this.mode = 'bilingual';
+
+        this.setupAudioListeners();
+    }
+
+    setupAudioListeners() {
+        // When a verse ends, advance to the next verse automatically
+        this.audio.addEventListener('ended', () => {
+            if (this.isPlaying && !this.isPaused) {
+                this.currentIndex++;
+                this.playCurrent();
+            }
+        });
+
+        // Error handling fallback
+        this.audio.addEventListener('error', (e) => {
+            console.error("Audio playback error:", e);
+            if (this.isPlaying && !this.isPaused) {
+                setTimeout(() => {
+                    this.currentIndex++;
+                    this.playCurrent();
+                }, 1000);
+            }
+        });
     }
 
     init(bookId, chapter, nextChapter, mode) {
@@ -29,32 +51,20 @@ class BibleContinuousAudio {
             textTa: el.querySelector('.verse-text-ta')?.innerText.trim() || ''
         }));
 
-        if (this.synth.onvoiceschanged !== undefined) {
-            this.synth.onvoiceschanged = () => this.getBestVoice(this.lang);
-        }
-
-        // Detect if cross-chapter continuous reading was active
+        // Detect if cross-chapter autoplay was active
         const savedState = sessionStorage.getItem('bible_autoplay_state');
         if (savedState) {
             const state = JSON.parse(savedState);
             sessionStorage.removeItem('bible_autoplay_state');
             this.lang = state.lang || 'ta';
             this.rate = state.rate || 1.0;
+
             const langEl = document.getElementById('audio-lang-select');
             const rateEl = document.getElementById('audio-rate-select');
             if (langEl) langEl.value = this.lang;
             if (rateEl) rateEl.value = this.rate;
-            setTimeout(() => this.play(0), 400);
-        }
-    }
 
-    getBestVoice(targetLang) {
-        const voices = this.synth.getVoices();
-        if (targetLang === 'ta') {
-            return voices.find(v => v.lang.toLowerCase().includes('ta')) || null;
-        } else {
-            return voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google'))) || 
-                   voices.find(v => v.lang.startsWith('en')) || null;
+            setTimeout(() => this.play(0), 400);
         }
     }
 
@@ -63,10 +73,10 @@ class BibleContinuousAudio {
         this.isPaused = false;
         this.currentIndex = fromIndex;
         this.showDock();
-        this.speakCurrent();
+        this.playCurrent();
     }
 
-    speakCurrent() {
+    playCurrent() {
         if (!this.isPlaying) return;
 
         if (this.currentIndex >= this.verses.length) {
@@ -77,47 +87,29 @@ class BibleContinuousAudio {
         const v = this.verses[this.currentIndex];
         this.spotlightVerse(v);
 
-        let text = this.lang === 'ta' ? v.textTa : v.textEn;
+        // Pick text according to language
+        let text = (this.lang === 'ta') ? v.textTa : v.textEn;
         if (!text && this.lang === 'ta') text = v.textEn;
 
-        this.synth.cancel();
-
-        this.currentUtterance = new SpeechSynthesisUtterance(text);
-        this.currentUtterance.rate = parseFloat(this.rate);
-
-        const voice = this.getBestVoice(this.lang);
-        if (voice) {
-            this.currentUtterance.voice = voice;
-            this.currentUtterance.lang = voice.lang;
-        } else {
-            this.currentUtterance.lang = this.lang === 'ta' ? 'ta-IN' : 'en-US';
-        }
-
-        this.currentUtterance.onend = () => {
-            if (this.isPlaying && !this.isPaused) {
-                this.currentIndex++;
-                this.speakCurrent();
-            }
-        };
-
-        this.currentUtterance.onerror = () => {
-            if (this.isPlaying && !this.isPaused) {
-                setTimeout(() => {
-                    this.currentIndex++;
-                    this.speakCurrent();
-                }, 800);
-            }
-        };
-
-        this.synth.speak(this.currentUtterance);
-        this.setPlayPauseIcon(true);
+        // Fetch streaming audio from our FastAPI backend
+        const audioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}`;
+        
+        this.audio.src = audioUrl;
+        this.audio.playbackRate = parseFloat(this.rate);
+        
+        this.audio.play().then(() => {
+            this.setPlayPauseIcon(true);
+        }).catch(err => {
+            console.warn("Autoplay blocked or stream issue:", err);
+            this.setPlayPauseIcon(false);
+        });
     }
 
     spotlightVerse(v) {
         document.querySelectorAll('.verse-item').forEach(el => {
-            el.classList.remove('ring-2', 'ring-amber-500', 'shadow-md');
+            el.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-50/70', 'dark:bg-amber-950/40');
         });
-        v.element.classList.add('ring-2', 'ring-amber-500', 'shadow-md');
+        v.element.classList.add('ring-2', 'ring-amber-500', 'bg-amber-50/70', 'dark:bg-amber-950/40');
         v.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         const label = document.getElementById('audio-verse-label');
@@ -126,7 +118,7 @@ class BibleContinuousAudio {
 
     pause() {
         if (this.isPlaying && !this.isPaused) {
-            this.synth.pause();
+            this.audio.pause();
             this.isPaused = true;
             this.setPlayPauseIcon(false);
         }
@@ -134,7 +126,7 @@ class BibleContinuousAudio {
 
     resume() {
         if (this.isPlaying && this.isPaused) {
-            this.synth.resume();
+            this.audio.play();
             this.isPaused = false;
             this.setPlayPauseIcon(true);
         } else {
@@ -145,10 +137,12 @@ class BibleContinuousAudio {
     stop() {
         this.isPlaying = false;
         this.isPaused = false;
-        this.synth.cancel();
+        this.audio.pause();
+        this.audio.currentTime = 0;
         sessionStorage.removeItem('bible_autoplay_state');
+
         document.querySelectorAll('.verse-item').forEach(el => {
-            el.classList.remove('ring-2', 'ring-amber-500', 'shadow-md');
+            el.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-50/70', 'dark:bg-amber-950/40');
         });
         this.hideDock();
     }
@@ -156,7 +150,7 @@ class BibleContinuousAudio {
     next() {
         if (this.currentIndex < this.verses.length - 1) {
             this.currentIndex++;
-            this.speakCurrent();
+            this.playCurrent();
         } else {
             this.onChapterComplete();
         }
@@ -165,7 +159,7 @@ class BibleContinuousAudio {
     prev() {
         if (this.currentIndex > 0) {
             this.currentIndex--;
-            this.speakCurrent();
+            this.playCurrent();
         }
     }
 
@@ -178,18 +172,18 @@ class BibleContinuousAudio {
             window.location.href = `/read/${this.bookId}/${this.nextChapter}?mode=${this.mode}`;
         } else {
             this.stop();
-            showToast("Reached the end of this book!");
+            alert("Reached the end of this book!");
         }
     }
 
     setLanguage(lang) {
         this.lang = lang;
-        if (this.isPlaying) this.speakCurrent();
+        if (this.isPlaying) this.playCurrent();
     }
 
     setRate(rate) {
         this.rate = rate;
-        if (this.isPlaying) this.speakCurrent();
+        this.audio.playbackRate = parseFloat(rate);
     }
 
     showDock() {

@@ -1,9 +1,13 @@
+import hashlib
+import io
 import platform
 import time
-from fastapi import FastAPI, Request, Query
+from fastapi import FastAPI, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from gtts import gTTS
+
 from app.db import BIBLE_BOOKS, BOOK_MAP, get_chapter_verses, search_verses
 
 app = FastAPI(title="Holy Bible - வேதம்")
@@ -12,37 +16,78 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 START_TIME = time.time()
+AUDIO_CACHE = {}
 
 DAILY_VERSE = {
     "ref_en": "John 3:16",
     "ref_ta": "யோவான் 3:16",
-    "text_en": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
-    "text_ta": "தேவன், தம்முடைய ஒரேபேறான குமாரனை விசுவாசிக்கிறவன் எவனோ அவன் கெட்டுப்போகாமல் நித்தியஜீவனை அடையும்படிக்கு, அவரைத் தந்தருளி, இவ்வளவாய் உலகத்தில் அன்புகூர்ந்தார்.",
-    "link": "/read/43/1?mode=bilingual"
+    "text_en": (
+        "For God so loved the world, that he gave his only begotten Son, "
+        "that whosoever believeth in him should not perish, but have everlasting life."
+    ),
+    "text_ta": (
+        "தேவன், தம்முடைய ஒரேபேறான குமாரனை விசுவாசிக்கிறவன் எவனோ அவன் கெட்டுப்போகாமல் "
+        "நித்தியஜீவனை அடையும்படிக்கு, அவரைத் தந்தருளி, இவ்வளவாய் உலகத்தில் அன்புகூர்ந்தார்."
+    ),
+    "link": "/read/43/1?mode=bilingual",
 }
 
 
 # ==========================================
-# 1. API & Minimal Web Status (Zero DB Touch)
+# 1. Server-Side Audio Streaming Engine (gTTS)
+# ==========================================
+
+@app.get("/api/audio/stream")
+async def stream_audio(text: str = Query(..., min_length=1), lang: str = Query("ta")):
+    """Generates and streams high-clarity MP3 audio for Tamil or English.
+
+    Bypasses missing offline OS voice packs completely.
+    """
+    clean_text = text.strip()
+    target_lang = "ta" if lang == "ta" else "en"
+    cache_key = hashlib.md5(f"{target_lang}:{clean_text}".encode("utf-8")).hexdigest()
+
+    if cache_key in AUDIO_CACHE:
+        return Response(content=AUDIO_CACHE[cache_key], media_type="audio/mpeg")
+
+    try:
+        tts = gTTS(text=clean_text, lang=target_lang, slow=False)
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        audio_bytes = fp.read()
+
+        # Cache up to 300 verses in memory for rapid instant playback
+        if len(AUDIO_CACHE) > 300:
+            AUDIO_CACHE.pop(next(iter(AUDIO_CACHE)))
+        AUDIO_CACHE[cache_key] = audio_bytes
+
+        return Response(content=audio_bytes, media_type="audio/mpeg")
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+# ==========================================
+# 2. Status & Health Endpoints (Zero-DB Touch)
 # ==========================================
 
 @app.get("/api/health")
 async def api_health():
-    """Pure JSON ping for Render health checks and uptime monitors."""
+    """Lightweight JSON health check for Render and external uptime pingers."""
     uptime_sec = int(time.time() - START_TIME)
     return JSONResponse(
         content={
             "status": "ok",
             "uptime_seconds": uptime_sec,
-            "version": "1.0.0"
+            "version": "1.0.0",
         },
-        status_code=200
+        status_code=200,
     )
 
 
 @app.get("/status", response_class=HTMLResponse)
 async def status_page():
-    """Ultra-lightweight standalone HTML status card (< 1.5 KB, 0 external assets)."""
+    """Minimalist dark-mode system monitor card (< 1.5 KB, 0 external assets)."""
     uptime_sec = int(time.time() - START_TIME)
     hours, remainder = divmod(uptime_sec, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -135,6 +180,10 @@ async def status_page():
             <span class="val">{uptime_str}</span>
         </div>
         <div class="row">
+            <span class="label">Audio Engine</span>
+            <span class="val" style="color: #22c55e;">gTTS Server-Side</span>
+        </div>
+        <div class="row">
             <span class="label">Runtime</span>
             <span class="val">Python {platform.python_version()}</span>
         </div>
@@ -153,7 +202,7 @@ async def status_page():
 
 
 # ==========================================
-# 2. Main Bible Web Pages
+# 3. Main Bible Pages
 # ==========================================
 
 @app.get("/", response_class=HTMLResponse)
@@ -166,14 +215,19 @@ async def landing_page(request: Request):
             "books": BIBLE_BOOKS,
             "daily_verse": DAILY_VERSE,
             "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
-            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39]
-        }
+            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
+        },
     )
 
 
 @app.get("/read/{book_id}/{chapter}", response_class=HTMLResponse)
-async def reader(request: Request, book_id: int, chapter: int, mode: str = Query("bilingual")):
-    """Reader interface with parallel/interlinear/single views and chapter pickers."""
+async def reader(
+    request: Request,
+    book_id: int,
+    chapter: int,
+    mode: str = Query("bilingual"),
+):
+    """Reader interface with continuous audio narration, multi-mode views, and direct chapter selectors."""
     if book_id not in BOOK_MAP:
         book_id = 1
     current_book = BOOK_MAP[book_id]
@@ -196,8 +250,8 @@ async def reader(request: Request, book_id: int, chapter: int, mode: str = Query
             "prev_ch": prev_ch,
             "next_ch": next_ch,
             "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
-            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39]
-        }
+            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
+        },
     )
 
 
@@ -208,7 +262,7 @@ async def search_page(request: Request, q: str = Query("", min_length=1)):
     return templates.TemplateResponse(
         request=request,
         name="search.html",
-        context={"query": q, "results": results, "books": BIBLE_BOOKS}
+        context={"query": q, "results": results, "books": BIBLE_BOOKS},
     )
 
 
@@ -218,11 +272,11 @@ async def bookmarks_page(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="bookmarks.html",
-        context={"books": BIBLE_BOOKS}
+        context={"books": BIBLE_BOOKS},
     )
 
 
-# Backward-compatible redirect for legacy book routes
 @app.get("/book/{book_id}/chapter/{chapter}")
 async def legacy_redirect(book_id: int, chapter: int):
+    """Backward-compatible redirect for legacy book routes."""
     return RedirectResponse(url=f"/read/{book_id}/{chapter}?mode=bilingual")
