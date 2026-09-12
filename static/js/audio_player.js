@@ -5,7 +5,7 @@ class BibleContinuousAudio {
         this.isPaused = false;
         this.currentIndex = 0;
         this.verses = [];
-        this.lang = 'ta'; // 'ta' | 'en'
+        this.lang = 'ta';
         this.rate = 1.0;
         this.bookId = null;
         this.chapter = null;
@@ -16,7 +16,6 @@ class BibleContinuousAudio {
     }
 
     setupAudioListeners() {
-        // When a verse ends, advance to the next verse automatically
         this.audio.addEventListener('ended', () => {
             if (this.isPlaying && !this.isPaused) {
                 this.currentIndex++;
@@ -24,9 +23,8 @@ class BibleContinuousAudio {
             }
         });
 
-        // Error handling fallback
         this.audio.addEventListener('error', (e) => {
-            console.error("Audio playback error:", e);
+            console.error("Audio stream playback issue:", e);
             if (this.isPlaying && !this.isPaused) {
                 setTimeout(() => {
                     this.currentIndex++;
@@ -51,7 +49,6 @@ class BibleContinuousAudio {
             textTa: el.querySelector('.verse-text-ta')?.innerText.trim() || ''
         }));
 
-        // Detect if cross-chapter autoplay was active
         const savedState = sessionStorage.getItem('bible_autoplay_state');
         if (savedState) {
             const state = JSON.parse(savedState);
@@ -87,11 +84,9 @@ class BibleContinuousAudio {
         const v = this.verses[this.currentIndex];
         this.spotlightVerse(v);
 
-        // Pick text according to language
         let text = (this.lang === 'ta') ? v.textTa : v.textEn;
         if (!text && this.lang === 'ta') text = v.textEn;
 
-        // Fetch streaming audio from our FastAPI backend
         const audioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}`;
         
         this.audio.src = audioUrl;
@@ -100,7 +95,7 @@ class BibleContinuousAudio {
         this.audio.play().then(() => {
             this.setPlayPauseIcon(true);
         }).catch(err => {
-            console.warn("Autoplay blocked or stream issue:", err);
+            console.warn("Autoplay block or delay:", err);
             this.setPlayPauseIcon(false);
         });
     }
@@ -164,6 +159,10 @@ class BibleContinuousAudio {
     }
 
     onChapterComplete() {
+        if (typeof markChapterAsReadDirect === 'function') {
+            markChapterAsReadDirect(this.bookId, this.chapter);
+        }
+
         if (this.nextChapter) {
             sessionStorage.setItem('bible_autoplay_state', JSON.stringify({
                 lang: this.lang,
@@ -172,7 +171,7 @@ class BibleContinuousAudio {
             window.location.href = `/read/${this.bookId}/${this.nextChapter}?mode=${this.mode}`;
         } else {
             this.stop();
-            alert("Reached the end of this book!");
+            showToast("Reached the end of this book!");
         }
     }
 

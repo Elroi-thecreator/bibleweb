@@ -34,15 +34,11 @@ DAILY_VERSE = {
 
 
 # ==========================================
-# 1. Server-Side Audio Streaming Engine (gTTS)
+# 1. Audio Streaming Engine (gTTS)
 # ==========================================
 
 @app.get("/api/audio/stream")
 async def stream_audio(text: str = Query(..., min_length=1), lang: str = Query("ta")):
-    """Generates and streams high-clarity MP3 audio for Tamil or English.
-
-    Bypasses missing offline OS voice packs completely.
-    """
     clean_text = text.strip()
     target_lang = "ta" if lang == "ta" else "en"
     cache_key = hashlib.md5(f"{target_lang}:{clean_text}".encode("utf-8")).hexdigest()
@@ -57,7 +53,6 @@ async def stream_audio(text: str = Query(..., min_length=1), lang: str = Query("
         fp.seek(0)
         audio_bytes = fp.read()
 
-        # Cache up to 300 verses in memory for rapid instant playback
         if len(AUDIO_CACHE) > 300:
             AUDIO_CACHE.pop(next(iter(AUDIO_CACHE)))
         AUDIO_CACHE[cache_key] = audio_bytes
@@ -68,12 +63,11 @@ async def stream_audio(text: str = Query(..., min_length=1), lang: str = Query("
 
 
 # ==========================================
-# 2. Status & Health Endpoints (Zero-DB Touch)
+# 2. Status & Health (Zero-DB Touch)
 # ==========================================
 
 @app.get("/api/health")
 async def api_health():
-    """Lightweight JSON health check for Render and external uptime pingers."""
     uptime_sec = int(time.time() - START_TIME)
     return JSONResponse(
         content={
@@ -87,7 +81,6 @@ async def api_health():
 
 @app.get("/status", response_class=HTMLResponse)
 async def status_page():
-    """Minimalist dark-mode system monitor card (< 1.5 KB, 0 external assets)."""
     uptime_sec = int(time.time() - START_TIME)
     hours, remainder = divmod(uptime_sec, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -181,11 +174,7 @@ async def status_page():
         </div>
         <div class="row">
             <span class="label">Audio Engine</span>
-            <span class="val" style="color: #22c55e;">gTTS Server-Side</span>
-        </div>
-        <div class="row">
-            <span class="label">Runtime</span>
-            <span class="val">Python {platform.python_version()}</span>
+            <span class="val" style="color: #22c55e;">gTTS Streaming</span>
         </div>
         <div class="row">
             <span class="label">Host</span>
@@ -207,7 +196,6 @@ async def status_page():
 
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request):
-    """Editorial landing page with language gateways and book indexes."""
     return templates.TemplateResponse(
         request=request,
         name="landing.html",
@@ -227,7 +215,6 @@ async def reader(
     chapter: int,
     mode: str = Query("bilingual"),
 ):
-    """Reader interface with continuous audio narration, multi-mode views, and direct chapter selectors."""
     if book_id not in BOOK_MAP:
         book_id = 1
     current_book = BOOK_MAP[book_id]
@@ -255,9 +242,24 @@ async def reader(
     )
 
 
+@app.get("/progress", response_class=HTMLResponse)
+async def progress_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="progress.html",
+        context={
+            "books": BIBLE_BOOKS,
+            "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
+            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
+            "total_chapters": 1189,
+            "ot_chapters": 929,
+            "nt_chapters": 260,
+        },
+    )
+
+
 @app.get("/search", response_class=HTMLResponse)
 async def search_page(request: Request, q: str = Query("", min_length=1)):
-    """Case-insensitive bilingual full-text search."""
     results = search_verses(q) if q.strip() else []
     return templates.TemplateResponse(
         request=request,
@@ -268,7 +270,6 @@ async def search_page(request: Request, q: str = Query("", min_length=1)):
 
 @app.get("/bookmarks", response_class=HTMLResponse)
 async def bookmarks_page(request: Request):
-    """Client-side saved bookmarks view."""
     return templates.TemplateResponse(
         request=request,
         name="bookmarks.html",
@@ -278,5 +279,4 @@ async def bookmarks_page(request: Request):
 
 @app.get("/book/{book_id}/chapter/{chapter}")
 async def legacy_redirect(book_id: int, chapter: int):
-    """Backward-compatible redirect for legacy book routes."""
     return RedirectResponse(url=f"/read/{book_id}/{chapter}?mode=bilingual")

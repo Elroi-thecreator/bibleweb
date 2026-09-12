@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Bible Reading Progress & Tracker | வேதாகம வாசிப்பு நிலை{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+
+    <!-- Header & Streak Banner -->
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-8 pb-4 border-b border-stone-200 dark:border-stone-800">
+        <div>
+            <h1 class="text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">Reading Progress</h1>
+            <p class="font-tamil text-sm text-stone-500">முழு வேதாகம வாசிப்பு நிலை & இலக்கு</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <div class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400">
+                <span>🔥</span> <span id="streak-counter">0 Day Streak</span>
+            </div>
+            <button onclick="exportProgress()" class="text-xs px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700">Backup Progress</button>
+            <button onclick="resetProgress()" class="text-xs text-rose-600 hover:underline">Reset</button>
+        </div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        
+        <!-- Total Bible Card -->
+        <div class="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-cinzel font-bold uppercase tracking-wider text-amber-700 dark:text-amber-500 block mb-1">Entire Scripture</span>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-total-pct" class="text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-total-fraction" class="text-xs text-stone-400">0 / 1189 Ch</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2.5 rounded-full overflow-hidden">
+                    <div id="bar-total" class="bg-amber-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="stat-pending" class="text-[11px] text-stone-500 mt-2 font-medium">1,189 chapters remaining</p>
+            </div>
+        </div>
+
+        <!-- Old Testament Card -->
+        <div class="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-cinzel font-bold uppercase tracking-wider text-stone-500 block mb-1">Old Testament (பழைய ஏற்பாடு)</span>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-ot-pct" class="text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-ot-fraction" class="text-xs text-stone-400">0 / 929 Ch</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2.5 rounded-full overflow-hidden">
+                    <div id="bar-ot" class="bg-stone-600 dark:bg-stone-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="stat-ot-pending" class="text-[11px] text-stone-500 mt-2 font-medium">929 chapters remaining</p>
+            </div>
+        </div>
+
+        <!-- New Testament Card -->
+        <div class="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-cinzel font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-1">New Testament (புதிய ஏற்பாடு)</span>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-nt-pct" class="text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-nt-fraction" class="text-xs text-stone-400">0 / 260 Ch</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2.5 rounded-full overflow-hidden">
+                    <div id="bar-nt" class="bg-emerald-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="stat-nt-pending" class="text-[11px] text-stone-500 mt-2 font-medium">260 chapters remaining</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projected Finish Date Calculator -->
+    <div class="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 mb-10">
+        <h3 class="font-cinzel font-bold text-sm text-stone-800 dark:text-stone-200 uppercase tracking-wider mb-3">📅 Estimated Completion Dates</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div class="p-3 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span class="text-stone-500 block">1 Chapter / Day</span>
+                <span id="est-1ch" class="font-bold text-sm text-stone-900 dark:text-stone-100 block mt-1">Calculating...</span>
+                <span class="text-[11px] text-stone-400">Steady (~3.2 years)</span>
+            </div>
+            <div class="p-3 bg-white dark:bg-stone-800 rounded-xl border border-amber-300 dark:border-amber-800">
+                <span class="text-amber-700 dark:text-amber-400 font-semibold block">3 Chapters / Day (1 Year Plan)</span>
+                <span id="est-3ch" class="font-bold text-sm text-stone-900 dark:text-stone-100 block mt-1">Calculating...</span>
+                <span class="text-[11px] text-stone-400">Standard Bible in 1 Year</span>
+            </div>
+            <div class="p-3 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span class="text-stone-500 block">4 Chapters / Day</span>
+                <span id="est-4ch" class="font-bold text-sm text-stone-900 dark:text-stone-100 block mt-1">Calculating...</span>
+                <span class="text-[11px] text-stone-400">Accelerated (~10 months)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canonical Bookshelf Heatmap -->
+    <div class="space-y-8">
+        <div>
+            <h3 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100 pb-2 mb-4 border-b flex justify-between">
+                <span>OLD TESTAMENT (39 Books)</span>
+                <span class="font-tamil text-xs text-stone-500">பழைய ஏற்பாடு</span>
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs" id="grid-ot">
+                {% for b in ot_books %}
+                <a href="/read/{{ b[0] }}/1" class="book-card p-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-amber-700 transition block" data-book-id="{{ b[0] }}" data-chapters="{{ b[3] }}">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="font-semibold text-stone-900 dark:text-stone-100 truncate">{{ b[1] }}</span>
+                        <span class="book-pct text-[10px] text-stone-400 font-mono">0%</span>
+                    </div>
+                    <span class="font-tamil text-[11px] text-stone-500 block truncate">{{ b[2] }}</span>
+                    <div class="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden mt-2.5">
+                        <div class="book-bar bg-amber-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div>
+            <h3 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100 pb-2 mb-4 border-b flex justify-between">
+                <span>NEW TESTAMENT (27 Books)</span>
+                <span class="font-tamil text-xs text-stone-500">புதிய ஏற்பாடு</span>
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs" id="grid-nt">
+                {% for b in nt_books %}
+                <a href="/read/{{ b[0] }}/1" class="book-card p-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-amber-700 transition block" data-book-id="{{ b[0] }}" data-chapters="{{ b[3] }}">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="font-semibold text-stone-900 dark:text-stone-100 truncate">{{ b[1] }}</span>
+                        <span class="book-pct text-[10px] text-stone-400 font-mono">0%</span>
+                    </div>
+                    <span class="font-tamil text-[11px] text-stone-500 block truncate">{{ b[2] }}</span>
+                    <div class="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden mt-2.5">
+                        <div class="book-bar bg-emerald-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function renderProgressDashboard() {
+    const records = getReadChapters();
+    let otCount = 0;
+    let ntCount = 0;
+
+    document.querySelectorAll('.book-card').forEach(card => {
+        const bookId = parseInt(card.dataset.bookId);
+        const totalCh = parseInt(card.dataset.chapters);
+        
+        let readInBook = 0;
+        for (let c = 1; c <= totalCh; c++) {
+            if (records[`${bookId}_${c}`]) {
+                readInBook++;
+                if (bookId <= 39) otCount++; else ntCount++;
+            }
+        }
+
+        const pct = Math.round((readInBook / totalCh) * 100);
+        card.querySelector('.book-pct').innerText = `${pct}%`;
+        card.querySelector('.book-bar').style.width = `${pct}%`;
+
+        if (pct === 100) {
+            card.classList.add('border-emerald-500', 'bg-emerald-50/20');
+        }
+    });
+
+    const totalRead = otCount + ntCount;
+    const totalPending = 1189 - totalRead;
+
+    const totalPct = ((totalRead / 1189) * 100).toFixed(1);
+    document.getElementById('stat-total-pct').innerText = `${totalPct}%`;
+    document.getElementById('stat-total-fraction').innerText = `${totalRead} / 1189 Ch`;
+    document.getElementById('bar-total').style.width = `${totalPct}%`;
+    document.getElementById('stat-pending').innerText = `${totalPending} chapters remaining`;
+
+    const otPct = ((otCount / 929) * 100).toFixed(1);
+    document.getElementById('stat-ot-pct').innerText = `${otPct}%`;
+    document.getElementById('stat-ot-fraction').innerText = `${otCount} / 929 Ch`;
+    document.getElementById('bar-ot').style.width = `${otPct}%`;
+    document.getElementById('stat-ot-pending').innerText = `${929 - otCount} chapters remaining`;
+
+    const ntPct = ((ntCount / 260) * 100).toFixed(1);
+    document.getElementById('stat-nt-pct').innerText = `${ntPct}%`;
+    document.getElementById('stat-nt-fraction').innerText = `${ntCount} / 260 Ch`;
+    document.getElementById('bar-nt').style.width = `${ntPct}%`;
+    document.getElementById('stat-nt-pending').innerText = `${260 - ntCount} chapters remaining`;
+
+    const streak = getReadingStreak();
+    document.getElementById('streak-counter').innerText = `${streak} Day Streak`;
+
+    calculateFinishEstimates(totalPending);
+}
+
+function calculateFinishEstimates(pending) {
+    const now = new Date();
+    
+    function addDays(days) {
+        const d = new Date(now);
+        d.setDate(d.getDate() + Math.ceil(days));
+        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    document.getElementById('est-1ch').innerText = pending > 0 ? addDays(pending / 1) : "Completed! 🎉";
+    document.getElementById('est-3ch').innerText = pending > 0 ? addDays(pending / 3) : "Completed! 🎉";
+    document.getElementById('est-4ch').innerText = pending > 0 ? addDays(pending / 4) : "Completed! 🎉";
+}
+
+function resetProgress() {
+    if (confirm("Are you sure you want to reset all your reading progress?")) {
+        localStorage.removeItem(STORAGE_KEYS.READ_CHAPTERS);
+        renderProgressDashboard();
+    }
+}
+
+function exportProgress() {
+    const data = {
+        read_chapters: getReadChapters(),
+        exported_at: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bible_reading_progress_${Date.now()}.json`;
+    a.click();
+}
+
+document.addEventListener('DOMContentLoaded', renderProgressDashboard);
+</script>
+{% endblock %}
