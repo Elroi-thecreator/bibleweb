@@ -3,12 +3,13 @@ import io
 import platform
 import time
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from gtts import gTTS
 
 from app.db import BIBLE_BOOKS, BOOK_MAP, get_chapter_verses, search_verses
+from app.plans_data import READING_PLANS
 
 app = FastAPI(title="Holy Bible - வேதம்")
 
@@ -34,7 +35,17 @@ DAILY_VERSE = {
 
 
 # ==========================================
-# 1. Audio Streaming Engine (gTTS)
+# 1. PWA Service Worker Route
+# ==========================================
+
+@app.get("/sw.js")
+async def service_worker():
+    """Serves the Service Worker at root scope so it can cache all application paths."""
+    return FileResponse("static/sw.js", media_type="application/javascript")
+
+
+# ==========================================
+# 2. Audio Streaming Engine (gTTS)
 # ==========================================
 
 @app.get("/api/audio/stream")
@@ -63,7 +74,7 @@ async def stream_audio(text: str = Query(..., min_length=1), lang: str = Query("
 
 
 # ==========================================
-# 2. Status & Health (Zero-DB Touch)
+# 3. Status & Health (Zero-DB Touch)
 # ==========================================
 
 @app.get("/api/health")
@@ -177,6 +188,10 @@ async def status_page():
             <span class="val" style="color: #22c55e;">gTTS Streaming</span>
         </div>
         <div class="row">
+            <span class="label">PWA / Offline</span>
+            <span class="val" style="color: #38bdf8;">Service Worker Active</span>
+        </div>
+        <div class="row">
             <span class="label">Host</span>
             <span class="val">Render / Web</span>
         </div>
@@ -191,7 +206,7 @@ async def status_page():
 
 
 # ==========================================
-# 3. Main Bible Pages
+# 4. Main Bible Pages
 # ==========================================
 
 @app.get("/", response_class=HTMLResponse)
@@ -238,6 +253,42 @@ async def reader(
             "next_ch": next_ch,
             "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
             "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
+        },
+    )
+
+
+@app.get("/present/{book_id}/{chapter}", response_class=HTMLResponse)
+async def presenter_mode(request: Request, book_id: int, chapter: int):
+    """Church / TV / Projector presentation mode with extra-large bilingual slides."""
+    if book_id not in BOOK_MAP:
+        book_id = 1
+    current_book = BOOK_MAP[book_id]
+    if chapter < 1 or chapter > current_book["total_chapters"]:
+        chapter = 1
+
+    verses = get_chapter_verses(book_id, chapter)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="presenter.html",
+        context={
+            "books": BIBLE_BOOKS,
+            "book": current_book,
+            "chapter": chapter,
+            "verses": verses,
+        },
+    )
+
+
+@app.get("/plans", response_class=HTMLResponse)
+async def plans_page(request: Request):
+    """Daily habit reading tracks with day-by-day progress checkoffs."""
+    return templates.TemplateResponse(
+        request=request,
+        name="plans.html",
+        context={
+            "plans": READING_PLANS,
+            "books": BIBLE_BOOKS,
         },
     )
 
