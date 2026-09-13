@@ -1,60 +1,85 @@
 // ==========================================
-// Robust Universal Backup & Restore Engine
+// Reading Progress & Tracking Engine
 // ==========================================
 
-function exportAllUserData() {
+function getReadChapters() {
     try {
-        const backupPayload = {
-            app: "bilingual_bible_app",
-            version: "2.0",
-            exported_at: new Date().toISOString(),
-            data: {
-                bookmarks: getBookmarks(),
-                highlights: getHighlights(),
-                read_chapters: getReadChapters(),
-                theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
-                font_size: localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '16',
-                plans: {}
-            }
-        };
-
-        // Safely extract reading plans without crashing on non-JSON entries
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('bible_plan_')) {
-                try {
-                    backupPayload.data.plans[key] = JSON.parse(localStorage.getItem(key) || '[]');
-                } catch (e) {
-                    backupPayload.data.plans[key] = [];
-                }
-            }
-        }
-
-        const jsonString = JSON.stringify(backupPayload, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.setAttribute('download', `bible_backup_${new Date().toISOString().split('T')[0]}.json`);
-        
-        document.body.appendChild(a);
-        a.click();
-
-        // Delay cleanup so the browser has time to finish handing off the download
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 1500);
-
-        showToast("Backup downloaded successfully! 💾");
-    } catch (err) {
-        console.error("Backup failed:", err);
-        alert("Failed to export backup: " + err.message);
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.READ_CHAPTERS) || '{}');
+    } catch (e) {
+        return {};
     }
 }
 
-// Backward-compatibility alias in case any template calls the old name
-window.exportProgress = exportAllUserData;
-window.exportAllUserData = exportAllUserData;
+function isChapterRead(bookId, ch) {
+    const records = getReadChapters();
+    return !!records[`${bookId}_${ch}`];
+}
+
+function toggleChapterRead(bookId, ch) {
+    const b = parseInt(bookId);
+    const c = parseInt(ch);
+    let records = getReadChapters();
+    const key = `${b}_${c}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    if (records[key]) {
+        delete records[key];
+        showToast(`Chapter ${c} marked as unread`);
+    } else {
+        records[key] = today;
+        showToast(`Chapter ${c} marked as completed! ✓`);
+    }
+
+    localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
+    updateChapterReadUI(b, c);
+}
+
+function markChapterAsReadDirect(bookId, ch) {
+    const b = parseInt(bookId);
+    const c = parseInt(ch);
+    let records = getReadChapters();
+    const key = `${b}_${c}`;
+    if (!records[key]) {
+        records[key] = new Date().toISOString().split('T')[0];
+        localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
+        updateChapterReadUI(b, c);
+    }
+}
+
+function updateChapterReadUI(bookId, ch) {
+    const b = parseInt(bookId);
+    const c = parseInt(ch);
+    const isRead = isChapterRead(b, c);
+
+    // Update all mark-as-read buttons on screen
+    const btns = document.querySelectorAll('.chapter-read-btn');
+    btns.forEach(btn => {
+        if (isRead) {
+            btn.innerHTML = '✓ Completed';
+            btn.classList.remove('bg-stone-100', 'dark:bg-stone-800', 'text-stone-700', 'dark:text-stone-300', 'border-stone-300', 'dark:border-stone-700');
+            btn.classList.add('bg-emerald-700', 'text-white', 'border-emerald-700');
+        } else {
+            btn.innerHTML = 'Mark as Read ✓';
+            btn.classList.remove('bg-emerald-700', 'text-white', 'border-emerald-700');
+            btn.classList.add('bg-stone-100', 'dark:bg-stone-800', 'text-stone-700', 'dark:text-stone-300', 'border-stone-300', 'dark:border-stone-700');
+        }
+    });
+
+    // Update chapter grid buttons if open
+    const trayButtons = document.querySelectorAll('.chapter-tray-btn');
+    trayButtons.forEach(btn => {
+        const trayCh = parseInt(btn.dataset.chapter);
+        if (isChapterRead(b, trayCh)) {
+            btn.classList.add('ring-2', 'ring-emerald-500');
+        } else {
+            btn.classList.remove('ring-2', 'ring-emerald-500');
+        }
+    });
+}
+
+// Attach explicitly to window so onclick handlers never miss it
+window.toggleChapterRead = toggleChapterRead;
+window.markChapterAsReadDirect = markChapterAsReadDirect;
+window.updateChapterReadUI = updateChapterReadUI;
+window.isChapterRead = isChapterRead;
+window.getReadChapters = getReadChapters;
