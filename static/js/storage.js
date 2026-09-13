@@ -101,7 +101,7 @@ function getReadingStreak() {
 }
 
 // ==========================================
-// Bookmarks, Highlights & Utilities
+// Bookmarks & Color Highlights
 // ==========================================
 
 function getBookmarks() {
@@ -198,6 +198,87 @@ function showToast(message) {
     toast.innerText = message;
     toast.style.opacity = '1';
     setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+}
+
+// ==========================================
+// Universal Backup & Restore Engine
+// ==========================================
+
+function exportAllUserData() {
+    const backupPayload = {
+        app: "bilingual_bible_app",
+        version: "2.0",
+        exported_at: new Date().toISOString(),
+        data: {
+            bookmarks: getBookmarks(),
+            highlights: getHighlights(),
+            read_chapters: getReadChapters(),
+            theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
+            font_size: localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '16',
+            plans: {}
+        }
+    };
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('bible_plan_')) {
+            backupPayload.data.plans[key] = JSON.parse(localStorage.getItem(key) || '[]');
+        }
+    }
+
+    const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bible_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Backup downloaded successfully! 💾");
+}
+
+function importAllUserData(fileInputEvent, reloadCallback) {
+    const file = fileInputEvent.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            const payloadData = parsed.data || parsed;
+
+            if (payloadData.bookmarks) {
+                localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(payloadData.bookmarks));
+            }
+            if (payloadData.highlights) {
+                localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(payloadData.highlights));
+            }
+            if (payloadData.read_chapters) {
+                localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(payloadData.read_chapters));
+            }
+            if (payloadData.theme) {
+                localStorage.setItem(STORAGE_KEYS.THEME, payloadData.theme);
+            }
+            if (payloadData.plans) {
+                Object.keys(payloadData.plans).forEach(planKey => {
+                    localStorage.setItem(planKey, JSON.stringify(payloadData.plans[planKey]));
+                });
+            }
+
+            showToast("Data restored successfully! ✓");
+
+            if (typeof reloadCallback === 'function') {
+                reloadCallback();
+            } else {
+                setTimeout(() => window.location.reload(), 600);
+            }
+        } catch (err) {
+            console.error("Backup parse error:", err);
+            alert("Invalid backup file. Please select a valid JSON backup file from this app.");
+        }
+    };
+    reader.readAsText(file);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
