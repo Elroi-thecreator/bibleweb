@@ -10,9 +10,8 @@
         
         <!-- Left: Quick Book & Chapter Selectors -->
         <div class="flex items-center space-x-1.5 sm:space-x-2.5 min-w-0">
-            <!-- Book Picker Modal Button -->
             <button onclick="document.getElementById('quick-nav-modal').classList.remove('hidden')" 
-                    class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 hover:text-amber-700 flex items-center gap-1 truncate">
+                    class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 hover:text-amber-700 flex items-center gap-1 truncate cursor-pointer">
                 <span>{{ book.name_en }}</span>
                 <span class="text-[10px] text-stone-400">▾</span>
             </button>
@@ -28,7 +27,7 @@
 
             <!-- All Chapters Grid Trigger -->
             <button onclick="document.getElementById('chapter-grid-tray').classList.toggle('hidden')"
-                    class="hidden md:inline-block text-[11px] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 px-1.5 py-0.5 rounded"
+                    class="hidden md:inline-block text-[11px] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 px-1.5 py-0.5 rounded cursor-pointer"
                     title="View all chapters">
                 Grid
             </button>
@@ -38,15 +37,17 @@
         <div class="flex items-center space-x-1.5 sm:space-x-2">
             
             <!-- Quick Listen Button -->
-            <button onclick="window.bibleAudio ? window.bibleAudio.play(0) : null" 
-                    class="flex items-center gap-1 px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold shadow-xs transition"
+            <button type="button" 
+                    onclick="window.bibleAudio ? window.bibleAudio.play(0) : null" 
+                    class="flex items-center gap-1 px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
                     title="Listen to this chapter">
                 <span>▶</span> <span class="hidden sm:inline">Listen</span>
             </button>
 
             <!-- Mark Chapter Read Quick Pill -->
-            <button onclick="toggleChapterRead({{ book.id }}, {{ chapter }})" 
-                    class="chapter-read-btn flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border shadow-xs transition"
+            <button type="button" 
+                    onclick="window.toggleChapterRead({{ book.id }}, {{ chapter }})" 
+                    class="chapter-read-btn flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:border-amber-600"
                     title="Mark chapter as completed">
                 Mark as Read ✓
             </button>
@@ -64,11 +65,11 @@
             <!-- Unified View / Settings Popup Menu -->
             <div class="relative">
                 <button id="view-menu-btn" onclick="toggleViewMenu()" 
-                        class="px-2.5 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl text-xs font-semibold flex items-center gap-1 text-stone-700 dark:text-stone-300 transition">
+                        class="px-2.5 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl text-xs font-semibold flex items-center gap-1 text-stone-700 dark:text-stone-300 transition cursor-pointer">
                     <span>⚙</span> <span class="hidden sm:inline">View</span>
                 </button>
 
-                <!-- Floating Dropdown Modal/Card -->
+                <!-- Floating Dropdown Card -->
                 <div id="view-menu-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-stone-200 dark:border-stone-800 p-3.5 space-y-3 z-50">
                     
                     <!-- Language Mode Switcher -->
@@ -108,7 +109,7 @@
                             <span class="text-[10px] text-stone-400 font-mono">F11</span>
                         </a>
                         <button onclick="toggleZenMode(); toggleViewMenu();" 
-                                class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition text-left">
+                                class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition text-left cursor-pointer">
                             <span class="flex items-center gap-2"><span>🧘</span> Zen Distraction-Free</span>
                             <span class="text-[10px] text-stone-400">Hide UI</span>
                         </button>
@@ -124,7 +125,7 @@
     <div id="chapter-grid-tray" class="hidden mb-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-sm">
         <div class="flex justify-between items-center mb-3 pb-2 border-b border-stone-100 dark:border-stone-800">
             <span class="text-xs font-cinzel font-bold text-stone-500 uppercase tracking-wider">All Chapters</span>
-            <button onclick="document.getElementById('chapter-grid-tray').classList.add('hidden')" class="text-xs text-stone-400 hover:text-stone-600">✕ Close</button>
+            <button onclick="document.getElementById('chapter-grid-tray').classList.add('hidden')" class="text-xs text-stone-400 hover:text-stone-600 cursor-pointer">✕ Close</button>
         </div>
         <div class="flex flex-wrap gap-1.5">
             {% for c in range(1, book.total_chapters + 1) %}
@@ -148,14 +149,14 @@
                 
                 <!-- Subdued Hover Actions -->
                 <div class="opacity-0 group-hover:opacity-100 flex items-center space-x-2 text-stone-400 transition-opacity">
-                    <!-- Subtle Highlighter Palette -->
                     <div class="flex items-center space-x-1">
-                        <button onclick="setVerseHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'yellow')" class="w-3 h-3 rounded-full bg-amber-300 hover:scale-110" title="Highlight"></button>
-                        <button onclick="setVerseHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'green')" class="w-3 h-3 rounded-full bg-emerald-300 hover:scale-110" title="Highlight"></button>
-                        <button onclick="setVerseHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'rose')" class="w-3 h-3 rounded-full bg-rose-300 hover:scale-110" title="Highlight"></button>
+                        <button type="button" onclick="window.setVerseHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'yellow')" class="w-3 h-3 rounded-full bg-amber-300 hover:scale-110 cursor-pointer" title="Highlight"></button>
+                        <button type="button" onclick="window.setVerseHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'green')" class="w-3 h-3 rounded-full bg-emerald-300 hover:scale-110 cursor-pointer" title="Highlight"></button>
+                        <button type="button" onclick="window.setVerseHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'rose')" class="w-3 h-3 rounded-full bg-rose-300 hover:scale-110 cursor-pointer" title="Highlight"></button>
                     </div>
 
-                    <button class="bookmark-btn hover:text-amber-500 text-xs leading-none"
+                    <button type="button" 
+                            class="bookmark-btn hover:text-amber-500 text-xs leading-none cursor-pointer"
                             data-book="{{ book.id }}" 
                             data-chapter="{{ chapter }}" 
                             data-verse="{{ v.verse }}"
@@ -163,11 +164,11 @@
                             title="Bookmark verse">
                         ☆
                     </button>
-                    <button onclick="window.bibleAudio ? window.bibleAudio.play({{ loop.index0 }}) : null" title="Read from here" class="hover:text-amber-600 text-[11px]">
+                    <button type="button" onclick="window.bibleAudio ? window.bibleAudio.play({{ loop.index0 }}) : null" title="Read from here" class="hover:text-amber-600 text-[11px] cursor-pointer">
                         ▶
                     </button>
-                    <button onclick="handleCopyClick(this)" 
-                            class="hover:text-stone-700 dark:hover:text-stone-200 text-[11px]" title="Copy verse">
+                    <button type="button" onclick="handleCopyClick(this)" 
+                            class="hover:text-stone-700 dark:hover:text-stone-200 text-[11px] cursor-pointer" title="Copy verse">
                         📋
                     </button>
                 </div>
@@ -193,8 +194,9 @@
     <div class="my-10 p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl text-center space-y-3 shadow-xs">
         <p class="font-cinzel text-sm font-semibold text-stone-700 dark:text-stone-300">Finished Reading {{ book.name_en }} {{ chapter }}?</p>
         <div>
-            <button onclick="toggleChapterRead({{ book.id }}, {{ chapter }})" 
-                    class="chapter-read-btn px-6 py-2.5 rounded-xl text-xs font-bold border shadow-xs transition">
+            <button type="button" 
+                    onclick="window.toggleChapterRead({{ book.id }}, {{ chapter }})" 
+                    class="chapter-read-btn px-6 py-2.5 rounded-xl text-xs font-bold border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:border-amber-600">
                 Mark as Read ✓
             </button>
         </div>
@@ -223,13 +225,13 @@
         </div>
 
         <div class="flex items-center space-x-3">
-            <button onclick="window.bibleAudio ? window.bibleAudio.prev() : null" class="text-stone-400 hover:text-white text-base">⏮</button>
+            <button onclick="window.bibleAudio ? window.bibleAudio.prev() : null" class="text-stone-400 hover:text-white text-base cursor-pointer">⏮</button>
             <button id="audio-play-pause-btn" onclick="window.bibleAudio ? (window.bibleAudio.isPaused ? window.bibleAudio.resume() : window.bibleAudio.pause()) : null" 
-                    class="w-9 h-9 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center text-sm font-bold shadow-md">
+                    class="w-9 h-9 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center text-sm font-bold shadow-md cursor-pointer">
                 ⏸
             </button>
-            <button onclick="window.bibleAudio ? window.bibleAudio.next() : null" class="text-stone-400 hover:text-white text-base">⏭</button>
-            <button onclick="window.bibleAudio ? window.bibleAudio.stop() : null" class="text-stone-400 hover:text-rose-400 text-xs px-2 py-1 rounded border border-stone-800">Stop</button>
+            <button onclick="window.bibleAudio ? window.bibleAudio.next() : null" class="text-stone-400 hover:text-white text-base cursor-pointer">⏭</button>
+            <button onclick="window.bibleAudio ? window.bibleAudio.stop() : null" class="text-stone-400 hover:text-rose-400 text-xs px-2 py-1 rounded border border-stone-800 cursor-pointer">Stop</button>
         </div>
 
         <div class="flex items-center space-x-2 text-xs">
@@ -252,7 +254,7 @@
     <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-xl w-full p-5 max-h-[80vh] flex flex-col border border-stone-200 dark:border-stone-800">
         <div class="flex justify-between items-center pb-3 border-b border-stone-100 dark:border-stone-800">
             <h3 class="font-cinzel font-bold text-base">Select Book</h3>
-            <button onclick="document.getElementById('quick-nav-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-600 text-xl leading-none">&times;</button>
+            <button onclick="document.getElementById('quick-nav-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-600 text-xl leading-none cursor-pointer">&times;</button>
         </div>
         <div class="overflow-y-auto pr-1 py-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
             {% for b in books %}
@@ -269,8 +271,9 @@
 {% block scripts %}
 <script src="/static/js/audio_player.js"></script>
 <script>
-    window.CURRENT_BOOK_ID = {{ book.id }};
-    window.CURRENT_CHAPTER = {{ chapter }};
+    // 1. Declare globals immediately
+    window.CURRENT_BOOK_ID = Number({{ book.id }});
+    window.CURRENT_CHAPTER = Number({{ chapter }});
     window.CURRENT_BOOK_EN = "{{ book.name_en }}";
     window.CURRENT_BOOK_TA = "{{ book.name_ta }}";
 
@@ -279,7 +282,9 @@
         const v = parseInt(btn.dataset.verse);
         const textEn = item.querySelector('.verse-text-en')?.innerText || '';
         const textTa = item.querySelector('.verse-text-ta')?.innerText || '';
-        toggleBookmark(window.CURRENT_BOOK_ID, window.CURRENT_BOOK_EN, window.CURRENT_BOOK_TA, window.CURRENT_CHAPTER, v, textEn, textTa);
+        if (typeof window.toggleBookmark === 'function') {
+            window.toggleBookmark(window.CURRENT_BOOK_ID, window.CURRENT_BOOK_EN, window.CURRENT_BOOK_TA, window.CURRENT_CHAPTER, v, textEn, textTa);
+        }
     }
 
     function handleCopyClick(btn) {
@@ -289,12 +294,21 @@
         const refTa = `${window.CURRENT_BOOK_TA} ${window.CURRENT_CHAPTER}:${v}`;
         const textEn = item.querySelector('.verse-text-en')?.innerText || '';
         const textTa = item.querySelector('.verse-text-ta')?.innerText || '';
-        copyBilingualVerse(refEn, refTa, textEn, textTa);
+        if (typeof window.copyBilingualVerse === 'function') {
+            window.copyBilingualVerse(refEn, refTa, textEn, textTa);
+        }
+    }
+
+    // 2. Immediate synchronous execution
+    if (typeof window.updateChapterReadUI === 'function') {
+        window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
+        window.applyHighlights();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        if (typeof updateChapterReadUI === 'function') {
-            updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
+        if (typeof window.updateChapterReadUI === 'function') {
+            window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
+            window.applyHighlights();
         }
         if (window.bibleAudio) {
             window.bibleAudio.init({{ book.id }}, {{ chapter }}, {{ next_ch or 'null' }}, '{{ mode }}');
