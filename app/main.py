@@ -3,7 +3,14 @@ import io
 import platform
 import time
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from gtts import gTTS
@@ -35,7 +42,17 @@ DAILY_VERSE = {
 
 
 # ==========================================
-# 1. PWA Service Worker Route
+# 1. Google Site Verification Route
+# ==========================================
+
+@app.get("/google032292dfbea249aa.html", response_class=PlainTextResponse)
+async def google_site_verification():
+    """Serves the Google Search Console / OAuth domain verification token."""
+    return "google-site-verification: google032292dfbea249aa.html"
+
+
+# ==========================================
+# 2. PWA Service Worker Route
 # ==========================================
 
 @app.get("/sw.js")
@@ -45,7 +62,7 @@ async def service_worker():
 
 
 # ==========================================
-# 2. Audio Streaming Engine (gTTS)
+# 3. Audio Streaming Engine (gTTS)
 # ==========================================
 
 @app.get("/api/audio/stream")
@@ -74,7 +91,7 @@ async def stream_audio(text: str = Query(..., min_length=1), lang: str = Query("
 
 
 # ==========================================
-# 3. Status & Health (Zero-DB Touch)
+# 4. Status & Health (Zero-DB Touch)
 # ==========================================
 
 @app.get("/api/health")
@@ -206,7 +223,7 @@ async def status_page():
 
 
 # ==========================================
-# 4. Main Bible Pages
+# 5. Main Bible Pages
 # ==========================================
 
 @app.get("/", response_class=HTMLResponse)
@@ -236,7 +253,12 @@ async def reader(
     if chapter < 1 or chapter > current_book["total_chapters"]:
         chapter = 1
 
-    verses = get_chapter_verses(book_id, chapter)
+    try:
+        verses = get_chapter_verses(book_id, chapter) or []
+    except Exception as e:
+        print(f"Error fetching verses: {e}")
+        verses = []
+
     prev_ch = chapter - 1 if chapter > 1 else None
     next_ch = chapter + 1 if chapter < current_book["total_chapters"] else None
 
