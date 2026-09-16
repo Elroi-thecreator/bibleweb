@@ -64,8 +64,8 @@
                 </div>
             </form>
 
-            <!-- Navigation Links & Theme Settings -->
-            <div class="flex items-center space-x-1 sm:space-x-2 text-xs">
+            <!-- Navigation Links, Sync & Theme Settings -->
+            <div class="flex items-center space-x-1.5 sm:space-x-2 text-xs">
                 <!-- Daily Habit Reading Plans -->
                 <a href="/plans" class="px-2.5 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center gap-1 font-medium" title="Reading Plans">
                     <span>📅</span> <span class="hidden sm:inline">Plans</span>
@@ -80,6 +80,14 @@
                 <a href="/bookmarks" class="px-2.5 py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center gap-1 font-medium" title="Saved Verses">
                     <span>★</span> <span class="hidden sm:inline">Bookmarks</span>
                 </a>
+
+                <!-- Google Drive Cloud Sync Button -->
+                <div id="gdrive-sync-container" class="flex items-center">
+                    <button id="gdrive-btn" onclick="handleGoogleAuthClick()" 
+                            class="px-2.5 py-1 rounded-xl border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-xs font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1.5 transition cursor-pointer shadow-xs">
+                        <span class="text-sm">☁️</span> <span id="gdrive-btn-label">Sync Cloud</span>
+                    </button>
+                </div>
 
                 <!-- Theme Pickers (Light / Sepia / Dark) -->
                 <div class="flex items-center border border-stone-300 dark:border-stone-700 rounded-full p-1 bg-stone-100 dark:bg-stone-800 ml-1">
@@ -102,8 +110,15 @@
         <p class="mt-1 font-tamil">பரிசுத்த வேதாகமம் • Bilingual Tamil & English Scripture</p>
     </footer>
 
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        // Replace with your Google OAuth 2.0 Web Client ID from Google Cloud Console
+        window.GOOGLE_CLIENT_ID = "1022976373068-ilp23pqv1plsj810s44k03ujvq69dth7.apps.googleusercontent.com";
+    </script>
+
     <!-- Core Scripts -->
-    <script src="/static/js/storage.js?v=2.4"></script>
+    <script src="/static/js/storage.js?v=4.0"></script>
     <script>
         function setTheme(theme) {
             document.documentElement.classList.remove('dark');

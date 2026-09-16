@@ -18,7 +18,7 @@
 
             <!-- Backup Button -->
             <button onclick="exportAllUserData()" 
-                    class="text-xs px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 font-semibold">
+                    class="text-xs px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 font-semibold cursor-pointer">
                 <span>💾</span> <span>Backup</span>
             </button>
 
@@ -28,7 +28,7 @@
                 <input type="file" accept=".json" class="hidden" onchange="importAllUserData(event, renderProgressDashboard)">
             </label>
 
-            <button onclick="resetProgress()" class="text-xs text-rose-600 hover:underline ml-1">Reset</button>
+            <button onclick="resetProgress()" class="text-xs text-rose-600 hover:underline ml-1 cursor-pointer">Reset</button>
         </div>
     </div>
 
@@ -232,6 +232,7 @@ function resetProgress() {
     if (confirm("Are you sure you want to reset all your reading progress?")) {
         localStorage.removeItem(STORAGE_KEYS.READ_CHAPTERS);
         renderProgressDashboard();
+        queueDriveAutoSync();
     }
 }
 
