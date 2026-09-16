@@ -1,3 +1,4 @@
+// LocalStorage Keys
 const STORAGE_KEYS = {
     BOOKMARKS: 'bilingual_bible_bookmarks',
     HIGHLIGHTS: 'bilingual_bible_highlights',
@@ -64,6 +65,7 @@ function toggleChapterRead(bookId, ch) {
 
     localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
     updateChapterReadUI(b, c);
+    queueDriveAutoSync();
 }
 window.toggleChapterRead = toggleChapterRead;
 
@@ -78,6 +80,7 @@ function markChapterAsReadDirect(bookId, ch) {
         records[key] = new Date().toISOString().split('T')[0];
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
         updateChapterReadUI(b, c);
+        queueDriveAutoSync();
     }
 }
 window.markChapterAsReadDirect = markChapterAsReadDirect;
@@ -182,6 +185,7 @@ function toggleBookmark(bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa) {
 
     localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
     updateBookmarkUI();
+    queueDriveAutoSync();
 }
 window.toggleBookmark = toggleBookmark;
 
@@ -213,6 +217,7 @@ function setVerseHighlight(bookId, ch, v, colorClass) {
 
     localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(highlights));
     applyHighlights();
+    queueDriveAutoSync();
 }
 window.setVerseHighlight = setVerseHighlight;
 
@@ -228,9 +233,11 @@ function applyHighlights() {
 
         el.classList.remove('bg-amber-100/50', 'dark:bg-amber-950/30', 'bg-emerald-100/50', 'dark:bg-emerald-950/30', 'bg-rose-100/50', 'dark:bg-rose-950/30');
 
-        if (highlights[key] === 'yellow') el.classList.add('bg-amber-100/50', 'dark:bg-amber-950/30');
-        if (highlights[key] === 'green') el.classList.add('bg-emerald-100/50', 'dark:bg-emerald-950/30');
-        if (highlights[key] === 'rose') el.classList.add('bg-rose-100/50', 'dark:bg-rose-950/30');
+        if (highlights[key]) {
+            if (highlights[key] === 'yellow') el.classList.add('bg-amber-100/50', 'dark:bg-amber-950/30');
+            if (highlights[key] === 'green') el.classList.add('bg-emerald-100/50', 'dark:bg-emerald-950/30');
+            if (highlights[key] === 'rose') el.classList.add('bg-rose-100/50', 'dark:bg-rose-950/30');
+        }
     });
 }
 window.applyHighlights = applyHighlights;
@@ -244,7 +251,7 @@ function copyBilingualVerse(refEn, refTa, textEn, textTa) {
 window.copyBilingualVerse = copyBilingualVerse;
 
 // ==========================================
-// 4. Universal Backup & Restore
+// 4. Backup & Restore
 // ==========================================
 function exportAllUserData() {
     try {
@@ -316,6 +323,7 @@ function importAllUserData(fileInputEvent, reloadCallback) {
             }
 
             showToast("Backup restored! ✓");
+            queueDriveAutoSync();
             if (typeof reloadCallback === 'function') {
                 reloadCallback();
             } else {
@@ -329,10 +337,205 @@ function importAllUserData(fileInputEvent, reloadCallback) {
 }
 window.importAllUserData = importAllUserData;
 
+// ==========================================
+// 5. Zero-Maintenance Google Drive AppData Sync
+// ==========================================
+let tokenClient = null;
+let googleAccessToken = localStorage.getItem('gdrive_user_token') || null;
+
+function initGoogleDriveSync() {
+    if (typeof google === 'undefined' || !window.GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID.includes("YOUR_GOOGLE_CLIENT_ID")) return;
+
+    try {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: window.GOOGLE_CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.appdata',
+            callback: async (tokenResponse) => {
+                if (tokenResponse && tokenResponse.access_token) {
+                    googleAccessToken = tokenResponse.access_token;
+                    localStorage.setItem('gdrive_user_token', googleAccessToken);
+                    updateGoogleSyncUI(true);
+                    showToast("Connected to Google Drive! Syncing... ☁️");
+                    await syncWithGoogleDrive();
+                }
+            },
+        });
+
+        if (googleAccessToken) {
+            updateGoogleSyncUI(true);
+            syncWithGoogleDrive();
+        }
+    } catch (e) {
+        console.warn("Google Drive Sync init deferred:", e);
+    }
+}
+window.initGoogleDriveSync = initGoogleDriveSync;
+
+function handleGoogleAuthClick() {
+    if (!tokenClient) {
+        initGoogleDriveSync();
+    }
+    if (googleAccessToken) {
+        if (confirm("Disconnect Google Drive sync on this device? Your local progress remains safe.")) {
+            googleAccessToken = null;
+            localStorage.removeItem('gdrive_user_token');
+            updateGoogleSyncUI(false);
+            showToast("Google Drive disconnected");
+        }
+    } else if (tokenClient) {
+        tokenClient.requestAccessToken({ prompt: '' });
+    } else {
+        alert("Please configure your Google Client ID in templates/base.html first.");
+    }
+}
+window.handleGoogleAuthClick = handleGoogleAuthClick;
+
+function updateGoogleSyncUI(isConnected) {
+    const label = document.getElementById('gdrive-btn-label');
+    const btn = document.getElementById('gdrive-btn');
+    if (!label || !btn) return;
+
+    if (isConnected) {
+        label.innerText = "Synced";
+        btn.classList.remove('border-stone-300', 'dark:border-stone-700');
+        btn.classList.add('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
+    } else {
+        label.innerText = "Sync Cloud";
+        btn.classList.remove('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
+        btn.classList.add('border-stone-300', 'dark:border-stone-700');
+    }
+}
+
+function mergeSyncData(local, remote) {
+    const mergedChapters = { ...(remote.read_chapters || {}), ...(local.read_chapters || {}) };
+
+    const bookmarkMap = new Map();
+    [...(remote.bookmarks || []), ...(local.bookmarks || [])].forEach(b => {
+        bookmarkMap.set(`${b.bookId}_${b.ch}_${b.v}`, b);
+    });
+
+    const mergedHighlights = { ...(remote.highlights || {}), ...(local.highlights || {}) };
+
+    const mergedPlans = {};
+    const planKeys = new Set([...Object.keys(remote.plans || {}), ...Object.keys(local.plans || {})]);
+    planKeys.forEach(pk => {
+        const days = new Set([...(remote.plans?.[pk] || []), ...(local.plans?.[pk] || [])]);
+        mergedPlans[pk] = Array.from(days).sort((a, b) => a - b);
+    });
+
+    return {
+        read_chapters: mergedChapters,
+        bookmarks: Array.from(bookmarkMap.values()),
+        highlights: mergedHighlights,
+        plans: mergedPlans,
+        theme: local.theme || remote.theme || 'light',
+        updated_at: new Date().toISOString()
+    };
+}
+
+async function syncWithGoogleDrive() {
+    if (!googleAccessToken) return;
+
+    try {
+        const headers = { Authorization: `Bearer ${googleAccessToken}` };
+        const query = encodeURIComponent("name = 'bible_sync_data.json' and 'appDataFolder' in parents and trashed = false");
+        const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name)`, { headers });
+        
+        if (listRes.status === 401) {
+            googleAccessToken = null;
+            localStorage.removeItem('gdrive_user_token');
+            updateGoogleSyncUI(false);
+            return;
+        }
+
+        const listData = await listRes.json();
+        const existingFile = listData.files && listData.files[0];
+
+        const localData = {
+            bookmarks: getBookmarks(),
+            highlights: getHighlights(),
+            read_chapters: getReadChapters(),
+            theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
+            plans: {}
+        };
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('bible_plan_')) {
+                try { localData.plans[k] = JSON.parse(localStorage.getItem(k) || '[]'); } catch(e){}
+            }
+        }
+
+        let merged = localData;
+
+        if (existingFile) {
+            const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${existingFile.id}?alt=media`, { headers });
+            if (fileRes.ok) {
+                const remoteData = await fileRes.json();
+                merged = mergeSyncData(localData, remoteData);
+            }
+        }
+
+        localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(merged.bookmarks));
+        localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(merged.highlights));
+        localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(merged.read_chapters));
+        Object.keys(merged.plans).forEach(pk => {
+            localStorage.setItem(pk, JSON.stringify(merged.plans[pk]));
+        });
+
+        const metadata = {
+            name: 'bible_sync_data.json',
+            parents: ['appDataFolder'],
+            mimeType: 'application/json'
+        };
+
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('file', new Blob([JSON.stringify(merged, null, 2)], { type: 'application/json' }));
+
+        if (existingFile) {
+            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`, {
+                method: 'PATCH',
+                headers,
+                body: form
+            });
+        } else {
+            await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers,
+                body: form
+            });
+        }
+
+        if (typeof window.updateBookmarkUI === 'function') window.updateBookmarkUI();
+        if (typeof window.updateChapterReadUI === 'function' && window.CURRENT_BOOK_ID) {
+            window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
+        }
+        if (typeof renderProgressDashboard === 'function') renderProgressDashboard();
+
+        console.log("Drive AppData Sync successful.");
+    } catch (err) {
+        console.warn("Drive sync deferred:", err);
+    }
+}
+window.syncWithGoogleDrive = syncWithGoogleDrive;
+
+let gdriveSyncTimer = null;
+function queueDriveAutoSync() {
+    if (!googleAccessToken) return;
+    clearTimeout(gdriveSyncTimer);
+    gdriveSyncTimer = setTimeout(syncWithGoogleDrive, 2000);
+}
+window.queueDriveAutoSync = queueDriveAutoSync;
+
+// Safe Init
 document.addEventListener('DOMContentLoaded', () => {
     updateBookmarkUI();
     if (typeof window.CURRENT_BOOK_ID !== 'undefined' && typeof window.CURRENT_CHAPTER !== 'undefined') {
         updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
         applyHighlights();
     }
+});
+
+window.addEventListener('load', () => {
+    setTimeout(initGoogleDriveSync, 800);
 });
