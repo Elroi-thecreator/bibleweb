@@ -1,10 +1,12 @@
 {
-  "name": "Holy Bible | பரிசுத்த வேதாகமம்",
+  "name": "வேதம் | Bilingual Bible",
   "short_name": "Bible",
+  "description": "Tamil & English Parallel Holy Bible with continuous audio narration and reading progress tracker.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAF6EE",
+  "background_color": "#0f172a",
   "theme_color": "#b45309",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/static/icons/icon-192.png",

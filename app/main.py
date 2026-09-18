@@ -1,283 +1,355 @@
-import os
-import sqlite3
+import hashlib
 import io
-from typing import Optional
-from fastapi import FastAPI, Request, Query, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse, PlainTextResponse
+import platform
+import time
+from fastapi import FastAPI, Query, Request
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from gtts import gTTS
 
-app = FastAPI(title="Holy Bible | பரிசுத்த வேதாகமம்")
+from app.db import BIBLE_BOOKS, BOOK_MAP, get_chapter_verses, search_verses
+from app.plans_data import READING_PLANS
 
-# Static assets & Jinja2 template setup
+app = FastAPI(title="Holy Bible - வேதம்")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "bible.db")
+START_TIME = time.time()
+AUDIO_CACHE = {}
+
+DAILY_VERSE = {
+    "ref_en": "John 3:16",
+    "ref_ta": "யோவான் 3:16",
+    "text_en": (
+        "For God so loved the world, that he gave his only begotten Son, "
+        "that whosoever believeth in him should not perish, but have everlasting life."
+    ),
+    "text_ta": (
+        "தேவன், தம்முடைய ஒரேபேறான குமாரனை விசுவாசிக்கிறவன் எவனோ அவன் கெட்டுப்போகாமல் "
+        "நித்தியஜீவனை அடையும்படிக்கு, அவரைத் தந்தருளி, இவ்வளவாய் உலகத்தில் அன்புகூர்ந்தார்."
+    ),
+    "link": "/read/43/1?mode=bilingual",
+}
 
 
-def get_db_connection():
-    """Establishes an SQLite connection with optimized read concurrency."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+# ==========================================
+# 1. Google Site Verification Route
+# ==========================================
 
-
-# =====================================================================
-# 1. Verification & PWA Offline Routes
-# =====================================================================
 @app.get("/google032292dfbea249aa.html", response_class=PlainTextResponse)
-async def google_verification():
-    """Google Search Console site verification token."""
+async def google_site_verification():
+    """Serves the Google Search Console / OAuth domain verification token."""
     return "google-site-verification: google032292dfbea249aa.html"
 
 
+# ==========================================
+# 2. PWA Service Worker Route
+# ==========================================
+
 @app.get("/sw.js")
 async def service_worker():
-    """Serves service worker from the root to ensure full application scope."""
-    sw_path = os.path.join(os.path.dirname(__file__), "static", "sw.js")
-    if os.path.exists(sw_path):
-        with open(sw_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        return HTMLResponse(content=content, media_type="application/javascript")
-    raise HTTPException(status_code=404, detail="Service worker file not found")
+    """Serves the Service Worker at root scope so it can cache all application paths."""
+    return FileResponse("static/sw.js", media_type="application/javascript")
 
 
-# =====================================================================
-# 2. Main View & Navigation Routes
-# =====================================================================
+# ==========================================
+# 3. Audio Streaming Engine (gTTS)
+# ==========================================
+
+@app.get("/api/audio/stream")
+async def stream_audio(text: str = Query(..., min_length=1), lang: str = Query("ta")):
+    clean_text = text.strip()
+    target_lang = "ta" if lang == "ta" else "en"
+    cache_key = hashlib.md5(f"{target_lang}:{clean_text}".encode("utf-8")).hexdigest()
+
+    if cache_key in AUDIO_CACHE:
+        return Response(content=AUDIO_CACHE[cache_key], media_type="audio/mpeg")
+
+    try:
+        tts = gTTS(text=clean_text, lang=target_lang, slow=False)
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        audio_bytes = fp.read()
+
+        if len(AUDIO_CACHE) > 300:
+            AUDIO_CACHE.pop(next(iter(AUDIO_CACHE)))
+        AUDIO_CACHE[cache_key] = audio_bytes
+
+        return Response(content=audio_bytes, media_type="audio/mpeg")
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+# ==========================================
+# 4. Status & Health (Zero-DB Touch)
+# ==========================================
+
+@app.get("/api/health")
+async def api_health():
+    uptime_sec = int(time.time() - START_TIME)
+    return JSONResponse(
+        content={
+            "status": "ok",
+            "uptime_seconds": uptime_sec,
+            "version": "1.0.0",
+        },
+        status_code=200,
+    )
+
+
+@app.get("/status", response_class=HTMLResponse)
+async def status_page():
+    uptime_sec = int(time.time() - START_TIME)
+    hours, remainder = divmod(uptime_sec, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    uptime_str = f"{hours}h {minutes}m {seconds}s"
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+            background: #0f172a;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }}
+        .card {{
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 24px;
+            width: 320px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }}
+        .header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }}
+        .pulse {{
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: inline-block;
+            margin-right: 6px;
+        }}
+        .badge {{
+            font-size: 11px;
+            font-weight: bold;
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.15);
+            padding: 2px 8px;
+            border-radius: 99px;
+        }}
+        .row {{
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 6px 0;
+        }}
+        .label {{ color: #94a3b8; }}
+        .val {{ font-weight: 600; font-family: monospace; }}
+        .actions {{
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+        }}
+        .btn {{
+            flex: 1;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 12px;
+            color: #38bdf8;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            text-decoration: none;
+        }}
+        .btn:hover {{ background: #1e293b; border-color: #38bdf8; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <span style="font-weight: bold; font-size: 14px;"><span class="pulse"></span>Service Active</span>
+            <span class="badge">ONLINE</span>
+        </div>
+        <div class="row">
+            <span class="label">Uptime</span>
+            <span class="val">{uptime_str}</span>
+        </div>
+        <div class="row">
+            <span class="label">Audio Engine</span>
+            <span class="val" style="color: #22c55e;">gTTS Streaming</span>
+        </div>
+        <div class="row">
+            <span class="label">PWA / Offline</span>
+            <span class="val" style="color: #38bdf8;">Service Worker Active</span>
+        </div>
+        <div class="row">
+            <span class="label">Host</span>
+            <span class="val">Render / Web</span>
+        </div>
+        <div class="actions">
+            <a href="/api/health" class="btn" target="_blank">JSON</a>
+            <a href="/" class="btn">Open Bible →</a>
+        </div>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html_content)
+
+
+# ==========================================
+# 5. Main Bible Pages
+# ==========================================
+
 @app.get("/", response_class=HTMLResponse)
-async def home_index(request: Request):
-    """Renders the canonical bookshelf and quick navigation dashboard."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # Load canonical books partitioned by testament
-    cursor.execute("""
-        SELECT id, name_en, name_ta, total_chapters, testament 
-        FROM books 
-        ORDER BY id ASC
-    """)
-    books = [tuple(row) for row in cursor.fetchall()]
-    conn.close()
-
-    ot_books = [b for b in books if b[4] == "OT" or b[0] <= 39]
-    nt_books = [b for b in books if b[4] == "NT" or b[0] > 39]
-
+async def landing_page(request: Request):
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "ot_books": ot_books,
-            "nt_books": nt_books,
-            "all_books": books,
+        request=request,
+        name="landing.html",
+        context={
+            "books": BIBLE_BOOKS,
+            "daily_verse": DAILY_VERSE,
+            "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
+            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
         },
     )
 
 
 @app.get("/read/{book_id}/{chapter}", response_class=HTMLResponse)
-async def read_chapter(
+async def reader(
     request: Request,
     book_id: int,
     chapter: int,
-    mode: str = Query("bilingual", regex="^(bilingual|tamil|english)$"),
+    mode: str = Query("bilingual"),
 ):
-    """
-    Renders scripture text with parallel bilingual verses,
-    matching the context keys expected by reader.html / read.html.
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    if book_id not in BOOK_MAP:
+        book_id = 1
+    current_book = BOOK_MAP[book_id]
+    if chapter < 1 or chapter > current_book["total_chapters"]:
+        chapter = 1
 
-    # Retrieve selected book
-    cursor.execute(
-        "SELECT id, name_en, name_ta, total_chapters FROM books WHERE id = ?",
-        (book_id,),
-    )
-    book_row = cursor.fetchone()
-    if not book_row:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Book not found")
+    try:
+        verses = get_chapter_verses(book_id, chapter) or []
+    except Exception as e:
+        print(f"Error fetching verses: {e}")
+        verses = []
 
-    book = tuple(book_row)
-    total_chapters = book[3]
-
-    if chapter < 1 or chapter > total_chapters:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Chapter out of bounds")
-
-    # Retrieve all books for dropdown selector
-    cursor.execute(
-        "SELECT id, name_en, name_ta, total_chapters FROM books ORDER BY id ASC"
-    )
-    all_books = [tuple(r) for r in cursor.fetchall()]
-
-    # Retrieve verses for this chapter
-    cursor.execute(
-        """
-        SELECT verse, text_en, text_ta 
-        FROM verses 
-        WHERE book_id = ? AND chapter = ? 
-        ORDER BY verse ASC
-        """,
-        (book_id, chapter),
-    )
-    verses = [tuple(r) for r in cursor.fetchall()]
-    conn.close()
-
-    # Chooses between 'reader.html' or 'read.html' depending on naming
-    template_name = (
-        "reader.html"
-        if os.path.exists(os.path.join("templates", "reader.html"))
-        else "read.html"
-    )
+    prev_ch = chapter - 1 if chapter > 1 else None
+    next_ch = chapter + 1 if chapter < current_book["total_chapters"] else None
 
     return templates.TemplateResponse(
-        template_name,
-        {
-            "request": request,
-            "book": book,
-            "chapter": int(chapter),
-            "total_chapters": total_chapters,
-            "all_books": all_books,
+        request=request,
+        name="reader.html",
+        context={
+            "books": BIBLE_BOOKS,
+            "book": current_book,
+            "chapter": chapter,
             "verses": verses,
             "mode": mode,
+            "prev_ch": prev_ch,
+            "next_ch": next_ch,
+            "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
+            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
         },
     )
 
 
-@app.get("/progress", response_class=HTMLResponse)
-async def reading_progress(request: Request):
-    """Displays user reading progress, canonical breakdown, and chapter matrix."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT id, name_en, name_ta, total_chapters, testament 
-        FROM books 
-        ORDER BY id ASC
-    """)
-    books = [tuple(row) for row in cursor.fetchall()]
-    conn.close()
+@app.get("/present/{book_id}/{chapter}", response_class=HTMLResponse)
+async def presenter_mode(request: Request, book_id: int, chapter: int):
+    """Church / TV / Projector presentation mode with extra-large bilingual slides."""
+    if book_id not in BOOK_MAP:
+        book_id = 1
+    current_book = BOOK_MAP[book_id]
+    if chapter < 1 or chapter > current_book["total_chapters"]:
+        chapter = 1
 
-    ot_books = [b for b in books if b[4] == "OT" or b[0] <= 39]
-    nt_books = [b for b in books if b[4] == "NT" or b[0] > 39]
+    verses = get_chapter_verses(book_id, chapter)
 
     return templates.TemplateResponse(
-        "progress.html",
-        {
-            "request": request,
-            "ot_books": ot_books,
-            "nt_books": nt_books,
-            "all_books": books,
+        request=request,
+        name="presenter.html",
+        context={
+            "books": BIBLE_BOOKS,
+            "book": current_book,
+            "chapter": chapter,
+            "verses": verses,
         },
     )
 
 
 @app.get("/plans", response_class=HTMLResponse)
-async def reading_plans(request: Request):
-    """Renders daily structured reading habits (e.g., 365-day, New Testament in 90 days)."""
-    return templates.TemplateResponse("plans.html", {"request": request})
-
-
-@app.get("/bookmarks", response_class=HTMLResponse)
-async def saved_bookmarks(request: Request):
-    """Renders client-side saved bookmarks and highlights screen."""
-    return templates.TemplateResponse("bookmarks.html", {"request": request})
-
-
-@app.get("/search", response_class=HTMLResponse)
-async def search_verses(
-    request: Request,
-    q: Optional[str] = Query(None),
-    limit: int = Query(50, le=100),
-):
-    """Performs full-text search across Tamil and English scripture verses."""
-    results = []
-    search_query = q.strip() if q else ""
-
-    if search_query:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        query_pattern = f"%{search_query}%"
-
-        cursor.execute(
-            """
-            SELECT v.book_id, b.name_en, b.name_ta, v.chapter, v.verse, v.text_en, v.text_ta
-            FROM verses v
-            JOIN books b ON v.book_id = b.id
-            WHERE v.text_en LIKE ? OR v.text_ta LIKE ?
-            ORDER BY v.book_id ASC, v.chapter ASC, v.verse ASC
-            LIMIT ?
-            """,
-            (query_pattern, query_pattern, limit),
-        )
-        results = [tuple(r) for r in cursor.fetchall()]
-        conn.close()
-
+async def plans_page(request: Request):
+    """Daily habit reading tracks with day-by-day progress checkoffs."""
     return templates.TemplateResponse(
-        "search.html",
-        {
-            "request": request,
-            "query": search_query,
-            "results": results,
-            "count": len(results),
+        request=request,
+        name="plans.html",
+        context={
+            "plans": READING_PLANS,
+            "books": BIBLE_BOOKS,
         },
     )
 
 
-# =====================================================================
-# 3. Audio Streaming API (gTTS)
-# =====================================================================
-@app.get("/api/audio/stream")
-async def stream_chapter_audio(
-    book_id: int = Query(...),
-    chapter: int = Query(...),
-    lang: str = Query("ta", regex="^(ta|en)$"),
-):
-    """
-    Synthesizes and streams chapter audio using server-side gTTS.
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    text_column = "text_ta" if lang == "ta" else "text_en"
-    cursor.execute(
-        f"SELECT {text_column} FROM verses WHERE book_id = ? AND chapter = ? ORDER BY verse ASC",
-        (book_id, chapter),
+@app.get("/progress", response_class=HTMLResponse)
+async def progress_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="progress.html",
+        context={
+            "books": BIBLE_BOOKS,
+            "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
+            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
+            "total_chapters": 1189,
+            "ot_chapters": 929,
+            "nt_chapters": 260,
+        },
     )
-    rows = cursor.fetchall()
-    conn.close()
-
-    if not rows:
-        raise HTTPException(
-            status_code=404, detail="Verses not found for audio synthesis"
-        )
-
-    # Combine chapter verses into fluent speech text
-    chapter_text = " ".join([r[0] for r in rows if r[0]])
-    if not chapter_text.strip():
-        raise HTTPException(status_code=400, detail="Empty text for audio synthesis")
-
-    try:
-        mp3_fp = io.BytesIO()
-        tts = gTTS(text=chapter_text, lang=lang, slow=False)
-        tts.write_to_fp(mp3_fp)
-        mp3_fp.seek(0)
-
-        return StreamingResponse(
-            mp3_fp,
-            media_type="audio/mpeg",
-            headers={
-                "Content-Disposition": f"inline; filename=bible_{book_id}_{chapter}_{lang}.mp3",
-                "Cache-Control": "public, max-age=86400",
-            },
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Audio synthesis error: {str(e)}")
 
 
-if __name__ == "__main__":
-    import uvicorn
+@app.get("/search", response_class=HTMLResponse)
+async def search_page(request: Request, q: str = Query("", min_length=1)):
+    results = search_verses(q) if q.strip() else []
+    return templates.TemplateResponse(
+        request=request,
+        name="search.html",
+        context={"query": q, "results": results, "books": BIBLE_BOOKS},
+    )
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+@app.get("/bookmarks", response_class=HTMLResponse)
+async def bookmarks_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="bookmarks.html",
+        context={"books": BIBLE_BOOKS},
+    )
+
+
+@app.get("/book/{book_id}/chapter/{chapter}")
+async def legacy_redirect(book_id: int, chapter: int):
+    return RedirectResponse(url=f"/read/{book_id}/{chapter}?mode=bilingual")
