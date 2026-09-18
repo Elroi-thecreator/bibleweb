@@ -5,16 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}வேதம் | Holy Bible{% endblock %}</title>
 
+    <!-- PWA Manifest & Browser Meta -->
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#b45309">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Holy Bible">
 
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+Tamil:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -55,7 +58,7 @@
                 </div>
             </a>
 
-            <!-- Search Bar (Desktop View) -->
+            <!-- Desktop Search Bar -->
             <form action="/search" method="get" class="hidden md:flex flex-1 max-w-xs mx-3">
                 <div class="relative w-full">
                     <input type="text" name="q" placeholder="Search / தேடுக..."
@@ -64,7 +67,7 @@
                 </div>
             </form>
 
-            <!-- Nav Actions: Plans, Progress, Bookmarks, Sync & Settings -->
+            <!-- Nav Actions -->
             <div class="flex items-center space-x-1 sm:space-x-1.5 text-xs shrink-0">
                 <a href="/plans" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center gap-1 font-medium" title="Reading Plans">
                     <span>📅</span> <span class="hidden md:inline">Plans</span>
@@ -89,7 +92,7 @@
                 <!-- Settings Trigger Button -->
                 <button onclick="toggleSettingsModal()" 
                         class="p-1.5 sm:px-2 py-1 rounded-xl border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition cursor-pointer flex items-center gap-1 text-xs" 
-                        title="Display & Settings">
+                        title="Appearance & Settings">
                     <span>⚙️</span> <span class="hidden lg:inline">Settings</span>
                 </button>
             </div>
@@ -107,7 +110,7 @@
         <p class="mt-0.5 font-tamil">பரிசுத்த வேதாகமம் • Bilingual Scripture</p>
     </footer>
 
-    <!-- Settings Popup Modal (Theme & Appearance) -->
+    <!-- Settings Popup Modal (Theme, Font Size & PWA Install) -->
     <div id="settings-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
         <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-stone-200 dark:border-stone-800 animate-in fade-in zoom-in-95 duration-150">
             
@@ -121,8 +124,8 @@
                 </button>
             </div>
 
-            <!-- Theme Picker Section -->
-            <div class="space-y-2 mb-5">
+            <!-- Theme Picker -->
+            <div class="space-y-2 mb-4">
                 <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Theme / பின்னணி நிறம்</label>
                 <div class="grid grid-cols-3 gap-2">
                     <button onclick="setTheme('light')" 
@@ -147,22 +150,40 @@
             </div>
 
             <!-- Font Size Scaling -->
-            <div class="space-y-2 mb-5">
+            <div class="space-y-2 mb-4">
                 <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Text Size / எழுத்து அளவு</label>
                 <div class="flex items-center justify-between gap-2">
                     <button onclick="adjustFontSize(-1)" class="flex-1 py-1.5 px-3 bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 font-bold text-xs hover:border-amber-600 cursor-pointer">
-                        A- (Smaller)
+                        A-
                     </button>
                     <button onclick="adjustFontSize(0)" class="py-1.5 px-3 bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-semibold hover:border-amber-600 cursor-pointer">
                         Reset
                     </button>
                     <button onclick="adjustFontSize(1)" class="flex-1 py-1.5 px-3 bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 font-bold text-xs hover:border-amber-600 cursor-pointer">
-                        A+ (Larger)
+                        A+
                     </button>
                 </div>
             </div>
 
-            <!-- Data & Backup Quick Links -->
+            <!-- Install App Option -->
+            <div id="pwa-install-section" class="space-y-2 mb-4">
+                <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">App Installation / செயலியை நிறுவு</label>
+                
+                <button id="pwa-install-btn" onclick="triggerPWAInstall()" 
+                        class="hidden w-full py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs">
+                    <span>📲</span> <span>Install as App (செயலியை நிறுவு)</span>
+                </button>
+
+                <div id="ios-install-hint" class="hidden p-2.5 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-[11px] text-stone-600 dark:text-stone-300 space-y-1">
+                    <p class="font-semibold text-stone-800 dark:text-stone-100 flex items-center gap-1">
+                        <span>🍏</span> Install on iPhone / iPad:
+                    </p>
+                    <p>1. Tap the <strong>Share</strong> button (⎋) in Safari.</p>
+                    <p>2. Scroll down and tap <strong>"Add to Home Screen"</strong> (➕).</p>
+                </div>
+            </div>
+
+            <!-- Bottom Actions -->
             <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
                 <button onclick="exportAllUserData()" class="text-xs text-stone-600 dark:text-stone-400 hover:text-amber-700 flex items-center gap-1 cursor-pointer">
                     <span>💾</span> Export Backup
@@ -174,7 +195,7 @@
         </div>
     </div>
 
-    <!-- Supabase Auth Modals -->
+    <!-- Sign In Modal -->
     <div id="auth-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
         <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-stone-200 dark:border-stone-800 text-center">
             <div class="w-10 h-10 bg-amber-100 dark:bg-amber-950/50 text-amber-700 rounded-full flex items-center justify-center mx-auto mb-2 text-lg">†</div>
@@ -196,6 +217,7 @@
         </div>
     </div>
 
+    <!-- Active Account Modal -->
     <div id="account-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
         <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-stone-200 dark:border-stone-800 text-center space-y-3">
             <h3 class="font-cinzel font-bold text-sm text-stone-900 dark:text-stone-100">Account Synced</h3>
@@ -219,21 +241,20 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         window.SUPABASE_URL = "https://pyuwejlodeyrvufrxtrf.supabase.co";
+        // Paste your Supabase publishable anon key below:
         window.SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
         if (window.supabase && window.SUPABASE_ANON_KEY && !window.SUPABASE_ANON_KEY.includes("PASTE_YOUR")) {
             window.sbClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         }
     </script>
 
-    <script src="/static/js/storage.js?v=5.2"></script>
+    <script src="/static/js/storage.js?v=5.3"></script>
     <script>
-        // Settings Modal Toggle
         function toggleSettingsModal() {
             const modal = document.getElementById('settings-modal');
             if (modal) modal.classList.toggle('hidden');
         }
 
-        // Theme Switcher & Active Button Highlight
         function setTheme(theme) {
             document.documentElement.classList.remove('dark');
             document.body.classList.remove('theme-sepia');
@@ -253,7 +274,6 @@
             });
         }
 
-        // Font Size Adjuster
         function adjustFontSize(delta) {
             const currentSize = parseInt(localStorage.getItem('bible_font_size') || '16');
             let newSize = delta === 0 ? 16 : Math.min(Math.max(currentSize + (delta * 2), 12), 24);
@@ -266,7 +286,6 @@
             showToast(`Text size: ${newSize}px`);
         }
 
-        // Initialize Theme & Font Size
         (function() {
             const savedTheme = localStorage.getItem('bible_app_theme') || 'light';
             setTheme(savedTheme);
@@ -278,12 +297,61 @@
             }
         })();
 
-        // Backdrop Dismissal
         document.getElementById('settings-modal').addEventListener('click', (e) => {
             if (e.target.id === 'settings-modal') toggleSettingsModal();
         });
 
-        // PWA Service Worker Registration
+        // ==========================================
+        // PWA Installation Handlers
+        // ==========================================
+        let deferredPrompt = null;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('pwa-install-btn');
+            if (installBtn && !isStandalone) {
+                installBtn.classList.remove('hidden');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (isStandalone) {
+                const pwaSec = document.getElementById('pwa-install-section');
+                if (pwaSec) pwaSec.style.display = 'none';
+                return;
+            }
+            if (isIOS) {
+                const iosHint = document.getElementById('ios-install-hint');
+                if (iosHint) iosHint.classList.remove('hidden');
+            }
+        });
+
+        async function triggerPWAInstall() {
+            if (!deferredPrompt) {
+                showToast("Open browser menu (⋮) and tap 'Add to Home screen'");
+                return;
+            }
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                showToast("App installed successfully! 📱");
+                const installBtn = document.getElementById('pwa-install-btn');
+                if (installBtn) installBtn.classList.add('hidden');
+            }
+            deferredPrompt = null;
+        }
+
+        window.addEventListener('appinstalled', () => {
+            showToast("Bible App installed! 🎉");
+            const pwaSec = document.getElementById('pwa-install-section');
+            if (pwaSec) pwaSec.style.display = 'none';
+            deferredPrompt = null;
+        });
+
+        // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js').catch(err => {

@@ -110,7 +110,7 @@
         </div>
     </div>
 
-    <!-- Bookshelf Sections -->
+    <!-- Canonical Bookshelf -->
     <div class="space-y-6 sm:space-y-8">
         <div>
             <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 pb-2 mb-3 border-b flex justify-between items-center">
@@ -183,7 +183,7 @@
             </button>
         </div>
 
-        <!-- Legend & Quick Action -->
+        <!-- Legend & Quick Resume Link -->
         <div class="flex items-center justify-between py-2 text-[11px] text-stone-500 border-b border-stone-100 dark:border-stone-800">
             <div class="flex items-center space-x-2">
                 <span class="flex items-center gap-1">
@@ -198,7 +198,7 @@
             </a>
         </div>
 
-        <!-- Chapter Matrix (Adaptive Auto-fit Columns) -->
+        <!-- Adaptive Chapter Grid -->
         <div class="overflow-y-auto py-3 pr-1 my-1 flex-1">
             <div id="modal-chapters-grid" class="grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-1.5 text-xs">
                 <!-- Populated via openChapterModal -->
@@ -313,7 +313,7 @@ function openChapterModal(bookId, bookEn, bookTa, totalChapters) {
         const btn = document.createElement('a');
         btn.href = `/read/${bookId}/${c}?mode=bilingual`;
         btn.className = isRead
-            ? 'flex items-center justify-between px-2 py-1.5 rounded-lg bg-emerald-600 text-white font-bold border border-emerald-500 hover:bg-emerald-700 transition'
+            ? 'flex items-center justify-between px-2 py-1.5 rounded-lg bg-emerald-600 text-white font-bold border border-emerald-500 hover:bg-emerald-700 transition shadow-xs'
             : 'flex items-center justify-between px-2 py-1.5 rounded-lg bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700 hover:border-amber-600 transition';
 
         btn.innerHTML = `
