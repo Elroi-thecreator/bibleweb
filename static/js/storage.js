@@ -4,7 +4,8 @@ const STORAGE_KEYS = {
     HIGHLIGHTS: 'bilingual_bible_highlights',
     READ_CHAPTERS: 'bible_read_chapters',
     THEME: 'bible_app_theme',
-    FONT_SIZE: 'bible_font_size'
+    FONT_SIZE: 'bible_font_size',
+    CACHED_USER_EMAIL: 'bible_cached_auth_email'
 };
 
 // ==========================================
@@ -342,47 +343,14 @@ window.importAllUserData = importAllUserData;
 // ==========================================
 let currentAuthUser = null;
 
-function initSupabaseAuth() {
-    if (!window.sbClient) return;
-
-    // Listen for sign-in / sign-out state changes
-    window.sbClient.auth.onAuthStateChange(async (event, session) => {
-        currentAuthUser = session?.user || null;
-        updateSupabaseAuthUI();
-
-        if (event === 'SIGNED_IN' && currentAuthUser) {
-            showToast(`Signed in as ${currentAuthUser.email}! Syncing... ☁️`);
-            await syncWithSupabase();
-        }
-    });
-
-    // Check existing active session on load
-    window.sbClient.auth.getSession().then(({ data: { session } }) => {
-        currentAuthUser = session?.user || null;
-        updateSupabaseAuthUI();
-        if (currentAuthUser) {
-            syncWithSupabase();
-        }
-    });
-}
-
-function handleAuthButtonClick() {
-    if (currentAuthUser) {
-        document.getElementById('account-email-display').innerText = currentAuthUser.email;
-        document.getElementById('account-modal').classList.remove('hidden');
-    } else {
-        document.getElementById('auth-modal').classList.remove('hidden');
-    }
-}
-window.handleAuthButtonClick = handleAuthButtonClick;
-
-function updateSupabaseAuthUI() {
+function applyCachedAuthUI() {
+    const cachedEmail = localStorage.getItem(STORAGE_KEYS.CACHED_USER_EMAIL);
     const label = document.getElementById('auth-btn-label');
     const btn = document.getElementById('auth-btn');
     if (!label || !btn) return;
 
-    if (currentAuthUser) {
-        const username = currentAuthUser.email.split('@')[0];
+    if (cachedEmail) {
+        const username = cachedEmail.split('@')[0];
         label.innerText = username.length > 9 ? username.slice(0, 9) + '…' : username;
         btn.classList.remove('border-stone-300', 'dark:border-stone-700');
         btn.classList.add('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
@@ -393,10 +361,67 @@ function updateSupabaseAuthUI() {
     }
 }
 
+function updateSupabaseAuthUI() {
+    const label = document.getElementById('auth-btn-label');
+    const btn = document.getElementById('auth-btn');
+    if (!label || !btn) return;
+
+    if (currentAuthUser) {
+        localStorage.setItem(STORAGE_KEYS.CACHED_USER_EMAIL, currentAuthUser.email);
+        const username = currentAuthUser.email.split('@')[0];
+        label.innerText = username.length > 9 ? username.slice(0, 9) + '…' : username;
+        btn.classList.remove('border-stone-300', 'dark:border-stone-700');
+        btn.classList.add('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
+    } else {
+        localStorage.removeItem(STORAGE_KEYS.CACHED_USER_EMAIL);
+        label.innerText = 'Sign In';
+        btn.classList.remove('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
+        btn.classList.add('border-stone-300', 'dark:border-stone-700');
+    }
+}
+
+function initSupabaseAuth() {
+    // Render immediate UI from local cache to prevent flickering
+    applyCachedAuthUI();
+
+    if (!window.sbClient) return;
+
+    // Listen for auth state changes (Magic link redirects, sign-in, sign-out)
+    window.sbClient.auth.onAuthStateChange(async (event, session) => {
+        currentAuthUser = session?.user || null;
+        updateSupabaseAuthUI();
+
+        if (event === 'SIGNED_IN' && currentAuthUser) {
+            showToast(`Signed in as ${currentAuthUser.email}! Syncing... ☁️`);
+            await syncWithSupabase();
+        }
+    });
+
+    // Check existing Supabase session asynchronously
+    window.sbClient.auth.getSession().then(({ data: { session } }) => {
+        currentAuthUser = session?.user || null;
+        updateSupabaseAuthUI();
+        if (currentAuthUser) {
+            syncWithSupabase();
+        }
+    });
+}
+
+function handleAuthButtonClick() {
+    const cachedEmail = localStorage.getItem(STORAGE_KEYS.CACHED_USER_EMAIL);
+    if (currentAuthUser || cachedEmail) {
+        document.getElementById('account-email-display').innerText = currentAuthUser ? currentAuthUser.email : cachedEmail;
+        document.getElementById('account-modal').classList.remove('hidden');
+    } else {
+        document.getElementById('auth-modal').classList.remove('hidden');
+    }
+}
+window.handleAuthButtonClick = handleAuthButtonClick;
+
 async function handleSendMagicLink(e) {
     e.preventDefault();
     if (!window.sbClient) {
-        alert("Supabase client is not configured yet. Please supply your anon public key in base.html.");
+        alert("Supabase client is not configured yet. Please verify your publishable key.");
         return;
     }
 
@@ -414,7 +439,7 @@ async function handleSendMagicLink(e) {
         if (error) {
             alert("Error sending link: " + error.message);
         } else {
-            alert(`Sign-in link sent to ${email}!\n\nCheck your inbox (and spam folder) and click the link to sync your devices.`);
+            alert(`Sign-in link sent to ${email}!\n\nCheck your inbox and spam folder. Click the link to complete setup.`);
             document.getElementById('auth-modal').classList.add('hidden');
         }
     } catch (err) {
@@ -428,7 +453,7 @@ window.handleSendMagicLink = handleSendMagicLink;
 
 async function handleSignOut() {
     if (!window.sbClient) return;
-    if (confirm("Sign out on this device? Your local progress will remain completely safe.")) {
+    if (confirm("Sign out on this device? Your local reading progress remains safe.")) {
         await window.sbClient.auth.signOut();
         currentAuthUser = null;
         updateSupabaseAuthUI();
@@ -482,7 +507,6 @@ async function syncWithSupabase() {
             }
         }
 
-        // 1. Fetch remote cloud row from public.user_bible_sync
         const { data: remoteRow, error: fetchError } = await window.sbClient
             .from('user_bible_sync')
             .select('data')
@@ -494,7 +518,6 @@ async function syncWithSupabase() {
             merged = mergeSyncData(localData, remoteRow.data);
         }
 
-        // 2. Hydrate local storage with merged truth
         localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(merged.bookmarks));
         localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(merged.highlights));
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(merged.read_chapters));
@@ -502,7 +525,6 @@ async function syncWithSupabase() {
             localStorage.setItem(pk, JSON.stringify(merged.plans[pk]));
         });
 
-        // 3. Upsert back to Supabase
         await window.sbClient
             .from('user_bible_sync')
             .upsert({
@@ -512,7 +534,6 @@ async function syncWithSupabase() {
                 updated_at: new Date().toISOString()
             });
 
-        // 4. Update onscreen elements
         if (typeof window.updateBookmarkUI === 'function') window.updateBookmarkUI();
         if (typeof window.updateChapterReadUI === 'function' && window.CURRENT_BOOK_ID) {
             window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
@@ -521,7 +542,7 @@ async function syncWithSupabase() {
 
         console.log("Supabase Cloud Sync completed.");
     } catch (err) {
-        console.warn("Supabase Sync deferred (offline or unreachable):", err);
+        console.warn("Supabase Sync deferred:", err);
     }
 }
 window.syncWithSupabase = syncWithSupabase;
@@ -536,6 +557,7 @@ window.queueCloudSync = queueCloudSync;
 
 // Safe Init
 document.addEventListener('DOMContentLoaded', () => {
+    applyCachedAuthUI();
     updateBookmarkUI();
     if (typeof window.CURRENT_BOOK_ID !== 'undefined' && typeof window.CURRENT_CHAPTER !== 'undefined') {
         updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
