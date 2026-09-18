@@ -67,7 +67,7 @@ async function toggleChapterRead(bookId, ch) {
     localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
     updateChapterReadUI(b, c);
 
-    // Push immediately to Supabase database without debounce
+    // Push immediately to Supabase
     await syncWithSupabase();
 }
 window.toggleChapterRead = toggleChapterRead;
@@ -84,7 +84,7 @@ async function markChapterAsReadDirect(bookId, ch) {
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
         updateChapterReadUI(b, c);
 
-        // Push immediately to Supabase database without debounce
+        // Push immediately to Supabase
         await syncWithSupabase();
     }
 }
@@ -525,7 +525,7 @@ async function syncWithSupabase() {
             localStorage.setItem(pk, JSON.stringify(merged.plans[pk]));
         });
 
-        // Direct push to server
+        // Push immediately to the user_bible_sync table
         await window.sbClient
             .from('user_bible_sync')
             .upsert({
