@@ -81,11 +81,11 @@
                     <span>★</span> <span class="hidden sm:inline">Bookmarks</span>
                 </a>
 
-                <!-- Google Drive Cloud Sync Button -->
-                <div id="gdrive-sync-container" class="flex items-center">
-                    <button id="gdrive-btn" onclick="handleGoogleAuthClick()" 
+                <!-- Supabase Cloud Sync & Sign In Trigger -->
+                <div id="auth-sync-container" class="flex items-center">
+                    <button id="auth-btn" onclick="handleAuthButtonClick()" 
                             class="px-2.5 py-1 rounded-xl border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-xs font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1.5 transition cursor-pointer shadow-xs">
-                        <span class="text-sm">☁️</span> <span id="gdrive-btn-label">Sync Cloud</span>
+                        <span id="auth-icon" class="text-xs">☁️</span> <span id="auth-btn-label">Sign In</span>
                     </button>
                 </div>
 
@@ -110,15 +110,64 @@
         <p class="mt-1 font-tamil">பரிசுத்த வேதாகமம் • Bilingual Tamil & English Scripture</p>
     </footer>
 
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Supabase Auth Modals -->
+    <!-- Sign In Modal -->
+    <div id="auth-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-stone-200 dark:border-stone-800 text-center">
+            <div class="w-12 h-12 bg-amber-100 dark:bg-amber-950/50 text-amber-700 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                †
+            </div>
+            <h3 class="font-cinzel font-bold text-lg text-stone-900 dark:text-stone-100 mb-1">Save Progress Forever</h3>
+            <p class="text-xs text-stone-500 mb-4">Enter your email to receive a passwordless sign-in link. Reading progress syncs across your phone, tablet, and PC automatically.</p>
+
+            <form id="magic-link-form" onsubmit="handleSendMagicLink(event)" class="space-y-3 text-left">
+                <input type="email" id="auth-email-input" required placeholder="name@example.com"
+                       class="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-700">
+                <button type="submit" id="magic-link-btn" 
+                        class="w-full py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition cursor-pointer">
+                    Send Sign-In Link →
+                </button>
+            </form>
+
+            <button onclick="document.getElementById('auth-modal').classList.add('hidden')" class="mt-4 text-xs text-stone-400 hover:text-stone-600 cursor-pointer">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Account Active Modal (Logout / Status) -->
+    <div id="account-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-stone-200 dark:border-stone-800 text-center space-y-4">
+            <h3 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Account Synced</h3>
+            <p id="account-email-display" class="text-xs font-mono text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 py-1.5 px-3 rounded-lg break-all"></p>
+            
+            <div class="flex gap-2">
+                <button onclick="syncWithSupabase(); document.getElementById('account-modal').classList.add('hidden');" 
+                        class="flex-1 py-2 bg-stone-100 dark:bg-stone-800 rounded-xl text-xs font-semibold hover:border-amber-600 border border-stone-300 dark:border-stone-700 cursor-pointer">
+                    Sync Now 🔄
+                </button>
+                <button onclick="handleSignOut()" 
+                        class="flex-1 py-2 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 rounded-xl text-xs font-semibold hover:bg-rose-100 cursor-pointer">
+                    Sign Out
+                </button>
+            </div>
+            <button onclick="document.getElementById('account-modal').classList.add('hidden')" class="text-xs text-stone-400 hover:underline cursor-pointer">Close</button>
+        </div>
+    </div>
+
+    <!-- Official Supabase Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Replace with your Google OAuth 2.0 Web Client ID from Google Cloud Console
-        window.GOOGLE_CLIENT_ID = "1022976373068-ilp23pqv1plsj810s44k03ujvq69dth7.apps.googleusercontent.com";
+        window.SUPABASE_URL = "https://pyuwejlodeyrvufrxtrf.supabase.co";
+        // Paste your Supabase 'anon' 'public' key here:
+        window.SUPABASE_ANON_KEY = "sb_publishable_Hst902YRApsZ5C19kkrcVA_ozgMAlU2";
+        if (window.supabase && window.SUPABASE_ANON_KEY && !window.SUPABASE_ANON_KEY.includes("PASTE_YOUR")) {
+            window.sbClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        }
     </script>
 
-    <!-- Core Scripts -->
-    <script src="/static/js/storage.js?v=4.0"></script>
+    <!-- Core App Scripts -->
+    <script src="/static/js/storage.js?v=5.0"></script>
     <script>
         function setTheme(theme) {
             document.documentElement.classList.remove('dark');
