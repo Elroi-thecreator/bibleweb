@@ -37,11 +37,38 @@
         }
     </script>
     <style>
+        :root {
+            --bible-font-size: 16px;
+        }
         .font-tamil { font-family: 'Noto Serif Tamil', serif; line-height: 2.1; }
         .font-english { font-family: 'Lora', serif; line-height: 1.85; }
         body.theme-sepia { background-color: #FAF6EE; color: #2D241E; }
         body.theme-sepia .bg-card { background-color: #F3EBDD; border-color: #E2D3BF; }
+
+        /* Dynamic Font Size Enforcement across pages */
+        #reader-content,
+        .verse-text,
+        .verse-item p,
+        .verse-text-en,
+        .verse-text-ta {
+            font-size: var(--bible-font-size) !important;
+        }
     </style>
+
+    <!-- Pre-render hydration script to prevent flash of wrong theme/font size -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('bible_app_theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else if (savedTheme === 'sepia') {
+                document.body?.classList.add('theme-sepia');
+            }
+
+            const savedSize = localStorage.getItem('bible_font_size') || '16';
+            document.documentElement.style.setProperty('--bible-font-size', `${savedSize}px`);
+        })();
+    </script>
 </head>
 <body class="bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100 transition-colors duration-200 min-h-screen flex flex-col font-serif">
 
@@ -151,7 +178,10 @@
 
             <!-- Font Size Scaling -->
             <div class="space-y-2 mb-4">
-                <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Text Size / எழுத்து அளவு</label>
+                <div class="flex justify-between items-center">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500">Text Size / எழுத்து அளவு</label>
+                    <span id="font-size-label" class="text-[11px] font-mono text-amber-700 dark:text-amber-400 font-bold">16px</span>
+                </div>
                 <div class="flex items-center justify-between gap-2">
                     <button onclick="adjustFontSize(-1)" class="flex-1 py-1.5 px-3 bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 font-bold text-xs hover:border-amber-600 cursor-pointer">
                         A-
@@ -241,14 +271,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         window.SUPABASE_URL = "https://pyuwejlodeyrvufrxtrf.supabase.co";
-        // Paste your Supabase publishable anon key below:
         window.SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
         if (window.supabase && window.SUPABASE_ANON_KEY && !window.SUPABASE_ANON_KEY.includes("PASTE_YOUR")) {
             window.sbClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         }
     </script>
 
-    <script src="/static/js/storage.js?v=5.3"></script>
+    <script src="/static/js/storage.js?v=5.4"></script>
     <script>
         function toggleSettingsModal() {
             const modal = document.getElementById('settings-modal');
@@ -274,28 +303,28 @@
             });
         }
 
+        function applySavedFontSize(size) {
+            const s = size || localStorage.getItem('bible_font_size') || '16';
+            document.documentElement.style.setProperty('--bible-font-size', `${s}px`);
+            const label = document.getElementById('font-size-label');
+            if (label) label.innerText = `${s}px`;
+        }
+
         function adjustFontSize(delta) {
             const currentSize = parseInt(localStorage.getItem('bible_font_size') || '16');
-            let newSize = delta === 0 ? 16 : Math.min(Math.max(currentSize + (delta * 2), 12), 24);
+            let newSize = delta === 0 ? 16 : Math.min(Math.max(currentSize + (delta * 2), 12), 26);
             localStorage.setItem('bible_font_size', newSize);
-            
-            const readerContent = document.getElementById('reader-content');
-            if (readerContent) {
-                readerContent.style.fontSize = `${newSize}px`;
-            }
+            applySavedFontSize(newSize);
             showToast(`Text size: ${newSize}px`);
         }
 
-        (function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('bible_app_theme') || 'light';
             setTheme(savedTheme);
 
-            const savedSize = localStorage.getItem('bible_font_size');
-            if (savedSize) {
-                const readerContent = document.getElementById('reader-content');
-                if (readerContent) readerContent.style.fontSize = `${savedSize}px`;
-            }
-        })();
+            const savedSize = localStorage.getItem('bible_font_size') || '16';
+            applySavedFontSize(savedSize);
+        });
 
         document.getElementById('settings-modal').addEventListener('click', (e) => {
             if (e.target.id === 'settings-modal') toggleSettingsModal();
