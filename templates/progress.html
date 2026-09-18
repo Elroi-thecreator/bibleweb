@@ -3,132 +3,133 @@
 {% block title %}Bible Reading Progress & Tracker | வேதாகம வாசிப்பு நிலை{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto px-4 py-8">
+<div class="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
 
-    <!-- Header & Streak Banner -->
-    <div class="flex flex-wrap justify-between items-center gap-4 mb-8 pb-4 border-b border-stone-200 dark:border-stone-800">
+    <!-- Header & Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-6 pb-4 border-b border-stone-200 dark:border-stone-800">
         <div>
-            <h1 class="text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">Reading Progress</h1>
-            <p class="font-tamil text-sm text-stone-500">முழு வேதாகம வாசிப்பு நிலை & இலக்கு</p>
+            <h1 class="text-2xl sm:text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">Reading Progress</h1>
+            <p class="font-tamil text-xs sm:text-sm text-stone-500">முழு வேதாகம வாசிப்பு நிலை & இலக்கு</p>
         </div>
-        <div class="flex items-center space-x-2">
-            <div class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400">
-                <span>🔥</span> <span id="streak-counter">0 Day Streak</span>
+
+        <div class="flex items-center justify-between sm:justify-end gap-1.5 sm:space-x-2 w-full sm:w-auto">
+            <div class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg flex items-center gap-1 text-[11px] sm:text-xs font-bold text-amber-800 dark:text-amber-400">
+                <span>🔥</span> <span id="streak-counter">0 Streak</span>
             </div>
 
-            <!-- Backup Button -->
-            <button onclick="exportAllUserData()" 
-                    class="text-xs px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 font-semibold cursor-pointer">
-                <span>💾</span> <span>Backup</span>
-            </button>
+            <div class="flex items-center gap-1">
+                <button onclick="exportAllUserData()" 
+                        class="text-[11px] sm:text-xs px-2 sm:px-3 py-1 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 font-semibold cursor-pointer">
+                    <span>💾</span> <span class="hidden xs:inline">Backup</span>
+                </button>
 
-            <!-- Restore Button -->
-            <label class="text-xs px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 cursor-pointer font-semibold">
-                <span>📥</span> <span>Restore</span>
-                <input type="file" accept=".json" class="hidden" onchange="importAllUserData(event, renderProgressDashboard)">
-            </label>
+                <label class="text-[11px] sm:text-xs px-2 sm:px-3 py-1 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 cursor-pointer font-semibold">
+                    <span>📥</span> <span class="hidden xs:inline">Restore</span>
+                    <input type="file" accept=".json" class="hidden" onchange="importAllUserData(event, renderProgressDashboard)">
+                </label>
 
-            <button onclick="resetProgress()" class="text-xs text-rose-600 hover:underline ml-1 cursor-pointer">Reset</button>
+                <button onclick="resetProgress()" class="text-[11px] sm:text-xs text-rose-600 hover:underline px-1 cursor-pointer">Reset</button>
+            </div>
         </div>
     </div>
 
     <!-- Metric Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-10">
         
         <!-- Total Bible Card -->
-        <div class="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col justify-between">
+        <div class="bg-white dark:bg-stone-900 p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs flex flex-col justify-between">
             <div>
-                <span class="text-xs font-cinzel font-bold uppercase tracking-wider text-amber-700 dark:text-amber-500 block mb-1">Entire Scripture</span>
+                <span class="text-[10px] sm:text-xs font-cinzel font-bold uppercase tracking-wider text-amber-700 dark:text-amber-500 block mb-1">Entire Scripture</span>
                 <div class="flex items-baseline gap-2">
-                    <span id="stat-total-pct" class="text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
-                    <span id="stat-total-fraction" class="text-xs text-stone-400">0 / 1189 Ch</span>
+                    <span id="stat-total-pct" class="text-3xl sm:text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-total-fraction" class="text-xs text-stone-400 font-mono">0 / 1189 Ch</span>
                 </div>
             </div>
-            <div class="mt-4">
-                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2.5 rounded-full overflow-hidden">
+            <div class="mt-3">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
                     <div id="bar-total" class="bg-amber-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
-                <p id="stat-pending" class="text-[11px] text-stone-500 mt-2 font-medium">1,189 chapters remaining</p>
+                <p id="stat-pending" class="text-[10px] sm:text-[11px] text-stone-500 mt-1.5 font-medium">1,189 chapters remaining</p>
             </div>
         </div>
 
         <!-- Old Testament Card -->
-        <div class="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col justify-between">
+        <div class="bg-white dark:bg-stone-900 p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs flex flex-col justify-between">
             <div>
-                <span class="text-xs font-cinzel font-bold uppercase tracking-wider text-stone-500 block mb-1">Old Testament (பழைய ஏற்பாடு)</span>
+                <span class="text-[10px] sm:text-xs font-cinzel font-bold uppercase tracking-wider text-stone-500 block mb-1">Old Testament (பழைய ஏற்பாடு)</span>
                 <div class="flex items-baseline gap-2">
-                    <span id="stat-ot-pct" class="text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
-                    <span id="stat-ot-fraction" class="text-xs text-stone-400">0 / 929 Ch</span>
+                    <span id="stat-ot-pct" class="text-3xl sm:text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-ot-fraction" class="text-xs text-stone-400 font-mono">0 / 929 Ch</span>
                 </div>
             </div>
-            <div class="mt-4">
-                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2.5 rounded-full overflow-hidden">
+            <div class="mt-3">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
                     <div id="bar-ot" class="bg-stone-600 dark:bg-stone-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
-                <p id="stat-ot-pending" class="text-[11px] text-stone-500 mt-2 font-medium">929 chapters remaining</p>
+                <p id="stat-ot-pending" class="text-[10px] sm:text-[11px] text-stone-500 mt-1.5 font-medium">929 chapters remaining</p>
             </div>
         </div>
 
         <!-- New Testament Card -->
-        <div class="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col justify-between">
+        <div class="bg-white dark:bg-stone-900 p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs flex flex-col justify-between sm:col-span-2 md:col-span-1">
             <div>
-                <span class="text-xs font-cinzel font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-1">New Testament (புதிய ஏற்பாடு)</span>
+                <span class="text-[10px] sm:text-xs font-cinzel font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-1">New Testament (புதிய ஏற்பாடு)</span>
                 <div class="flex items-baseline gap-2">
-                    <span id="stat-nt-pct" class="text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
-                    <span id="stat-nt-fraction" class="text-xs text-stone-400">0 / 260 Ch</span>
+                    <span id="stat-nt-pct" class="text-3xl sm:text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-nt-fraction" class="text-xs text-stone-400 font-mono">0 / 260 Ch</span>
                 </div>
             </div>
-            <div class="mt-4">
-                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2.5 rounded-full overflow-hidden">
+            <div class="mt-3">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
                     <div id="bar-nt" class="bg-emerald-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
-                <p id="stat-nt-pending" class="text-[11px] text-stone-500 mt-2 font-medium">260 chapters remaining</p>
+                <p id="stat-nt-pending" class="text-[10px] sm:text-[11px] text-stone-500 mt-1.5 font-medium">260 chapters remaining</p>
             </div>
         </div>
     </div>
 
     <!-- Projected Finish Date Calculator -->
-    <div class="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 mb-10">
-        <h3 class="font-cinzel font-bold text-sm text-stone-800 dark:text-stone-200 uppercase tracking-wider mb-3">📅 Estimated Completion Dates</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div class="p-3 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
-                <span class="text-stone-500 block">1 Chapter / Day</span>
-                <span id="est-1ch" class="font-bold text-sm text-stone-900 dark:text-stone-100 block mt-1">Calculating...</span>
-                <span class="text-[11px] text-stone-400">Steady (~3.2 years)</span>
+    <div class="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-10">
+        <h3 class="font-cinzel font-bold text-xs sm:text-sm text-stone-800 dark:text-stone-200 uppercase tracking-wider mb-2.5">📅 Estimated Completion Dates</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 text-xs">
+            <div class="p-2.5 sm:p-3 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span class="text-stone-500 block text-[11px]">1 Chapter / Day</span>
+                <span id="est-1ch" class="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 block mt-0.5">Calculating...</span>
+                <span class="text-[10px] text-stone-400">Steady pace</span>
             </div>
-            <div class="p-3 bg-white dark:bg-stone-800 rounded-xl border border-amber-300 dark:border-amber-800">
-                <span class="text-amber-700 dark:text-amber-400 font-semibold block">3 Chapters / Day (1 Year Plan)</span>
-                <span id="est-3ch" class="font-bold text-sm text-stone-900 dark:text-stone-100 block mt-1">Calculating...</span>
-                <span class="text-[11px] text-stone-400">Standard Bible in 1 Year</span>
+            <div class="p-2.5 sm:p-3 bg-white dark:bg-stone-800 rounded-xl border border-amber-300 dark:border-amber-800">
+                <span class="text-amber-700 dark:text-amber-400 font-semibold block text-[11px]">3 Chapters / Day (1 Year)</span>
+                <span id="est-3ch" class="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 block mt-0.5">Calculating...</span>
+                <span class="text-[10px] text-stone-400">Standard Plan</span>
             </div>
-            <div class="p-3 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
-                <span class="text-stone-500 block">4 Chapters / Day</span>
-                <span id="est-4ch" class="font-bold text-sm text-stone-900 dark:text-stone-100 block mt-1">Calculating...</span>
-                <span class="text-[11px] text-stone-400">Accelerated (~10 months)</span>
+            <div class="p-2.5 sm:p-3 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <span class="text-stone-500 block text-[11px]">4 Chapters / Day</span>
+                <span id="est-4ch" class="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 block mt-0.5">Calculating...</span>
+                <span class="text-[10px] text-stone-400">Accelerated</span>
             </div>
         </div>
     </div>
 
-    <!-- Canonical Bookshelf Heatmap -->
-    <div class="space-y-8">
+    <!-- Bookshelf Sections -->
+    <div class="space-y-6 sm:space-y-8">
         <div>
-            <h3 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100 pb-2 mb-4 border-b flex justify-between">
-                <span>OLD TESTAMENT (39 Books)</span>
+            <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 pb-2 mb-3 border-b flex justify-between items-center">
+                <span>OLD TESTAMENT (39)</span>
                 <span class="font-tamil text-xs text-stone-500">பழைய ஏற்பாடு</span>
             </h3>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs" id="grid-ot">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 text-xs" id="grid-ot">
                 {% for b in ot_books %}
                 <button type="button" 
                         onclick="openChapterModal({{ b[0] }}, '{{ b[1] }}', '{{ b[2] }}', {{ b[3] }})"
-                        class="book-card text-left p-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-amber-600 hover:shadow-xs transition block cursor-pointer group" 
+                        class="book-card text-left p-2.5 sm:p-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-amber-600 transition block cursor-pointer w-full overflow-hidden" 
                         data-book-id="{{ b[0] }}" 
                         data-chapters="{{ b[3] }}">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="font-semibold text-stone-900 dark:text-stone-100 truncate group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">{{ b[1] }}</span>
-                        <span class="book-pct text-[10px] text-stone-400 font-mono">0%</span>
+                    <div class="flex justify-between items-start mb-0.5">
+                        <span class="font-semibold text-stone-900 dark:text-stone-100 truncate text-xs">{{ b[1] }}</span>
+                        <span class="book-pct text-[9px] sm:text-[10px] text-stone-400 font-mono ml-1">0%</span>
                     </div>
-                    <span class="font-tamil text-[11px] text-stone-500 block truncate">{{ b[2] }}</span>
-                    <div class="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden mt-2.5">
+                    <span class="font-tamil text-[10px] sm:text-[11px] text-stone-500 block truncate">{{ b[2] }}</span>
+                    <div class="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden mt-2">
                         <div class="book-bar bg-amber-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </button>
@@ -137,23 +138,23 @@
         </div>
 
         <div>
-            <h3 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100 pb-2 mb-4 border-b flex justify-between">
-                <span>NEW TESTAMENT (27 Books)</span>
+            <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 pb-2 mb-3 border-b flex justify-between items-center">
+                <span>NEW TESTAMENT (27)</span>
                 <span class="font-tamil text-xs text-stone-500">புதிய ஏற்பாடு</span>
             </h3>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs" id="grid-nt">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 text-xs" id="grid-nt">
                 {% for b in nt_books %}
                 <button type="button" 
                         onclick="openChapterModal({{ b[0] }}, '{{ b[1] }}', '{{ b[2] }}', {{ b[3] }})"
-                        class="book-card text-left p-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-emerald-600 hover:shadow-xs transition block cursor-pointer group" 
+                        class="book-card text-left p-2.5 sm:p-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-emerald-600 transition block cursor-pointer w-full overflow-hidden" 
                         data-book-id="{{ b[0] }}" 
                         data-chapters="{{ b[3] }}">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="font-semibold text-stone-900 dark:text-stone-100 truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition">{{ b[1] }}</span>
-                        <span class="book-pct text-[10px] text-stone-400 font-mono">0%</span>
+                    <div class="flex justify-between items-start mb-0.5">
+                        <span class="font-semibold text-stone-900 dark:text-stone-100 truncate text-xs">{{ b[1] }}</span>
+                        <span class="book-pct text-[9px] sm:text-[10px] text-stone-400 font-mono ml-1">0%</span>
                     </div>
-                    <span class="font-tamil text-[11px] text-stone-500 block truncate">{{ b[2] }}</span>
-                    <div class="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden mt-2.5">
+                    <span class="font-tamil text-[10px] sm:text-[11px] text-stone-500 block truncate">{{ b[2] }}</span>
+                    <div class="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden mt-2">
                         <div class="book-bar bg-emerald-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </button>
@@ -164,49 +165,49 @@
 
 </div>
 
-<!-- Modal Chapter Detail Breakdown -->
-<div id="book-chapters-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-xl w-full p-5 sm:p-6 max-h-[85vh] flex flex-col border border-stone-200 dark:border-stone-800 animate-in fade-in zoom-in-95 duration-150">
+<!-- Modal Chapter Detail Breakdown (Responsive) -->
+<div id="book-chapters-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-lg w-full p-4 sm:p-6 max-h-[85vh] flex flex-col border border-stone-200 dark:border-stone-800">
         
         <!-- Modal Top Bar -->
-        <div class="flex justify-between items-start pb-4 border-b border-stone-100 dark:border-stone-800">
+        <div class="flex justify-between items-start pb-3 border-b border-stone-100 dark:border-stone-800">
             <div>
                 <div class="flex items-center gap-2">
-                    <h3 id="modal-book-name" class="font-cinzel font-bold text-lg text-stone-900 dark:text-stone-100">Genesis</h3>
+                    <h3 id="modal-book-name" class="font-cinzel font-bold text-base sm:text-lg text-stone-900 dark:text-stone-100">Genesis</h3>
                     <span id="modal-book-ta" class="font-tamil text-xs text-amber-700 dark:text-amber-400 font-medium">ஆதியாகமம்</span>
                 </div>
-                <p id="modal-progress-label" class="text-xs text-stone-500 mt-0.5">12 of 50 chapters read (24%)</p>
+                <p id="modal-progress-label" class="text-[11px] text-stone-500 mt-0.5">0 of 0 chapters read</p>
             </div>
-            <button onclick="closeChapterModal()" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-xl font-bold leading-none p-1 cursor-pointer">
+            <button onclick="closeChapterModal()" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-2xl font-bold leading-none p-1 cursor-pointer">
                 &times;
             </button>
         </div>
 
         <!-- Legend & Quick Action -->
-        <div class="flex items-center justify-between py-2.5 text-[11px] text-stone-500 border-b border-stone-50 dark:border-stone-800/50">
-            <div class="flex items-center space-x-3">
+        <div class="flex items-center justify-between py-2 text-[11px] text-stone-500 border-b border-stone-100 dark:border-stone-800">
+            <div class="flex items-center space-x-2">
                 <span class="flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded bg-emerald-600 inline-block"></span> Completed
+                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span> Done
                 </span>
                 <span class="flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 inline-block"></span> Unread
+                    <span class="w-2 h-2 rounded-full bg-stone-300 dark:bg-stone-700"></span> Unread
                 </span>
             </div>
             <a id="modal-continue-btn" href="#" class="font-semibold text-amber-700 dark:text-amber-400 hover:underline">
-                Continue Reading →
+                Continue →
             </a>
         </div>
 
-        <!-- Scrollable Grid of Chapters -->
-        <div class="overflow-y-auto py-4 pr-1">
-            <div id="modal-chapters-grid" class="grid grid-cols-5 sm:grid-cols-8 gap-2 text-xs">
-                <!-- Dynamically generated via JS -->
+        <!-- Chapter Matrix (Adaptive Auto-fit Columns) -->
+        <div class="overflow-y-auto py-3 pr-1 my-1 flex-1">
+            <div id="modal-chapters-grid" class="grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-1.5 text-xs">
+                <!-- Populated via openChapterModal -->
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="pt-3 border-t border-stone-100 dark:border-stone-800 text-right">
-            <button onclick="closeChapterModal()" class="px-4 py-1.5 bg-stone-100 dark:bg-stone-800 rounded-xl text-xs font-semibold hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 cursor-pointer">
+        <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end">
+            <button onclick="closeChapterModal()" class="w-full sm:w-auto px-4 py-2 bg-stone-100 dark:bg-stone-800 rounded-xl text-xs font-semibold hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 cursor-pointer">
                 Close
             </button>
         </div>
@@ -266,7 +267,7 @@ function renderProgressDashboard() {
     document.getElementById('stat-nt-pending').innerText = `${260 - ntCount} chapters remaining`;
 
     const streak = getReadingStreak();
-    document.getElementById('streak-counter').innerText = `${streak} Day Streak`;
+    document.getElementById('streak-counter').innerText = `${streak} Streak`;
 
     calculateFinishEstimates(totalPending);
 }
@@ -277,15 +278,14 @@ function calculateFinishEstimates(pending) {
     function addDays(days) {
         const d = new Date(now);
         d.setDate(d.getDate() + Math.ceil(days));
-        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    document.getElementById('est-1ch').innerText = pending > 0 ? addDays(pending / 1) : "Completed! 🎉";
-    document.getElementById('est-3ch').innerText = pending > 0 ? addDays(pending / 3) : "Completed! 🎉";
-    document.getElementById('est-4ch').innerText = pending > 0 ? addDays(pending / 4) : "Completed! 🎉";
+    document.getElementById('est-1ch').innerText = pending > 0 ? addDays(pending / 1) : "Done! 🎉";
+    document.getElementById('est-3ch').innerText = pending > 0 ? addDays(pending / 3) : "Done! 🎉";
+    document.getElementById('est-4ch').innerText = pending > 0 ? addDays(pending / 4) : "Done! 🎉";
 }
 
-// Modal Chapter Breakdown
 function openChapterModal(bookId, bookEn, bookTa, totalChapters) {
     const records = getReadChapters();
     const modal = document.getElementById('book-chapters-modal');
@@ -313,20 +313,19 @@ function openChapterModal(bookId, bookEn, bookTa, totalChapters) {
         const btn = document.createElement('a');
         btn.href = `/read/${bookId}/${c}?mode=bilingual`;
         btn.className = isRead
-            ? 'flex flex-col items-center justify-center p-2 rounded-xl bg-emerald-600 text-white font-bold border border-emerald-500 hover:bg-emerald-700 transition shadow-xs'
-            : 'flex flex-col items-center justify-center p-2 rounded-xl bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700 hover:border-amber-600 transition';
+            ? 'flex items-center justify-between px-2 py-1.5 rounded-lg bg-emerald-600 text-white font-bold border border-emerald-500 hover:bg-emerald-700 transition'
+            : 'flex items-center justify-between px-2 py-1.5 rounded-lg bg-stone-50 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700 hover:border-amber-600 transition';
 
         btn.innerHTML = `
             <span class="font-cinzel text-xs">${c}</span>
-            <span class="text-[9px] mt-0.5">${isRead ? '✓' : '•'}</span>
+            <span class="text-[10px]">${isRead ? '✓' : ''}</span>
         `;
         grid.appendChild(btn);
     }
 
     const pct = Math.round((readCount / totalChapters) * 100);
-    progressEl.innerText = `${readCount} of ${totalChapters} chapters completed (${pct}%)`;
+    progressEl.innerText = `${readCount} of ${totalChapters} chapters read (${pct}%)`;
 
-    // Direct resume button link
     const nextChapterToRead = firstUnreadChapter || 1;
     continueBtn.href = `/read/${bookId}/${nextChapterToRead}?mode=bilingual`;
     continueBtn.innerText = firstUnreadChapter ? `Continue: Ch ${firstUnreadChapter} →` : `Reread: Ch 1 →`;
@@ -339,7 +338,6 @@ function closeChapterModal() {
     if (modal) modal.classList.add('hidden');
 }
 
-// Close modal on escape or background backdrop click
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeChapterModal();
 });
