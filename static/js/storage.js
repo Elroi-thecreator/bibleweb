@@ -30,7 +30,7 @@ function showToast(message) {
 window.showToast = showToast;
 
 // ==========================================
-// 2. Reading Progress Engine
+// 2. Reading Progress Engine (Immediate Cloud Push)
 // ==========================================
 function getReadChapters() {
     try {
@@ -47,7 +47,7 @@ function isChapterRead(bookId, ch) {
 }
 window.isChapterRead = isChapterRead;
 
-function toggleChapterRead(bookId, ch) {
+async function toggleChapterRead(bookId, ch) {
     const b = parseInt(bookId);
     const c = parseInt(ch);
     if (isNaN(b) || isNaN(c)) return;
@@ -66,11 +66,13 @@ function toggleChapterRead(bookId, ch) {
 
     localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
     updateChapterReadUI(b, c);
-    queueCloudSync();
+
+    // Push immediately to Supabase database without debounce
+    await syncWithSupabase();
 }
 window.toggleChapterRead = toggleChapterRead;
 
-function markChapterAsReadDirect(bookId, ch) {
+async function markChapterAsReadDirect(bookId, ch) {
     const b = parseInt(bookId);
     const c = parseInt(ch);
     if (isNaN(b) || isNaN(c)) return;
@@ -81,7 +83,9 @@ function markChapterAsReadDirect(bookId, ch) {
         records[key] = new Date().toISOString().split('T')[0];
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
         updateChapterReadUI(b, c);
-        queueCloudSync();
+
+        // Push immediately to Supabase database without debounce
+        await syncWithSupabase();
     }
 }
 window.markChapterAsReadDirect = markChapterAsReadDirect;
@@ -169,7 +173,7 @@ function isBookmarked(bookId, ch, v) {
 }
 window.isBookmarked = isBookmarked;
 
-function toggleBookmark(bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa) {
+async function toggleBookmark(bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa) {
     let bookmarks = getBookmarks();
     const idx = bookmarks.findIndex(b => b.bookId === bookId && b.ch === ch && b.v === v);
 
@@ -186,7 +190,7 @@ function toggleBookmark(bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa) {
 
     localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
     updateBookmarkUI();
-    queueCloudSync();
+    await syncWithSupabase();
 }
 window.toggleBookmark = toggleBookmark;
 
@@ -308,7 +312,7 @@ function importAllUserData(fileInputEvent, reloadCallback) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         try {
             const parsed = JSON.parse(e.target.result);
             const payloadData = parsed.data || parsed;
@@ -324,7 +328,7 @@ function importAllUserData(fileInputEvent, reloadCallback) {
             }
 
             showToast("Backup restored! ✓");
-            queueCloudSync();
+            await syncWithSupabase();
             if (typeof reloadCallback === 'function') {
                 reloadCallback();
             } else {
@@ -339,7 +343,7 @@ function importAllUserData(fileInputEvent, reloadCallback) {
 window.importAllUserData = importAllUserData;
 
 // ==========================================
-// 5. Supabase Auth & Multi-Device Cloud Sync
+// 5. Supabase Auth & Cloud Sync
 // ==========================================
 let currentAuthUser = null;
 
@@ -381,12 +385,9 @@ function updateSupabaseAuthUI() {
 }
 
 function initSupabaseAuth() {
-    // Render immediate UI from local cache to prevent flickering
     applyCachedAuthUI();
-
     if (!window.sbClient) return;
 
-    // Listen for auth state changes (Magic link redirects, sign-in, sign-out)
     window.sbClient.auth.onAuthStateChange(async (event, session) => {
         currentAuthUser = session?.user || null;
         updateSupabaseAuthUI();
@@ -397,7 +398,6 @@ function initSupabaseAuth() {
         }
     });
 
-    // Check existing Supabase session asynchronously
     window.sbClient.auth.getSession().then(({ data: { session } }) => {
         currentAuthUser = session?.user || null;
         updateSupabaseAuthUI();
@@ -421,7 +421,7 @@ window.handleAuthButtonClick = handleAuthButtonClick;
 async function handleSendMagicLink(e) {
     e.preventDefault();
     if (!window.sbClient) {
-        alert("Supabase client is not configured yet. Please verify your publishable key.");
+        alert("Supabase client is not configured yet. Please check your keys in base.html.");
         return;
     }
 
@@ -525,6 +525,7 @@ async function syncWithSupabase() {
             localStorage.setItem(pk, JSON.stringify(merged.plans[pk]));
         });
 
+        // Direct push to server
         await window.sbClient
             .from('user_bible_sync')
             .upsert({
@@ -540,9 +541,9 @@ async function syncWithSupabase() {
         }
         if (typeof renderProgressDashboard === 'function') renderProgressDashboard();
 
-        console.log("Supabase Cloud Sync completed.");
+        console.log("Supabase synced in real-time.");
     } catch (err) {
-        console.warn("Supabase Sync deferred:", err);
+        console.warn("Supabase push deferred:", err);
     }
 }
 window.syncWithSupabase = syncWithSupabase;
