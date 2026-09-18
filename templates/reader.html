@@ -7,8 +7,6 @@
 
     <!-- Top Navigation Toolbar -->
     <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-6 border-b border-stone-200 dark:border-stone-800">
-        
-        <!-- Book & Chapter Select Dropdowns -->
         <div class="flex items-center gap-1.5 sm:gap-2">
             <select id="book-select" onchange="navigateToChapter(this.value, 1)" 
                     class="bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 text-xs sm:text-sm font-semibold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-700">
@@ -29,16 +27,13 @@
             </select>
         </div>
 
-        <!-- Mode Toggles & Reading State -->
         <div class="flex items-center gap-1.5">
-            <!-- Language Mode Segmented Toggle -->
             <div class="flex items-center border border-stone-300 dark:border-stone-700 rounded-xl p-0.5 bg-stone-100 dark:bg-stone-800 text-[11px] sm:text-xs">
                 <a href="?mode=bilingual" class="px-2 py-1 rounded-lg {% if mode == 'bilingual' %}bg-white dark:bg-stone-700 font-bold shadow-xs{% else %}text-stone-500{% endif %}">Both</a>
                 <a href="?mode=tamil" class="px-2 py-1 rounded-lg {% if mode == 'tamil' %}bg-white dark:bg-stone-700 font-bold shadow-xs{% else %}text-stone-500{% endif %}">தமிழ்</a>
                 <a href="?mode=english" class="px-2 py-1 rounded-lg {% if mode == 'english' %}bg-white dark:bg-stone-700 font-bold shadow-xs{% else %}text-stone-500{% endif %}">EN</a>
             </div>
 
-            <!-- Complete Chapter Button -->
             <button onclick="toggleChapterRead({{ book[0] }}, {{ chapter }})" 
                     class="chapter-read-btn flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:border-amber-600">
                 Mark as Read ✓
@@ -46,7 +41,7 @@
         </div>
     </div>
 
-    <!-- Chapter Title Banner -->
+    <!-- Chapter Heading -->
     <div class="text-center my-6 sm:my-8 space-y-1">
         <h1 class="font-cinzel text-2xl sm:text-3xl font-bold tracking-wider text-stone-900 dark:text-stone-100">
             {{ book[1] }} {{ chapter }}
@@ -56,7 +51,7 @@
         </p>
     </div>
 
-    <!-- Audio Player Strip (gTTS Streaming) -->
+    <!-- Audio Player Strip -->
     <div class="sticky top-16 z-30 mb-6 p-3 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
             <button id="audio-play-btn" onclick="toggleAudioPlayback()" 
@@ -78,26 +73,30 @@
         </div>
     </div>
 
-    <!-- Main Scripture Reading Container -->
+    <!-- Verses Container -->
     <div id="reader-content" class="space-y-4">
         {% for v in verses %}
-        <div id="v{{ v[0] }}" class="verse-item group rounded-xl p-2.5 transition border border-transparent hover:border-stone-200 dark:hover:border-stone-800">
+        <div id="v{{ v[0] }}" class="verse-item group rounded-xl p-2.5 transition border border-transparent hover:border-stone-200 dark:hover:border-stone-800"
+             data-book-id="{{ book[0] }}"
+             data-book-en="{{ book[1]|e }}"
+             data-book-ta="{{ book[2]|e }}"
+             data-chapter="{{ chapter }}"
+             data-verse="{{ v[0] }}"
+             data-text-en="{{ v[1]|e }}"
+             data-text-ta="{{ v[2]|e }}">
             <div class="flex items-start gap-2.5">
-                
-                <!-- Verse Number & Action Menu -->
                 <div class="pt-1 flex flex-col items-center shrink-0 w-6">
                     <span class="font-mono text-xs font-bold text-stone-400 group-hover:text-amber-700">{{ v[0] }}</span>
                     <button class="bookmark-btn text-xs text-stone-300 hover:text-amber-500 cursor-pointer mt-0.5" 
                             data-book="{{ book[0] }}" 
                             data-chapter="{{ chapter }}" 
                             data-verse="{{ v[0] }}"
-                            onclick="toggleBookmark({{ book[0] }}, '{{ book[1] }}', '{{ book[2] }}', {{ chapter }}, {{ v[0] }}, '{{ v[1]|replace('\'', '\\\'') }}', '{{ v[2]|replace('\'', '\\\'') }}')" 
+                            onclick="handleVerseBookmark(this)" 
                             title="Bookmark Verse">
                         ☆
                     </button>
                 </div>
 
-                <!-- Verse Text Paragraphs -->
                 <div class="flex-1 space-y-1.5">
                     {% if mode == 'bilingual' or mode == 'english' %}
                     <p class="verse-text-en font-english text-stone-900 dark:text-stone-100">
@@ -112,9 +111,8 @@
                     {% endif %}
                 </div>
 
-                <!-- Verse Quick Utility Bar -->
                 <div class="opacity-0 group-hover:opacity-100 transition flex items-center gap-1 shrink-0 pt-1">
-                    <button onclick="copyBilingualVerse('{{ book[1] }} {{ chapter }}:{{ v[0] }}', '{{ book[2] }} {{ chapter }}:{{ v[0] }}', '{{ v[1]|replace('\'', '\\\'') }}', '{{ v[2]|replace('\'', '\\\'') }}')"
+                    <button onclick="handleVerseCopy(this)"
                             class="p-1 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-xs" title="Copy Bilingual Verse">
                         📋
                     </button>
@@ -130,7 +128,7 @@
         {% endfor %}
     </div>
 
-    <!-- Bottom Prev / Next Navigation -->
+    <!-- Chapter Navigation -->
     <div class="flex justify-between items-center gap-3 pt-8 mt-10 border-t border-stone-200 dark:border-stone-800">
         {% if chapter > 1 %}
         <a href="/read/{{ book[0] }}/{{ chapter - 1 }}?mode={{ mode }}" 
@@ -168,12 +166,36 @@ function navigateToChapter(bookId, ch) {
     window.location.href = `/read/${bookId}/${ch}?mode=${mode}`;
 }
 
-// Audio Engine Handling
+function handleVerseBookmark(btn) {
+    const item = btn.closest('.verse-item');
+    const bId = parseInt(item.dataset.bookId);
+    const bEn = item.dataset.bookEn;
+    const bTa = item.dataset.bookTa;
+    const ch = parseInt(item.dataset.chapter);
+    const v = parseInt(item.dataset.verse);
+    const textEn = item.dataset.textEn;
+    const textTa = item.dataset.textTa;
+    toggleBookmark(bId, bEn, bTa, ch, v, textEn, textTa);
+}
+
+function handleVerseCopy(btn) {
+    const item = btn.closest('.verse-item');
+    const bEn = item.dataset.bookEn;
+    const bTa = item.dataset.bookTa;
+    const ch = item.dataset.chapter;
+    const v = item.dataset.verse;
+    const textEn = item.dataset.textEn;
+    const textTa = item.dataset.textTa;
+    copyBilingualVerse(`${bEn} ${ch}:${v}`, `${bTa} ${ch}:${v}`, textEn, textTa);
+}
+
+// Audio Playback
 const audioEl = document.getElementById('bible-audio');
 const playBtn = document.getElementById('audio-play-btn');
 const audioStatus = document.getElementById('audio-status');
 
 function toggleAudioPlayback() {
+    if (!audioEl) return;
     if (audioEl.paused) {
         audioEl.play();
         playBtn.innerText = '⏸';
@@ -185,28 +207,27 @@ function toggleAudioPlayback() {
     }
 }
 
-audioEl.addEventListener('ended', () => {
-    playBtn.innerText = '▶';
-    audioStatus.innerText = 'Finished';
-    
-    // Auto mark as read upon audio completion
-    if (typeof markChapterAsReadDirect === 'function') {
-        markChapterAsReadDirect(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
-    }
+if (audioEl) {
+    audioEl.addEventListener('ended', () => {
+        playBtn.innerText = '▶';
+        audioStatus.innerText = 'Finished';
+        
+        if (typeof markChapterAsReadDirect === 'function') {
+            markChapterAsReadDirect(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
+        }
 
-    // Continuous Playback across chapters
-    const autoplay = document.getElementById('audio-autoplay-toggle').checked;
-    if (autoplay && window.CURRENT_CHAPTER < window.TOTAL_CHAPTERS) {
-        setTimeout(() => {
-            window.location.href = `/read/${window.CURRENT_BOOK_ID}/${window.CURRENT_CHAPTER + 1}?mode={{ mode }}&autoplay=true`;
-        }, 1000);
-    }
-});
+        const autoplay = document.getElementById('audio-autoplay-toggle').checked;
+        if (autoplay && window.CURRENT_CHAPTER < window.TOTAL_CHAPTERS) {
+            setTimeout(() => {
+                window.location.href = `/read/${window.CURRENT_BOOK_ID}/${window.CURRENT_CHAPTER + 1}?mode={{ mode }}&autoplay=true`;
+            }, 1000);
+        }
+    });
+}
 
-// Autoplay trigger on load if param exists
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('autoplay') === 'true') {
+    if (urlParams.get('autoplay') === 'true' && audioEl) {
         document.getElementById('audio-autoplay-toggle').checked = true;
         setTimeout(() => toggleAudioPlayback(), 800);
     }

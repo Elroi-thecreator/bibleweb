@@ -45,7 +45,7 @@
         body.theme-sepia { background-color: #FAF6EE; color: #2D241E; }
         body.theme-sepia .bg-card { background-color: #F3EBDD; border-color: #E2D3BF; }
 
-        /* Dynamic Font Size Enforcement across pages */
+        /* Font Scaling */
         #reader-content,
         .verse-text,
         .verse-item p,
@@ -54,21 +54,6 @@
             font-size: var(--bible-font-size) !important;
         }
     </style>
-
-    <!-- Pre-render hydration script to prevent flash of wrong theme/font size -->
-    <script>
-        (function() {
-            const savedTheme = localStorage.getItem('bible_app_theme') || 'light';
-            if (savedTheme === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else if (savedTheme === 'sepia') {
-                document.body?.classList.add('theme-sepia');
-            }
-
-            const savedSize = localStorage.getItem('bible_font_size') || '16';
-            document.documentElement.style.setProperty('--bible-font-size', `${savedSize}px`);
-        })();
-    </script>
 </head>
 <body class="bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100 transition-colors duration-200 min-h-screen flex flex-col font-serif">
 
@@ -76,7 +61,6 @@
     <header id="site-header" class="sticky top-0 z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
             
-            <!-- Brand Link -->
             <a href="/" class="flex items-center space-x-2 shrink-0">
                 <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-xs sm:text-sm shadow-xs">†</span>
                 <div>
@@ -85,7 +69,6 @@
                 </div>
             </a>
 
-            <!-- Desktop Search Bar -->
             <form action="/search" method="get" class="hidden md:flex flex-1 max-w-xs mx-3">
                 <div class="relative w-full">
                     <input type="text" name="q" placeholder="Search / தேடுக..."
@@ -94,7 +77,6 @@
                 </div>
             </form>
 
-            <!-- Nav Actions -->
             <div class="flex items-center space-x-1 sm:space-x-1.5 text-xs shrink-0">
                 <a href="/plans" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center gap-1 font-medium" title="Reading Plans">
                     <span>📅</span> <span class="hidden md:inline">Plans</span>
@@ -108,7 +90,6 @@
                     <span>★</span> <span class="hidden md:inline">Saved</span>
                 </a>
 
-                <!-- Supabase Cloud Sync / Sign In -->
                 <div id="auth-sync-container" class="flex items-center">
                     <button id="auth-btn" onclick="handleAuthButtonClick()" 
                             class="px-2 sm:px-2.5 py-1 rounded-xl border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-[11px] sm:text-xs font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1 transition cursor-pointer">
@@ -116,7 +97,6 @@
                     </button>
                 </div>
 
-                <!-- Settings Trigger Button -->
                 <button onclick="toggleSettingsModal()" 
                         class="p-1.5 sm:px-2 py-1 rounded-xl border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition cursor-pointer flex items-center gap-1 text-xs" 
                         title="Appearance & Settings">
@@ -137,9 +117,9 @@
         <p class="mt-0.5 font-tamil">பரிசுத்த வேதாகமம் • Bilingual Scripture</p>
     </footer>
 
-    <!-- Settings Popup Modal (Theme, Font Size & PWA Install) -->
+    <!-- Settings Popup Modal -->
     <div id="settings-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
-        <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-stone-200 dark:border-stone-800 animate-in fade-in zoom-in-95 duration-150">
+        <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-stone-200 dark:border-stone-800">
             
             <div class="flex justify-between items-center pb-3 border-b border-stone-100 dark:border-stone-800 mb-4">
                 <div class="flex items-center gap-2">
@@ -151,7 +131,7 @@
                 </button>
             </div>
 
-            <!-- Theme Picker -->
+            <!-- Theme Options -->
             <div class="space-y-2 mb-4">
                 <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Theme / பின்னணி நிறம்</label>
                 <div class="grid grid-cols-3 gap-2">
@@ -176,7 +156,7 @@
                 </div>
             </div>
 
-            <!-- Font Size Scaling -->
+            <!-- Text Size Options -->
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between items-center">
                     <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500">Text Size / எழுத்து அளவு</label>
@@ -225,7 +205,7 @@
         </div>
     </div>
 
-    <!-- Sign In Modal -->
+    <!-- Auth Modals -->
     <div id="auth-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
         <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-stone-200 dark:border-stone-800 text-center">
             <div class="w-10 h-10 bg-amber-100 dark:bg-amber-950/50 text-amber-700 rounded-full flex items-center justify-center mx-auto mb-2 text-lg">†</div>
@@ -247,7 +227,6 @@
         </div>
     </div>
 
-    <!-- Active Account Modal -->
     <div id="account-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
         <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-stone-200 dark:border-stone-800 text-center space-y-3">
             <h3 class="font-cinzel font-bold text-sm text-stone-900 dark:text-stone-100">Account Synced</h3>
@@ -267,7 +246,7 @@
         </div>
     </div>
 
-    <!-- Official Supabase Client SDK -->
+    <!-- Supabase SDK & Storage -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         window.SUPABASE_URL = "https://pyuwejlodeyrvufrxtrf.supabase.co";
@@ -278,9 +257,12 @@
     </script>
 
     <script src="/static/js/storage.js?v=5.4"></script>
+
+    <!-- Client Script -->
+    {% raw %}
     <script>
         function toggleSettingsModal() {
-            const modal = document.getElementById('settings-modal');
+            var modal = document.getElementById('settings-modal');
             if (modal) modal.classList.toggle('hidden');
         }
 
@@ -294,101 +276,109 @@
             }
             localStorage.setItem('bible_app_theme', theme);
 
-            document.querySelectorAll('.theme-opt-btn').forEach(btn => {
-                if (btn.dataset.themeVal === theme) {
-                    btn.classList.add('ring-2', 'ring-amber-600');
+            var btns = document.querySelectorAll('.theme-opt-btn');
+            for (var i = 0; i < btns.length; i++) {
+                if (btns[i].getAttribute('data-theme-val') === theme) {
+                    btns[i].classList.add('ring-2', 'ring-amber-600');
                 } else {
-                    btn.classList.remove('ring-2', 'ring-amber-600');
+                    btns[i].classList.remove('ring-2', 'ring-amber-600');
                 }
-            });
+            }
         }
 
         function applySavedFontSize(size) {
-            const s = size || localStorage.getItem('bible_font_size') || '16';
-            document.documentElement.style.setProperty('--bible-font-size', `${s}px`);
-            const label = document.getElementById('font-size-label');
-            if (label) label.innerText = `${s}px`;
+            var s = size || localStorage.getItem('bible_font_size') || '16';
+            document.documentElement.style.setProperty('--bible-font-size', s + 'px');
+            var label = document.getElementById('font-size-label');
+            if (label) label.innerText = s + 'px';
         }
 
         function adjustFontSize(delta) {
-            const currentSize = parseInt(localStorage.getItem('bible_font_size') || '16');
-            let newSize = delta === 0 ? 16 : Math.min(Math.max(currentSize + (delta * 2), 12), 26);
+            var currentSize = parseInt(localStorage.getItem('bible_font_size') || '16');
+            var newSize = delta === 0 ? 16 : Math.min(Math.max(currentSize + (delta * 2), 12), 26);
             localStorage.setItem('bible_font_size', newSize);
             applySavedFontSize(newSize);
-            showToast(`Text size: ${newSize}px`);
+            if (typeof showToast === 'function') {
+                showToast('Text size: ' + newSize + 'px');
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('bible_app_theme') || 'light';
+        document.addEventListener('DOMContentLoaded', function() {
+            var savedTheme = localStorage.getItem('bible_app_theme') || 'light';
             setTheme(savedTheme);
 
-            const savedSize = localStorage.getItem('bible_font_size') || '16';
+            var savedSize = localStorage.getItem('bible_font_size') || '16';
             applySavedFontSize(savedSize);
         });
 
-        document.getElementById('settings-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'settings-modal') toggleSettingsModal();
-        });
+        var settingsModal = document.getElementById('settings-modal');
+        if (settingsModal) {
+            settingsModal.addEventListener('click', function(e) {
+                if (e.target.id === 'settings-modal') toggleSettingsModal();
+            });
+        }
 
-        // ==========================================
-        // PWA Installation Handlers
-        // ==========================================
-        let deferredPrompt = null;
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        // PWA Installation
+        var deferredPrompt = null;
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-        window.addEventListener('beforeinstallprompt', (e) => {
+        window.addEventListener('beforeinstallprompt', function(e) {
             e.preventDefault();
             deferredPrompt = e;
-            const installBtn = document.getElementById('pwa-install-btn');
+            var installBtn = document.getElementById('pwa-install-btn');
             if (installBtn && !isStandalone) {
                 installBtn.classList.remove('hidden');
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             if (isStandalone) {
-                const pwaSec = document.getElementById('pwa-install-section');
+                var pwaSec = document.getElementById('pwa-install-section');
                 if (pwaSec) pwaSec.style.display = 'none';
                 return;
             }
             if (isIOS) {
-                const iosHint = document.getElementById('ios-install-hint');
+                var iosHint = document.getElementById('ios-install-hint');
                 if (iosHint) iosHint.classList.remove('hidden');
             }
         });
 
-        async function triggerPWAInstall() {
+        function triggerPWAInstall() {
             if (!deferredPrompt) {
-                showToast("Open browser menu (⋮) and tap 'Add to Home screen'");
+                if (typeof showToast === 'function') {
+                    showToast("Open browser menu (⋮) and tap 'Add to Home screen'");
+                }
                 return;
             }
             deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                showToast("App installed successfully! 📱");
-                const installBtn = document.getElementById('pwa-install-btn');
-                if (installBtn) installBtn.classList.add('hidden');
-            }
-            deferredPrompt = null;
+            deferredPrompt.userChoice.then(function(choiceResult) {
+                if (choiceResult.outcome === 'accepted') {
+                    if (typeof showToast === 'function') showToast("App installed successfully! 📱");
+                    var installBtn = document.getElementById('pwa-install-btn');
+                    if (installBtn) installBtn.classList.add('hidden');
+                }
+                deferredPrompt = null;
+            });
         }
 
-        window.addEventListener('appinstalled', () => {
-            showToast("Bible App installed! 🎉");
-            const pwaSec = document.getElementById('pwa-install-section');
+        window.addEventListener('appinstalled', function() {
+            if (typeof showToast === 'function') showToast("Bible App installed! 🎉");
+            var pwaSec = document.getElementById('pwa-install-section');
             if (pwaSec) pwaSec.style.display = 'none';
             deferredPrompt = null;
         });
 
-        // Service Worker
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(err => {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').catch(function(err) {
                     console.warn('PWA registration failed:', err);
                 });
             });
         }
     </script>
+    {% endraw %}
+
     {% block scripts %}{% endblock %}
 </body>
 </html>
