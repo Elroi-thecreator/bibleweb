@@ -65,7 +65,7 @@ function toggleChapterRead(bookId, ch) {
 
     localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
     updateChapterReadUI(b, c);
-    queueDriveAutoSync();
+    queueCloudSync();
 }
 window.toggleChapterRead = toggleChapterRead;
 
@@ -80,7 +80,7 @@ function markChapterAsReadDirect(bookId, ch) {
         records[key] = new Date().toISOString().split('T')[0];
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
         updateChapterReadUI(b, c);
-        queueDriveAutoSync();
+        queueCloudSync();
     }
 }
 window.markChapterAsReadDirect = markChapterAsReadDirect;
@@ -185,7 +185,7 @@ function toggleBookmark(bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa) {
 
     localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
     updateBookmarkUI();
-    queueDriveAutoSync();
+    queueCloudSync();
 }
 window.toggleBookmark = toggleBookmark;
 
@@ -217,7 +217,7 @@ function setVerseHighlight(bookId, ch, v, colorClass) {
 
     localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(highlights));
     applyHighlights();
-    queueDriveAutoSync();
+    queueCloudSync();
 }
 window.setVerseHighlight = setVerseHighlight;
 
@@ -251,7 +251,7 @@ function copyBilingualVerse(refEn, refTa, textEn, textTa) {
 window.copyBilingualVerse = copyBilingualVerse;
 
 // ==========================================
-// 4. Backup & Restore
+// 4. Backup & Restore (JSON Export)
 // ==========================================
 function exportAllUserData() {
     try {
@@ -323,7 +323,7 @@ function importAllUserData(fileInputEvent, reloadCallback) {
             }
 
             showToast("Backup restored! ✓");
-            queueDriveAutoSync();
+            queueCloudSync();
             if (typeof reloadCallback === 'function') {
                 reloadCallback();
             } else {
@@ -338,73 +338,105 @@ function importAllUserData(fileInputEvent, reloadCallback) {
 window.importAllUserData = importAllUserData;
 
 // ==========================================
-// 5. Zero-Maintenance Google Drive AppData Sync
+// 5. Supabase Auth & Multi-Device Cloud Sync
 // ==========================================
-let tokenClient = null;
-let googleAccessToken = localStorage.getItem('gdrive_user_token') || null;
+let currentAuthUser = null;
 
-function initGoogleDriveSync() {
-    if (typeof google === 'undefined' || !window.GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID.includes("YOUR_GOOGLE_CLIENT_ID")) return;
+function initSupabaseAuth() {
+    if (!window.sbClient) return;
 
-    try {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: window.GOOGLE_CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.appdata',
-            callback: async (tokenResponse) => {
-                if (tokenResponse && tokenResponse.access_token) {
-                    googleAccessToken = tokenResponse.access_token;
-                    localStorage.setItem('gdrive_user_token', googleAccessToken);
-                    updateGoogleSyncUI(true);
-                    showToast("Connected to Google Drive! Syncing... ☁️");
-                    await syncWithGoogleDrive();
-                }
-            },
-        });
+    // Listen for sign-in / sign-out state changes
+    window.sbClient.auth.onAuthStateChange(async (event, session) => {
+        currentAuthUser = session?.user || null;
+        updateSupabaseAuthUI();
 
-        if (googleAccessToken) {
-            updateGoogleSyncUI(true);
-            syncWithGoogleDrive();
+        if (event === 'SIGNED_IN' && currentAuthUser) {
+            showToast(`Signed in as ${currentAuthUser.email}! Syncing... ☁️`);
+            await syncWithSupabase();
         }
-    } catch (e) {
-        console.warn("Google Drive Sync init deferred:", e);
-    }
+    });
+
+    // Check existing active session on load
+    window.sbClient.auth.getSession().then(({ data: { session } }) => {
+        currentAuthUser = session?.user || null;
+        updateSupabaseAuthUI();
+        if (currentAuthUser) {
+            syncWithSupabase();
+        }
+    });
 }
-window.initGoogleDriveSync = initGoogleDriveSync;
 
-function handleGoogleAuthClick() {
-    if (!tokenClient) {
-        initGoogleDriveSync();
-    }
-    if (googleAccessToken) {
-        if (confirm("Disconnect Google Drive sync on this device? Your local progress remains safe.")) {
-            googleAccessToken = null;
-            localStorage.removeItem('gdrive_user_token');
-            updateGoogleSyncUI(false);
-            showToast("Google Drive disconnected");
-        }
-    } else if (tokenClient) {
-        tokenClient.requestAccessToken({ prompt: '' });
+function handleAuthButtonClick() {
+    if (currentAuthUser) {
+        document.getElementById('account-email-display').innerText = currentAuthUser.email;
+        document.getElementById('account-modal').classList.remove('hidden');
     } else {
-        alert("Please configure your Google Client ID in templates/base.html first.");
+        document.getElementById('auth-modal').classList.remove('hidden');
     }
 }
-window.handleGoogleAuthClick = handleGoogleAuthClick;
+window.handleAuthButtonClick = handleAuthButtonClick;
 
-function updateGoogleSyncUI(isConnected) {
-    const label = document.getElementById('gdrive-btn-label');
-    const btn = document.getElementById('gdrive-btn');
+function updateSupabaseAuthUI() {
+    const label = document.getElementById('auth-btn-label');
+    const btn = document.getElementById('auth-btn');
     if (!label || !btn) return;
 
-    if (isConnected) {
-        label.innerText = "Synced";
+    if (currentAuthUser) {
+        const username = currentAuthUser.email.split('@')[0];
+        label.innerText = username.length > 9 ? username.slice(0, 9) + '…' : username;
         btn.classList.remove('border-stone-300', 'dark:border-stone-700');
         btn.classList.add('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
     } else {
-        label.innerText = "Sync Cloud";
+        label.innerText = 'Sign In';
         btn.classList.remove('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
         btn.classList.add('border-stone-300', 'dark:border-stone-700');
     }
 }
+
+async function handleSendMagicLink(e) {
+    e.preventDefault();
+    if (!window.sbClient) {
+        alert("Supabase client is not configured yet. Please supply your anon public key in base.html.");
+        return;
+    }
+
+    const email = document.getElementById('auth-email-input').value.trim();
+    const btn = document.getElementById('magic-link-btn');
+    btn.disabled = true;
+    btn.innerText = "Sending Link...";
+
+    try {
+        const { error } = await window.sbClient.auth.signInWithOtp({
+            email: email,
+            options: { emailRedirectTo: window.location.origin }
+        });
+
+        if (error) {
+            alert("Error sending link: " + error.message);
+        } else {
+            alert(`Sign-in link sent to ${email}!\n\nCheck your inbox (and spam folder) and click the link to sync your devices.`);
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+    } catch (err) {
+        alert("Request failed: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Send Sign-In Link →";
+    }
+}
+window.handleSendMagicLink = handleSendMagicLink;
+
+async function handleSignOut() {
+    if (!window.sbClient) return;
+    if (confirm("Sign out on this device? Your local progress will remain completely safe.")) {
+        await window.sbClient.auth.signOut();
+        currentAuthUser = null;
+        updateSupabaseAuthUI();
+        document.getElementById('account-modal').classList.add('hidden');
+        showToast("Signed out");
+    }
+}
+window.handleSignOut = handleSignOut;
 
 function mergeSyncData(local, remote) {
     const mergedChapters = { ...(remote.read_chapters || {}), ...(local.read_chapters || {}) };
@@ -428,29 +460,14 @@ function mergeSyncData(local, remote) {
         bookmarks: Array.from(bookmarkMap.values()),
         highlights: mergedHighlights,
         plans: mergedPlans,
-        theme: local.theme || remote.theme || 'light',
-        updated_at: new Date().toISOString()
+        theme: local.theme || remote.theme || 'light'
     };
 }
 
-async function syncWithGoogleDrive() {
-    if (!googleAccessToken) return;
+async function syncWithSupabase() {
+    if (!window.sbClient || !currentAuthUser) return;
 
     try {
-        const headers = { Authorization: `Bearer ${googleAccessToken}` };
-        const query = encodeURIComponent("name = 'bible_sync_data.json' and 'appDataFolder' in parents and trashed = false");
-        const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name)`, { headers });
-        
-        if (listRes.status === 401) {
-            googleAccessToken = null;
-            localStorage.removeItem('gdrive_user_token');
-            updateGoogleSyncUI(false);
-            return;
-        }
-
-        const listData = await listRes.json();
-        const existingFile = listData.files && listData.files[0];
-
         const localData = {
             bookmarks: getBookmarks(),
             highlights: getHighlights(),
@@ -465,16 +482,19 @@ async function syncWithGoogleDrive() {
             }
         }
 
-        let merged = localData;
+        // 1. Fetch remote cloud row from public.user_bible_sync
+        const { data: remoteRow, error: fetchError } = await window.sbClient
+            .from('user_bible_sync')
+            .select('data')
+            .eq('user_id', currentAuthUser.id)
+            .maybeSingle();
 
-        if (existingFile) {
-            const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${existingFile.id}?alt=media`, { headers });
-            if (fileRes.ok) {
-                const remoteData = await fileRes.json();
-                merged = mergeSyncData(localData, remoteData);
-            }
+        let merged = localData;
+        if (remoteRow && remoteRow.data) {
+            merged = mergeSyncData(localData, remoteRow.data);
         }
 
+        // 2. Hydrate local storage with merged truth
         localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(merged.bookmarks));
         localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(merged.highlights));
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(merged.read_chapters));
@@ -482,50 +502,37 @@ async function syncWithGoogleDrive() {
             localStorage.setItem(pk, JSON.stringify(merged.plans[pk]));
         });
 
-        const metadata = {
-            name: 'bible_sync_data.json',
-            parents: ['appDataFolder'],
-            mimeType: 'application/json'
-        };
-
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        form.append('file', new Blob([JSON.stringify(merged, null, 2)], { type: 'application/json' }));
-
-        if (existingFile) {
-            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`, {
-                method: 'PATCH',
-                headers,
-                body: form
+        // 3. Upsert back to Supabase
+        await window.sbClient
+            .from('user_bible_sync')
+            .upsert({
+                user_id: currentAuthUser.id,
+                email: currentAuthUser.email,
+                data: merged,
+                updated_at: new Date().toISOString()
             });
-        } else {
-            await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers,
-                body: form
-            });
-        }
 
+        // 4. Update onscreen elements
         if (typeof window.updateBookmarkUI === 'function') window.updateBookmarkUI();
         if (typeof window.updateChapterReadUI === 'function' && window.CURRENT_BOOK_ID) {
             window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
         }
         if (typeof renderProgressDashboard === 'function') renderProgressDashboard();
 
-        console.log("Drive AppData Sync successful.");
+        console.log("Supabase Cloud Sync completed.");
     } catch (err) {
-        console.warn("Drive sync deferred:", err);
+        console.warn("Supabase Sync deferred (offline or unreachable):", err);
     }
 }
-window.syncWithGoogleDrive = syncWithGoogleDrive;
+window.syncWithSupabase = syncWithSupabase;
 
-let gdriveSyncTimer = null;
-function queueDriveAutoSync() {
-    if (!googleAccessToken) return;
-    clearTimeout(gdriveSyncTimer);
-    gdriveSyncTimer = setTimeout(syncWithGoogleDrive, 2000);
+let cloudSyncTimer = null;
+function queueCloudSync() {
+    if (!currentAuthUser) return;
+    clearTimeout(cloudSyncTimer);
+    cloudSyncTimer = setTimeout(syncWithSupabase, 2000);
 }
-window.queueDriveAutoSync = queueDriveAutoSync;
+window.queueCloudSync = queueCloudSync;
 
 // Safe Init
 document.addEventListener('DOMContentLoaded', () => {
@@ -534,8 +541,5 @@ document.addEventListener('DOMContentLoaded', () => {
         updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
         applyHighlights();
     }
-});
-
-window.addEventListener('load', () => {
-    setTimeout(initGoogleDriveSync, 800);
+    initSupabaseAuth();
 });
