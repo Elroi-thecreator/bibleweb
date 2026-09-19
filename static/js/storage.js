@@ -12,7 +12,7 @@ const STORAGE_KEYS = {
 // ==========================================
 // VAPID Configuration for Web Push
 // ==========================================
-const VAPID_PUBLIC_KEY = "PASTE_YOUR_PUBLIC_KEY_HERE";
+const VAPID_PUBLIC_KEY = "BGXW2T5SG80VyojeXeZp5VOeGm57Xyc1pwNg_wwrpVz1qLj7DQntm5J_lDerF1pDyjF7rEn8Q8yC71cXHJ3AW2k";
 
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
