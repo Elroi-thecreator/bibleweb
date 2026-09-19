@@ -37,23 +37,29 @@
             }
         }
     </script>
-    <style>
+    <style id="dynamic-reader-font-style">
     :root {
         --reader-font-size: 18px;
     }
-    .font-tamil { font-family: 'Noto Serif Tamil', serif; line-height: 2.1; }
-    .font-english { font-family: 'Lora', serif; line-height: 1.85; }
-    body.theme-sepia { background-color: #FAF6EE; color: #2D241E; }
-    body.theme-sepia .bg-card { background-color: #F3EBDD; border-color: #E2D3BF; }
 
-    /* Force all verse text to listen to the CSS variable */
-    .verse-text, 
-    .verse-text p,
-    .verse-text span,
-    .verse-ta, 
+    /* Targets any text container inside the reader regardless of markup */
+    #reader-container,
+    #reader-content,
+    .verse-item,
+    .verse-item p,
+    .verse-item span,
+    .verse-text,
     .verse-en,
-    .reader-verse-content {
+    .verse-ta {
         font-size: var(--reader-font-size) !important;
+    }
+
+    /* Adjust line heights proportionally */
+    .verse-ta, .font-tamil {
+        line-height: 1.9 !important;
+    }
+    .verse-en, .font-english {
+        line-height: 1.7 !important;
     }
 </style>
 <script>

@@ -6,7 +6,7 @@
 <div class="max-w-5xl mx-auto px-4 py-4 sm:py-6 pb-32">
 
     <!-- Minimalist Sticky Header Dock -->
-    <div id="reader-toolbar" class="sticky top-16 z-30 mb-6 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-200/80 dark:border-stone-800 rounded-2xl px-4 py-2.5 shadow-sm flex items-center justify-between gap-2 transition-all duration-200">
+    <div id="reader-toolbar" class="sticky top-14 sm:top-16 z-30 mb-6 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-200/80 dark:border-stone-800 rounded-2xl px-4 py-2.5 shadow-sm flex items-center justify-between gap-2 transition-all duration-200">
         
         <!-- Left: Quick Book & Chapter Selectors -->
         <div class="flex items-center space-x-1.5 sm:space-x-2.5 min-w-0">
@@ -15,7 +15,7 @@
                 <span>{{ book.name_en }}</span>
                 <span class="text-[10px] text-stone-400">▾</span>
             </button>
-            <span class="text-stone-400 font-tamil text-xs hidden sm:inline truncate">({{ book.name_ta }})</span>
+            <span class="text-stone-400 font-tamil text-xs hidden sm:inline truncate notranslate" translate="no">({{ book.name_ta }})</span>
 
             <!-- Compact Chapter Dropdown -->
             <select onchange="window.location.href='/read/{{ book.id }}/' + this.value + '?mode={{ mode }}'" 
@@ -33,7 +33,7 @@
             </button>
         </div>
 
-        <!-- Right: Primary Actions & Unified View Menu Popup -->
+        <!-- Right: Primary Actions & View Menu Popup -->
         <div class="flex items-center space-x-1.5 sm:space-x-2">
             
             <!-- Quick Listen Button -->
@@ -44,10 +44,10 @@
                 <span>▶</span> <span class="hidden sm:inline">Listen</span>
             </button>
 
-            <!-- Compact Read Status Checkbox Button -->
+            <!-- Compact Read Status Checkbox Button (Icon Only) -->
             <button type="button"
                     onclick="toggleChapterRead({{ book.id }}, {{ chapter }})"
-                    class="chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 transition shadow-xs cursor-pointer"
+                    class="chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 transition shadow-xs cursor-pointer shrink-0"
                     title="Mark chapter as read">
                 <svg class="w-4 h-4 text-stone-400 dark:text-stone-500 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -83,7 +83,7 @@
                                Parallel
                             </a>
                             <a href="/read/{{ book.id }}/{{ chapter }}?mode=ta" 
-                               class="py-1 text-center rounded-lg transition font-tamil {% if mode == 'ta' %}bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-400 font-bold shadow-xs{% else %}text-stone-600 dark:text-stone-400{% endif %}">
+                               class="py-1 text-center rounded-lg transition font-tamil notranslate {% if mode == 'ta' %}bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-400 font-bold shadow-xs{% else %}text-stone-600 dark:text-stone-400{% endif %}" translate="no">
                                தமிழ்
                             </a>
                             <a href="/read/{{ book.id }}/{{ chapter }}?mode=en" 
@@ -93,13 +93,15 @@
                         </div>
                     </div>
 
-                    <!-- Font Size Scaling -->
+                    <!-- Persistent Font Size Scaling -->
                     <div class="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
                         <span class="text-xs text-stone-500 dark:text-stone-400">Text Size</span>
                         <div class="flex items-center border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden text-xs">
-                            <button onclick="changeFontSize(-1)" class="px-2.5 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold text-stone-600 dark:text-stone-300">A-</button>
+                            <button onclick="adjustFontSize(-1)" class="px-2.5 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold text-stone-600 dark:text-stone-300 cursor-pointer">A-</button>
                             <span class="text-stone-300 dark:text-stone-700">|</span>
-                            <button onclick="changeFontSize(1)" class="px-2.5 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold text-stone-600 dark:text-stone-300">A+</button>
+                            <button onclick="adjustFontSize(0)" class="px-2 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 text-[11px] text-stone-500 cursor-pointer">Reset</button>
+                            <span class="text-stone-300 dark:text-stone-700">|</span>
+                            <button onclick="adjustFontSize(1)" class="px-2.5 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold text-stone-600 dark:text-stone-300 cursor-pointer">A+</button>
                         </div>
                     </div>
 
@@ -143,7 +145,7 @@
     <!-- Verses Container -->
     <div id="reader-content" class="space-y-2 sm:space-y-3">
         {% for v in verses %}
-        <div id="v{{ v.verse }}" class="verse-item group rounded-xl p-3.5 sm:p-4 hover:bg-white dark:hover:bg-stone-900 border border-transparent hover:border-stone-200 dark:hover:border-stone-800 transition duration-150">
+        <div id="v{{ v.verse }}" class="verse-item group rounded-xl p-3.5 sm:p-4 hover:bg-white dark:hover:bg-stone-900 border border-transparent hover:border-stone-200 dark:border-stone-800 transition duration-150">
             
             <!-- Verse Header Line -->
             <div class="flex items-center justify-between text-xs mb-1.5">
@@ -176,30 +178,36 @@
                 </div>
             </div>
 
-            <!-- Verse Body -->
+            <!-- Verse Body (Fixed specificity: text-base removed so dynamic CSS variable rules apply directly) -->
             {% if mode == 'bilingual' %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                <p class="verse-text-en font-english text-stone-800 dark:text-stone-200 text-base leading-relaxed">{{ v.text_en }}</p>
-                <p class="verse-text-ta font-tamil text-stone-900 dark:text-stone-100 text-base md:border-l md:border-stone-100 md:dark:border-stone-800 md:pl-5 pt-1 md:pt-0">{{ v.text_ta }}</p>
+                <p class="verse-text-en verse-en font-english text-stone-800 dark:text-stone-200 leading-relaxed">{{ v.text_en }}</p>
+                <p class="verse-text-ta verse-ta font-tamil notranslate text-stone-900 dark:text-stone-100 md:border-l md:border-stone-100 md:dark:border-stone-800 md:pl-5 pt-1 md:pt-0" translate="no">{{ v.text_ta }}</p>
             </div>
             {% elif mode == 'ta' %}
-            <p class="verse-text-ta font-tamil text-stone-900 dark:text-stone-100 text-lg leading-relaxed">{{ v.text_ta }}</p>
+            <p class="verse-text-ta verse-ta font-tamil notranslate text-stone-900 dark:text-stone-100 leading-relaxed" translate="no">{{ v.text_ta }}</p>
             {% elif mode == 'en' %}
-            <p class="verse-text-en font-english text-stone-800 dark:text-stone-200 text-lg leading-relaxed">{{ v.text_en }}</p>
+            <p class="verse-text-en verse-en font-english text-stone-800 dark:text-stone-200 leading-relaxed">{{ v.text_en }}</p>
             {% endif %}
 
         </div>
         {% endfor %}
     </div>
 
-    <!-- Chapter Completion Section -->
-    <div class="my-10 p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl text-center space-y-3 shadow-xs">
-        <p class="font-cinzel text-sm font-semibold text-stone-700 dark:text-stone-300">Finished Reading {{ book.name_en }} {{ chapter }}?</p>
+    <!-- Chapter Completion Section (Clean Icon Only) -->
+    <div class="my-10 p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl flex items-center justify-between shadow-xs">
+        <div>
+            <p class="font-cinzel text-sm font-semibold text-stone-800 dark:text-stone-200">Completed {{ book.name_en }} {{ chapter }}?</p>
+            <p class="font-tamil text-xs text-stone-400 notranslate" translate="no">அத்தியாயம் வாசித்து முடித்தீர்களா?</p>
+        </div>
         <div>
             <button type="button" 
                     onclick="window.toggleChapterRead({{ book.id }}, {{ chapter }})" 
-                    class="chapter-read-btn px-6 py-2.5 rounded-xl text-xs font-bold border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:border-amber-600">
-                Mark as Read ✓
+                    class="chapter-read-btn flex items-center justify-center w-10 h-10 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 transition shadow-xs cursor-pointer"
+                    title="Mark chapter as read">
+                <svg class="w-5 h-5 text-stone-400 dark:text-stone-500 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
             </button>
         </div>
     </div>
@@ -262,7 +270,7 @@
             {% for b in books %}
             <a href="/read/{{ b[0] }}/1?mode={{ mode }}" class="p-2 rounded-xl border border-stone-200 dark:border-stone-800 hover:border-amber-700 hover:bg-amber-50/40 dark:hover:bg-stone-800/60 block">
                 <span class="font-semibold block text-stone-900 dark:text-stone-100">{{ b[1] }}</span>
-                <span class="font-tamil text-stone-500 text-[11px] block truncate">{{ b[2] }}</span>
+                <span class="font-tamil text-stone-500 text-[11px] block truncate notranslate" translate="no">{{ b[2] }}</span>
             </a>
             {% endfor %}
         </div>
@@ -306,11 +314,17 @@
         window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
         window.applyHighlights();
     }
+    if (typeof window.applyPersistentFontSize === 'function') {
+        window.applyPersistentFontSize();
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         if (typeof window.updateChapterReadUI === 'function') {
             window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
             window.applyHighlights();
+        }
+        if (typeof window.applyPersistentFontSize === 'function') {
+            window.applyPersistentFontSize();
         }
         if (window.bibleAudio) {
             window.bibleAudio.init({{ book.id }}, {{ chapter }}, {{ next_ch or 'null' }}, '{{ mode }}');
@@ -329,13 +343,6 @@
             menu.classList.add('hidden');
         }
     });
-
-    function changeFontSize(delta) {
-        document.querySelectorAll('.verse-text-en, .verse-text-ta').forEach(el => {
-            const currentSize = parseFloat(window.getComputedStyle(el).fontSize);
-            el.style.fontSize = (currentSize + delta) + 'px';
-        });
-    }
 
     function toggleZenMode() {
         const header = document.getElementById('site-header');
