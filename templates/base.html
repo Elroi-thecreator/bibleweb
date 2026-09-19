@@ -38,11 +38,31 @@
         }
     </script>
     <style>
-        .font-tamil { font-family: 'Noto Serif Tamil', serif; line-height: 2.1; }
-        .font-english { font-family: 'Lora', serif; line-height: 1.85; }
-        body.theme-sepia { background-color: #FAF6EE; color: #2D241E; }
-        body.theme-sepia .bg-card { background-color: #F3EBDD; border-color: #E2D3BF; }
-    </style>
+    :root {
+        --reader-font-size: 18px;
+    }
+    .font-tamil { font-family: 'Noto Serif Tamil', serif; line-height: 2.1; }
+    .font-english { font-family: 'Lora', serif; line-height: 1.85; }
+    body.theme-sepia { background-color: #FAF6EE; color: #2D241E; }
+    body.theme-sepia .bg-card { background-color: #F3EBDD; border-color: #E2D3BF; }
+
+    /* Force all verse text to listen to the CSS variable */
+    .verse-text, 
+    .verse-text p,
+    .verse-text span,
+    .verse-ta, 
+    .verse-en,
+    .reader-verse-content {
+        font-size: var(--reader-font-size) !important;
+    }
+</style>
+<script>
+    // Set root variable before rendering begins to prevent flicker
+    (function() {
+        const savedSize = localStorage.getItem('bible_font_size') || '18';
+        document.documentElement.style.setProperty('--reader-font-size', savedSize + 'px');
+    })();
+</script>
 </head>
 <body translate="no" class="notranslate bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100 transition-colors duration-200 min-h-screen flex flex-col font-serif">
 
