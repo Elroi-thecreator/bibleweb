@@ -12,7 +12,6 @@ const STORAGE_KEYS = {
 // ==========================================
 // VAPID Configuration for Web Push
 // ==========================================
-// Paste the Public Key you generated in the browser console here:
 const VAPID_PUBLIC_KEY = "PASTE_YOUR_PUBLIC_KEY_HERE";
 
 function urlBase64ToUint8Array(base64String) {
@@ -51,7 +50,6 @@ async function subscribeToPushNotifications(reminderTime = "07:00") {
 
         const subJson = subscription.toJSON();
 
-        // Store subscription record in Supabase
         if (window.sbClient) {
             const userId = currentAuthUser ? currentAuthUser.id : null;
             const { error } = await window.sbClient
@@ -293,27 +291,42 @@ function updateReaderUIForPlan(planId, bookId, ch) {
 window.updateReaderUIForPlan = updateReaderUIForPlan;
 
 // ==========================================
-// 4. Persistent Font-Size Engine
+// 4. Robust Persistent Font-Size Engine
 // ==========================================
 function applyPersistentFontSize() {
     const size = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
     document.documentElement.style.setProperty('--reader-font-size', `${size}px`);
 
-    const reader = document.getElementById('reader-content');
-    if (reader) {
-        reader.style.setProperty('font-size', `${size}px`, 'important');
+    // Ensure style node is present and holds explicit selector rules
+    let styleEl = document.getElementById('dynamic-reader-font-style');
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'dynamic-reader-font-style';
+        document.head.appendChild(styleEl);
     }
-
-    const verses = document.querySelectorAll('.verse-text, .verse-en, .verse-ta, .verse-text-en, .verse-text-ta');
-    verses.forEach(v => {
-        v.style.setProperty('font-size', `${size}px`, 'important');
-    });
+    styleEl.innerHTML = `
+        :root { --reader-font-size: ${size}px; }
+        #reader-container,
+        #reader-content,
+        #reader-content p,
+        #reader-content span,
+        .verse-item,
+        .verse-item p,
+        .verse-item span,
+        .verse-text,
+        .verse-text-en,
+        .verse-text-ta,
+        .verse-en,
+        .verse-ta {
+            font-size: ${size}px !important;
+        }
+    `;
 }
 window.applyPersistentFontSize = applyPersistentFontSize;
 
 function adjustFontSize(delta) {
     const currentSize = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
-    let newSize = delta === 0 ? 18 : Math.min(Math.max(currentSize + (delta * 2), 13), 28);
+    let newSize = delta === 0 ? 18 : Math.min(Math.max(currentSize + (delta * 2), 13), 32);
 
     localStorage.setItem(STORAGE_KEYS.FONT_SIZE, newSize.toString());
     applyPersistentFontSize();
@@ -439,7 +452,7 @@ function exportAllUserData() {
 
         const backupPayload = {
             app: "bilingual_bible_app",
-            version: "2.3",
+            version: "2.4",
             exported_at: new Date().toISOString(),
             data: {
                 bookmarks: getBookmarks(),
