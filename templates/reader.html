@@ -18,7 +18,7 @@
             <span class="text-stone-400 font-tamil text-xs hidden sm:inline truncate notranslate" translate="no">({{ book.name_ta }})</span>
 
             <!-- Compact Chapter Dropdown -->
-            <select onchange="window.location.href='/read/{{ book.id }}/' + this.value + '?mode={{ mode }}'" 
+            <select id="chapter-select-dropdown" onchange="navigateWithPlan(this.value)" 
                     class="bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-semibold rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-700 cursor-pointer">
                 {% for c in range(1, book.total_chapters + 1) %}
                 <option value="{{ c }}" {% if c == chapter %}selected{% endif %}>Ch {{ c }}</option>
@@ -44,9 +44,9 @@
                 <span>▶</span> <span class="hidden sm:inline">Listen</span>
             </button>
 
-            <!-- Compact Read Status Checkbox Button (Icon Only) -->
+            <!-- Context-Aware Read Status Checkbox Button -->
             <button type="button"
-                    onclick="toggleChapterRead({{ book.id }}, {{ chapter }})"
+                    onclick="handleChapterTick()"
                     class="chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 transition shadow-xs cursor-pointer shrink-0"
                     title="Mark chapter as read">
                 <svg class="w-4 h-4 text-stone-400 dark:text-stone-500 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -57,14 +57,14 @@
             <!-- Prev / Next Chapter Buttons -->
             <div class="flex items-center border border-stone-200 dark:border-stone-700 rounded-xl overflow-hidden text-xs">
                 {% if prev_ch %}
-                <a href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="px-2.5 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300">‹</a>
+                <a id="link-prev-ch" href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="px-2.5 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300">‹</a>
                 {% endif %}
                 {% if next_ch %}
-                <a href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="px-2.5 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300">›</a>
+                <a id="link-next-ch" href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="px-2.5 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300">›</a>
                 {% endif %}
             </div>
 
-            <!-- Unified View / Settings Popup Menu -->
+            <!-- Unified View Menu Popup -->
             <div class="relative">
                 <button id="view-menu-btn" onclick="toggleViewMenu()" 
                         class="px-2.5 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl text-xs font-semibold flex items-center gap-1 text-stone-700 dark:text-stone-300 transition cursor-pointer">
@@ -78,15 +78,15 @@
                     <div>
                         <span class="text-[10px] font-cinzel font-bold text-stone-400 uppercase tracking-wider block mb-1.5">Reading Language</span>
                         <div class="grid grid-cols-3 gap-1 bg-stone-100 dark:bg-stone-800 p-1 rounded-xl text-xs">
-                            <a href="/read/{{ book.id }}/{{ chapter }}?mode=bilingual" 
+                            <a id="mode-btn-bilingual" href="/read/{{ book.id }}/{{ chapter }}?mode=bilingual" 
                                class="py-1 text-center rounded-lg transition font-medium {% if mode == 'bilingual' %}bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-400 font-bold shadow-xs{% else %}text-stone-600 dark:text-stone-400{% endif %}">
                                Parallel
                             </a>
-                            <a href="/read/{{ book.id }}/{{ chapter }}?mode=ta" 
+                            <a id="mode-btn-ta" href="/read/{{ book.id }}/{{ chapter }}?mode=ta" 
                                class="py-1 text-center rounded-lg transition font-tamil notranslate {% if mode == 'ta' %}bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-400 font-bold shadow-xs{% else %}text-stone-600 dark:text-stone-400{% endif %}" translate="no">
                                தமிழ்
                             </a>
-                            <a href="/read/{{ book.id }}/{{ chapter }}?mode=en" 
+                            <a id="mode-btn-en" href="/read/{{ book.id }}/{{ chapter }}?mode=en" 
                                class="py-1 text-center rounded-lg transition font-medium {% if mode == 'en' %}bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-400 font-bold shadow-xs{% else %}text-stone-600 dark:text-stone-400{% endif %}">
                                English
                             </a>
@@ -145,7 +145,7 @@
     <!-- Verses Container -->
     <div id="reader-content" class="space-y-2 sm:space-y-3">
         {% for v in verses %}
-        <div id="v{{ v.verse }}" class="verse-item group rounded-xl p-3.5 sm:p-4 hover:bg-white dark:hover:bg-stone-900 border border-transparent hover:border-stone-200 dark:border-stone-800 transition duration-150">
+        <div id="v{{ v.verse }}" class="verse-item group rounded-xl p-3.5 sm:p-4 hover:bg-white dark:hover:bg-stone-900 border border-transparent hover:border-stone-200 dark:hover:border-stone-800 transition duration-150">
             
             <!-- Verse Header Line -->
             <div class="flex items-center justify-between text-xs mb-1.5">
@@ -178,7 +178,7 @@
                 </div>
             </div>
 
-            <!-- Verse Body (Fixed specificity: text-base removed so dynamic CSS variable rules apply directly) -->
+            <!-- Verse Body -->
             {% if mode == 'bilingual' %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <p class="verse-text-en verse-en font-english text-stone-800 dark:text-stone-200 leading-relaxed">{{ v.text_en }}</p>
@@ -194,15 +194,15 @@
         {% endfor %}
     </div>
 
-    <!-- Chapter Completion Section (Clean Icon Only) -->
+    <!-- Chapter Completion Section -->
     <div class="my-10 p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl flex items-center justify-between shadow-xs">
         <div>
             <p class="font-cinzel text-sm font-semibold text-stone-800 dark:text-stone-200">Completed {{ book.name_en }} {{ chapter }}?</p>
-            <p class="font-tamil text-xs text-stone-400 notranslate" translate="no">அத்தியாயம் வாசித்து முடித்தீர்களா?</p>
+            <p id="completion-subtitle" class="font-tamil text-xs text-stone-400 notranslate" translate="no">அத்தியாயம் வாசித்து முடித்தீர்களா?</p>
         </div>
         <div>
             <button type="button" 
-                    onclick="window.toggleChapterRead({{ book.id }}, {{ chapter }})" 
+                    onclick="handleChapterTick()" 
                     class="chapter-read-btn flex items-center justify-center w-10 h-10 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 transition shadow-xs cursor-pointer"
                     title="Mark chapter as read">
                 <svg class="w-5 h-5 text-stone-400 dark:text-stone-500 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -215,10 +215,10 @@
     <!-- Bottom Page Navigation -->
     <div class="flex justify-between items-center py-4">
         {% if prev_ch %}
-        <a href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="px-4 py-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl hover:border-amber-700 text-xs font-semibold">← Previous</a>
+        <a id="link-prev-bottom" href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="px-4 py-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl hover:border-amber-700 text-xs font-semibold">← Previous</a>
         {% else %}<div></div>{% endif %}
         {% if next_ch %}
-        <a href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="px-4 py-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl hover:border-amber-700 text-xs font-semibold">Next →</a>
+        <a id="link-next-bottom" href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="px-4 py-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl hover:border-amber-700 text-xs font-semibold">Next →</a>
         {% endif %}
     </div>
 </div>
@@ -266,9 +266,9 @@
             <h3 class="font-cinzel font-bold text-base">Select Book</h3>
             <button onclick="document.getElementById('quick-nav-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-600 text-xl leading-none cursor-pointer">&times;</button>
         </div>
-        <div class="overflow-y-auto pr-1 py-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+        <div class="overflow-y-auto pr-1 py-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs" id="quick-nav-books-list">
             {% for b in books %}
-            <a href="/read/{{ b[0] }}/1?mode={{ mode }}" class="p-2 rounded-xl border border-stone-200 dark:border-stone-800 hover:border-amber-700 hover:bg-amber-50/40 dark:hover:bg-stone-800/60 block">
+            <a href="/read/{{ b[0] }}/1?mode={{ mode }}" class="quick-nav-book-link p-2 rounded-xl border border-stone-200 dark:border-stone-800 hover:border-amber-700 hover:bg-amber-50/40 dark:hover:bg-stone-800/60 block">
                 <span class="font-semibold block text-stone-900 dark:text-stone-100">{{ b[1] }}</span>
                 <span class="font-tamil text-stone-500 text-[11px] block truncate notranslate" translate="no">{{ b[2] }}</span>
             </a>
@@ -281,11 +281,91 @@
 {% block scripts %}
 <script src="/static/js/audio_player.js"></script>
 <script>
-    // 1. Declare globals immediately
     window.CURRENT_BOOK_ID = Number({{ book.id }});
     window.CURRENT_CHAPTER = Number({{ chapter }});
     window.CURRENT_BOOK_EN = "{{ book.name_en }}";
     window.CURRENT_BOOK_TA = "{{ book.name_ta }}";
+
+    // 1. Detect Active Plan Context from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const ACTIVE_PLAN_ID = urlParams.get('plan_id');
+
+    function navigateWithPlan(ch) {
+        let dest = `/read/${window.CURRENT_BOOK_ID}/${ch}?mode={{ mode }}`;
+        if (ACTIVE_PLAN_ID) dest += `&plan_id=${ACTIVE_PLAN_ID}`;
+        window.location.href = dest;
+    }
+
+    function preservePlanInLinks() {
+        if (!ACTIVE_PLAN_ID) return;
+
+        // Preserve plan_id across top/bottom prev/next controls
+        ['link-prev-ch', 'link-next-ch', 'link-prev-bottom', 'link-next-bottom'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && !el.href.includes('plan_id=')) {
+                el.href += `&plan_id=${ACTIVE_PLAN_ID}`;
+            }
+        });
+
+        // Preserve plan_id across language mode toggles
+        ['mode-btn-bilingual', 'mode-btn-ta', 'mode-btn-en'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && !el.href.includes('plan_id=')) {
+                el.href += `&plan_id=${ACTIVE_PLAN_ID}`;
+            }
+        });
+
+        // Preserve in grid drawer links
+        document.querySelectorAll('.chapter-tray-btn').forEach(btn => {
+            if (!btn.href.includes('plan_id=')) {
+                btn.href += `&plan_id=${ACTIVE_PLAN_ID}`;
+            }
+        });
+
+        // Preserve in quick nav modal links
+        document.querySelectorAll('.quick-nav-book-link').forEach(btn => {
+            if (!btn.href.includes('plan_id=')) {
+                btn.href += `&plan_id=${ACTIVE_PLAN_ID}`;
+            }
+        });
+    }
+
+    // 2. Context-Aware Completion Handler
+    function handleChapterTick() {
+        if (ACTIVE_PLAN_ID) {
+            togglePlanSpecificChapter(ACTIVE_PLAN_ID, window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
+        } else {
+            toggleChapterRead(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
+        }
+    }
+
+    function initReaderContextUI() {
+        if (ACTIVE_PLAN_ID) {
+            updateReaderUIForPlan(ACTIVE_PLAN_ID, window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
+            
+            // Render active plan indicator chip inside reader toolbar
+            const plans = getCustomPlans();
+            const activePlan = plans.find(p => p.id === ACTIVE_PLAN_ID);
+            if (activePlan) {
+                const subTitle = document.getElementById('completion-subtitle');
+                if (subTitle) {
+                    subTitle.innerText = `Plan: ${activePlan.name}`;
+                }
+
+                let badge = document.getElementById('active-plan-badge');
+                if (!badge) {
+                    badge = document.createElement('a');
+                    badge.id = 'active-plan-badge';
+                    badge.href = '/plans';
+                    badge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 truncate max-w-[130px] border border-amber-300 dark:border-amber-800 flex items-center gap-1 cursor-pointer';
+                    badge.innerHTML = `<span>📋</span> <span class="truncate">${activePlan.name}</span>`;
+                    document.getElementById('reader-toolbar').prepend(badge);
+                }
+            }
+        } else {
+            updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
+        }
+    }
 
     function handleBookmarkClick(btn) {
         const item = btn.closest('.verse-item');
@@ -309,22 +389,15 @@
         }
     }
 
-    // 2. Synchronous UI initialization
-    if (typeof window.updateChapterReadUI === 'function') {
-        window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
-        window.applyHighlights();
-    }
-    if (typeof window.applyPersistentFontSize === 'function') {
-        window.applyPersistentFontSize();
-    }
-
+    // 3. Mount UI listeners
     document.addEventListener('DOMContentLoaded', () => {
-        if (typeof window.updateChapterReadUI === 'function') {
-            window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
-            window.applyHighlights();
-        }
+        initReaderContextUI();
+        preservePlanInLinks();
         if (typeof window.applyPersistentFontSize === 'function') {
             window.applyPersistentFontSize();
+        }
+        if (typeof window.applyHighlights === 'function') {
+            window.applyHighlights();
         }
         if (window.bibleAudio) {
             window.bibleAudio.init({{ book.id }}, {{ chapter }}, {{ next_ch or 'null' }}, '{{ mode }}');
