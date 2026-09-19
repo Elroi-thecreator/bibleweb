@@ -156,21 +156,32 @@ window.getReadingStreak = getReadingStreak;
 // Persistent Font-Size Engine
 // ==========================================
 function applyPersistentFontSize() {
-    const size = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
-    document.documentElement.style.setProperty('--reader-font-size', `${size}px`);
+    const saved = localStorage.getItem('bible_font_size') || '18';
+    document.documentElement.style.setProperty('--reader-font-size', saved + 'px');
+    
+    // Direct inline override on the reader container as a fallback
+    const reader = document.getElementById('reader-content') || document.getElementById('reader-container');
+    if (reader) {
+        reader.style.setProperty('font-size', saved + 'px', 'important');
+    }
 }
 window.applyPersistentFontSize = applyPersistentFontSize;
 
 function adjustFontSize(delta) {
-    const currentSize = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
+    const currentSize = parseInt(localStorage.getItem('bible_font_size') || '18');
     let newSize = delta === 0 ? 18 : Math.min(Math.max(currentSize + (delta * 2), 14), 28);
     
-    localStorage.setItem(STORAGE_KEYS.FONT_SIZE, newSize.toString());
-    applyPersistentFontSize();
+    localStorage.setItem('bible_font_size', newSize.toString());
+    document.documentElement.style.setProperty('--reader-font-size', newSize + 'px');
+
+    const reader = document.getElementById('reader-content') || document.getElementById('reader-container');
+    if (reader) {
+        reader.style.setProperty('font-size', newSize + 'px', 'important');
+    }
+
     showToast(`Font size: ${newSize}px`);
 }
 window.adjustFontSize = adjustFontSize;
-
 // ==========================================
 // 4. Bookmarks & Color Highlighting
 // ==========================================
