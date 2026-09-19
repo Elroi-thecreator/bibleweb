@@ -71,22 +71,6 @@ async function toggleChapterRead(bookId, ch) {
 }
 window.toggleChapterRead = toggleChapterRead;
 
-async function markChapterAsReadDirect(bookId, ch) {
-    const b = parseInt(bookId);
-    const c = parseInt(ch);
-    if (isNaN(b) || isNaN(c)) return;
-
-    let records = getReadChapters();
-    const key = `${b}_${c}`;
-    if (!records[key]) {
-        records[key] = new Date().toISOString().split('T')[0];
-        localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
-        updateChapterReadUI(b, c);
-        await syncWithSupabase();
-    }
-}
-window.markChapterAsReadDirect = markChapterAsReadDirect;
-
 function updateChapterReadUI(bookId, ch) {
     const b = parseInt(bookId);
     const c = parseInt(ch);
@@ -153,7 +137,88 @@ function getReadingStreak() {
 window.getReadingStreak = getReadingStreak;
 
 // ==========================================
-// 3. Persistent Font-Size Engine
+// 3. Isolated Custom Plan Operations
+// ==========================================
+function getCustomPlans() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_PLANS) || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+window.getCustomPlans = getCustomPlans;
+
+function isPlanChapterRead(planId, bookId, ch) {
+    const plans = getCustomPlans();
+    const plan = plans.find(p => p.id === planId);
+    if (!plan || !plan.completedChapters) return false;
+    return !!plan.completedChapters[`${bookId}_${ch}`];
+}
+window.isPlanChapterRead = isPlanChapterRead;
+
+async function togglePlanSpecificChapter(planId, bookId, ch) {
+    const b = parseInt(bookId);
+    const c = parseInt(ch);
+    const plans = getCustomPlans();
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+
+    if (!plan.completedChapters) plan.completedChapters = {};
+    const key = `${b}_${c}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    if (plan.completedChapters[key]) {
+        delete plan.completedChapters[key];
+        showToast(`Ch ${c} marked unread in "${plan.name}"`);
+    } else {
+        plan.completedChapters[key] = today;
+        showToast(`Ch ${c} finished in "${plan.name}"! ✓`);
+    }
+
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_PLANS, JSON.stringify(plans));
+    updateReaderUIForPlan(planId, b, c);
+    await syncWithSupabase();
+}
+window.togglePlanSpecificChapter = togglePlanSpecificChapter;
+
+function updateReaderUIForPlan(planId, bookId, ch) {
+    const b = parseInt(bookId);
+    const c = parseInt(ch);
+    const isRead = isPlanChapterRead(planId, b, c);
+
+    const btns = document.querySelectorAll('.chapter-read-btn');
+    btns.forEach(btn => {
+        if (isRead) {
+            btn.innerHTML = `
+                <svg class="w-4 h-4 text-white stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>`;
+            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-emerald-600 text-white border-emerald-500 shrink-0';
+            btn.title = 'Completed in this plan (click to undo)';
+        } else {
+            btn.innerHTML = `
+                <svg class="w-4 h-4 text-stone-400 dark:text-stone-500 hover:text-amber-600 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>`;
+            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-amber-600 shrink-0';
+            btn.title = 'Mark as Read for this plan';
+        }
+    });
+
+    const trayButtons = document.querySelectorAll('.chapter-tray-btn');
+    trayButtons.forEach(btn => {
+        const trayCh = parseInt(btn.dataset.chapter);
+        if (isPlanChapterRead(planId, b, trayCh)) {
+            btn.classList.add('ring-2', 'ring-emerald-500');
+        } else {
+            btn.classList.remove('ring-2', 'ring-emerald-500');
+        }
+    });
+}
+window.updateReaderUIForPlan = updateReaderUIForPlan;
+
+// ==========================================
+// 4. Persistent Font-Size Engine
 // ==========================================
 function applyPersistentFontSize() {
     const size = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
@@ -182,7 +247,7 @@ function adjustFontSize(delta) {
 window.adjustFontSize = adjustFontSize;
 
 // ==========================================
-// 4. Bookmarks & Color Highlighting
+// 5. Bookmarks & Color Highlighting
 // ==========================================
 function getBookmarks() {
     try {
@@ -290,7 +355,7 @@ function copyBilingualVerse(refEn, refTa, textEn, textTa) {
 window.copyBilingualVerse = copyBilingualVerse;
 
 // ==========================================
-// 5. Backup & Restore (JSON Export)
+// 6. Backup & Restore (JSON Export)
 // ==========================================
 function exportAllUserData() {
     try {
@@ -299,7 +364,7 @@ function exportAllUserData() {
 
         const backupPayload = {
             app: "bilingual_bible_app",
-            version: "2.2",
+            version: "2.3",
             exported_at: new Date().toISOString(),
             data: {
                 bookmarks: getBookmarks(),
@@ -369,7 +434,7 @@ function importAllUserData(fileInputEvent, reloadCallback) {
 window.importAllUserData = importAllUserData;
 
 // ==========================================
-// 6. Supabase Auth & Multi-Plan Cloud Sync
+// 7. Supabase Auth & Multi-Plan Cloud Sync
 // ==========================================
 let currentAuthUser = null;
 
@@ -495,7 +560,7 @@ function mergeSyncData(local, remote) {
 
     const mergedHighlights = { ...(remote.highlights || {}), ...(local.highlights || {}) };
 
-    // Merge multi-plans safely by Plan ID
+    // Deep merge multiple plans by ID
     const planMap = new Map();
     [...(remote.custom_reading_plans || []), ...(local.custom_reading_plans || [])].forEach(p => {
         if (!planMap.has(p.id)) {
@@ -570,11 +635,8 @@ async function syncWithSupabase() {
 
         applyPersistentFontSize();
         if (typeof window.updateBookmarkUI === 'function') window.updateBookmarkUI();
-        if (typeof window.updateChapterReadUI === 'function' && window.CURRENT_BOOK_ID) {
-            window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
-        }
-        if (typeof renderAllPlans === 'function') renderAllPlans();
-        if (typeof renderProgressDashboard === 'function') renderProgressDashboard();
+        if (typeof window.renderAllPlans === 'function') renderAllPlans();
+        if (typeof window.renderProgressDashboard === 'function') renderProgressDashboard();
 
         console.log("Supabase multi-plans synced.");
     } catch (err) {
@@ -596,9 +658,5 @@ document.addEventListener('DOMContentLoaded', () => {
     applyCachedAuthUI();
     applyPersistentFontSize();
     updateBookmarkUI();
-    if (typeof window.CURRENT_BOOK_ID !== 'undefined' && typeof window.CURRENT_CHAPTER !== 'undefined') {
-        updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
-        applyHighlights();
-    }
     initSupabaseAuth();
 });
