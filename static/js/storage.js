@@ -153,27 +153,17 @@ function getReadingStreak() {
 window.getReadingStreak = getReadingStreak;
 
 // ==========================================
-// 3. Persistent Font-Size Engine
+// Persistent Font-Size Engine
 // ==========================================
 function applyPersistentFontSize() {
-    const size = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '17');
-    
-    // Apply dynamically to reader content and verse text containers
-    const reader = document.getElementById('reader-content');
-    if (reader) {
-        reader.style.fontSize = `${size}px`;
-    }
-
-    const verses = document.querySelectorAll('.verse-text, .verse-en, .verse-ta');
-    verses.forEach(v => {
-        v.style.fontSize = `${size}px`;
-    });
+    const size = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
+    document.documentElement.style.setProperty('--reader-font-size', `${size}px`);
 }
 window.applyPersistentFontSize = applyPersistentFontSize;
 
 function adjustFontSize(delta) {
-    const currentSize = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '17');
-    let newSize = delta === 0 ? 17 : Math.min(Math.max(currentSize + (delta * 2), 13), 26);
+    const currentSize = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
+    let newSize = delta === 0 ? 18 : Math.min(Math.max(currentSize + (delta * 2), 14), 28);
     
     localStorage.setItem(STORAGE_KEYS.FONT_SIZE, newSize.toString());
     applyPersistentFontSize();
