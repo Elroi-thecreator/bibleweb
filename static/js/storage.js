@@ -30,7 +30,7 @@ function showToast(message) {
 window.showToast = showToast;
 
 // ==========================================
-// 2. Reading Progress Engine (Immediate Cloud Push)
+// 2. Reading Progress Engine (Icon-Only Tick)
 // ==========================================
 function getReadChapters() {
     try {
@@ -66,8 +66,6 @@ async function toggleChapterRead(bookId, ch) {
 
     localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
     updateChapterReadUI(b, c);
-
-    // Push immediately to Supabase
     await syncWithSupabase();
 }
 window.toggleChapterRead = toggleChapterRead;
@@ -83,8 +81,6 @@ async function markChapterAsReadDirect(bookId, ch) {
         records[key] = new Date().toISOString().split('T')[0];
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
         updateChapterReadUI(b, c);
-
-        // Push immediately to Supabase
         await syncWithSupabase();
     }
 }
@@ -97,14 +93,23 @@ function updateChapterReadUI(bookId, ch) {
 
     const isRead = isChapterRead(b, c);
 
+    // Strictly icon-only button (no text)
     const btns = document.querySelectorAll('.chapter-read-btn');
     btns.forEach(btn => {
         if (isRead) {
-            btn.innerHTML = '✓ Completed';
-            btn.className = 'chapter-read-btn flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-xs transition cursor-pointer bg-emerald-700 text-white border-emerald-600';
+            btn.innerHTML = `
+                <svg class="w-4 h-4 text-white stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>`;
+            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-emerald-600 text-white border-emerald-500 shrink-0';
+            btn.title = 'Completed (click to mark unread)';
         } else {
-            btn.innerHTML = 'Mark as Read ✓';
-            btn.className = 'chapter-read-btn flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:border-amber-600';
+            btn.innerHTML = `
+                <svg class="w-4 h-4 text-stone-400 dark:text-stone-500 hover:text-amber-600 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>`;
+            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-amber-600 shrink-0';
+            btn.title = 'Mark as Read';
         }
     });
 
@@ -148,7 +153,36 @@ function getReadingStreak() {
 window.getReadingStreak = getReadingStreak;
 
 // ==========================================
-// 3. Bookmarks & Color Highlighting
+// 3. Persistent Font-Size Engine
+// ==========================================
+function applyPersistentFontSize() {
+    const size = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '17');
+    
+    // Apply dynamically to reader content and verse text containers
+    const reader = document.getElementById('reader-content');
+    if (reader) {
+        reader.style.fontSize = `${size}px`;
+    }
+
+    const verses = document.querySelectorAll('.verse-text, .verse-en, .verse-ta');
+    verses.forEach(v => {
+        v.style.fontSize = `${size}px`;
+    });
+}
+window.applyPersistentFontSize = applyPersistentFontSize;
+
+function adjustFontSize(delta) {
+    const currentSize = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '17');
+    let newSize = delta === 0 ? 17 : Math.min(Math.max(currentSize + (delta * 2), 13), 26);
+    
+    localStorage.setItem(STORAGE_KEYS.FONT_SIZE, newSize.toString());
+    applyPersistentFontSize();
+    showToast(`Font size: ${newSize}px`);
+}
+window.adjustFontSize = adjustFontSize;
+
+// ==========================================
+// 4. Bookmarks & Color Highlighting
 // ==========================================
 function getBookmarks() {
     try {
@@ -256,7 +290,7 @@ function copyBilingualVerse(refEn, refTa, textEn, textTa) {
 window.copyBilingualVerse = copyBilingualVerse;
 
 // ==========================================
-// 4. Backup & Restore (JSON Export)
+// 5. Backup & Restore (JSON Export)
 // ==========================================
 function exportAllUserData() {
     try {
@@ -269,6 +303,7 @@ function exportAllUserData() {
                 highlights: getHighlights(),
                 read_chapters: getReadChapters(),
                 theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
+                font_size: localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '17',
                 plans: {}
             }
         };
@@ -321,6 +356,7 @@ function importAllUserData(fileInputEvent, reloadCallback) {
             if (payloadData.highlights) localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(payloadData.highlights));
             if (payloadData.read_chapters) localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(payloadData.read_chapters));
             if (payloadData.theme) localStorage.setItem(STORAGE_KEYS.THEME, payloadData.theme);
+            if (payloadData.font_size) localStorage.setItem(STORAGE_KEYS.FONT_SIZE, payloadData.font_size);
             if (payloadData.plans) {
                 Object.keys(payloadData.plans).forEach(planKey => {
                     localStorage.setItem(planKey, JSON.stringify(payloadData.plans[planKey]));
@@ -343,7 +379,7 @@ function importAllUserData(fileInputEvent, reloadCallback) {
 window.importAllUserData = importAllUserData;
 
 // ==========================================
-// 5. Supabase Auth & Cloud Sync
+// 6. Supabase Auth & Cloud Sync
 // ==========================================
 let currentAuthUser = null;
 
@@ -391,6 +427,7 @@ function updateSupabaseAuthUI() {
         if (statusLabel) statusLabel.innerText = "Not Connected";
     }
 }
+
 function initSupabaseAuth() {
     applyCachedAuthUI();
     if (!window.sbClient) return;
@@ -413,17 +450,6 @@ function initSupabaseAuth() {
         }
     });
 }
-
-function handleAuthButtonClick() {
-    const cachedEmail = localStorage.getItem(STORAGE_KEYS.CACHED_USER_EMAIL);
-    if (currentAuthUser || cachedEmail) {
-        document.getElementById('account-email-display').innerText = currentAuthUser ? currentAuthUser.email : cachedEmail;
-        document.getElementById('account-modal').classList.remove('hidden');
-    } else {
-        document.getElementById('auth-modal').classList.remove('hidden');
-    }
-}
-window.handleAuthButtonClick = handleAuthButtonClick;
 
 async function handleSendMagicLink(e) {
     e.preventDefault();
@@ -453,7 +479,7 @@ async function handleSendMagicLink(e) {
         alert("Request failed: " + err.message);
     } finally {
         btn.disabled = false;
-        btn.innerText = "Send Sign-In Link →";
+        btn.innerText = "Send Link →";
     }
 }
 window.handleSendMagicLink = handleSendMagicLink;
@@ -464,7 +490,6 @@ async function handleSignOut() {
         await window.sbClient.auth.signOut();
         currentAuthUser = null;
         updateSupabaseAuthUI();
-        document.getElementById('account-modal').classList.add('hidden');
         showToast("Signed out");
     }
 }
@@ -492,7 +517,8 @@ function mergeSyncData(local, remote) {
         bookmarks: Array.from(bookmarkMap.values()),
         highlights: mergedHighlights,
         plans: mergedPlans,
-        theme: local.theme || remote.theme || 'light'
+        theme: local.theme || remote.theme || 'light',
+        font_size: local.font_size || remote.font_size || '17'
     };
 }
 
@@ -505,6 +531,7 @@ async function syncWithSupabase() {
             highlights: getHighlights(),
             read_chapters: getReadChapters(),
             theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
+            font_size: localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '17',
             plans: {}
         };
         for (let i = 0; i < localStorage.length; i++) {
@@ -514,7 +541,7 @@ async function syncWithSupabase() {
             }
         }
 
-        const { data: remoteRow, error: fetchError } = await window.sbClient
+        const { data: remoteRow } = await window.sbClient
             .from('user_bible_sync')
             .select('data')
             .eq('user_id', currentAuthUser.id)
@@ -528,11 +555,11 @@ async function syncWithSupabase() {
         localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(merged.bookmarks));
         localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(merged.highlights));
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(merged.read_chapters));
+        if (merged.font_size) localStorage.setItem(STORAGE_KEYS.FONT_SIZE, merged.font_size);
         Object.keys(merged.plans).forEach(pk => {
             localStorage.setItem(pk, JSON.stringify(merged.plans[pk]));
         });
 
-        // Push immediately to the user_bible_sync table
         await window.sbClient
             .from('user_bible_sync')
             .upsert({
@@ -542,6 +569,7 @@ async function syncWithSupabase() {
                 updated_at: new Date().toISOString()
             });
 
+        applyPersistentFontSize();
         if (typeof window.updateBookmarkUI === 'function') window.updateBookmarkUI();
         if (typeof window.updateChapterReadUI === 'function' && window.CURRENT_BOOK_ID) {
             window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
@@ -563,9 +591,10 @@ function queueCloudSync() {
 }
 window.queueCloudSync = queueCloudSync;
 
-// Safe Init
+// Safe Init on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     applyCachedAuthUI();
+    applyPersistentFontSize();
     updateBookmarkUI();
     if (typeof window.CURRENT_BOOK_ID !== 'undefined' && typeof window.CURRENT_CHAPTER !== 'undefined') {
         updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
