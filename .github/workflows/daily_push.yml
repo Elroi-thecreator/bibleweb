@@ -1,6 +1,25 @@
-- name: Query & Dispatch Notifications
+name: Dispatch Daily Bible Reminders
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  send-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install web-push @supabase/supabase-js
+
+      - name: Query and Dispatch Notifications
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://pyuwejlodeyrvufrxtrf.supabase.co' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
@@ -9,18 +28,29 @@
           const webpush = require("web-push");
           const { createClient } = require("@supabase/supabase-js");
 
-          const supabaseUrl = process.env.SUPABASE_URL || "https://pyuwejlodeyrvufrxtrf.supabase.co";
+          // Safely fallback if the SUPABASE_URL secret is omitted
+          const rawUrl = process.env.SUPABASE_URL;
+          const supabaseUrl = (rawUrl && rawUrl.trim().length > 0)
+            ? rawUrl.trim()
+            : "https://pyuwejlodeyrvufrxtrf.supabase.co";
+
           const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const vapidPublic = process.env.VAPID_PUBLIC_KEY;
+          const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
 
           if (!serviceRoleKey) {
-            console.error("Missing SUPABASE_SERVICE_ROLE_KEY secret in GitHub Actions!");
+            console.error("Missing SUPABASE_SERVICE_ROLE_KEY secret!");
+            process.exit(1);
+          }
+          if (!vapidPublic || !vapidPrivate) {
+            console.error("Missing VAPID keys!");
             process.exit(1);
           }
 
           webpush.setVapidDetails(
             "mailto:admin@elroi-bible.app",
-            process.env.VAPID_PUBLIC_KEY,
-            process.env.VAPID_PRIVATE_KEY
+            vapidPublic,
+            vapidPrivate
           );
 
           const supabase = createClient(supabaseUrl, serviceRoleKey);
