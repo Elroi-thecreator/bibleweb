@@ -6,7 +6,7 @@ const STORAGE_KEYS = {
     THEME: 'bible_app_theme',
     FONT_SIZE: 'bible_font_size',
     CACHED_USER_EMAIL: 'bible_cached_auth_email',
-    CUSTOM_PLAN: 'bible_custom_reading_plan'
+    CUSTOM_PLANS: 'bible_custom_reading_plans'
 };
 
 // ==========================================
@@ -31,7 +31,7 @@ function showToast(message) {
 window.showToast = showToast;
 
 // ==========================================
-// 2. Reading Progress Engine (Icon-Only Tick)
+// 2. Canonical Reading Progress (Independent)
 // ==========================================
 function getReadChapters() {
     try {
@@ -294,34 +294,22 @@ window.copyBilingualVerse = copyBilingualVerse;
 // ==========================================
 function exportAllUserData() {
     try {
-        let customPlan = null;
-        try { customPlan = JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_PLAN) || 'null'); } catch(e){}
+        let customPlans = [];
+        try { customPlans = JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_PLANS) || '[]'); } catch(e){}
 
         const backupPayload = {
             app: "bilingual_bible_app",
-            version: "2.1",
+            version: "2.2",
             exported_at: new Date().toISOString(),
             data: {
                 bookmarks: getBookmarks(),
                 highlights: getHighlights(),
                 read_chapters: getReadChapters(),
+                custom_reading_plans: customPlans,
                 theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
-                font_size: localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18',
-                custom_reading_plan: customPlan,
-                plans: {}
+                font_size: localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18'
             }
         };
-
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('bible_plan_')) {
-                try {
-                    backupPayload.data.plans[key] = JSON.parse(localStorage.getItem(key) || '[]');
-                } catch (e) {
-                    backupPayload.data.plans[key] = [];
-                }
-            }
-        }
 
         const jsonString = JSON.stringify(backupPayload, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
@@ -361,13 +349,8 @@ function importAllUserData(fileInputEvent, reloadCallback) {
             if (payloadData.read_chapters) localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(payloadData.read_chapters));
             if (payloadData.theme) localStorage.setItem(STORAGE_KEYS.THEME, payloadData.theme);
             if (payloadData.font_size) localStorage.setItem(STORAGE_KEYS.FONT_SIZE, payloadData.font_size);
-            if (payloadData.custom_reading_plan) {
-                localStorage.setItem(STORAGE_KEYS.CUSTOM_PLAN, JSON.stringify(payloadData.custom_reading_plan));
-            }
-            if (payloadData.plans) {
-                Object.keys(payloadData.plans).forEach(planKey => {
-                    localStorage.setItem(planKey, JSON.stringify(payloadData.plans[planKey]));
-                });
+            if (payloadData.custom_reading_plans) {
+                localStorage.setItem(STORAGE_KEYS.CUSTOM_PLANS, JSON.stringify(payloadData.custom_reading_plans));
             }
 
             showToast("Backup restored! ✓");
@@ -386,7 +369,7 @@ function importAllUserData(fileInputEvent, reloadCallback) {
 window.importAllUserData = importAllUserData;
 
 // ==========================================
-// 6. Supabase Auth & Cloud Sync
+// 6. Supabase Auth & Multi-Plan Cloud Sync
 // ==========================================
 let currentAuthUser = null;
 
@@ -512,21 +495,26 @@ function mergeSyncData(local, remote) {
 
     const mergedHighlights = { ...(remote.highlights || {}), ...(local.highlights || {}) };
 
-    const mergedPlans = {};
-    const planKeys = new Set([...Object.keys(remote.plans || {}), ...Object.keys(local.plans || {})]);
-    planKeys.forEach(pk => {
-        const days = new Set([...(remote.plans?.[pk] || []), ...(local.plans?.[pk] || [])]);
-        mergedPlans[pk] = Array.from(days).sort((a, b) => a - b);
+    // Merge multi-plans safely by Plan ID
+    const planMap = new Map();
+    [...(remote.custom_reading_plans || []), ...(local.custom_reading_plans || [])].forEach(p => {
+        if (!planMap.has(p.id)) {
+            planMap.set(p.id, p);
+        } else {
+            const existing = planMap.get(p.id);
+            planMap.set(p.id, {
+                ...existing,
+                ...p,
+                completedChapters: { ...(existing.completedChapters || {}), ...(p.completedChapters || {}) }
+            });
+        }
     });
-
-    const customPlan = local.custom_reading_plan || remote.custom_reading_plan || null;
 
     return {
         read_chapters: mergedChapters,
         bookmarks: Array.from(bookmarkMap.values()),
         highlights: mergedHighlights,
-        plans: mergedPlans,
-        custom_reading_plan: customPlan,
+        custom_reading_plans: Array.from(planMap.values()),
         theme: local.theme || remote.theme || 'light',
         font_size: local.font_size || remote.font_size || '18'
     };
@@ -536,11 +524,11 @@ async function syncWithSupabase() {
     if (!window.sbClient || !currentAuthUser) return;
 
     try {
-        let customPlan = null;
+        let customPlans = [];
         try {
-            customPlan = JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_PLAN) || 'null');
+            customPlans = JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_PLANS) || '[]');
         } catch (e) {
-            customPlan = null;
+            customPlans = [];
         }
 
         const localData = {
@@ -549,16 +537,8 @@ async function syncWithSupabase() {
             read_chapters: getReadChapters(),
             theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
             font_size: localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18',
-            custom_reading_plan: customPlan,
-            plans: {}
+            custom_reading_plans: customPlans
         };
-
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith('bible_plan_')) {
-                try { localData.plans[k] = JSON.parse(localStorage.getItem(k) || '[]'); } catch(e){}
-            }
-        }
 
         const { data: remoteRow } = await window.sbClient
             .from('user_bible_sync')
@@ -575,13 +555,9 @@ async function syncWithSupabase() {
         localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(merged.highlights));
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(merged.read_chapters));
         if (merged.font_size) localStorage.setItem(STORAGE_KEYS.FONT_SIZE, merged.font_size);
-        if (merged.custom_reading_plan) {
-            localStorage.setItem(STORAGE_KEYS.CUSTOM_PLAN, JSON.stringify(merged.custom_reading_plan));
+        if (merged.custom_reading_plans) {
+            localStorage.setItem(STORAGE_KEYS.CUSTOM_PLANS, JSON.stringify(merged.custom_reading_plans));
         }
-
-        Object.keys(merged.plans).forEach(pk => {
-            localStorage.setItem(pk, JSON.stringify(merged.plans[pk]));
-        });
 
         await window.sbClient
             .from('user_bible_sync')
@@ -597,12 +573,12 @@ async function syncWithSupabase() {
         if (typeof window.updateChapterReadUI === 'function' && window.CURRENT_BOOK_ID) {
             window.updateChapterReadUI(window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
         }
-        if (typeof renderPlanDashboard === 'function') renderPlanDashboard();
+        if (typeof renderAllPlans === 'function') renderAllPlans();
         if (typeof renderProgressDashboard === 'function') renderProgressDashboard();
 
-        console.log("Supabase plan & data synced.");
+        console.log("Supabase multi-plans synced.");
     } catch (err) {
-        console.warn("Supabase plan sync deferred:", err);
+        console.warn("Supabase multi-plan sync deferred:", err);
     }
 }
 window.syncWithSupabase = syncWithSupabase;
