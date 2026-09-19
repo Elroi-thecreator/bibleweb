@@ -193,14 +193,6 @@ function updateModalCalculations() {
     }
 }
 
-function getCustomPlans() {
-    try {
-        return JSON.parse(localStorage.getItem('bible_custom_reading_plans') || '[]');
-    } catch(e) {
-        return [];
-    }
-}
-
 function saveCustomPlansList(plans) {
     localStorage.setItem('bible_custom_reading_plans', JSON.stringify(plans));
     renderAllPlans();
@@ -238,7 +230,7 @@ function saveNewCustomPlan() {
         endDate: endStr,
         dailyPace: pace,
         reminderTime,
-        completedChapters: {}, // Strictly separate from canonical progress
+        completedChapters: {},
         createdAt: new Date().toISOString()
     };
 
@@ -255,25 +247,6 @@ function deletePlanById(planId) {
         saveCustomPlansList(plans);
         showToast("Plan deleted");
     }
-}
-
-function togglePlanChapter(planId, bookId, ch) {
-    const plans = getCustomPlans();
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) return;
-
-    if (!plan.completedChapters) plan.completedChapters = {};
-    const key = `${bookId}_${ch}`;
-
-    if (plan.completedChapters[key]) {
-        delete plan.completedChapters[key];
-        showToast(`Chapter ${ch} marked unread in plan`);
-    } else {
-        plan.completedChapters[key] = new Date().toISOString().split('T')[0];
-        showToast(`Chapter ${ch} completed in plan! ✓`);
-    }
-
-    saveCustomPlansList(plans);
 }
 
 function recalculatePlanById(planId) {
@@ -384,7 +357,7 @@ function renderAllPlans() {
                     <p class="text-xs text-stone-500 mt-0.5">${m.scope.name} • ${plan.startDate} → ${plan.endDate}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <a href="/read/${m.firstUnread.book}/${m.firstUnread.ch}?mode=bilingual" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition">
+                    <a href="/read/${m.firstUnread.book}/${m.firstUnread.ch}?mode=bilingual&plan_id=${plan.id}" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition">
                         Next: Ch ${m.firstUnread.ch} →
                     </a>
                     <button onclick="downloadPlanICS('${plan.id}')" class="p-2 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 border border-stone-300 dark:border-stone-700 rounded-xl text-xs cursor-pointer" title="Export Calendar Reminder">
