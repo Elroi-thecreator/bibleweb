@@ -15,7 +15,7 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: npm install web-push @supabase/supabase-js
+        run: npm install web-push
 
       - name: Query and Dispatch Notifications
         env:
@@ -26,9 +26,7 @@ jobs:
         run: |
           node -e '
           const webpush = require("web-push");
-          const { createClient } = require("@supabase/supabase-js");
 
-          // Sanitize environment variables by removing accidental quotes, newlines, and trailing spaces
           const clean = (val) => (val || "").replace(/[\r\n\t "]/g, "").trim();
 
           const rawUrl = clean(process.env.SUPABASE_URL);
@@ -52,37 +50,29 @@ jobs:
             vapidPrivate
           );
 
-          // Custom fetch wrapper with detailed network logging
-          const customFetch = async (url, options) => {
-            try {
-              return await fetch(url, options);
-            } catch (err) {
-              console.error("Network fetch failed to URL:", url);
-              if (err.cause) console.error("Underlying cause:", err.cause);
-              throw err;
-            }
-          };
-
-          const supabase = createClient(supabaseUrl, serviceRoleKey, {
-            auth: { persistSession: false, autoRefreshToken: false },
-            global: { fetch: customFetch }
-          });
-
           async function main() {
-            console.log("Connecting to Supabase project:", supabaseUrl);
-            const { data: subs, error } = await supabase
-              .from("user_push_subscriptions")
-              .select("*");
+            console.log("Fetching subscriptions from Supabase REST API...");
+            const endpoint = `${supabaseUrl}/rest/v1/user_push_subscriptions?select=*`;
 
-            if (error) {
-              console.error("Database query failed:", error);
+            const res = await fetch(endpoint, {
+              headers: {
+                "apikey": serviceRoleKey,
+                "Authorization": `Bearer ${serviceRoleKey}`,
+                "Content-Type": "application/json"
+              }
+            });
+
+            if (!res.ok) {
+              const errBody = await res.text();
+              console.error(`HTTP error ${res.status} from Supabase:`, errBody);
               process.exit(1);
             }
 
+            const subs = await res.json();
             console.log(`Found ${subs.length} active subscription(s).`);
 
             if (subs.length === 0) {
-              console.log("No subscriptions found in table user_push_subscriptions.");
+              console.log("No subscriptions registered yet. Please enable push notifications on your app first!");
               return;
             }
 
@@ -107,7 +97,14 @@ jobs:
               } catch (err) {
                 console.warn("Delivery issue:", err.statusCode, err.message);
                 if (err.statusCode === 410 || err.statusCode === 404) {
-                  await supabase.from("user_push_subscriptions").delete().eq("id", sub.id);
+                  // Purge dead endpoint via REST DELETE
+                  await fetch(`${supabaseUrl}/rest/v1/user_push_subscriptions?id=eq.${sub.id}`, {
+                    method: "DELETE",
+                    headers: {
+                      "apikey": serviceRoleKey,
+                      "Authorization": `Bearer ${serviceRoleKey}`
+                    }
+                  });
                   console.log("Purged expired subscription:", sub.id);
                 }
               }
@@ -115,7 +112,7 @@ jobs:
           }
 
           main().catch(err => {
-            console.error("Top-level execution error:", err);
+            console.error("Execution error:", err);
             process.exit(1);
           });
           '
