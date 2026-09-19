@@ -10,7 +10,82 @@ const STORAGE_KEYS = {
 };
 
 // ==========================================
-// 1. Toast Notification Utility (Safe DOM)
+// VAPID Configuration for Web Push
+// ==========================================
+// Paste the Public Key you generated in the browser console here:
+const VAPID_PUBLIC_KEY = "PASTE_YOUR_PUBLIC_KEY_HERE";
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function subscribeToPushNotifications(reminderTime = "07:00") {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        alert("Push notifications are not supported on this browser.");
+        return false;
+    }
+
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            showToast("Notification permission denied");
+            return false;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+        }
+
+        const subJson = subscription.toJSON();
+
+        // Store subscription record in Supabase
+        if (window.sbClient) {
+            const userId = currentAuthUser ? currentAuthUser.id : null;
+            const { error } = await window.sbClient
+                .from('user_push_subscriptions')
+                .upsert({
+                    user_id: userId,
+                    endpoint: subJson.endpoint,
+                    p256dh: subJson.keys.p256dh,
+                    auth: subJson.keys.auth,
+                    reminder_time: reminderTime
+                }, { onConflict: 'endpoint' });
+
+            if (error) {
+                console.error("Failed saving push subscription to Supabase:", error);
+                showToast("Failed to register subscription");
+                return false;
+            } else {
+                showToast(`Daily push reminder enabled for ${reminderTime}! 🔔`);
+                return true;
+            }
+        } else {
+            showToast("Notifications enabled on device!");
+            return true;
+        }
+    } catch (err) {
+        console.error("Push subscription error:", err);
+        showToast("Push registration failed");
+        return false;
+    }
+}
+window.subscribeToPushNotifications = subscribeToPushNotifications;
+
+// ==========================================
+// 1. Toast Notification Utility
 // ==========================================
 function showToast(message) {
     try {
@@ -355,7 +430,7 @@ function copyBilingualVerse(refEn, refTa, textEn, textTa) {
 window.copyBilingualVerse = copyBilingualVerse;
 
 // ==========================================
-// 6. Backup & Restore (JSON Export)
+// 6. Universal JSON Backup & Restore
 // ==========================================
 function exportAllUserData() {
     try {
@@ -560,7 +635,6 @@ function mergeSyncData(local, remote) {
 
     const mergedHighlights = { ...(remote.highlights || {}), ...(local.highlights || {}) };
 
-    // Deep merge multiple plans by ID
     const planMap = new Map();
     [...(remote.custom_reading_plans || []), ...(local.custom_reading_plans || [])].forEach(p => {
         if (!planMap.has(p.id)) {
