@@ -100,17 +100,11 @@ function updateChapterReadUI(bookId, ch) {
     const btns = document.querySelectorAll('.chapter-read-btn');
     btns.forEach(btn => {
         if (isRead) {
-            btn.innerHTML = `<svg class="w-4 h-4 text-white stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-            </svg>`;
-            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-emerald-600 text-white border-emerald-500';
-            btn.title = 'Completed (click to mark unread)';
+            btn.innerHTML = '✓ Completed';
+            btn.className = 'chapter-read-btn flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-xs transition cursor-pointer bg-emerald-700 text-white border-emerald-600';
         } else {
-            btn.innerHTML = `<svg class="w-4 h-4 text-stone-400 dark:text-stone-500 hover:text-amber-600 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-            </svg>`;
-            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-amber-600';
-            btn.title = 'Mark as Read';
+            btn.innerHTML = 'Mark as Read ✓';
+            btn.className = 'chapter-read-btn flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:border-amber-600';
         }
     });
 
@@ -355,41 +349,48 @@ let currentAuthUser = null;
 
 function applyCachedAuthUI() {
     const cachedEmail = localStorage.getItem(STORAGE_KEYS.CACHED_USER_EMAIL);
-    const label = document.getElementById('auth-btn-label');
-    const btn = document.getElementById('auth-btn');
-    if (!label || !btn) return;
+    const navDot = document.getElementById('nav-auth-dot');
+    const loggedInView = document.getElementById('settings-logged-in-view');
+    const loggedOutView = document.getElementById('settings-logged-out-view');
+    const userEmailDisplay = document.getElementById('settings-user-email');
+    const statusLabel = document.getElementById('settings-auth-status');
 
     if (cachedEmail) {
-        const username = cachedEmail.split('@')[0];
-        label.innerText = username.length > 9 ? username.slice(0, 9) + '…' : username;
-        btn.classList.remove('border-stone-300', 'dark:border-stone-700');
-        btn.classList.add('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
+        if (navDot) navDot.classList.remove('hidden');
+        if (loggedInView) loggedInView.classList.remove('hidden');
+        if (loggedOutView) loggedOutView.classList.add('hidden');
+        if (userEmailDisplay) userEmailDisplay.innerText = cachedEmail;
+        if (statusLabel) statusLabel.innerText = "Synced";
     } else {
-        label.innerText = 'Sign In';
-        btn.classList.remove('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
-        btn.classList.add('border-stone-300', 'dark:border-stone-700');
+        if (navDot) navDot.classList.add('hidden');
+        if (loggedInView) loggedInView.classList.add('hidden');
+        if (loggedOutView) loggedOutView.classList.remove('hidden');
+        if (statusLabel) statusLabel.innerText = "Not Connected";
     }
 }
 
 function updateSupabaseAuthUI() {
-    const label = document.getElementById('auth-btn-label');
-    const btn = document.getElementById('auth-btn');
-    if (!label || !btn) return;
+    const navDot = document.getElementById('nav-auth-dot');
+    const loggedInView = document.getElementById('settings-logged-in-view');
+    const loggedOutView = document.getElementById('settings-logged-out-view');
+    const userEmailDisplay = document.getElementById('settings-user-email');
+    const statusLabel = document.getElementById('settings-auth-status');
 
     if (currentAuthUser) {
         localStorage.setItem(STORAGE_KEYS.CACHED_USER_EMAIL, currentAuthUser.email);
-        const username = currentAuthUser.email.split('@')[0];
-        label.innerText = username.length > 9 ? username.slice(0, 9) + '…' : username;
-        btn.classList.remove('border-stone-300', 'dark:border-stone-700');
-        btn.classList.add('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
+        if (navDot) navDot.classList.remove('hidden');
+        if (loggedInView) loggedInView.classList.remove('hidden');
+        if (loggedOutView) loggedOutView.classList.add('hidden');
+        if (userEmailDisplay) userEmailDisplay.innerText = currentAuthUser.email;
+        if (statusLabel) statusLabel.innerText = "Synced";
     } else {
         localStorage.removeItem(STORAGE_KEYS.CACHED_USER_EMAIL);
-        label.innerText = 'Sign In';
-        btn.classList.remove('border-emerald-600', 'text-emerald-700', 'dark:text-emerald-400', 'bg-emerald-50/30');
-        btn.classList.add('border-stone-300', 'dark:border-stone-700');
+        if (navDot) navDot.classList.add('hidden');
+        if (loggedInView) loggedInView.classList.add('hidden');
+        if (loggedOutView) loggedOutView.classList.remove('hidden');
+        if (statusLabel) statusLabel.innerText = "Not Connected";
     }
 }
-
 function initSupabaseAuth() {
     applyCachedAuthUI();
     if (!window.sbClient) return;
