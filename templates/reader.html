@@ -44,7 +44,7 @@
                 <span>▶</span> <span class="hidden sm:inline">Listen</span>
             </button>
 
-            <!-- Context-Aware Read Status Checkbox Button -->
+            <!-- Context-Aware Read Checkbox Button (Strictly Icon Only) -->
             <button type="button"
                     onclick="handleChapterTick()"
                     class="chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 transition shadow-xs cursor-pointer shrink-0"
@@ -93,15 +93,15 @@
                         </div>
                     </div>
 
-                    <!-- Persistent Font Size Scaling -->
+                    <!-- Direct Font Size Controls (Calls global adjustFontSize) -->
                     <div class="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
                         <span class="text-xs text-stone-500 dark:text-stone-400">Text Size</span>
                         <div class="flex items-center border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden text-xs">
-                            <button onclick="adjustFontSize(-1)" class="px-2.5 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold text-stone-600 dark:text-stone-300 cursor-pointer">A-</button>
+                            <button type="button" onclick="adjustFontSize(-1)" class="px-2.5 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold text-stone-600 dark:text-stone-300 cursor-pointer">A-</button>
                             <span class="text-stone-300 dark:text-stone-700">|</span>
-                            <button onclick="adjustFontSize(0)" class="px-2 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 text-[11px] text-stone-500 cursor-pointer">Reset</button>
+                            <button type="button" onclick="adjustFontSize(0)" class="px-2 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 text-[11px] text-stone-500 cursor-pointer">Reset</button>
                             <span class="text-stone-300 dark:text-stone-700">|</span>
-                            <button onclick="adjustFontSize(1)" class="px-2.5 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold text-stone-600 dark:text-stone-300 cursor-pointer">A+</button>
+                            <button type="button" onclick="adjustFontSize(1)" class="px-2.5 py-1 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold text-stone-600 dark:text-stone-300 cursor-pointer">A+</button>
                         </div>
                     </div>
 
@@ -194,7 +194,7 @@
         {% endfor %}
     </div>
 
-    <!-- Chapter Completion Section -->
+    <!-- Chapter Completion Section (Strictly Icon Only) -->
     <div class="my-10 p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl flex items-center justify-between shadow-xs">
         <div>
             <p class="font-cinzel text-sm font-semibold text-stone-800 dark:text-stone-200">Completed {{ book.name_en }} {{ chapter }}?</p>
@@ -299,7 +299,6 @@
     function preservePlanInLinks() {
         if (!ACTIVE_PLAN_ID) return;
 
-        // Preserve plan_id across top/bottom prev/next controls
         ['link-prev-ch', 'link-next-ch', 'link-prev-bottom', 'link-next-bottom'].forEach(id => {
             const el = document.getElementById(id);
             if (el && !el.href.includes('plan_id=')) {
@@ -307,7 +306,6 @@
             }
         });
 
-        // Preserve plan_id across language mode toggles
         ['mode-btn-bilingual', 'mode-btn-ta', 'mode-btn-en'].forEach(id => {
             const el = document.getElementById(id);
             if (el && !el.href.includes('plan_id=')) {
@@ -315,14 +313,12 @@
             }
         });
 
-        // Preserve in grid drawer links
         document.querySelectorAll('.chapter-tray-btn').forEach(btn => {
             if (!btn.href.includes('plan_id=')) {
                 btn.href += `&plan_id=${ACTIVE_PLAN_ID}`;
             }
         });
 
-        // Preserve in quick nav modal links
         document.querySelectorAll('.quick-nav-book-link').forEach(btn => {
             if (!btn.href.includes('plan_id=')) {
                 btn.href += `&plan_id=${ACTIVE_PLAN_ID}`;
@@ -343,7 +339,6 @@
         if (ACTIVE_PLAN_ID) {
             updateReaderUIForPlan(ACTIVE_PLAN_ID, window.CURRENT_BOOK_ID, window.CURRENT_CHAPTER);
             
-            // Render active plan indicator chip inside reader toolbar
             const plans = getCustomPlans();
             const activePlan = plans.find(p => p.id === ACTIVE_PLAN_ID);
             if (activePlan) {

@@ -37,7 +37,9 @@
             }
         }
     </script>
-    <style>
+
+    <!-- Persistent Global Font Engine Stylesheet -->
+    <style id="dynamic-reader-font-style">
         :root {
             --reader-font-size: 18px;
         }
@@ -46,14 +48,47 @@
         body.theme-sepia { background-color: #FAF6EE; color: #2D241E; }
         body.theme-sepia .bg-card { background-color: #F3EBDD; border-color: #E2D3BF; }
 
-        .verse-text, 
+        /* Direct match for every verse paragraph tag in reader.html */
+        #reader-container,
+        #reader-content,
+        #reader-content p,
+        #reader-content span,
+        .verse-item,
+        .verse-item p,
+        .verse-item span,
+        .verse-text,
         .verse-text-en,
         .verse-text-ta,
-        .verse-ta, 
-        .verse-en {
+        .verse-en,
+        .verse-ta {
             font-size: var(--reader-font-size) !important;
         }
+
+        /* Proportional line heights */
+        .verse-text-ta, .verse-ta, .font-tamil {
+            line-height: 1.95 !important;
+        }
+        .verse-text-en, .verse-en, .font-english {
+            line-height: 1.75 !important;
+        }
     </style>
+
+    <!-- Synchronous Font & Theme Restoration (Zero FOUT / Instant Apply) -->
+    <script>
+        (function() {
+            try {
+                var savedTheme = localStorage.getItem('bible_app_theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else if (savedTheme === 'sepia') {
+                    document.body.classList.add('theme-sepia');
+                }
+
+                var savedSize = localStorage.getItem('bible_font_size') || '18';
+                document.documentElement.style.setProperty('--reader-font-size', savedSize + 'px');
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body translate="no" class="notranslate bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100 transition-colors duration-200 min-h-screen flex flex-col font-serif">
 
@@ -205,7 +240,7 @@
                 </div>
             </div>
 
-            <!-- Persistent Font Size Scaling -->
+            <!-- Persistent Font Size Scaling (Settings Modal) -->
             <div class="space-y-2 mb-4">
                 <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Text Size / எழுத்து அளவு</label>
                 <div class="flex items-center justify-between gap-2">
@@ -283,7 +318,7 @@
         }
     </script>
 
-    <script src="/static/js/storage.js?v=6.0"></script>
+    <script src="/static/js/storage.js?v=6.5"></script>
     <script>
         function toggleSettingsModal() {
             const modal = document.getElementById('settings-modal');
@@ -308,15 +343,6 @@
                 }
             });
         }
-
-        // Apply saved theme and CSS variable font size before painting
-        (function() {
-            const savedTheme = localStorage.getItem('bible_app_theme') || 'light';
-            setTheme(savedTheme);
-
-            const savedSize = localStorage.getItem('bible_font_size') || '18';
-            document.documentElement.style.setProperty('--reader-font-size', savedSize + 'px');
-        })();
 
         document.getElementById('settings-modal').addEventListener('click', (e) => {
             if (e.target.id === 'settings-modal') toggleSettingsModal();
