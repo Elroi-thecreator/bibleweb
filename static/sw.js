@@ -58,3 +58,57 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// ==========================================
+// Web Push Notification Listeners
+// ==========================================
+
+// 1. Receive incoming push from server/GitHub Actions
+self.addEventListener('push', (event) => {
+    let payload = {
+        title: 'Daily Scripture Reading 📖',
+        body: 'Time for your daily Bible reading portion!',
+        url: '/plans'
+    };
+
+    if (event.data) {
+        try {
+            payload = event.data.json();
+        } catch (e) {
+            payload.body = event.data.text();
+        }
+    }
+
+    const options = {
+        body: payload.body,
+        icon: '/static/icons/icon-192.png',
+        badge: '/static/icons/icon-192.png',
+        vibrate: [100, 50, 100],
+        data: {
+            url: payload.url || '/plans'
+        }
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(payload.title, options)
+    );
+});
+
+// 2. Handle tap/click on notification banner
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const targetUrl = event.notification.data?.url || '/plans';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            for (const client of clientList) {
+                if (client.url.includes(targetUrl) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow(targetUrl);
+            }
+        })
+    );
+});
