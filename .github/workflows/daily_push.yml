@@ -1,0 +1,84 @@
+name: Dispatch Daily Bible Reminders
+
+on:
+  schedule:
+    # Runs automatically at the top of every hour (UTC)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Enables manual trigger button in GitHub UI
+
+jobs:
+  send-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install web-push @supabase/supabase-js
+
+      - name: Query & Dispatch Notifications
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          node -e '
+          const webpush = require("web-push");
+          const { createClient } = require("@supabase/supabase-js");
+
+          webpush.setVapidDetails(
+            "mailto:admin@elroi-bible.app",
+            process.env.VAPID_PUBLIC_KEY,
+            process.env.VAPID_PRIVATE_KEY
+          );
+
+          const supabase = createClient(
+            process.env.SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+          );
+
+          async function main() {
+            const { data: subs, error } = await supabase
+              .from("user_push_subscriptions")
+              .select("*");
+
+            if (error) {
+              console.error("Database query failed:", error.message);
+              process.exit(1);
+            }
+
+            console.log(`Found ${subs.length} active subscription(s).`);
+
+            const payload = JSON.stringify({
+              title: "Daily Scripture Reading 📖",
+              body: "Take a moment to read your assigned chapter today!",
+              url: "/plans"
+            });
+
+            for (const sub of subs) {
+              const pushConfig = {
+                endpoint: sub.endpoint,
+                keys: {
+                  p256dh: sub.p256dh,
+                  auth: sub.auth
+                }
+              };
+
+              try {
+                await webpush.sendNotification(pushConfig, payload);
+                console.log("Delivered push to endpoint:", sub.endpoint.slice(0, 35));
+              } catch (err) {
+                console.warn("Delivery issue:", err.statusCode, err.message);
+                if (err.statusCode === 410 || err.statusCode === 404) {
+                  await supabase.from("user_push_subscriptions").delete().eq("id", sub.id);
+                  console.log("Purged expired subscription:", sub.id);
+                }
+              }
+            }
+          }
+
+          main();
+          '
