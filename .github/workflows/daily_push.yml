@@ -1,26 +1,6 @@
-name: Dispatch Daily Bible Reminders
-
-on:
-  schedule:
-    # Runs automatically at the top of every hour (UTC)
-    - cron: '0 * * * *'
-  workflow_dispatch: # Enables manual trigger button in GitHub UI
-
-jobs:
-  send-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Dependencies
-        run: npm install web-push @supabase/supabase-js
-
-      - name: Query & Dispatch Notifications
+- name: Query & Dispatch Notifications
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://pyuwejlodeyrvufrxtrf.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
@@ -29,16 +9,21 @@ jobs:
           const webpush = require("web-push");
           const { createClient } = require("@supabase/supabase-js");
 
+          const supabaseUrl = process.env.SUPABASE_URL || "https://pyuwejlodeyrvufrxtrf.supabase.co";
+          const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+          if (!serviceRoleKey) {
+            console.error("Missing SUPABASE_SERVICE_ROLE_KEY secret in GitHub Actions!");
+            process.exit(1);
+          }
+
           webpush.setVapidDetails(
             "mailto:admin@elroi-bible.app",
             process.env.VAPID_PUBLIC_KEY,
             process.env.VAPID_PRIVATE_KEY
           );
 
-          const supabase = createClient(
-            process.env.SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-          );
+          const supabase = createClient(supabaseUrl, serviceRoleKey);
 
           async function main() {
             const { data: subs, error } = await supabase
@@ -69,7 +54,7 @@ jobs:
 
               try {
                 await webpush.sendNotification(pushConfig, payload);
-                console.log("Delivered push to endpoint:", sub.endpoint.slice(0, 35));
+                console.log("Delivered push to:", sub.endpoint.slice(0, 35));
               } catch (err) {
                 console.warn("Delivery issue:", err.statusCode, err.message);
                 if (err.statusCode === 410 || err.statusCode === 404) {
