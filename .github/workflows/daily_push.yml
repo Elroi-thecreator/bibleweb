@@ -12,7 +12,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Dependencies
         run: npm install web-push @supabase/supabase-js
@@ -28,7 +28,6 @@ jobs:
           const webpush = require("web-push");
           const { createClient } = require("@supabase/supabase-js");
 
-          // Safely fallback if the SUPABASE_URL secret is omitted
           const rawUrl = process.env.SUPABASE_URL;
           const supabaseUrl = (rawUrl && rawUrl.trim().length > 0)
             ? rawUrl.trim()
@@ -53,7 +52,16 @@ jobs:
             vapidPrivate
           );
 
-          const supabase = createClient(supabaseUrl, serviceRoleKey);
+          // Disable Realtime WebSocket initialization
+          const supabase = createClient(supabaseUrl, serviceRoleKey, {
+            auth: {
+              persistSession: false,
+              autoRefreshToken: false
+            },
+            realtime: {
+              enabled: false
+            }
+          });
 
           async function main() {
             const { data: subs, error } = await supabase
