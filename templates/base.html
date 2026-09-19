@@ -46,7 +46,7 @@
 </head>
 <body translate="no" class="notranslate bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100 transition-colors duration-200 min-h-screen flex flex-col font-serif">
 
-    <!-- Header Navigation (Uncluttered & Clean) -->
+    <!-- Header Navigation -->
     <header id="site-header" class="sticky top-0 z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
             
@@ -68,7 +68,7 @@
                 </div>
             </form>
 
-            <!-- Nav Actions: Plans, Progress, Bookmarks & Settings -->
+            <!-- Nav Actions -->
             <div class="flex items-center space-x-1 sm:space-x-1.5 text-xs shrink-0">
                 <a href="/plans" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center gap-1 font-medium" title="Reading Plans">
                     <span>📅</span> <span class="hidden md:inline">Plans</span>
@@ -82,7 +82,7 @@
                     <span>★</span> <span class="hidden md:inline">Saved</span>
                 </a>
 
-                <!-- Settings Trigger Button (With status dot when signed in) -->
+                <!-- Settings Trigger Button -->
                 <button onclick="toggleSettingsModal()" 
                         class="relative p-1.5 sm:px-2.5 py-1.5 rounded-xl border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition cursor-pointer flex items-center gap-1.5 text-xs" 
                         title="Appearance & Settings">
@@ -126,7 +126,6 @@
                     <span id="settings-auth-status" class="text-[10px] text-stone-400 font-medium">Not Connected</span>
                 </div>
 
-                <!-- Shown when Signed In -->
                 <div id="settings-logged-in-view" class="hidden space-y-2 pt-1">
                     <div class="flex items-center justify-between text-xs">
                         <span id="settings-user-email" class="font-mono text-emerald-600 dark:text-emerald-400 truncate max-w-[190px]"></span>
@@ -142,9 +141,8 @@
                     </div>
                 </div>
 
-                <!-- Shown when Signed Out -->
                 <div id="settings-logged-out-view" class="pt-1">
-                    <p class="text-[11px] text-stone-500 mb-2">Save your reading marks, streak, and bookmarks permanently across your devices.</p>
+                    <p class="text-[11px] text-stone-500 mb-2">Save your reading marks, streak, and bookmarks permanently across all devices.</p>
                     <button onclick="toggleSettingsModal(); document.getElementById('auth-modal').classList.remove('hidden');" 
                             class="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
                         <span>☁️</span> <span>Sign In with Email</span>
@@ -177,7 +175,7 @@
                 </div>
             </div>
 
-            <!-- Font Size Scaling -->
+            <!-- Persistent Font Size Scaling -->
             <div class="space-y-2 mb-4">
                 <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Text Size / எழுத்து அளவு</label>
                 <div class="flex items-center justify-between gap-2">
@@ -245,18 +243,17 @@
         </div>
     </div>
 
-    <!-- Official Supabase Client SDK -->
+    <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         window.SUPABASE_URL = "https://pyuwejlodeyrvufrxtrf.supabase.co";
-        // Paste your Supabase publishable anon key below:
         window.SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
         if (window.supabase && window.SUPABASE_ANON_KEY && !window.SUPABASE_ANON_KEY.includes("PASTE_YOUR")) {
             window.sbClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
         }
     </script>
 
-    <script src="/static/js/storage.js?v=5.4"></script>
+    <script src="/static/js/storage.js?v=5.5"></script>
     <script>
         function toggleSettingsModal() {
             const modal = document.getElementById('settings-modal');
@@ -282,36 +279,23 @@
             });
         }
 
-        function adjustFontSize(delta) {
-            const currentSize = parseInt(localStorage.getItem('bible_font_size') || '16');
-            let newSize = delta === 0 ? 16 : Math.min(Math.max(currentSize + (delta * 2), 12), 24);
-            localStorage.setItem('bible_font_size', newSize);
-            
-            const readerContent = document.getElementById('reader-content');
-            if (readerContent) {
-                readerContent.style.fontSize = `${newSize}px`;
-            }
-            showToast(`Text size: ${newSize}px`);
-        }
-
+        // Apply theme and font size immediately before full parse
         (function() {
             const savedTheme = localStorage.getItem('bible_app_theme') || 'light';
             setTheme(savedTheme);
 
-            const savedSize = localStorage.getItem('bible_font_size');
-            if (savedSize) {
-                const readerContent = document.getElementById('reader-content');
-                if (readerContent) readerContent.style.fontSize = `${savedSize}px`;
-            }
+            const savedSize = localStorage.getItem('bible_font_size') || '17';
+            const style = document.createElement('style');
+            style.id = 'inline-persistent-font';
+            style.innerHTML = `#reader-content, .verse-text, .verse-en, .verse-ta { font-size: ${savedSize}px !important; }`;
+            document.head.appendChild(style);
         })();
 
         document.getElementById('settings-modal').addEventListener('click', (e) => {
             if (e.target.id === 'settings-modal') toggleSettingsModal();
         });
 
-        // ==========================================
-        // PWA Installation Handlers
-        // ==========================================
+        // PWA Prompt
         let deferredPrompt = null;
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -359,7 +343,6 @@
             deferredPrompt = null;
         });
 
-        // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js').catch(err => {
