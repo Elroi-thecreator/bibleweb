@@ -23,6 +23,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          IS_MANUAL_TRIGGER: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           node -e '
           const webpush = require("web-push");
@@ -34,13 +35,10 @@ jobs:
           const serviceRoleKey = clean(process.env.SUPABASE_SERVICE_ROLE_KEY);
           const vapidPublic = clean(process.env.VAPID_PUBLIC_KEY);
           const vapidPrivate = clean(process.env.VAPID_PRIVATE_KEY);
+          const isManual = process.env.IS_MANUAL_TRIGGER === "true";
 
-          if (!serviceRoleKey) {
-            console.error("Missing or empty SUPABASE_SERVICE_ROLE_KEY secret!");
-            process.exit(1);
-          }
-          if (!vapidPublic || !vapidPrivate) {
-            console.error("Missing or empty VAPID keys!");
+          if (!serviceRoleKey || !vapidPublic || !vapidPrivate) {
+            console.error("Missing required secrets!");
             process.exit(1);
           }
 
@@ -50,10 +48,63 @@ jobs:
             vapidPrivate
           );
 
-          async function main() {
-            console.log("Fetching subscriptions from Supabase REST API...");
-            const endpoint = `${supabaseUrl}/rest/v1/user_push_subscriptions?select=*`;
+          // Daily Bilingual Verses Bank
+          const VERSES_OF_THE_DAY = [
+            {
+              ref: "Psalm 119:105",
+              en: "Your word is a lamp to my feet and a light to my path.",
+              ta: "உம்முடைய வசனம் என் கால்களுக்குத் தீபமும், என் பாதைக்கு வெளிச்சமுமாயிருக்கிறது."
+            },
+            {
+              ref: "Philippians 4:13",
+              en: "I can do all things through Christ who strengthens me.",
+              ta: "என்னைப் பெலப்படுத்துகிற கிறிஸ்துவினாலே எல்லாவற்றையுஞ்செய்ய எனக்குப் பெலனுண்டு."
+            },
+            {
+              ref: "Jeremiah 29:11",
+              en: "For I know the plans I have for you, declares the Lord.",
+              ta: "நீங்கள் எதிர்பார்த்திருக்கும் முடிவை உங்களுக்குக் கொடுக்கும்படிக்கு நான் உங்களைப்பற்றி நினைத்திருக்கிற நினைவுகளை அறிவேன்."
+            },
+            {
+              ref: "Proverbs 3:5",
+              en: "Trust in the Lord with all your heart and lean not on your own understanding.",
+              ta: "உன் சுயபுத்தியின்மேல் சாயாமல், உன் முழு இருதயத்தோடும் கர்த்தரில் நம்பிக்கையாயிரு."
+            },
+            {
+              ref: "Isaiah 41:10",
+              en: "Fear not, for I am with you; be not dismayed, for I am your God.",
+              ta: "நீ பயப்படாதே, நான் உன்னுடனே இருக்கிறேன்; திகையாதே, நான் உன் தேவன்."
+            },
+            {
+              ref: "Matthew 6:33",
+              en: "Seek first the kingdom of God and his righteousness.",
+              ta: "முதலாவது தேவனுடைய ராஜ்யத்தையும் அவருடைய நீதியையும் தேடுங்கள்."
+            },
+            {
+              ref: "John 14:6",
+              en: "I am the way, the truth, and the life.",
+              ta: "நானே வழியும் சத்தியமும் ஜீவனுமாயிருக்கிறேன்."
+            }
+          ];
 
+          // Compute Day of Year to select verse deterministically
+          const now = new Date();
+          const start = new Date(now.getFullYear(), 0, 0);
+          const diff = now - start;
+          const oneDay = 1000 * 60 * 60 * 24;
+          const dayOfYear = Math.floor(diff / oneDay);
+          const dailyVerse = VERSES_OF_THE_DAY[dayOfYear % VERSES_OF_THE_DAY.length];
+
+          // Current Hour in IST (UTC+5:30) and UTC
+          const istOffsetMs = 5.5 * 60 * 60 * 1000;
+          const istDate = new Date(now.getTime() + istOffsetMs);
+          const istHourStr = String(istDate.getUTCHours()).padStart(2, "0");
+          const utcHourStr = String(now.getUTCHours()).padStart(2, "0");
+
+          console.log(`Current Time Check -> UTC: ${utcHourStr}:00 | IST: ${istHourStr}:00`);
+
+          async function main() {
+            const endpoint = `${supabaseUrl}/rest/v1/user_push_subscriptions?select=*`;
             const res = await fetch(endpoint, {
               headers: {
                 "apikey": serviceRoleKey,
@@ -64,25 +115,31 @@ jobs:
 
             if (!res.ok) {
               const errBody = await res.text();
-              console.error(`HTTP error ${res.status} from Supabase:`, errBody);
+              console.error(`HTTP error ${res.status}:`, errBody);
               process.exit(1);
             }
 
-            const subs = await res.json();
-            console.log(`Found ${subs.length} active subscription(s).`);
+            const allSubs = await res.json();
+            console.log(`Total subscriptions stored: ${allSubs.length}`);
 
-            if (subs.length === 0) {
-              console.log("No subscriptions registered yet. Please enable push notifications on your app first!");
-              return;
-            }
+            // Filter subscriptions matching the current hour (checks both IST & UTC matches)
+            const targetSubs = isManual ? allSubs : allSubs.filter(sub => {
+              const pref = (sub.reminder_time || "07:00").trim();
+              const prefHour = pref.split(":")[0];
+              return prefHour === istHourStr || prefHour === utcHourStr;
+            });
+
+            console.log(`Subscriptions scheduled for this hour: ${targetSubs.length} (Manual mode: ${isManual})`);
+
+            if (targetSubs.length === 0) return;
 
             const payload = JSON.stringify({
-              title: "Daily Scripture Reading 📖",
-              body: "Take a moment to read your assigned chapter today!",
+              title: `✝ ${dailyVerse.ref}`,
+              body: `${dailyVerse.ta}\n"${dailyVerse.en}"`,
               url: "/plans"
             });
 
-            for (const sub of subs) {
+            for (const sub of targetSubs) {
               const pushConfig = {
                 endpoint: sub.endpoint,
                 keys: {
@@ -93,11 +150,10 @@ jobs:
 
               try {
                 await webpush.sendNotification(pushConfig, payload);
-                console.log("Delivered push to:", sub.endpoint.slice(0, 35));
+                console.log("Push delivered to:", sub.endpoint.slice(0, 35));
               } catch (err) {
-                console.warn("Delivery issue:", err.statusCode, err.message);
+                console.warn("Delivery error:", err.statusCode, err.message);
                 if (err.statusCode === 410 || err.statusCode === 404) {
-                  // Purge dead endpoint via REST DELETE
                   await fetch(`${supabaseUrl}/rest/v1/user_push_subscriptions?id=eq.${sub.id}`, {
                     method: "DELETE",
                     headers: {
@@ -105,14 +161,14 @@ jobs:
                       "Authorization": `Bearer ${serviceRoleKey}`
                     }
                   });
-                  console.log("Purged expired subscription:", sub.id);
+                  console.log("Purged inactive subscriber:", sub.id);
                 }
               }
             }
           }
 
           main().catch(err => {
-            console.error("Execution error:", err);
+            console.error("Runner failure:", err);
             process.exit(1);
           });
           '
