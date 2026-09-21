@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6 relative" id="player-container">
+
+    <!-- 1. INTRO OVERLAY (5 Seconds Countdown) -->
+    <div id="intro-card" class="fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white">
+        <span class="text-xs uppercase font-bold tracking-widest text-amber-400 mb-2">Day {{ day.day }} of {{ plan.total_days }}</span>
+        <h2 class="text-2xl sm:text-3xl font-bold mb-4">{{ day.intro.display_ta }}</h2>
+        <p class="text-stone-300 text-base sm:text-lg mb-8 font-serif">{{ day.intro.display_en }}</p>
+
+        <!-- 5-Second Animated Circular Timer -->
+        <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path id="intro-progress-bar" class="text-amber-500 transition-all duration-1000 ease-linear" stroke-dasharray="100, 100" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <span id="intro-timer-num" class="absolute font-bold text-lg text-white">5</span>
+        </div>
+
+        <button onclick="skipIntro()" class="text-xs text-stone-400 hover:text-white underline cursor-pointer">
+            Skip Intro
+        </button>
+    </div>
+
+    <!-- 2. READING HEADER & START BUTTON BAR -->
+    <header class="flex items-center justify-between border-b border-stone-200 dark:border-stone-800 pb-4 mb-6 sticky top-14 bg-white/90 dark:bg-stone-900/90 backdrop-blur z-20">
+        <div>
+            <span class="text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-wider">{{ plan.name_ta }}</span>
+            <h1 class="text-lg font-bold text-stone-900 dark:text-stone-100">{{ day.intro.display_ta }}</h1>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button id="start-read-btn" onclick="startReadingSession()" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md cursor-pointer transition">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
+                <span>Start Reading</span>
+            </button>
+            <button id="finish-btn" onclick="triggerOutroBlessing()" class="hidden px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md cursor-pointer transition">
+                <span>Complete Day</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 3. BIBLE CHAPTERS STREAM -->
+    <div id="scripture-stream" class="space-y-12">
+        {% for ch in chapters %}
+        <section class="chapter-block" data-book-id="{{ ch.book_id }}" data-chapter="{{ ch.chapter }}">
+            <div class="mb-4 pb-2 border-b border-stone-100 dark:border-stone-800 flex justify-between items-baseline">
+                <h2 class="text-xl font-bold text-stone-900 dark:text-stone-100">{{ ch.book_name_ta }} {{ ch.chapter }}</h2>
+                <span class="text-sm text-stone-400">{{ ch.book_name_en }} {{ ch.chapter }}</span>
+            </div>
+
+            <div class="space-y-4 text-base leading-relaxed">
+                {% for v in ch.verses %}
+                <div class="verse-row flex gap-3 group" id="v-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}">
+                    <span class="text-xs font-bold text-stone-400 dark:text-stone-500 select-none pt-1">{{ v.verse }}</span>
+                    <div class="flex-1 space-y-1">
+                        <p class="text-stone-900 dark:text-stone-100">{{ v.text_ta }}</p>
+                        <p class="text-sm text-stone-500 dark:text-stone-400 font-serif">{{ v.text_en }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+
+    <!-- 4. OUTRO BLESSING OVERLAY (5 Seconds Auto-Complete) -->
+    <div id="outro-card" class="hidden fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white">
+        <span class="text-xs uppercase font-bold tracking-widest text-emerald-400 mb-2">Today's Blessing / ஆசீர்வாத வசனம்</span>
+        <span class="text-amber-400 text-sm font-semibold mb-4">{{ day.outro.ref }}</span>
+        
+        <h2 class="text-xl sm:text-2xl font-bold mb-3 max-w-xl leading-snug">{{ day.outro.ta }}</h2>
+        <p class="text-stone-300 text-sm sm:text-base mb-8 max-w-xl font-serif italic">{{ day.outro.en }}</p>
+
+        <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path id="outro-progress-bar" class="text-emerald-500 transition-all duration-1000 ease-linear" stroke-dasharray="100, 100" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <span id="outro-timer-num" class="absolute font-bold text-lg text-white">5</span>
+        </div>
+
+        <p class="text-xs text-stone-400">Marking progress and saving to cloud...</p>
+    </div>
+</div>
+
+<script>
+const PLAN_ID = "{{ plan.id }}";
+const CURRENT_DAY = {{ day.day }};
+const CHAPTERS_LIST = {{ day.chapters | tojson }};
+
+let introTimer = null;
+let introSeconds = 5;
+
+// 1. Run 5s Intro Screen on page load
+window.addEventListener('DOMContentLoaded', () => {
+    const timerText = document.getElementById('intro-timer-num');
+    const progressBar = document.getElementById('intro-progress-bar');
+
+    introTimer = setInterval(() => {
+        introSeconds--;
+        if (timerText) timerText.innerText = introSeconds;
+        if (progressBar) {
+            const pct = (introSeconds / 5) * 100;
+            progressBar.setAttribute('stroke-dasharray', `${pct}, 100`);
+        }
+
+        if (introSeconds <= 0) {
+            clearInterval(introTimer);
+            skipIntro();
+        }
+    }, 1000);
+});
+
+function skipIntro() {
+    if (introTimer) clearInterval(introTimer);
+    document.getElementById('intro-card').classList.add('hidden');
+}
+
+// 2. Start Reading Action
+function startReadingSession() {
+    document.getElementById('start-read-btn').classList.add('hidden');
+    const finishBtn = document.getElementById('finish-btn');
+    finishBtn.classList.remove('hidden');
+    
+    // Smooth scroll down to first chapter
+    window.scrollTo({ top: 120, behavior: 'smooth' });
+}
+
+// 3. Trigger 5s Outro Blessing & Auto-Complete Plan
+function triggerOutroBlessing() {
+    const outroCard = document.getElementById('outro-card');
+    outroCard.classList.remove('hidden');
+
+    let outroSeconds = 5;
+    const timerText = document.getElementById('outro-timer-num');
+    const progressBar = document.getElementById('outro-progress-bar');
+
+    const outroTimer = setInterval(() => {
+        outroSeconds--;
+        if (timerText) timerText.innerText = outroSeconds;
+        if (progressBar) {
+            const pct = (outroSeconds / 5) * 100;
+            progressBar.setAttribute('stroke-dasharray', `${pct}, 100`);
+        }
+
+        if (outroSeconds <= 0) {
+            clearInterval(outroTimer);
+            finalizeDayCompletion();
+        }
+    }, 1000);
+}
+
+// 4. Mark all chapters of today complete in plan storage
+async function finalizeDayCompletion() {
+    if (typeof window.markPlanChapterComplete === 'function') {
+        for (const ch of CHAPTERS_LIST) {
+            window.markPlanChapterComplete(PLAN_ID, ch.book_id, ch.chapter, true);
+        }
+    }
+    
+    // Sync with Supabase cloud
+    if (typeof window.syncWithSupabase === 'function') {
+        await window.syncWithSupabase();
+    }
+
+    // Redirect to plans overview with a completion notice
+    window.location.href = `/plans?completed_day=${CURRENT_DAY}&plan_id=${PLAN_ID}`;
+}
+</script>
+{% endblock %}
