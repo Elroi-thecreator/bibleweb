@@ -2,7 +2,7 @@ import sqlite3
 import json
 import os
 
-DB_PATH = "bible.db"
+DB_PATH = "data/bible.sqlite.db"
 OUT_DIR = os.path.join("static", "plans")
 os.makedirs(OUT_DIR, exist_ok=True)
 
