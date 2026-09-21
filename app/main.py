@@ -6,7 +6,6 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-# Import only the functions exported by app/db.py
 from app.db import (
     get_books,
     get_chapter_verses,
@@ -97,11 +96,11 @@ async def presenter_view(
     )
 
 
-# --- API Routes ---
+# --- API Endpoints ---
 
 @app.get("/api/plans")
 async def list_available_plans():
-    """List available static plans and built-in defaults."""
+    """List available plans from static JSONs or defaults."""
     plans = []
     if PLANS_DIR.exists():
         for f in PLANS_DIR.glob("*.json"):
@@ -143,7 +142,7 @@ async def get_plan_details(plan_id: str):
             with open(target_file, "r", encoding="utf-8") as f:
                 return JSONResponse(content=json.load(f))
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to read plan: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to read plan file: {str(e)}")
 
     if plan_id in DEFAULT_PLANS:
         return JSONResponse(content=DEFAULT_PLANS[plan_id])
