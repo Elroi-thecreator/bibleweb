@@ -12,7 +12,7 @@ from app.db import (
     search_verses,
     get_verse_count_by_book
 )
-from app.plans_data import DEFAULT_PLANS
+import app.plans_data as plans_data
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -96,55 +96,37 @@ async def presenter_view(
     )
 
 
-# --- API Endpoints ---
+# --- Plan Endpoints (Separated) ---
 
-@app.get("/api/plans")
-async def list_available_plans():
-    """List available plans from static JSONs or defaults."""
-    plans = []
-    if PLANS_DIR.exists():
-        for f in PLANS_DIR.glob("*.json"):
-            plan_id = f.stem.replace("plan_", "")
+@app.get("/api/plans/default")
+async def get_default_plans():
+    """Returns the default plan data from app.plans_data."""
+    for attr in ["PLANS", "DEFAULT_PLANS", "plans", "default_plans"]:
+        if hasattr(plans_data, attr):
+            return JSONResponse(content=getattr(plans_data, attr))
+    # Return any public dictionary defined in plans_data
+    for k, v in vars(plans_data).items():
+        if not k.startswith("_") and isinstance(v, (dict, list)):
+            return JSONResponse(content={k: v})
+    return JSONResponse(content={})
+
+
+@app.get("/api/plans/100-days/{plan_id}")
+async def get_100_day_plan(plan_id: str):
+    """Returns specific 100-day plans from static/plans directory."""
+    clean_id = plan_id.replace("plan_", "")
+    candidate_files = [
+        PLANS_DIR / f"{plan_id}.json",
+        PLANS_DIR / f"plan_{plan_id}.json",
+        PLANS_DIR / f"plan_{clean_id}.json"
+    ]
+
+    for file_path in candidate_files:
+        if file_path.is_file():
             try:
-                with open(f, "r", encoding="utf-8") as pf:
-                    data = json.load(pf)
-                    plans.append({
-                        "id": plan_id,
-                        "title": data.get("title", plan_id.replace("_", " ").title()),
-                        "days_count": len(data.get("days", []))
-                    })
-            except Exception:
-                continue
+                with open(file_path, "r", encoding="utf-8") as f:
+                    return JSONResponse(content=json.load(f))
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error reading plan: {str(e)}")
 
-    if not plans:
-        plans = [
-            {"id": "100_whole_bible", "title": "100 Days Through the Whole Bible", "days_count": 100},
-            {"id": "100_new_testament", "title": "100 Days Through the New Testament", "days_count": 100}
-        ]
-
-    return JSONResponse(content=plans)
-
-
-@app.get("/api/plans/{plan_id}")
-async def get_plan_details(plan_id: str):
-    """Retrieve schedule items for a specific reading plan."""
-    candidate_names = [f"{plan_id}.json", f"plan_{plan_id}.json"]
-    target_file = None
-
-    for name in candidate_names:
-        candidate_path = PLANS_DIR / name
-        if candidate_path.is_file():
-            target_file = candidate_path
-            break
-
-    if target_file and target_file.exists():
-        try:
-            with open(target_file, "r", encoding="utf-8") as f:
-                return JSONResponse(content=json.load(f))
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to read plan file: {str(e)}")
-
-    if plan_id in DEFAULT_PLANS:
-        return JSONResponse(content=DEFAULT_PLANS[plan_id])
-
-    raise HTTPException(status_code=404, detail=f"Plan '{plan_id}' not found")
+    raise HTTPException(status_code=404, detail="100-day plan not found")
