@@ -364,7 +364,7 @@ PLANS_DIR = Path(__file__).resolve().parent.parent / "static" / "plans"
 
 
 def _lookup_book_id(book_str: str):
-    """Matches book names, ids, or abbreviations into an integer ID from BOOK_MAP."""
+    """Maps book name, ID, or slug to integer book_id in BOOK_MAP."""
     if not book_str:
         return None
     try:
@@ -412,7 +412,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
     with open(file_path, "r", encoding="utf-8") as f:
         plan_json = json.load(f)
 
-    # 1. Resolve raw days list
+    # 1. Extract days list from JSON
     raw_days = []
     if isinstance(plan_json, list):
         raw_days = plan_json
@@ -424,7 +424,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
         else:
             raw_days = [v for k, v in plan_json.items() if isinstance(v, dict)]
 
-    # Locate target day entry
+    # 2. Locate target day
     target_entry = None
     for entry in raw_days:
         if isinstance(entry, dict) and entry.get("day") == day:
@@ -437,7 +437,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
     if not target_entry:
         raise HTTPException(status_code=404, detail=f"Day {day} not found in {plan_type}")
 
-    # 2. Extract reading items (strings or dicts)
+    # 3. Read chapter portions (e.g. ["Matthew 1", "Matthew 2", ...])
     portions = (
         target_entry.get("portions")
         or target_entry.get("chapters")
@@ -446,94 +446,72 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
         or []
     )
 
-    readings = []
+    chapters_data = []
     for item in portions:
         book_id = None
         chapter = None
 
         if isinstance(item, str):
+            # Parse strings like "Matthew 1", "1 John 2", "மத்தேயு 1"
             match = re.match(r"^(.*?)\s*(\d+)$", item.strip())
             if match:
-                book_name_part, ch_part = match.groups()
-                book_id = _lookup_book_id(book_name_part)
-                chapter = int(ch_part)
+                book_str, ch_str = match.groups()
+                book_id = _lookup_book_id(book_str)
+                chapter = int(ch_str)
         elif isinstance(item, dict):
-            raw_book = item.get("book") or item.get("book_id") or item.get("b")
+            raw_book = item.get("book_id") or item.get("book") or item.get("b")
             raw_ch = item.get("chapter") or item.get("ch") or item.get("c")
             book_id = _lookup_book_id(raw_book)
             if raw_ch is not None:
-                try:
-                    chapter = int(raw_ch)
-                except ValueError:
-                    pass
-        elif isinstance(item, (list, tuple)) and len(item) >= 2:
-            book_id = _lookup_book_id(item[0])
-            try:
-                chapter = int(item[1])
-            except ValueError:
-                pass
+                chapter = int(raw_ch)
 
         if book_id and chapter:
-            verses = get_chapter_verses(book_id, chapter) or []
+            # Query the database
+            raw_verses = get_chapter_verses(book_id, chapter) or []
             book_info = BOOK_MAP.get(book_id, {})
-            b_ta = book_info.get("name_ta", "")
-            b_en = book_info.get("name_en", "")
-            display_name = f"{b_ta} / {b_en}".strip(" /")
 
-            formatted_verses = []
-            for v in verses:
+            # Normalize verse fields to support whatever keys your template/audio uses
+            verses = []
+            for v in raw_verses:
                 if isinstance(v, dict):
-                    v_num = v.get("verse") or v.get("verse_num") or v.get("v")
-                    text = v.get("text_ta") or v.get("text_en") or v.get("text", "")
-                    formatted_verses.append({"verse": v_num, "text": text})
-                elif isinstance(v, (list, tuple)) and len(v) >= 2:
-                    formatted_verses.append({"verse": v[0], "text": v[1]})
+                    verses.append({
+                        "verse": v.get("verse") or v.get("verse_num") or v.get("v"),
+                        "verse_num": v.get("verse_num") or v.get("verse") or v.get("v"),
+                        "text_ta": v.get("text_ta") or v.get("text", ""),
+                        "text_en": v.get("text_en") or v.get("text", ""),
+                        "text": v.get("text_ta") or v.get("text_en") or v.get("text", ""),
+                    })
 
-            readings.append(
-                {
-                    "book_id": book_id,
-                    "book_name": display_name,
-                    "chapter": chapter,
-                    "verses": formatted_verses,
-                }
-            )
+            chapter_dict = {
+                "book_id": book_id,
+                "book": book_info,
+                "book_name": book_info.get("name_ta", "") or book_info.get("name_en", ""),
+                "book_name_en": book_info.get("name_en", ""),
+                "book_name_ta": book_info.get("name_ta", ""),
+                "chapter": chapter,
+                "verses": verses,
+            }
+            chapters_data.append(chapter_dict)
 
-    # 3. Build plan object
-    plan_title = (
-        (plan_json.get("title") if isinstance(plan_json, dict) else None)
-        or default_title
-    )
-    total_days = (
-        (plan_json.get("total_days") if isinstance(plan_json, dict) else None)
-        or len(raw_days)
-        or 100
-    )
+    # 4. Prepare data matching your original template's exact keys
+    day_obj = dict(target_entry)
+    day_obj["day"] = day
+    day_obj["chapters"] = chapters_data
+    day_obj["readings"] = chapters_data
+    day_obj["portions"] = chapters_data
+
+    # Ensure intro fields exist safely
+    if "intro" not in day_obj or not isinstance(day_obj["intro"], dict):
+        day_obj["intro"] = {}
+    day_obj["intro"].setdefault("display_ta", f"{default_title} - நாள் {day}")
+    day_obj["intro"].setdefault("display_en", f"{default_title} - Day {day}")
 
     plan_obj = {
         "id": plan_type,
-        "type": plan_type,
-        "title": plan_title,
-        "name": plan_title,
-        "total_days": total_days,
+        "title": default_title,
+        "name": default_title,
+        "total_days": len(raw_days) or 100,
     }
-
-    # 4. Ensure day object contains all keys expected by read_along.html
-    day_obj = dict(target_entry)
-    day_obj["day"] = day
-    day_obj["readings"] = readings
-    day_obj["portions"] = portions
-
-    # Ensure intro and its sub-properties are safely present
-    intro = day_obj.get("intro")
-    if not isinstance(intro, dict):
-        intro = {}
-    intro.setdefault("display_ta", "")
-    intro.setdefault("display_en", "")
-    intro.setdefault("title_ta", "")
-    intro.setdefault("title_en", "")
-    intro.setdefault("summary_ta", "")
-    intro.setdefault("summary_en", "")
-    day_obj["intro"] = intro
 
     return templates.TemplateResponse(
         request=request,
@@ -542,13 +520,14 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
             "books": BIBLE_BOOKS,
             "is_plan_mode": True,
             "plan": plan_obj,
-            "day": day_obj,
             "plan_type": plan_type,
-            "plan_title": plan_title,
-            "total_days": total_days,
+            "plan_title": default_title,
+            "day": day_obj,
+            "chapters": chapters_data,
+            "readings": chapters_data,
+            "total_days": plan_obj["total_days"],
             "prev_day": day - 1 if day > 1 else None,
-            "next_day": day + 1 if day < total_days else None,
-            "readings": readings,
+            "next_day": day + 1 if day < plan_obj["total_days"] else None,
             "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
             "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
         },
