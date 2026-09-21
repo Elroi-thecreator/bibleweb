@@ -2,10 +2,27 @@ import sqlite3
 import json
 import os
 
-# Adjust this if your sqlite file is located elsewhere (e.g., 'data/bible.db')
-DB_PATH = "data/bible.sqlite.db"
+DB_PATH = "bible.db"
 OUT_DIR = os.path.join("static", "plans")
 os.makedirs(OUT_DIR, exist_ok=True)
+
+# Standard English Book Names mapped by book id (1 to 66)
+BOOK_NAMES_EN = {
+    1: "Genesis", 2: "Exodus", 3: "Leviticus", 4: "Numbers", 5: "Deuteronomy",
+    6: "Joshua", 7: "Judges", 8: "Ruth", 9: "1 Samuel", 10: "2 Samuel",
+    11: "1 Kings", 12: "2 Kings", 13: "1 Chronicles", 14: "2 Chronicles", 15: "Ezra",
+    16: "Nehemiah", 17: "Esther", 18: "Job", 19: "Psalms", 20: "Proverbs",
+    21: "Ecclesiastes", 22: "Song of Solomon", 23: "Isaiah", 24: "Jeremiah", 25: "Lamentations",
+    26: "Ezekiel", 27: "Daniel", 28: "Hosea", 29: "Joel", 30: "Amos",
+    31: "Obadiah", 32: "Jonah", 33: "Micah", 34: "Nahum", 35: "Habakkuk",
+    36: "Zephaniah", 37: "Haggai", 38: "Zechariah", 39: "Malachi",
+    40: "Matthew", 41: "Mark", 42: "Luke", 43: "John", 44: "Acts",
+    45: "Romans", 46: "1 Corinthians", 47: "2 Corinthians", 48: "Galatians", 49: "Ephesians",
+    50: "Philippians", 51: "Colossians", 52: "1 Thessalonians", 53: "2 Thessalonians", 54: "1 Timothy",
+    55: "2 Timothy", 56: "Titus", 57: "Philemon", 58: "Hebrews", 59: "James",
+    60: "1 Peter", 61: "2 Peter", 62: "1 John", 63: "2 John", 64: "3 John",
+    65: "Jude", 66: "Revelation"
+}
 
 # Curated blessing promises for book clusters
 BOOK_BLESSINGS = {
@@ -31,9 +48,9 @@ def get_chapter_word_counts(start_book=1, end_book=66):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     
-    # Calculate word count based on whitespace separation in text_en
+    # Selecting only existing columns: b.id, b.code, b.name_ta
     cur.execute("""
-        SELECT b.id, b.name_en, b.name_ta, v.chapter, COUNT(v.verse) as verse_count,
+        SELECT b.id, b.code, b.name_ta, v.chapter, COUNT(v.verse) as verse_count,
                SUM(LENGTH(v.text_en) - LENGTH(REPLACE(v.text_en, ' ', '')) + 1) as word_count
         FROM verses v
         JOIN books b ON v.book_id = b.id
@@ -46,9 +63,11 @@ def get_chapter_word_counts(start_book=1, end_book=66):
 
     chapters = []
     for r in rows:
+        book_id = r[0]
         chapters.append({
-            "book_id": r[0],
-            "book_name_en": r[1],
+            "book_id": book_id,
+            "book_code": r[1],
+            "book_name_en": BOOK_NAMES_EN.get(book_id, r[1]),
             "book_name_ta": r[2],
             "chapter": r[3],
             "verse_count": r[4],
@@ -76,14 +95,12 @@ def split_into_100_days(chapters, plan_id, plan_name_en, plan_name_ta):
         while curr_idx < num_chapters:
             ch = chapters[curr_idx]
             
-            # Ensure at least 1 chapter is assigned per day
             if not day_chapters:
                 day_chapters.append(ch)
                 day_words += ch["word_count"]
                 curr_idx += 1
                 continue
 
-            # Check threshold boundary before adding next chapter
             if (day_words + ch["word_count"] * 0.5) > dynamic_target and remaining_days > 1:
                 break
                 
@@ -94,7 +111,6 @@ def split_into_100_days(chapters, plan_id, plan_name_en, plan_name_ta):
         first_ch = day_chapters[0]
         last_ch = day_chapters[-1]
 
-        # Select blessing verse
         blessing = BOOK_BLESSINGS.get(last_ch["book_id"], DEFAULT_BLESSING)
 
         days.append({
@@ -117,7 +133,6 @@ def split_into_100_days(chapters, plan_id, plan_name_en, plan_name_ta):
             }
         })
 
-    # Put remaining chapters into Day 100 if any exist
     while curr_idx < num_chapters:
         ch = chapters[curr_idx]
         days[-1]["chapters"].append({"book_id": ch["book_id"], "chapter": ch["chapter"]})
@@ -135,26 +150,24 @@ def split_into_100_days(chapters, plan_id, plan_name_en, plan_name_ta):
 
 def main():
     if not os.path.exists(DB_PATH):
-        print(f"Error: Could not find database file at '{DB_PATH}'. Please update DB_PATH in the script.")
+        print(f"Error: Database file not found at '{DB_PATH}'")
         return
 
-    # 1. Whole Bible (Genesis 1 to Revelation 22)
     print("Generating Whole Bible 100-Day Plan...")
     wb_chapters = get_chapter_word_counts(1, 66)
     wb_plan = split_into_100_days(wb_chapters, "plan_100_whole_bible", "100-Day Whole Bible Read-Along", "100 நாட்கள் முழு வேதாகம வாசிப்பு")
     wb_file = os.path.join(OUT_DIR, "plan_100_whole_bible.json")
     with open(wb_file, "w", encoding="utf-8") as f:
         json.dump(wb_plan, f, ensure_ascii=False, indent=2)
-    print(f"Created: {wb_file} ({wb_plan['total_days']} days, ~{int(wb_plan['total_words']/100)} words/day)")
+    print(f"Generated: {wb_file}")
 
-    # 2. New Testament (Matthew 1 to Revelation 22)
-    print("\nGenerating New Testament 100-Day Plan...")
+    print("Generating New Testament 100-Day Plan...")
     nt_chapters = get_chapter_word_counts(40, 66)
     nt_plan = split_into_100_days(nt_chapters, "plan_100_new_testament", "100-Day New Testament Read-Along", "100 நாட்கள் புதிய ஏற்பாடு வாசிப்பு")
     nt_file = os.path.join(OUT_DIR, "plan_100_new_testament.json")
     with open(nt_file, "w", encoding="utf-8") as f:
         json.dump(nt_plan, f, ensure_ascii=False, indent=2)
-    print(f"Created: {nt_file} ({nt_plan['total_days']} days, ~{int(nt_plan['total_words']/100)} words/day)")
+    print(f"Generated: {nt_file}")
 
 if __name__ == "__main__":
     main()
