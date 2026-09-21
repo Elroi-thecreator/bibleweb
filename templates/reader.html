@@ -3,96 +3,581 @@
 {% block content %}
 {% set total_ch = total_chapters if total_chapters is defined and total_chapters else (book.total_chapters if book and book.total_chapters is defined else 1) %}
 
-<div class="max-w-4xl mx-auto px-4 py-6">
+<div class="max-w-4xl mx-auto px-4 py-6 relative pb-32" id="reader-wrapper">
 
-    <!-- Top Sticky Navigation Bar -->
-    <header class="flex items-center justify-between border-b border-stone-200 dark:border-stone-800 pb-3 mb-6 sticky top-14 bg-white/90 dark:bg-stone-900/90 backdrop-blur z-20">
-        <div>
-            <div class="flex items-center gap-2">
-                <a href="/" class="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition">
+    <!-- Hidden Audio Engine -->
+    <audio id="chapter-audio" preload="none"></audio>
+
+    <!-- ======================================================== -->
+    <!-- 1. STICKY TOP APP & CONTROL HEADER                       -->
+    <!-- ======================================================== -->
+    <header class="sticky top-0 z-30 bg-white/95 dark:bg-[#121110]/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800/80 px-2 sm:px-4 py-3 mb-6 transition-colors">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            
+            <!-- Book & Chapter Title with Navigation -->
+            <div class="flex items-center gap-2.5 min-w-0">
+                <a href="/" class="p-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-500 dark:text-stone-400 transition" title="Home">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
                 </a>
-                <h1 class="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">
-                    {{ book.name_ta }} <span class="text-stone-400 dark:text-stone-500 font-normal">({{ book.name_en }})</span>
-                </h1>
+                
+                <div class="min-w-0">
+                    <div class="flex items-baseline gap-1.5">
+                        <h1 class="text-base sm:text-lg font-bold text-stone-900 dark:text-stone-100 truncate">
+                            {{ book.name_ta }} <span class="text-xs font-normal text-stone-400 font-serif">({{ book.name_en }})</span>
+                        </h1>
+                    </div>
+                    <span class="text-[11px] font-semibold text-amber-700 dark:text-amber-500 uppercase tracking-wider">
+                        Chapter {{ chapter }} of {{ total_ch }}
+                    </span>
+                </div>
             </div>
-            <span class="text-xs font-semibold text-amber-700 dark:text-amber-500 uppercase tracking-wider">
-                Chapter {{ chapter }} of {{ total_ch }}
-            </span>
-        </div>
 
-        <!-- Chapter Switcher Controls -->
-        <div class="flex items-center gap-1.5">
-            {% if chapter > 1 %}
-            <a href="/read/{{ book.id }}/{{ chapter - 1 }}" 
-               class="p-2 rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 transition"
-               title="Previous Chapter">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-            </a>
-            {% endif %}
+            <!-- Toolbar: Quick Actions -->
+            <div class="flex items-center flex-wrap gap-2">
+                
+                <!-- View Mode Selector -->
+                <div class="inline-flex rounded-xl bg-stone-100 dark:bg-stone-800/80 p-0.5 text-xs font-semibold">
+                    <button type="button" onclick="setReaderMode('ta')" id="mode-btn-ta" class="px-2 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition">
+                        தமிழ்
+                    </button>
+                    <button type="button" onclick="setReaderMode('en')" id="mode-btn-en" class="px-2 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition">
+                        ENG
+                    </button>
+                    <button type="button" onclick="setReaderMode('bilingual')" id="mode-btn-bilingual" class="px-2 py-1 rounded-lg bg-amber-700 text-white shadow-xs transition">
+                        Both
+                    </button>
+                </div>
 
-            <select onchange="location = this.value;" class="bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-700">
-                {% for c in range(1, total_ch + 1) %}
-                <option value="/read/{{ book.id }}/{{ c }}" {% if c == chapter %}selected{% endif %}>
-                    Ch {{ c }}
-                </option>
-                {% endfor %}
-            </select>
+                <!-- Font Sizer (A- / A+) -->
+                <div class="inline-flex items-center rounded-xl bg-stone-100 dark:bg-stone-800/80 p-0.5 text-xs font-semibold">
+                    <button type="button" onclick="adjustReaderFontSize(-1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Smaller font">
+                        A-
+                    </button>
+                    <span id="font-size-label" class="px-1 text-[10px] font-mono text-stone-400 select-none">100%</span>
+                    <button type="button" onclick="adjustReaderFontSize(1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Larger font">
+                        A+
+                    </button>
+                </div>
 
-            {% if chapter < total_ch %}
-            <a href="/read/{{ book.id }}/{{ chapter + 1 }}" 
-               class="p-2 rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 transition"
-               title="Next Chapter">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </a>
-            {% endif %}
+                <!-- Chapter Selector Dropdown -->
+                <select onchange="location = this.value;" class="bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-700">
+                    {% for c in range(1, total_ch + 1) %}
+                    <option value="/read/{{ book.id }}/{{ c }}" {% if c == chapter %}selected{% endif %}>
+                        Ch {{ c }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <!-- Audio Play Toggle Trigger -->
+                <button type="button" 
+                        onclick="toggleChapterAudio()" 
+                        id="audio-start-btn" 
+                        class="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
+                    <span>Listen 🎧</span>
+                </button>
+
+                <!-- Complete Chapter Checkmark Toggle -->
+                <button type="button" 
+                        onclick="toggleChapterCompletion()" 
+                        id="complete-chapter-btn" 
+                        class="px-3 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-emerald-700 hover:text-white text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-stone-300 dark:border-stone-700 transition cursor-pointer">
+                    <span id="complete-icon">○</span>
+                    <span id="complete-text">Mark Read</span>
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- Verses Rendering Engine -->
-    <main class="space-y-4 font-sans leading-relaxed text-base" id="scripture-container">
+    <!-- ======================================================== -->
+    <!-- 2. SCRIPTURE ENGINE (VERSES, BOOKMARKS, HIGHLIGHTS)     -->
+    <!-- ======================================================== -->
+    <main class="space-y-4" id="scripture-stream">
         {% for v in verses %}
-        <div class="verse-row flex gap-3.5 p-2 rounded-xl transition hover:bg-stone-50 dark:hover:bg-stone-800/40 group" id="v-{{ v.verse }}">
-            <span class="text-xs font-bold text-amber-700 dark:text-amber-500 pt-1 select-none w-5 text-right flex-shrink-0">
-                {{ v.verse }}
-            </span>
-            <div class="flex-1 space-y-1.5">
-                <p class="verse-ta text-stone-900 dark:text-stone-100 text-[var(--bible-font-size,1rem)] leading-relaxed">
-                    {{ v.text_ta }}
-                </p>
-                <p class="verse-en text-stone-500 dark:text-stone-400 font-serif text-[calc(var(--bible-font-size,1rem)*0.92)] leading-relaxed">
-                    {{ v.text_en }}
-                </p>
+        <div class="verse-row group relative p-3 rounded-2xl transition duration-200 border border-transparent hover:border-stone-200 dark:hover:border-stone-800 hover:bg-stone-50/70 dark:hover:bg-stone-900/40 cursor-pointer" 
+             id="v-{{ v.verse }}"
+             onclick="handleVerseClick({{ loop.index0 }})"
+             data-book-id="{{ book.id }}"
+             data-chapter="{{ chapter }}"
+             data-verse="{{ v.verse }}"
+             data-ref-ta="{{ book.name_ta }} {{ chapter }}:{{ v.verse }}"
+             data-ref-en="{{ book.name_en }} {{ chapter }}:{{ v.verse }}"
+             data-text-ta="{{ v.text_ta }}"
+             data-text-en="{{ v.text_en }}">
+            
+            <div class="flex items-start gap-3.5">
+                
+                <!-- Verse Number & Quick Save / Bookmark Button -->
+                <div class="flex flex-col items-center flex-shrink-0 w-6 pt-0.5">
+                    <span class="text-xs font-bold text-amber-700 dark:text-amber-500 font-mono select-none">
+                        {{ v.verse }}
+                    </span>
+                    
+                    <!-- Bookmark Heart/Star Icon -->
+                    <button type="button" 
+                            onclick="event.stopPropagation(); toggleBookmark({{ book.id }}, {{ chapter }}, {{ v.verse }})" 
+                            class="bookmark-btn mt-1 text-stone-300 dark:text-stone-700 hover:text-amber-600 dark:hover:text-amber-400 transition" 
+                            id="bm-{{ book.id }}-{{ chapter }}-{{ v.verse }}"
+                            title="Save / Bookmark">
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
+                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-3.125L5 18V4z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Verse Content Blocks -->
+                <div class="flex-1 space-y-1.5">
+                    <!-- Tamil Text -->
+                    <p class="verse-ta text-stone-900 dark:text-stone-100 leading-[1.85] tracking-wide transition-all"
+                       style="font-size: var(--bible-font-size, 1.1rem);">
+                        {{ v.text_ta }}
+                    </p>
+                    
+                    <!-- English Text -->
+                    <p class="verse-en text-stone-500 dark:text-stone-400 font-serif leading-[1.75] transition-all"
+                       style="font-size: calc(var(--bible-font-size, 1.1rem) * 0.94);">
+                        {{ v.text_en }}
+                    </p>
+                </div>
+
+                <!-- Highlight Color Palette Trigger (Hover / Focus) -->
+                <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition flex-shrink-0" onclick="event.stopPropagation();">
+                    <button type="button" onclick="applyHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'yellow')" class="w-3.5 h-3.5 rounded-full bg-amber-400 hover:scale-125 transition" title="Yellow Highlight"></button>
+                    <button type="button" onclick="applyHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'emerald')" class="w-3.5 h-3.5 rounded-full bg-emerald-400 hover:scale-125 transition" title="Green Highlight"></button>
+                    <button type="button" onclick="applyHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'sky')" class="w-3.5 h-3.5 rounded-full bg-sky-400 hover:scale-125 transition" title="Blue Highlight"></button>
+                    <button type="button" onclick="applyHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'clear')" class="text-[10px] text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 ml-0.5" title="Clear">✕</button>
+                </div>
+
             </div>
         </div>
         {% endfor %}
     </main>
 
-    <!-- Bottom Chapter Progression -->
-    <footer class="mt-12 pt-6 border-t border-stone-200 dark:border-stone-800 flex justify-between items-center text-xs font-semibold">
-        {% if chapter > 1 %}
-        <a href="/read/{{ book.id }}/{{ chapter - 1 }}" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-lg transition">
-            ← Chapter {{ chapter - 1 }}
+    <!-- ======================================================== -->
+    <!-- 3. BOTTOM CHAPTER NAVIGATION FOOTER                      -->
+    <!-- ======================================================== -->
+    <footer class="mt-14 pt-6 border-t border-stone-200 dark:border-stone-800 flex justify-between items-center text-xs font-semibold">
+        {% if prev_ch %}
+        <a href="/read/{{ book.id }}/{{ prev_ch }}" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl transition">
+            ← Chapter {{ prev_ch }}
         </a>
         {% else %}
         <div></div>
         {% endif %}
 
-        <span class="text-stone-400">{{ book.name_ta }} {{ chapter }}</span>
+        <button type="button" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300">
+            Top ↑
+        </button>
 
-        {% if chapter < total_ch %}
-        <a href="/read/{{ book.id }}/{{ chapter + 1 }}" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-lg transition">
-            Chapter {{ chapter + 1 }} →
+        {% if next_ch %}
+        <a href="/read/{{ book.id }}/{{ next_ch }}" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl transition shadow-xs">
+            Chapter {{ next_ch }} →
         </a>
         {% else %}
         <div></div>
         {% endif %}
     </footer>
+
+    <!-- ======================================================== -->
+    <!-- 4. FLOATING AUDIO CONTROL CAPSULE                        -->
+    <!-- ======================================================== -->
+    <div id="reader-audio-dock" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto z-40 bg-stone-950/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-800 text-stone-100 rounded-full px-3 py-1.5 shadow-2xl transition-all duration-300 transform translate-y-28 opacity-0 flex items-center justify-between gap-2">
+        <!-- Live Status -->
+        <div class="flex items-center gap-2 min-w-0 pr-1 pl-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+            <span id="dock-ref" class="text-xs font-bold text-stone-200 truncate max-w-[120px] sm:max-w-[150px]">
+                {{ book.name_ta }} {{ chapter }}
+            </span>
+            <span id="dock-count" class="text-[10px] font-mono text-stone-400 hidden xs:inline flex-shrink-0">
+                1 / {{ verses|length }}
+            </span>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button type="button" onclick="stepVerse(-1)" class="p-1 text-stone-400 hover:text-white transition cursor-pointer">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+
+            <button type="button" onclick="toggleAudioPlayback()" class="w-7 h-7 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center shadow-xs transition cursor-pointer">
+                <span id="dock-play-icon">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </span>
+            </button>
+
+            <button type="button" onclick="stepVerse(1)" class="p-1 text-stone-400 hover:text-white transition cursor-pointer">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+        </div>
+
+        <!-- Speed & Close -->
+        <div class="flex items-center gap-1.5 flex-shrink-0 pl-1 border-l border-stone-800">
+            <button type="button" onclick="cycleAudioSpeed()" id="dock-speed-btn" class="px-1.5 py-0.5 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-[10px] font-mono font-bold transition">
+                1.0x
+            </button>
+            <button type="button" onclick="stopChapterAudio()" class="px-1 text-stone-400 hover:text-white text-xs transition">
+                ✕
+            </button>
+        </div>
+    </div>
+
 </div>
+
+<script>
+const BOOK_ID = {{ book.id }};
+const CHAPTER_NUM = {{ chapter }};
+const TOTAL_VERSES = {{ verses | length }};
+
+// ==========================================
+// 1. Font Sizing Engine
+// ==========================================
+const FONT_STORAGE_KEY = 'bible_font_size';
+const DEFAULT_FONT_REM = 1.1;
+let currentFontRem = parseFloat(localStorage.getItem(FONT_STORAGE_KEY)) || DEFAULT_FONT_REM;
+
+function applyReaderFontSize(remVal) {
+    currentFontRem = Math.min(1.85, Math.max(0.9, remVal));
+    document.documentElement.style.setProperty('--bible-font-size', `${currentFontRem}rem`);
+    
+    document.querySelectorAll('.verse-ta').forEach(el => el.style.fontSize = `${currentFontRem}rem`);
+    document.querySelectorAll('.verse-en').forEach(el => el.style.fontSize = `${currentFontRem * 0.94}rem`);
+
+    const label = document.getElementById('font-size-label');
+    if (label) label.innerText = `${Math.round((currentFontRem / DEFAULT_FONT_REM) * 100)}%`;
+    localStorage.setItem(FONT_STORAGE_KEY, currentFontRem.toString());
+}
+
+function adjustReaderFontSize(direction) {
+    applyReaderFontSize(currentFontRem + (direction * 0.08));
+}
+
+// ==========================================
+// 2. View Mode (Tamil / English / Bilingual)
+// ==========================================
+let currentMode = 'bilingual';
+
+function setReaderMode(mode) {
+    currentMode = mode;
+    localStorage.setItem('bible_view_mode', mode);
+
+    const btnTa = document.getElementById('mode-btn-ta');
+    const btnEn = document.getElementById('mode-btn-en');
+    const btnBi = document.getElementById('mode-btn-bilingual');
+
+    [btnTa, btnEn, btnBi].forEach(b => {
+        b.className = "px-2 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition";
+    });
+
+    if (mode === 'ta') {
+        btnTa.className = "px-2 py-1 rounded-lg bg-amber-700 text-white shadow-xs transition";
+        document.querySelectorAll('.verse-ta').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.verse-en').forEach(el => el.classList.add('hidden'));
+    } else if (mode === 'en') {
+        btnEn.className = "px-2 py-1 rounded-lg bg-amber-700 text-white shadow-xs transition";
+        document.querySelectorAll('.verse-ta').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.verse-en').forEach(el => el.classList.remove('hidden'));
+    } else {
+        btnBi.className = "px-2 py-1 rounded-lg bg-amber-700 text-white shadow-xs transition";
+        document.querySelectorAll('.verse-ta').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.verse-en').forEach(el => el.classList.remove('hidden'));
+    }
+}
+
+// ==========================================
+// 3. Audio Streaming & Verse Highlighting
+// ==========================================
+const audioElement = document.getElementById('chapter-audio');
+let verseRows = [];
+let currentVerseIndex = 0;
+let isAudioActive = false;
+const speeds = [1.0, 1.25, 1.5, 2.0];
+let currentSpeedIndex = 0;
+
+function showAudioDock() {
+    const dock = document.getElementById('reader-audio-dock');
+    dock.classList.remove('translate-y-28', 'opacity-0');
+    dock.classList.add('translate-y-0', 'opacity-100');
+}
+
+function hideAudioDock() {
+    const dock = document.getElementById('reader-audio-dock');
+    dock.classList.add('translate-y-28', 'opacity-0');
+}
+
+function toggleChapterAudio() {
+    if (isAudioActive && !audioElement.paused) {
+        toggleAudioPlayback();
+    } else if (isAudioActive && audioElement.paused) {
+        toggleAudioPlayback();
+    } else {
+        startAudioFromIndex(0);
+    }
+}
+
+function handleVerseClick(index) {
+    startAudioFromIndex(index);
+}
+
+function startAudioFromIndex(index) {
+    showAudioDock();
+    isAudioActive = true;
+    playVerseAt(index);
+}
+
+function playVerseAt(index) {
+    if (index >= verseRows.length) {
+        stopChapterAudio();
+        return;
+    }
+
+    currentVerseIndex = index;
+    const node = verseRows[index];
+    const text = currentMode === 'en' ? node.getAttribute('data-text-en') : node.getAttribute('data-text-ta');
+    const lang = currentMode === 'en' ? 'en' : 'ta';
+    const ref = currentMode === 'en' ? node.getAttribute('data-ref-en') : node.getAttribute('data-ref-ta');
+
+    // Update Dock
+    document.getElementById('dock-ref').innerText = ref;
+    document.getElementById('dock-count').innerText = `${index + 1} / ${verseRows.length}`;
+
+    // Highlight Verse Node cleanly
+    verseRows.forEach(n => {
+        n.classList.remove('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-amber-500');
+    });
+    node.classList.add('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-amber-500');
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Request stream
+    audioElement.src = `/api/audio/stream?text=${encodeURIComponent(text)}&lang=${lang}`;
+    audioElement.playbackRate = speeds[currentSpeedIndex];
+
+    audioElement.play()
+        .then(() => {
+            updatePlayPauseIcon(true);
+        })
+        .catch(err => {
+            console.warn("Audio interrupted:", err);
+            updatePlayPauseIcon(false);
+        });
+}
+
+function toggleAudioPlayback() {
+    if (audioElement.paused) {
+        audioElement.play();
+        updatePlayPauseIcon(true);
+    } else {
+        audioElement.pause();
+        updatePlayPauseIcon(false);
+    }
+}
+
+function updatePlayPauseIcon(playing) {
+    const span = document.getElementById('dock-play-icon');
+    span.innerHTML = playing
+        ? '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'
+        : '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+}
+
+function stepVerse(dir) {
+    const target = currentVerseIndex + dir;
+    if (target >= 0 && target < verseRows.length) {
+        playVerseAt(target);
+    }
+}
+
+function cycleAudioSpeed() {
+    currentSpeedIndex = (currentSpeedIndex + 1) % speeds.length;
+    const rate = speeds[currentSpeedIndex];
+    audioElement.playbackRate = rate;
+    document.getElementById('dock-speed-btn').innerText = `${rate.toFixed(1)}x`;
+}
+
+function stopChapterAudio() {
+    audioElement.pause();
+    isAudioActive = false;
+    hideAudioDock();
+    verseRows.forEach(n => n.classList.remove('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-amber-500'));
+}
+
+audioElement.addEventListener('ended', () => {
+    currentVerseIndex++;
+    playVerseAt(currentVerseIndex);
+});
+
+audioElement.addEventListener('error', () => {
+    setTimeout(() => {
+        currentVerseIndex++;
+        playVerseAt(currentVerseIndex);
+    }, 1200);
+});
+
+// ==========================================
+// 4. Saved / Bookmarks Engine
+// ==========================================
+function getBookmarks() {
+    return JSON.parse(localStorage.getItem('bible_bookmarks') || '[]');
+}
+
+function toggleBookmark(bookId, chapter, verse) {
+    let bms = getBookmarks();
+    const key = `${bookId}_${chapter}_${verse}`;
+    const existsIndex = bms.findIndex(b => b.key === key);
+
+    const btn = document.getElementById(`bm-${bookId}-${chapter}-${verse}`);
+
+    if (existsIndex > -1) {
+        bms.splice(existsIndex, 1);
+        if (btn) btn.classList.remove('text-amber-600', 'dark:text-amber-400');
+    } else {
+        const node = document.getElementById(`v-${verse}`);
+        bms.push({
+            key: key,
+            book_id: bookId,
+            chapter: chapter,
+            verse: verse,
+            ref_ta: node.getAttribute('data-ref-ta'),
+            ref_en: node.getAttribute('data-ref-en'),
+            text_ta: node.getAttribute('data-text-ta'),
+            text_en: node.getAttribute('data-text-en'),
+            created_at: new Date().toISOString()
+        });
+        if (btn) btn.classList.add('text-amber-600', 'dark:text-amber-400');
+    }
+
+    localStorage.setItem('bible_bookmarks', JSON.stringify(bms));
+
+    if (typeof window.syncWithSupabase === 'function') {
+        window.syncWithSupabase();
+    }
+}
+
+function renderSavedBookmarksState() {
+    const bms = getBookmarks();
+    bms.forEach(b => {
+        if (b.book_id === BOOK_ID && b.chapter === CHAPTER_NUM) {
+            const btn = document.getElementById(`bm-${BOOK_ID}-${CHAPTER_NUM}-${b.verse}`);
+            if (btn) btn.classList.add('text-amber-600', 'dark:text-amber-400');
+        }
+    });
+}
+
+// ==========================================
+// 5. Multi-Color Verse Highlighter
+// ==========================================
+function getHighlights() {
+    return JSON.parse(localStorage.getItem('bible_highlights') || '{}');
+}
+
+function applyHighlight(bookId, chapter, verse, color) {
+    const highlights = getHighlights();
+    const key = `${bookId}_${chapter}_${verse}`;
+    const row = document.getElementById(`v-${verse}`);
+
+    // Remove existing color classes
+    row.classList.remove('bg-amber-100/60', 'dark:bg-amber-950/30', 'bg-emerald-100/60', 'dark:bg-emerald-950/30', 'bg-sky-100/60', 'dark:bg-sky-950/30');
+
+    if (color === 'clear') {
+        delete highlights[key];
+    } else {
+        highlights[key] = color;
+        if (color === 'yellow') row.classList.add('bg-amber-100/60', 'dark:bg-amber-950/30');
+        if (color === 'emerald') row.classList.add('bg-emerald-100/60', 'dark:bg-emerald-950/30');
+        if (color === 'sky') row.classList.add('bg-sky-100/60', 'dark:bg-sky-950/30');
+    }
+
+    localStorage.setItem('bible_highlights', JSON.stringify(highlights));
+
+    if (typeof window.syncWithSupabase === 'function') {
+        window.syncWithSupabase();
+    }
+}
+
+function renderSavedHighlightsState() {
+    const highlights = getHighlights();
+    for (const [key, color] of Object.entries(highlights)) {
+        const [b, c, v] = key.split('_').map(Number);
+        if (b === BOOK_ID && c === CHAPTER_NUM) {
+            const row = document.getElementById(`v-${v}`);
+            if (row) {
+                if (color === 'yellow') row.classList.add('bg-amber-100/60', 'dark:bg-amber-950/30');
+                if (color === 'emerald') row.classList.add('bg-emerald-100/60', 'dark:bg-emerald-950/30');
+                if (color === 'sky') row.classList.add('bg-sky-100/60', 'dark:bg-sky-950/30');
+            }
+        }
+    }
+}
+
+// ==========================================
+// 6. Chapter Completion Status & Habit Sync
+// ==========================================
+function getCompletedChapters() {
+    return JSON.parse(localStorage.getItem('bible_completed_chapters') || '[]');
+}
+
+function isCurrentChapterComplete() {
+    const list = getCompletedChapters();
+    return list.some(item => item.book_id === BOOK_ID && item.chapter === CHAPTER_NUM);
+}
+
+function toggleChapterCompletion() {
+    let list = getCompletedChapters();
+    const existsIndex = list.findIndex(item => item.book_id === BOOK_ID && item.chapter === CHAPTER_NUM);
+
+    if (existsIndex > -1) {
+        list.splice(existsIndex, 1);
+    } else {
+        list.push({
+            book_id: BOOK_ID,
+            chapter: CHAPTER_NUM,
+            completed_at: new Date().toISOString()
+        });
+    }
+
+    localStorage.setItem('bible_completed_chapters', JSON.stringify(list));
+    updateCompletionButtonUI();
+
+    if (typeof window.syncWithSupabase === 'function') {
+        window.syncWithSupabase();
+    }
+}
+
+function updateCompletionButtonUI() {
+    const btn = document.getElementById('complete-chapter-btn');
+    const icon = document.getElementById('complete-icon');
+    const text = document.getElementById('complete-text');
+
+    if (isCurrentChapterComplete()) {
+        btn.className = "px-3 py-1.5 bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer";
+        icon.innerText = "✓";
+        text.innerText = "Completed";
+    } else {
+        btn.className = "px-3 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-emerald-700 hover:text-white text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-stone-300 dark:border-stone-700 transition cursor-pointer";
+        icon.innerText = "○";
+        text.innerText = "Mark Read";
+    }
+}
+
+// ==========================================
+// Initialize on Page Load
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    verseRows = Array.from(document.querySelectorAll('.verse-row'));
+
+    // 1. Font Size
+    applyReaderFontSize(currentFontRem);
+
+    // 2. View Mode (restore user preference)
+    const savedMode = localStorage.getItem('bible_view_mode') || 'bilingual';
+    setReaderMode(savedMode);
+
+    // 3. Render Bookmarks & Highlights
+    renderSavedBookmarksState();
+    renderSavedHighlightsState();
+
+    // 4. Update Chapter Completion UI
+    updateCompletionButtonUI();
+});
+</script>
 {% endblock %}
