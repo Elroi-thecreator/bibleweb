@@ -348,7 +348,27 @@ async def bookmarks_page(request: Request):
         name="bookmarks.html",
         context={"books": BIBLE_BOOKS},
     )
+@app.get("/read-along/plan/whole-bible-100", response_class=HTMLResponse)
+async def read_along_whole_bible_100(request: Request):
+    return templates.TemplateResponse(
+        "read_along.html",
+        {
+            "request": request,
+            "plan_id": "plan_100_whole_bible",
+            "plan_title": "Whole Bible in 100 Days",
+        }
+    )
 
+@app.get("/read-along/plan/new-testament-100", response_class=HTMLResponse)
+async def read_along_new_testament_100(request: Request):
+    return templates.TemplateResponse(
+        "read_along.html",
+        {
+            "request": request,
+            "plan_id": "plan_100_new_testament",
+            "plan_title": "New Testament in 100 Days",
+        }
+    )
 
 @app.get("/book/{book_id}/chapter/{chapter}")
 async def legacy_redirect(book_id: int, chapter: int):
