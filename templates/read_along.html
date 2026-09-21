@@ -107,13 +107,16 @@
     <!-- ========================================================================= -->
     <div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 lg:grid lg:grid-cols-12 lg:gap-8 items-start">
         
-        <!-- WIDE SCRIPTURE CANVAS (Occupies 10 of 12 columns on Desktop) -->
+        <!-- WIDE SCRIPTURE CANVAS -->
         <main class="lg:col-span-9 xl:col-span-10 space-y-12 pr-0 lg:pr-4" id="scripture-stream">
             {% for ch in chapters %}
             <section class="chapter-block" data-book-id="{{ ch.book_id }}" data-chapter="{{ ch.chapter }}">
                 
-                <!-- Elegant Centered Chapter Indicator -->
-                <div class="text-center my-6">
+                <!-- Chapter Decorative Header -->
+                <div class="chapter-title-target text-center my-6 p-2 rounded-2xl transition-all duration-300"
+                     id="ch-header-{{ ch.book_id }}-{{ ch.chapter }}"
+                     data-title-ta="{{ ch.book_name_ta }} {{ ch.chapter }}"
+                     data-title-en="{{ ch.book_name_en }} {{ ch.chapter }}">
                     <span class="text-[11px] uppercase tracking-widest font-bold text-amber-700/80 dark:text-amber-500/80">✦ CHAPTER {{ ch.chapter }} ✦</span>
                     <h2 class="text-2xl sm:text-3xl font-serif font-bold text-stone-900 dark:text-stone-100 chapter-header-text mt-1"
                         data-ta="{{ ch.book_name_ta }} {{ ch.chapter }}"
@@ -123,12 +126,12 @@
                     <div class="w-10 h-0.5 bg-amber-600/30 mx-auto mt-2 rounded-full"></div>
                 </div>
 
-                <!-- Verse Text Flow with Generous Reading Width -->
+                <!-- Verse Text Flow -->
                 <div class="space-y-1.5">
                     {% for v in ch.verses %}
                     <div class="verse-row group relative px-3.5 py-2.5 rounded-xl transition-all duration-200 cursor-pointer border-l-2 border-transparent hover:bg-stone-100/70 dark:hover:bg-stone-800/40" 
                          id="verse-node-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}"
-                         onclick="jumpToVerseAudio({{ loop.index0 }})"
+                         onclick="jumpToVerseNode({{ ch.book_id }}, {{ ch.chapter }}, {{ v.verse }})"
                          data-book-id="{{ ch.book_id }}"
                          data-chapter="{{ ch.chapter }}"
                          data-verse="{{ v.verse }}"
@@ -163,7 +166,7 @@
             </div>
         </main>
 
-        <!-- SLIM COMPANION AUDIO RAIL (Only 3/2 Columns on Desktop) -->
+        <!-- SLIM COMPANION AUDIO RAIL -->
         <aside class="hidden lg:block lg:col-span-3 xl:col-span-2 sticky top-20">
             <div class="p-3.5 rounded-2xl bg-stone-100/90 dark:bg-stone-900/90 border border-stone-200/80 dark:border-stone-800/80 shadow-xs space-y-3.5">
                 
@@ -181,7 +184,7 @@
 
                 <!-- Slim Inline Controls -->
                 <div class="p-1.5 bg-white dark:bg-stone-950 rounded-xl border border-stone-200/60 dark:border-stone-800/60 flex items-center justify-between">
-                    <button type="button" onclick="stepVerse(-1)" class="p-1.5 text-stone-400 hover:text-stone-900 dark:hover:text-white transition cursor-pointer" title="Previous verse">
+                    <button type="button" onclick="stepItem(-1)" class="p-1.5 text-stone-400 hover:text-stone-900 dark:hover:text-white transition cursor-pointer" title="Previous">
                         <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                     </button>
 
@@ -191,7 +194,7 @@
                         </span>
                     </button>
 
-                    <button type="button" onclick="stepVerse(1)" class="p-1.5 text-stone-400 hover:text-stone-900 dark:hover:text-white transition cursor-pointer" title="Next verse">
+                    <button type="button" onclick="stepItem(1)" class="p-1.5 text-stone-400 hover:text-stone-900 dark:hover:text-white transition cursor-pointer" title="Next">
                         <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
                     </button>
                 </div>
@@ -204,7 +207,7 @@
                     </button>
                 </div>
 
-                <!-- Minimal Chapter Badges -->
+                <!-- Chapter Badges -->
                 <div class="pt-2 border-t border-stone-200/60 dark:border-stone-800/60 space-y-1">
                     <span class="text-[9px] font-bold text-stone-400 uppercase tracking-wider block px-1">Chapters</span>
                     {% for ch in chapters %}
@@ -233,7 +236,7 @@
             </div>
 
             <div class="flex items-center gap-1 flex-shrink-0">
-                <button type="button" onclick="stepVerse(-1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
+                <button type="button" onclick="stepItem(-1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
                     <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                 </button>
                 <button type="button" onclick="toggleAudioPlayback()" class="w-7 h-7 rounded-full bg-amber-700 text-white flex items-center justify-center shadow-xs">
@@ -241,7 +244,7 @@
                         <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     </span>
                 </button>
-                <button type="button" onclick="stepVerse(1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
+                <button type="button" onclick="stepItem(1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
                     <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
                 </button>
                 <button type="button" onclick="cycleAudioSpeed()" id="mobile-speed-btn" class="px-1.5 py-0.5 rounded-md bg-stone-200 dark:bg-stone-800 text-[10px] font-mono font-bold ml-1">
@@ -313,15 +316,55 @@ let introTimer = null;
 let introSeconds = 5;
 
 const audioElement = document.getElementById('readalong-audio');
-let verseNodes = [];
-let currentVerseIndex = 0;
+let audioQueue = [];
+let currentQueueIndex = 0;
 let isAudioPlaying = false;
 const speeds = [1.0, 1.25, 1.5, 2.0];
 let currentSpeedIndex = 0;
 
+// Builds the unified playlist (Title announcement -> Verse 1 -> Verse 2 -> etc.)
+function buildAudioQueue() {
+    audioQueue = [];
+    const chapterBlocks = document.querySelectorAll('.chapter-block');
+
+    chapterBlocks.forEach(sec => {
+        const bookId = sec.getAttribute('data-book-id');
+        const chapter = sec.getAttribute('data-chapter');
+        const headerEl = sec.querySelector('.chapter-title-target');
+
+        // Chapter title audio item
+        audioQueue.push({
+            type: 'title',
+            bookId: bookId,
+            chapter: chapter,
+            domElement: headerEl,
+            text_ta: headerEl ? headerEl.getAttribute('data-title-ta') : `அதிகாரம் ${chapter}`,
+            text_en: headerEl ? headerEl.getAttribute('data-title-en') : `Chapter ${chapter}`,
+            ref_ta: headerEl ? headerEl.getAttribute('data-title-ta') : `அதிகாரம் ${chapter}`,
+            ref_en: headerEl ? headerEl.getAttribute('data-title-en') : `Chapter ${chapter}`
+        });
+
+        // Verse audio items
+        const verses = sec.querySelectorAll('.verse-row');
+        verses.forEach(v => {
+            audioQueue.push({
+                type: 'verse',
+                bookId: bookId,
+                chapter: chapter,
+                verse: v.getAttribute('data-verse'),
+                domElement: v,
+                text_ta: v.getAttribute('data-text-ta'),
+                text_en: v.getAttribute('data-text-en'),
+                ref_ta: v.getAttribute('data-ref-ta'),
+                ref_en: v.getAttribute('data-ref-en')
+            });
+        });
+    });
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     applyReadAlongFontSize(currentFontRem);
-    verseNodes = Array.from(document.querySelectorAll('.verse-row'));
+    buildAudioQueue();
 
     const savedLang = localStorage.getItem('bible_reading_lang');
     if (savedLang === 'en' || savedLang === 'ta') {
@@ -383,7 +426,7 @@ function setLanguage(lang) {
     });
 
     // Verses content
-    verseNodes.forEach(node => {
+    document.querySelectorAll('.verse-row').forEach(node => {
         const textEl = node.querySelector('.verse-content');
         if (textEl) {
             textEl.innerText = lang === 'ta' ? node.getAttribute('data-text-ta') : node.getAttribute('data-text-en');
@@ -398,44 +441,56 @@ function setLanguage(lang) {
     applyReadAlongFontSize(currentFontRem);
 
     if (isAudioPlaying) {
-        playVerseAudio(currentVerseIndex);
+        playQueueIndex(currentQueueIndex);
     }
 }
 
 // Audio Handling
 function startReadingWithAudio() {
     skipIntro();
-    currentVerseIndex = 0;
-    playVerseAudio(currentVerseIndex);
+    currentQueueIndex = 0;
+    playQueueIndex(currentQueueIndex);
 }
 
-function playVerseAudio(index) {
-    if (index >= verseNodes.length) {
+function playQueueIndex(index) {
+    if (index >= audioQueue.length) {
         triggerOutroBlessing();
         return;
     }
 
-    currentVerseIndex = index;
-    const node = verseNodes[index];
-    const text = currentLanguage === 'ta' ? node.getAttribute('data-text-ta') : node.getAttribute('data-text-en');
-    const ref = currentLanguage === 'ta' ? node.getAttribute('data-ref-ta') : node.getAttribute('data-ref-en');
+    currentQueueIndex = index;
+    const item = audioQueue[index];
+    const text = currentLanguage === 'ta' ? item.text_ta : item.text_en;
+    const ref = currentLanguage === 'ta' ? item.ref_ta : item.ref_en;
 
-    // Update Status on Sidebar & Mobile footer
+    // Update Status
     const sbRef = document.getElementById('sidebar-verse-ref');
     const sbCount = document.getElementById('sidebar-progress-count');
     const mbRef = document.getElementById('mobile-verse-ref');
     if (sbRef) sbRef.innerText = ref;
-    if (sbCount) sbCount.innerText = `${index + 1} / ${verseNodes.length}`;
+    if (sbCount) sbCount.innerText = `${index + 1} / ${audioQueue.length}`;
     if (mbRef) mbRef.innerText = ref;
 
-    // Highlight Verse cleanly
-    verseNodes.forEach(n => {
+    // Reset visual highlights
+    document.querySelectorAll('.verse-row').forEach(n => {
         n.classList.remove('bg-amber-100/70', 'dark:bg-amber-950/40', '!border-amber-600');
     });
-    node.classList.add('bg-amber-100/70', 'dark:bg-amber-950/40', '!border-amber-600');
-    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.querySelectorAll('.chapter-title-target').forEach(h => {
+        h.classList.remove('bg-amber-100/50', 'dark:bg-amber-950/30', 'ring-1', 'ring-amber-500/30');
+    });
 
-    // Stream Audio
+    // Highlight active element and scroll
+    if (item.domElement) {
+        if (item.type === 'title') {
+            item.domElement.classList.add('bg-amber-100/50', 'dark:bg-amber-950/30', 'ring-1', 'ring-amber-500/30');
+            item.domElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            item.domElement.classList.add('bg-amber-100/70', 'dark:bg-amber-950/40', '!border-amber-600');
+            item.domElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    // Stream audio via endpoint
     const streamUrl = `/api/audio/stream?text=${encodeURIComponent(text)}&lang=${currentLanguage}`;
     audioElement.src = streamUrl;
     audioElement.playbackRate = speeds[currentSpeedIndex];
@@ -475,15 +530,23 @@ function toggleAudioPlayback() {
     }
 }
 
-function stepVerse(direction) {
-    const target = currentVerseIndex + direction;
-    if (target >= 0 && target < verseNodes.length) {
-        playVerseAudio(target);
+function stepItem(direction) {
+    const target = currentQueueIndex + direction;
+    if (target >= 0 && target < audioQueue.length) {
+        playQueueIndex(target);
     }
 }
 
-function jumpToVerseAudio(index) {
-    playVerseAudio(index);
+function jumpToVerseNode(bookId, chapter, verse) {
+    const targetIndex = audioQueue.findIndex(i => 
+        i.type === 'verse' && 
+        parseInt(i.bookId) === parseInt(bookId) && 
+        parseInt(i.chapter) === parseInt(chapter) && 
+        parseInt(i.verse) === parseInt(verse)
+    );
+    if (targetIndex !== -1) {
+        playQueueIndex(targetIndex);
+    }
 }
 
 function cycleAudioSpeed() {
@@ -498,14 +561,14 @@ function cycleAudioSpeed() {
 
 // Auto-advance
 audioElement.addEventListener('ended', () => {
-    currentVerseIndex++;
-    playVerseAudio(currentVerseIndex);
+    currentQueueIndex++;
+    playQueueIndex(currentQueueIndex);
 });
 
 audioElement.addEventListener('error', () => {
     setTimeout(() => {
-        currentVerseIndex++;
-        playVerseAudio(currentVerseIndex);
+        currentQueueIndex++;
+        playQueueIndex(currentQueueIndex);
     }, 1000);
 });
 
