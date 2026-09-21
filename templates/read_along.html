@@ -7,7 +7,7 @@
     <audio id="readalong-audio" preload="none"></audio>
 
     <!-- ========================================== -->
-    <!-- 1. INTRO OVERLAY (Cinematic Ambient Card)  -->
+    <!-- 1. INTRO OVERLAY (Ambient Card)           -->
     <!-- ========================================== -->
     <div id="intro-card" class="fixed inset-0 z-50 bg-[#0c0a09]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center text-stone-100">
         <div class="max-w-md w-full p-8 rounded-3xl border border-amber-500/20 bg-gradient-to-b from-stone-900/90 to-stone-950/95 shadow-2xl relative overflow-hidden">
@@ -50,8 +50,8 @@
     <!-- ========================================== -->
     <!-- 2. STICKY TOP APP HEADER                   -->
     <!-- ========================================== -->
-    <header class="sticky top-0 z-30 bg-[#faf8f5]/90 dark:bg-[#11100f]/90 backdrop-blur-md border-b border-stone-200 dark:border-stone-800/80 px-4 py-3">
-        <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+    <header class="sticky top-0 z-30 bg-[#faf8f5]/95 dark:bg-[#11100f]/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 px-4 sm:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
                 <a href="/plans" class="p-1.5 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-500 dark:text-stone-400 transition" title="Back to Plans">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -103,30 +103,30 @@
     </header>
 
     <!-- ========================================================================= -->
-    <!-- 3. TWO-COLUMN ADAPTIVE WORKSPACE (NO OVERLAYS OVER TEXT)                  -->
+    <!-- 3. SCRIPTURE-FIRST WORKSPACE (WIDE CANVAS + COMPACT SIDE DOCK)             -->
     <!-- ========================================================================= -->
-    <div class="max-w-6xl mx-auto px-4 py-8 lg:grid lg:grid-cols-12 lg:gap-8 items-start">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 lg:grid lg:grid-cols-12 lg:gap-8 items-start">
         
-        <!-- MAIN SCRIPTURE CANVAS (8 of 12 columns on Desktop) -->
-        <main class="lg:col-span-8 space-y-12" id="scripture-stream">
+        <!-- WIDE SCRIPTURE CANVAS (Occupies 10 of 12 columns on Desktop) -->
+        <main class="lg:col-span-9 xl:col-span-10 space-y-12 pr-0 lg:pr-4" id="scripture-stream">
             {% for ch in chapters %}
             <section class="chapter-block" data-book-id="{{ ch.book_id }}" data-chapter="{{ ch.chapter }}">
                 
-                <!-- Chapter Decorative Header -->
+                <!-- Elegant Centered Chapter Indicator -->
                 <div class="text-center my-6">
                     <span class="text-[11px] uppercase tracking-widest font-bold text-amber-700/80 dark:text-amber-500/80">✦ CHAPTER {{ ch.chapter }} ✦</span>
-                    <h2 class="text-2xl font-serif font-bold text-stone-900 dark:text-stone-100 chapter-header-text mt-1"
+                    <h2 class="text-2xl sm:text-3xl font-serif font-bold text-stone-900 dark:text-stone-100 chapter-header-text mt-1"
                         data-ta="{{ ch.book_name_ta }} {{ ch.chapter }}"
                         data-en="{{ ch.book_name_en }} {{ ch.chapter }}">
                         {{ ch.book_name_ta }} {{ ch.chapter }}
                     </h2>
-                    <div class="w-12 h-0.5 bg-amber-600/30 mx-auto mt-2 rounded-full"></div>
+                    <div class="w-10 h-0.5 bg-amber-600/30 mx-auto mt-2 rounded-full"></div>
                 </div>
 
-                <!-- Verses -->
-                <div class="space-y-1">
+                <!-- Verse Text Flow with Generous Reading Width -->
+                <div class="space-y-1.5">
                     {% for v in ch.verses %}
-                    <div class="verse-row group relative px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer border-l-2 border-transparent hover:bg-stone-100/70 dark:hover:bg-stone-800/40" 
+                    <div class="verse-row group relative px-3.5 py-2.5 rounded-xl transition-all duration-200 cursor-pointer border-l-2 border-transparent hover:bg-stone-100/70 dark:hover:bg-stone-800/40" 
                          id="verse-node-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}"
                          onclick="jumpToVerseAudio({{ loop.index0 }})"
                          data-book-id="{{ ch.book_id }}"
@@ -137,13 +137,13 @@
                          data-text-ta="{{ v.text_ta }}"
                          data-text-en="{{ v.text_en }}">
                         
-                        <div class="flex items-start gap-2.5">
-                            <span class="text-[11px] font-mono font-semibold text-amber-700/70 dark:text-amber-500/70 pt-1 select-none w-5 text-right flex-shrink-0 group-hover:text-amber-600">
+                        <div class="flex items-start gap-3">
+                            <span class="text-[12px] font-mono font-semibold text-amber-700/70 dark:text-amber-500/70 pt-1 select-none w-5 text-right flex-shrink-0 group-hover:text-amber-600">
                                 {{ v.verse }}
                             </span>
                             
-                            <p class="verse-content text-stone-800 dark:text-stone-200 leading-[1.85] tracking-wide transition-all"
-                               style="font-size: var(--bible-font-size, 1.05rem);">
+                            <p class="verse-content text-stone-800 dark:text-stone-200 leading-[1.9] tracking-wide transition-all"
+                               style="font-size: var(--bible-font-size, 1.1rem);">
                                 {{ v.text_ta }}
                             </p>
                         </div>
@@ -153,7 +153,7 @@
             </section>
             {% endfor %}
 
-            <!-- Bottom Completion Button -->
+            <!-- Bottom Completion Trigger -->
             <div class="pt-10 pb-8 text-center border-t border-stone-200 dark:border-stone-800">
                 <button type="button" 
                         onclick="triggerOutroBlessing()" 
@@ -163,57 +163,56 @@
             </div>
         </main>
 
-        <!-- SIDEBAR COMPANION AUDIO DECK (4 of 12 columns on Desktop - Zero text overlap) -->
-        <aside class="hidden lg:block lg:col-span-4 sticky top-20">
-            <div class="p-5 rounded-3xl bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-xs space-y-5">
+        <!-- SLIM COMPANION AUDIO RAIL (Only 3/2 Columns on Desktop) -->
+        <aside class="hidden lg:block lg:col-span-3 xl:col-span-2 sticky top-20">
+            <div class="p-3.5 rounded-2xl bg-stone-100/90 dark:bg-stone-900/90 border border-stone-200/80 dark:border-stone-800/80 shadow-xs space-y-3.5">
                 
-                <!-- Active Reference Card -->
-                <div>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-500">Audio Bible Companion</span>
-                    <div class="mt-1 flex items-center justify-between">
-                        <h3 id="sidebar-verse-ref" class="text-base font-bold text-stone-900 dark:text-stone-100 truncate">
-                            Ready to stream
-                        </h3>
-                        <span id="sidebar-progress-count" class="text-xs font-mono text-stone-400">0 / 0</span>
+                <!-- Mini Reference Tag -->
+                <div class="px-1">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-stone-400">Audio Bible</span>
                     </div>
+                    <h3 id="sidebar-verse-ref" class="text-xs font-bold text-stone-900 dark:text-stone-100 truncate mt-0.5">
+                        Ready to play
+                    </h3>
+                    <div id="sidebar-progress-count" class="text-[10px] font-mono text-stone-400 mt-0.5">0 / 0</div>
                 </div>
 
-                <!-- Desktop Playback Controls -->
-                <div class="p-3 bg-white dark:bg-stone-950 rounded-2xl border border-stone-200/80 dark:border-stone-800/80 flex items-center justify-center gap-3">
-                    <button type="button" onclick="stepVerse(-1)" class="p-2 text-stone-500 hover:text-stone-900 dark:hover:text-white transition cursor-pointer" title="Previous verse">
-                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                <!-- Slim Inline Controls -->
+                <div class="p-1.5 bg-white dark:bg-stone-950 rounded-xl border border-stone-200/60 dark:border-stone-800/60 flex items-center justify-between">
+                    <button type="button" onclick="stepVerse(-1)" class="p-1.5 text-stone-400 hover:text-stone-900 dark:hover:text-white transition cursor-pointer" title="Previous verse">
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                     </button>
 
-                    <button type="button" onclick="toggleAudioPlayback()" id="sidebar-play-pause-btn" class="w-12 h-12 rounded-full bg-amber-700 hover:bg-amber-800 text-white flex items-center justify-center shadow-md transition cursor-pointer">
+                    <button type="button" onclick="toggleAudioPlayback()" id="sidebar-play-pause-btn" class="w-8 h-8 rounded-full bg-amber-700 hover:bg-amber-800 text-white flex items-center justify-center shadow-xs transition cursor-pointer">
                         <span id="sidebar-play-icon">
-                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                         </span>
                     </button>
 
-                    <button type="button" onclick="stepVerse(1)" class="p-2 text-stone-500 hover:text-stone-900 dark:hover:text-white transition cursor-pointer" title="Next verse">
-                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    <button type="button" onclick="stepVerse(1)" class="p-1.5 text-stone-400 hover:text-stone-900 dark:hover:text-white transition cursor-pointer" title="Next verse">
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
                     </button>
                 </div>
 
-                <!-- Quick Tuning Settings -->
-                <div class="flex items-center justify-between pt-1 border-t border-stone-200 dark:border-stone-800 text-xs">
-                    <span class="text-stone-500 dark:text-stone-400 font-semibold">Narrator Speed</span>
-                    <button type="button" onclick="cycleAudioSpeed()" id="sidebar-speed-btn" class="px-2.5 py-1 rounded-lg bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-mono font-bold transition">
+                <!-- Speed Setting Pill -->
+                <div class="flex items-center justify-between px-1 text-[11px]">
+                    <span class="text-stone-400 font-medium">Speed</span>
+                    <button type="button" onclick="cycleAudioSpeed()" id="sidebar-speed-btn" class="px-2 py-0.5 rounded bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-mono font-bold text-[10px] transition">
                         1.0x
                     </button>
                 </div>
 
-                <!-- Day Chapters Index -->
-                <div class="space-y-2 pt-2 border-t border-stone-200 dark:border-stone-800">
-                    <span class="text-[11px] font-bold text-stone-500 uppercase tracking-wider">Today's Assigned Chapters</span>
-                    <div class="space-y-1">
-                        {% for ch in chapters %}
-                        <div class="flex items-center justify-between p-2 rounded-xl bg-white/60 dark:bg-stone-950/60 border border-stone-200/50 dark:border-stone-800/50 text-xs font-semibold">
-                            <span class="truncate">{{ ch.book_name_ta }} {{ ch.chapter }}</span>
-                            <span class="text-[10px] text-stone-400 font-mono">{{ ch.verses|length }} verses</span>
-                        </div>
-                        {% endfor %}
+                <!-- Minimal Chapter Badges -->
+                <div class="pt-2 border-t border-stone-200/60 dark:border-stone-800/60 space-y-1">
+                    <span class="text-[9px] font-bold text-stone-400 uppercase tracking-wider block px-1">Chapters</span>
+                    {% for ch in chapters %}
+                    <div class="flex items-center justify-between px-2 py-1 rounded-lg bg-stone-200/40 dark:bg-stone-800/40 text-[11px] font-medium text-stone-700 dark:text-stone-300">
+                        <span class="truncate">{{ ch.book_name_ta }} {{ ch.chapter }}</span>
+                        <span class="text-[9px] font-mono text-stone-400">{{ ch.verses|length }}v</span>
                     </div>
+                    {% endfor %}
                 </div>
 
             </div>
@@ -222,27 +221,27 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- 4. BOTTOM ACTION FOOTER BAR (MOBILE ONLY — KEPT BELOW TEXT, NEVER FLOATING)-->
+    <!-- 4. BOTTOM ACTION FOOTER BAR (MOBILE ONLY)                                 -->
     <!-- ========================================================================= -->
-    <div id="mobile-audio-bar" class="lg:hidden sticky bottom-0 z-30 bg-[#faf8f5]/95 dark:bg-[#11100f]/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 px-4 py-2.5">
+    <div id="mobile-audio-bar" class="lg:hidden sticky bottom-0 z-30 bg-[#faf8f5]/95 dark:bg-[#11100f]/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 px-4 py-2">
         <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
                 <span id="mobile-verse-ref" class="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">
                     Tap Read Along
                 </span>
             </div>
 
             <div class="flex items-center gap-1 flex-shrink-0">
-                <button type="button" onclick="stepVerse(-1)" class="p-1.5 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
+                <button type="button" onclick="stepVerse(-1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
                     <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                 </button>
-                <button type="button" onclick="toggleAudioPlayback()" class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center shadow-xs">
+                <button type="button" onclick="toggleAudioPlayback()" class="w-7 h-7 rounded-full bg-amber-700 text-white flex items-center justify-center shadow-xs">
                     <span id="mobile-play-icon">
-                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     </span>
                 </button>
-                <button type="button" onclick="stepVerse(1)" class="p-1.5 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
+                <button type="button" onclick="stepVerse(1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
                     <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
                 </button>
                 <button type="button" onclick="cycleAudioSpeed()" id="mobile-speed-btn" class="px-1.5 py-0.5 rounded-md bg-stone-200 dark:bg-stone-800 text-[10px] font-mono font-bold ml-1">
@@ -290,11 +289,11 @@ const OUTRO_BLESSING_EN = {{ day.outro.en | tojson }};
 
 // Font Sizing
 const FONT_STORAGE_KEY = 'bible_font_size';
-const DEFAULT_FONT_REM = 1.05;
+const DEFAULT_FONT_REM = 1.1;
 let currentFontRem = parseFloat(localStorage.getItem(FONT_STORAGE_KEY)) || DEFAULT_FONT_REM;
 
 function applyReadAlongFontSize(remVal) {
-    currentFontRem = Math.min(1.8, Math.max(0.85, remVal));
+    currentFontRem = Math.min(1.85, Math.max(0.9, remVal));
     document.documentElement.style.setProperty('--bible-font-size', `${currentFontRem}rem`);
     document.querySelectorAll('.verse-content').forEach(el => {
         el.style.fontSize = `${currentFontRem}rem`;
@@ -421,7 +420,7 @@ function playVerseAudio(index) {
     const text = currentLanguage === 'ta' ? node.getAttribute('data-text-ta') : node.getAttribute('data-text-en');
     const ref = currentLanguage === 'ta' ? node.getAttribute('data-ref-ta') : node.getAttribute('data-ref-en');
 
-    // Update Status Cards on Sidebar & Mobile footer
+    // Update Status on Sidebar & Mobile footer
     const sbRef = document.getElementById('sidebar-verse-ref');
     const sbCount = document.getElementById('sidebar-progress-count');
     const mbRef = document.getElementById('mobile-verse-ref');
@@ -429,11 +428,11 @@ function playVerseAudio(index) {
     if (sbCount) sbCount.innerText = `${index + 1} / ${verseNodes.length}`;
     if (mbRef) mbRef.innerText = ref;
 
-    // Highlight Verse
+    // Highlight Verse cleanly
     verseNodes.forEach(n => {
-        n.classList.remove('bg-amber-100/80', 'dark:bg-amber-950/40', '!border-amber-600', 'shadow-xs');
+        n.classList.remove('bg-amber-100/70', 'dark:bg-amber-950/40', '!border-amber-600');
     });
-    node.classList.add('bg-amber-100/80', 'dark:bg-amber-950/40', '!border-amber-600', 'shadow-xs');
+    node.classList.add('bg-amber-100/70', 'dark:bg-amber-950/40', '!border-amber-600');
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     // Stream Audio
@@ -457,8 +456,8 @@ function updatePlayIcons(playing) {
     const sbIcon = document.getElementById('sidebar-play-icon');
     const mbIcon = document.getElementById('mobile-play-icon');
     const iconHtml = playing
-        ? '<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'
-        : '<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        ? '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'
+        : '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
 
     if (sbIcon) sbIcon.innerHTML = iconHtml;
     if (mbIcon) mbIcon.innerHTML = iconHtml;
