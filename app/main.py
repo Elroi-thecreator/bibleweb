@@ -6,8 +6,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+# Import only the functions exported by app/db.py
 from app.db import (
-    get_db_connection,
     get_books,
     get_chapter_verses,
     search_verses,
