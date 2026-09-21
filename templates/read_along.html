@@ -3,13 +3,12 @@
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-6 relative" id="player-container">
 
-    <!-- 1. INTRO OVERLAY (5 Seconds Countdown) -->
+    <!-- Phase 1: 5-Second Intro Countdown Overlay -->
     <div id="intro-card" class="fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white">
         <span class="text-xs uppercase font-bold tracking-widest text-amber-400 mb-2">Day {{ day.day }} of {{ plan.total_days }}</span>
-        <h2 class="text-2xl sm:text-3xl font-bold mb-4">{{ day.intro.display_ta }}</h2>
+        <h2 class="text-2xl sm:text-3xl font-bold mb-3">{{ day.intro.display_ta }}</h2>
         <p class="text-stone-300 text-base sm:text-lg mb-8 font-serif">{{ day.intro.display_en }}</p>
 
-        <!-- 5-Second Animated Circular Timer -->
         <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
                 <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -23,7 +22,7 @@
         </button>
     </div>
 
-    <!-- 2. READING HEADER & START BUTTON BAR -->
+    <!-- Phase 2: Navigation & Reading Control Bar -->
     <header class="flex items-center justify-between border-b border-stone-200 dark:border-stone-800 pb-4 mb-6 sticky top-14 bg-white/90 dark:bg-stone-900/90 backdrop-blur z-20">
         <div>
             <span class="text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-wider">{{ plan.name_ta }}</span>
@@ -41,22 +40,22 @@
         </div>
     </header>
 
-    <!-- 3. BIBLE CHAPTERS STREAM -->
+    <!-- Phase 2: Scripture Stream -->
     <div id="scripture-stream" class="space-y-12">
         {% for ch in chapters %}
         <section class="chapter-block" data-book-id="{{ ch.book_id }}" data-chapter="{{ ch.chapter }}">
             <div class="mb-4 pb-2 border-b border-stone-100 dark:border-stone-800 flex justify-between items-baseline">
                 <h2 class="text-xl font-bold text-stone-900 dark:text-stone-100">{{ ch.book_name_ta }} {{ ch.chapter }}</h2>
-                <span class="text-sm text-stone-400">{{ ch.book_name_en }} {{ ch.chapter }}</span>
+                <span class="text-sm text-stone-400 font-serif">{{ ch.book_name_en }} {{ ch.chapter }}</span>
             </div>
 
             <div class="space-y-4 text-base leading-relaxed">
                 {% for v in ch.verses %}
-                <div class="verse-row flex gap-3 group" id="v-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}">
-                    <span class="text-xs font-bold text-stone-400 dark:text-stone-500 select-none pt-1">{{ v.verse }}</span>
+                <div class="verse-row flex gap-3 p-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800/40 transition">
+                    <span class="text-xs font-bold text-amber-700 dark:text-amber-500 select-none pt-1 w-5 text-right flex-shrink-0">{{ v.verse }}</span>
                     <div class="flex-1 space-y-1">
-                        <p class="text-stone-900 dark:text-stone-100">{{ v.text_ta }}</p>
-                        <p class="text-sm text-stone-500 dark:text-stone-400 font-serif">{{ v.text_en }}</p>
+                        <p class="text-stone-900 dark:text-stone-100 text-[var(--bible-font-size,1rem)]">{{ v.text_ta }}</p>
+                        <p class="text-sm text-stone-500 dark:text-stone-400 font-serif text-[calc(var(--bible-font-size,1rem)*0.92)]">{{ v.text_en }}</p>
                     </div>
                 </div>
                 {% endfor %}
@@ -65,7 +64,7 @@
         {% endfor %}
     </div>
 
-    <!-- 4. OUTRO BLESSING OVERLAY (5 Seconds Auto-Complete) -->
+    <!-- Phase 3: 5-Second Outro Blessing Overlay -->
     <div id="outro-card" class="hidden fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white">
         <span class="text-xs uppercase font-bold tracking-widest text-emerald-400 mb-2">Today's Blessing / ஆசீர்வாத வசனம்</span>
         <span class="text-amber-400 text-sm font-semibold mb-4">{{ day.outro.ref }}</span>
@@ -93,7 +92,7 @@ const CHAPTERS_LIST = {{ day.chapters | tojson }};
 let introTimer = null;
 let introSeconds = 5;
 
-// 1. Run 5s Intro Screen on page load
+// Intro Countdown
 window.addEventListener('DOMContentLoaded', () => {
     const timerText = document.getElementById('intro-timer-num');
     const progressBar = document.getElementById('intro-progress-bar');
@@ -118,17 +117,14 @@ function skipIntro() {
     document.getElementById('intro-card').classList.add('hidden');
 }
 
-// 2. Start Reading Action
+// Start Reading Toggle
 function startReadingSession() {
     document.getElementById('start-read-btn').classList.add('hidden');
-    const finishBtn = document.getElementById('finish-btn');
-    finishBtn.classList.remove('hidden');
-    
-    // Smooth scroll down to first chapter
+    document.getElementById('finish-btn').classList.remove('hidden');
     window.scrollTo({ top: 120, behavior: 'smooth' });
 }
 
-// 3. Trigger 5s Outro Blessing & Auto-Complete Plan
+// Outro Blessing & Auto-Save
 function triggerOutroBlessing() {
     const outroCard = document.getElementById('outro-card');
     outroCard.classList.remove('hidden');
@@ -152,20 +148,15 @@ function triggerOutroBlessing() {
     }, 1000);
 }
 
-// 4. Mark all chapters of today complete in plan storage
 async function finalizeDayCompletion() {
     if (typeof window.markPlanChapterComplete === 'function') {
         for (const ch of CHAPTERS_LIST) {
             window.markPlanChapterComplete(PLAN_ID, ch.book_id, ch.chapter, true);
         }
     }
-    
-    // Sync with Supabase cloud
     if (typeof window.syncWithSupabase === 'function') {
         await window.syncWithSupabase();
     }
-
-    // Redirect to plans overview with a completion notice
     window.location.href = `/plans?completed_day=${CURRENT_DAY}&plan_id=${PLAN_ID}`;
 }
 </script>
