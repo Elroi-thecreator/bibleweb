@@ -356,7 +356,6 @@ async def bookmarks_page(request: Request):
 async def legacy_redirect(book_id: int, chapter: int):
     return RedirectResponse(url=f"/read/{book_id}/{chapter}?mode=bilingual")
 
-
 # ==========================================
 # 6. 100-Day Read-Along Plan Routes
 # ==========================================
@@ -389,7 +388,6 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
     plan_info = plan_mapping[plan_type]
     file_path = PLANS_DIR / plan_info["file"]
 
-    # Fallback search if directory structure varies
     if not file_path.exists():
         file_path = Path("static/plans") / plan_info["file"]
 
@@ -399,33 +397,47 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
     with open(file_path, "r", encoding="utf-8") as f:
         plan_data = json.load(f)
 
-    # 1. Resolve Day Entry (supports array with 0-index/1-index or dict with string/int keys)
-    day_entry = None
+    # 1. Resolve list of day entries regardless of top-level schema
+    days_list = []
     if isinstance(plan_data, list):
-        for item in plan_data:
-            if item.get("day") == day:
-                day_entry = item
-                break
-        if not day_entry and 1 <= day <= len(plan_data):
-            day_entry = plan_data[day - 1]
+        days_list = plan_data
     elif isinstance(plan_data, dict):
-        day_entry = (
-            plan_data.get(str(day))
-            or plan_data.get(day)
-            or plan_data.get("days", {}).get(str(day))
-        )
+        raw_days = plan_data.get("days")
+        if isinstance(raw_days, list):
+            days_list = raw_days
+        elif isinstance(raw_days, dict):
+            # dict keyed by day numbers
+            day_val = raw_days.get(str(day)) or raw_days.get(day)
+            if day_val:
+                days_list = [day_val]
+        else:
+            # Plan itself might be keyed by day numbers {"1": {...}, "2": {...}}
+            day_val = plan_data.get(str(day)) or plan_data.get(day)
+            if day_val:
+                days_list = [day_val]
+
+    # Find the target day in the list
+    day_entry = None
+    for item in days_list:
+        if isinstance(item, dict) and item.get("day") == day:
+            day_entry = item
+            break
+
+    # Fallback to 1-based index if "day" key wasn't explicitly matched
+    if not day_entry and days_list and 1 <= day <= len(days_list):
+        day_entry = days_list[day - 1]
 
     if not day_entry:
         raise HTTPException(status_code=404, detail=f"Day {day} schedule not found")
 
-    # 2. Extract chapters/portions
+    # 2. Extract portions / passages
     raw_readings = []
     if isinstance(day_entry, dict):
         raw_readings = (
-            day_entry.get("readings")
+            day_entry.get("portions")
+            or day_entry.get("readings")
             or day_entry.get("chapters")
             or day_entry.get("passages")
-            or day_entry.get("portions")
             or []
         )
     elif isinstance(day_entry, list):
@@ -433,15 +445,21 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
 
     readings = []
     for item in raw_readings:
+        raw_book = None
+        ch = None
+
         if isinstance(item, dict):
-            raw_book = item.get("book") or item.get("book_id") or item.get("book_number") or item.get("b")
+            raw_book = (
+                item.get("book_id")
+                or item.get("book")
+                or item.get("book_number")
+                or item.get("b")
+            )
             ch = item.get("chapter") or item.get("ch") or item.get("c")
         elif isinstance(item, (list, tuple)) and len(item) >= 2:
             raw_book, ch = item[0], item[1]
-        else:
-            continue
 
-        # 3. Match raw_book against BOOK_MAP (supports id: 1-66, name_en: "Genesis", or name_ta)
+        # Match book identifier against BOOK_MAP
         book_id = None
         try:
             val = int(raw_book)
