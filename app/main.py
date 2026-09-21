@@ -360,138 +360,156 @@ async def legacy_redirect(book_id: int, chapter: int):
 # 6. 100-Day Read-Along Plan Routes
 # ==========================================
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-PLANS_DIR = BASE_DIR / "static" / "plans"
+PLANS_DIR = Path(__file__).resolve().parent.parent / "static" / "plans"
+
+
+def _lookup_book_id(book_str: str):
+    """Matches book names, ids, or abbreviations into an integer ID from BOOK_MAP."""
+    if not book_str:
+        return None
+    try:
+        val = int(book_str)
+        if val in BOOK_MAP:
+            return val
+    except (ValueError, TypeError):
+        pass
+
+    clean = str(book_str).strip().lower()
+    for bid, binfo in BOOK_MAP.items():
+        if (
+            binfo.get("name_en", "").lower() == clean
+            or binfo.get("name_ta", "").strip() == str(book_str).strip()
+            or binfo.get("abbrev", "").lower() == clean
+            or binfo.get("slug", "").lower() == clean
+        ):
+            return bid
+    return None
 
 
 @app.get("/read-along/plan/{plan_type}")
-async def redirect_to_day_one(plan_type: str):
-    return RedirectResponse(url=f"/read-along/plan/{plan_type}/day/1")
+async def redirect_plan_to_day(plan_type: str, day: int = 1):
+    return RedirectResponse(url=f"/read-along/plan/{plan_type}/day/{day}")
 
 
 @app.get("/read-along/plan/{plan_type}/day/{day}", response_class=HTMLResponse)
 async def read_along_plan_day(request: Request, plan_type: str, day: int):
-    plan_mapping = {
-        "whole-bible-100": {
-            "file": "plan_100_whole_bible.json",
-            "title": "Whole Bible in 100 Days",
-        },
-        "new-testament-100": {
-            "file": "plan_100_new_testament.json",
-            "title": "New Testament in 100 Days",
-        },
+    plan_files = {
+        "whole-bible-100": ("plan_100_whole_bible.json", "Whole Bible in 100 Days"),
+        "new-testament-100": ("plan_100_new_testament.json", "New Testament in 100 Days"),
     }
 
-    if plan_type not in plan_mapping:
+    if plan_type not in plan_files:
         raise HTTPException(status_code=404, detail="Plan not found")
 
-    plan_info = plan_mapping[plan_type]
-    file_path = PLANS_DIR / plan_info["file"]
+    filename, plan_title = plan_files[plan_type]
+    file_path = PLANS_DIR / filename
     if not file_path.exists():
-        file_path = Path("static/plans") / plan_info["file"]
+        file_path = Path("static/plans") / filename
 
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail=f"Plan file {plan_info['file']} not found")
+        raise HTTPException(status_code=404, detail=f"File {filename} not found")
 
     with open(file_path, "r", encoding="utf-8") as f:
-        plan_data = json.load(f)
+        plan_json = json.load(f)
 
-    # 1. Parse list of days from JSON structure
-    days_list = []
-    if isinstance(plan_data, list):
-        days_list = plan_data
-    elif isinstance(plan_data, dict):
-        raw_days = plan_data.get("days")
-        if isinstance(raw_days, list):
-            days_list = raw_days
-        elif isinstance(raw_days, dict):
-            day_val = raw_days.get(str(day)) or raw_days.get(day)
-            if day_val:
-                days_list = [day_val]
+    # 1. Parse raw days list
+    raw_days = []
+    if isinstance(plan_json, list):
+        raw_days = plan_json
+    elif isinstance(plan_json, dict):
+        if isinstance(plan_json.get("days"), list):
+            raw_days = plan_json["days"]
+        elif isinstance(plan_json.get("days"), dict):
+            raw_days = list(plan_json["days"].values())
         else:
-            day_val = plan_data.get(str(day)) or plan_data.get(day)
-            if day_val:
-                days_list = [day_val]
+            raw_days = [v for k, v in plan_json.items() if isinstance(v, dict)]
 
-    # Find the target day
-    day_entry = None
-    for item in days_list:
-        if isinstance(item, dict) and item.get("day") == day:
-            day_entry = item
+    # Locate target day
+    target_entry = None
+    for entry in raw_days:
+        if isinstance(entry, dict) and entry.get("day") == day:
+            target_entry = entry
             break
 
-    if not day_entry and days_list and 1 <= day <= len(days_list):
-        day_entry = days_list[day - 1]
+    if not target_entry and raw_days and (1 <= day <= len(raw_days)):
+        target_entry = raw_days[day - 1]
 
-    if not day_entry:
-        raise HTTPException(status_code=404, detail=f"Day {day} schedule not found")
+    if not target_entry:
+        raise HTTPException(status_code=404, detail=f"Day {day} not found in {plan_type}")
 
-    # 2. Extract chapters / portions
-    raw_readings = []
-    if isinstance(day_entry, dict):
-        raw_readings = (
-            day_entry.get("portions")
-            or day_entry.get("readings")
-            or day_entry.get("chapters")
-            or day_entry.get("passages")
-            or []
-        )
-    elif isinstance(day_entry, list):
-        raw_readings = day_entry
+    # 2. Extract reading items (strings or dicts)
+    portions = (
+        target_entry.get("portions")
+        or target_entry.get("chapters")
+        or target_entry.get("readings")
+        or target_entry.get("passages")
+        or []
+    )
 
     readings = []
-    for item in raw_readings:
-        raw_book = None
-        ch = None
-
-        if isinstance(item, dict):
-            raw_book = (
-                item.get("book_id")
-                or item.get("book")
-                or item.get("book_number")
-                or item.get("b")
-            )
-            ch = item.get("chapter") or item.get("ch") or item.get("c")
-        elif isinstance(item, (list, tuple)) and len(item) >= 2:
-            raw_book, ch = item[0], item[1]
-
-        # Match book against BOOK_MAP
+    for item in portions:
         book_id = None
-        try:
-            val = int(raw_book)
-            if val in BOOK_MAP:
-                book_id = val
-        except (ValueError, TypeError):
-            pass
+        chapter = None
 
-        if not book_id and isinstance(raw_book, str):
-            clean_b = raw_book.strip().lower()
-            for bid, binfo in BOOK_MAP.items():
-                if (
-                    binfo.get("name_en", "").lower() == clean_b
-                    or binfo.get("name_ta", "") == raw_book.strip()
-                    or binfo.get("abbrev", "").lower() == clean_b
-                ):
-                    book_id = bid
-                    break
-
-        if book_id and ch:
+        if isinstance(item, str):
+            match = re.match(r"^(.*?)\s*(\d+)$", item.strip())
+            if match:
+                book_name_part, ch_part = match.groups()
+                book_id = _lookup_book_id(book_name_part)
+                chapter = int(ch_part)
+        elif isinstance(item, dict):
+            raw_book = item.get("book") or item.get("book_id") or item.get("b")
+            raw_ch = item.get("chapter") or item.get("ch") or item.get("c")
+            book_id = _lookup_book_id(raw_book)
+            if raw_ch is not None:
+                try:
+                    chapter = int(raw_ch)
+                except ValueError:
+                    pass
+        elif isinstance(item, (list, tuple)) and len(item) >= 2:
+            book_id = _lookup_book_id(item[0])
             try:
-                ch_int = int(ch)
-                verses = get_chapter_verses(book_id, ch_int) or []
-                book_info = BOOK_MAP.get(book_id, {})
-                book_name = f"{book_info.get('name_ta', '')} / {book_info.get('name_en', '')}".strip(" /")
+                chapter = int(item[1])
+            except ValueError:
+                pass
 
-                readings.append(
-                    {
-                        "book_id": book_id,
-                        "book_name": book_name,
-                        "chapter": ch_int,
-                        "verses": verses,
-                    }
-                )
-            except Exception as e:
-                print(f"Error loading {book_id}:{ch} -> {e}")
+        if book_id and chapter:
+            verses = get_chapter_verses(book_id, chapter) or []
+            book_info = BOOK_MAP.get(book_id, {})
+            b_ta = book_info.get("name_ta", "")
+            b_en = book_info.get("name_en", "")
+            display_name = f"{b_ta} / {b_en}".strip(" /")
+
+            formatted_verses = []
+            for v in verses:
+                if isinstance(v, dict):
+                    v_num = v.get("verse") or v.get("verse_num") or v.get("v")
+                    text = v.get("text_ta") or v.get("text_en") or v.get("text", "")
+                    formatted_verses.append({"verse": v_num, "text": text})
+                elif isinstance(v, (list, tuple)) and len(v) >= 2:
+                    formatted_verses.append({"verse": v[0], "text": v[1]})
+
+            readings.append(
+                {
+                    "book_id": book_id,
+                    "book_name": display_name,
+                    "chapter": chapter,
+                    "verses": formatted_verses,
+                }
+            )
+
+    plan_obj = {
+        "id": plan_type,
+        "type": plan_type,
+        "title": plan_title,
+        "name": plan_title,
+        "total_days": 100,
+    }
+
+    day_obj = {
+        "day": day,
+        "portions": portions,
+    }
 
     return templates.TemplateResponse(
         request=request,
@@ -499,9 +517,10 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
         context={
             "books": BIBLE_BOOKS,
             "is_plan_mode": True,
+            "plan": plan_obj,
+            "day": day_obj,
             "plan_type": plan_type,
-            "plan_title": plan_info["title"],
-            "day": day,
+            "plan_title": plan_title,
             "total_days": 100,
             "prev_day": day - 1 if day > 1 else None,
             "next_day": day + 1 if day < 100 else None,
