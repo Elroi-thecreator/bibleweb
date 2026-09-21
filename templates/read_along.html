@@ -3,12 +3,21 @@
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-6 relative" id="player-container">
 
-    <!-- Phase 1: 5-Second Intro Countdown Overlay -->
+    <!-- ========================================== -->
+    <!-- 1. INTRO OVERLAY (5-Second Animated Cue)   -->
+    <!-- ========================================== -->
     <div id="intro-card" class="fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white">
-        <span class="text-xs uppercase font-bold tracking-widest text-amber-400 mb-2">Day {{ day.day }} of {{ plan.total_days }}</span>
-        <h2 class="text-2xl sm:text-3xl font-bold mb-3">{{ day.intro.display_ta }}</h2>
-        <p class="text-stone-300 text-base sm:text-lg mb-8 font-serif">{{ day.intro.display_en }}</p>
+        <span class="text-xs uppercase font-bold tracking-widest text-amber-400 mb-2">
+            Day {{ day.day }} of {{ plan.total_days }}
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-bold mb-3 max-w-xl leading-tight">
+            {{ day.intro.display_ta }}
+        </h2>
+        <p class="text-stone-300 text-base sm:text-lg mb-8 font-serif">
+            {{ day.intro.display_en }}
+        </p>
 
+        <!-- 5-Second Circular Progress Timer -->
         <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
                 <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -17,61 +26,115 @@
             <span id="intro-timer-num" class="absolute font-bold text-lg text-white">5</span>
         </div>
 
-        <button onclick="skipIntro()" class="text-xs text-stone-400 hover:text-white underline cursor-pointer">
-            Skip Intro
+        <button type="button" onclick="skipIntro()" class="text-xs text-stone-400 hover:text-white underline cursor-pointer">
+            Skip Intro →
         </button>
     </div>
 
-    <!-- Phase 2: Navigation & Reading Control Bar -->
-    <header class="flex items-center justify-between border-b border-stone-200 dark:border-stone-800 pb-4 mb-6 sticky top-14 bg-white/90 dark:bg-stone-900/90 backdrop-blur z-20">
+    <!-- ========================================== -->
+    <!-- 2. STICKY TOP CONTROL HEADER               -->
+    <!-- ========================================== -->
+    <header class="flex items-center justify-between border-b border-stone-200 dark:border-stone-800 pb-4 mb-6 sticky top-14 bg-white/95 dark:bg-stone-900/95 backdrop-blur z-20">
         <div>
-            <span class="text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-wider">{{ plan.name_ta }}</span>
-            <h1 class="text-lg font-bold text-stone-900 dark:text-stone-100">{{ day.intro.display_ta }}</h1>
+            <div class="flex items-center gap-2">
+                <a href="/plans" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                </a>
+                <span class="text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-wider">
+                    {{ plan.name_ta }} (Day {{ day.day }})
+                </span>
+            </div>
+            <h1 class="text-lg font-bold text-stone-900 dark:text-stone-100 mt-0.5">
+                {{ day.intro.display_ta }}
+            </h1>
         </div>
         
-        <div class="flex items-center gap-3">
-            <button id="start-read-btn" onclick="startReadingSession()" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md cursor-pointer transition">
+        <div class="flex items-center gap-2">
+            <!-- Start Action Button -->
+            <button id="start-read-btn" 
+                    type="button"
+                    onclick="startReadingSession()" 
+                    class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition">
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
                 <span>Start Reading</span>
             </button>
-            <button id="finish-btn" onclick="triggerOutroBlessing()" class="hidden px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md cursor-pointer transition">
-                <span>Complete Day</span>
+            
+            <!-- Finish & Trigger Blessing -->
+            <button id="finish-btn" 
+                    type="button"
+                    onclick="triggerOutroBlessing()" 
+                    class="hidden px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition">
+                <span>Complete Day {{ day.day }} ✓</span>
             </button>
         </div>
     </header>
 
-    <!-- Phase 2: Scripture Stream -->
-    <div id="scripture-stream" class="space-y-12">
+    <!-- ========================================== -->
+    <!-- 3. BIBLE CHAPTERS STREAM                   -->
+    <!-- ========================================== -->
+    <main id="scripture-stream" class="space-y-12">
         {% for ch in chapters %}
         <section class="chapter-block" data-book-id="{{ ch.book_id }}" data-chapter="{{ ch.chapter }}">
-            <div class="mb-4 pb-2 border-b border-stone-100 dark:border-stone-800 flex justify-between items-baseline">
-                <h2 class="text-xl font-bold text-stone-900 dark:text-stone-100">{{ ch.book_name_ta }} {{ ch.chapter }}</h2>
-                <span class="text-sm text-stone-400 font-serif">{{ ch.book_name_en }} {{ ch.chapter }}</span>
+            <div class="mb-4 pb-2 border-b border-stone-200 dark:border-stone-800 flex justify-between items-baseline">
+                <h2 class="text-xl font-bold text-stone-900 dark:text-stone-100">
+                    {{ ch.book_name_ta }} {{ ch.chapter }}
+                </h2>
+                <span class="text-sm text-stone-400 font-serif">
+                    {{ ch.book_name_en }} {{ ch.chapter }}
+                </span>
             </div>
 
             <div class="space-y-4 text-base leading-relaxed">
                 {% for v in ch.verses %}
-                <div class="verse-row flex gap-3 p-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800/40 transition">
-                    <span class="text-xs font-bold text-amber-700 dark:text-amber-500 select-none pt-1 w-5 text-right flex-shrink-0">{{ v.verse }}</span>
+                <div class="verse-row flex gap-3.5 p-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800/40 transition group" id="v-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}">
+                    <span class="text-xs font-bold text-amber-700 dark:text-amber-500 pt-1 select-none w-5 text-right flex-shrink-0">
+                        {{ v.verse }}
+                    </span>
                     <div class="flex-1 space-y-1">
-                        <p class="text-stone-900 dark:text-stone-100 text-[var(--bible-font-size,1rem)]">{{ v.text_ta }}</p>
-                        <p class="text-sm text-stone-500 dark:text-stone-400 font-serif text-[calc(var(--bible-font-size,1rem)*0.92)]">{{ v.text_en }}</p>
+                        <p class="verse-ta text-stone-900 dark:text-stone-100 text-[var(--bible-font-size,1rem)] leading-relaxed">
+                            {{ v.text_ta }}
+                        </p>
+                        <p class="verse-en text-stone-500 dark:text-stone-400 font-serif text-[calc(var(--bible-font-size,1rem)*0.92)] leading-relaxed">
+                            {{ v.text_en }}
+                        </p>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         </section>
         {% endfor %}
+    </main>
+
+    <!-- Bottom Day Completion Trigger -->
+    <div class="mt-14 py-8 border-t border-stone-200 dark:border-stone-800 text-center">
+        <button type="button" 
+                onclick="triggerOutroBlessing()" 
+                class="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-bold shadow-md cursor-pointer transition">
+            Finish & Receive Today's Blessing ✨
+        </button>
     </div>
 
-    <!-- Phase 3: 5-Second Outro Blessing Overlay -->
+    <!-- ========================================== -->
+    <!-- 4. OUTRO BLESSING (5s Auto-Complete)       -->
+    <!-- ========================================== -->
     <div id="outro-card" class="hidden fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white">
-        <span class="text-xs uppercase font-bold tracking-widest text-emerald-400 mb-2">Today's Blessing / ஆசீர்வாத வசனம்</span>
-        <span class="text-amber-400 text-sm font-semibold mb-4">{{ day.outro.ref }}</span>
+        <span class="text-xs uppercase font-bold tracking-widest text-emerald-400 mb-2">
+            Today's Blessing / ஆசீர்வாத வசனம்
+        </span>
+        <span class="text-amber-400 text-sm font-semibold mb-4">
+            {{ day.outro.ref }}
+        </span>
         
-        <h2 class="text-xl sm:text-2xl font-bold mb-3 max-w-xl leading-snug">{{ day.outro.ta }}</h2>
-        <p class="text-stone-300 text-sm sm:text-base mb-8 max-w-xl font-serif italic">{{ day.outro.en }}</p>
+        <h2 class="text-xl sm:text-2xl font-bold mb-3 max-w-xl leading-snug">
+            {{ day.outro.ta }}
+        </h2>
+        <p class="text-stone-300 text-sm sm:text-base mb-8 max-w-xl font-serif italic">
+            "{{ day.outro.en }}"
+        </p>
 
+        <!-- 5-Second Circular Timer -->
         <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
                 <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -80,7 +143,7 @@
             <span id="outro-timer-num" class="absolute font-bold text-lg text-white">5</span>
         </div>
 
-        <p class="text-xs text-stone-400">Marking progress and saving to cloud...</p>
+        <p class="text-xs text-stone-400">Saving completion and syncing to cloud...</p>
     </div>
 </div>
 
@@ -92,7 +155,7 @@ const CHAPTERS_LIST = {{ day.chapters | tojson }};
 let introTimer = null;
 let introSeconds = 5;
 
-// Intro Countdown
+// 1. Run 5s Intro Screen
 window.addEventListener('DOMContentLoaded', () => {
     const timerText = document.getElementById('intro-timer-num');
     const progressBar = document.getElementById('intro-progress-bar');
@@ -117,14 +180,14 @@ function skipIntro() {
     document.getElementById('intro-card').classList.add('hidden');
 }
 
-// Start Reading Toggle
+// 2. Start Reading Action
 function startReadingSession() {
     document.getElementById('start-read-btn').classList.add('hidden');
     document.getElementById('finish-btn').classList.remove('hidden');
     window.scrollTo({ top: 120, behavior: 'smooth' });
 }
 
-// Outro Blessing & Auto-Save
+// 3. Trigger 5-Second Outro Blessing & Complete Plan
 function triggerOutroBlessing() {
     const outroCard = document.getElementById('outro-card');
     outroCard.classList.remove('hidden');
@@ -148,15 +211,30 @@ function triggerOutroBlessing() {
     }, 1000);
 }
 
+// 4. Save Progress & Return to Plans Page
 async function finalizeDayCompletion() {
+    // Record last completed day locally
+    localStorage.setItem(`readalong_${PLAN_ID}_progress`, JSON.stringify({
+        last_completed_day: CURRENT_DAY,
+        updated_at: new Date().toISOString()
+    }));
+
+    // Record chapter checks if habit tracker function exists
     if (typeof window.markPlanChapterComplete === 'function') {
         for (const ch of CHAPTERS_LIST) {
             window.markPlanChapterComplete(PLAN_ID, ch.book_id, ch.chapter, true);
         }
     }
+
+    // Direct cloud sync to Supabase
     if (typeof window.syncWithSupabase === 'function') {
-        await window.syncWithSupabase();
+        try {
+            await window.syncWithSupabase();
+        } catch (e) {
+            console.warn("Cloud sync deferred:", e);
+        }
     }
+
     window.location.href = `/plans?completed_day=${CURRENT_DAY}&plan_id=${PLAN_ID}`;
 }
 </script>

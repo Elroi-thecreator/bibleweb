@@ -1,458 +1,231 @@
 {% extends "base.html" %}
 
-{% block title %}Custom Reading Plans | வேதாகம வாசிப்புத் திட்டங்கள்{% endblock %}
-
 {% block content %}
-<div class="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6">
+<div class="max-w-4xl mx-auto px-4 py-8">
 
-    <!-- Header -->
-    <div class="border-b border-stone-200 dark:border-stone-800 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <!-- Completion Toast / Alert -->
+    {% if completed_day %}
+    <div class="mb-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 flex items-center justify-between shadow-xs">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">🎉</span>
+            <div>
+                <h4 class="text-sm font-bold text-emerald-900 dark:text-emerald-200">Day {{ completed_day }} Completed!</h4>
+                <p class="text-xs text-emerald-700 dark:text-emerald-400">Your reading progress and blessing have been recorded.</p>
+            </div>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-600 dark:text-emerald-400 hover:opacity-75 text-xs font-bold px-2 py-1">
+            ✕
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Page Header -->
+    <header class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 dark:border-stone-800 pb-5">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">Reading Plans</h1>
-            <p class="font-tamil text-xs sm:text-sm text-stone-500">தனிப்பயன் வாசிப்புத் திட்டங்கள் (முழு வேதாகம பதிவிலிருந்து தனிப்பட்டது)</p>
+            <h1 class="text-2xl font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+                <span>📖</span> வாசிப்புத் திட்டங்கள் / Reading Plans
+            </h1>
+            <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1">
+                Structured Scripture journeys with isolated progress tracking and daily reminders.
+            </p>
         </div>
-        <button onclick="openPlanModal()" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer self-start sm:self-auto">
-            <span>+</span> <span>Create New Plan</span>
-        </button>
-    </div>
-
-    <!-- Active Plans Grid Container -->
-    <div id="plans-container" class="space-y-6">
-        <!-- Rendered dynamically via JavaScript -->
-    </div>
-
-    <!-- Empty State Prompt -->
-    <div id="no-plans-card" class="hidden bg-stone-100 dark:bg-stone-900 border border-dashed border-stone-300 dark:border-stone-800 rounded-2xl p-8 text-center space-y-3">
-        <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 flex items-center justify-center mx-auto text-xl">
-            📖
+        <div>
+            <a href="/" class="text-xs font-semibold text-amber-700 dark:text-amber-500 hover:underline flex items-center gap-1">
+                <span>← Back to Reader</span>
+            </a>
         </div>
-        <h3 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">No Active Reading Plans</h3>
-        <p class="text-xs text-stone-500 max-w-md mx-auto">Create multiple simultaneous plans (e.g., one for New Testament in 90 days and another for Psalms). Each plan keeps its own isolated progress.</p>
-        <button onclick="openPlanModal()" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition cursor-pointer">
-            Create First Plan →
-        </button>
-    </div>
+    </header>
 
-    <!-- Plan Creation Modal -->
-    <div id="plan-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
-        <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-md w-full p-5 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto space-y-4">
+    <!-- ========================================== -->
+    <!-- 100-DAY READ-ALONG CHALLENGES SECTION      -->
+    <!-- ========================================== -->
+    <section class="mb-12">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-base sm:text-lg font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+                    <span>🎧</span> 100-Day Read-Along Challenges
+                </h2>
+                <p class="text-xs text-stone-500 dark:text-stone-400">
+                    Word-balanced daily reading with 5s chapter preview & closing blessing benediction.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             
-            <div class="flex justify-between items-center pb-2 border-b border-stone-100 dark:border-stone-800">
-                <h3 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Create Reading Plan</h3>
-                <button onclick="closePlanModal()" class="text-stone-400 text-xl font-bold leading-none cursor-pointer">&times;</button>
-            </div>
-
-            <!-- Custom Plan Title -->
-            <div class="space-y-1.5">
-                <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Plan Name / திட்டத்தின் பெயர்</label>
-                <input type="text" id="input-plan-name" placeholder="e.g., Morning Devotion, NT in 90 Days" class="w-full text-xs p-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 font-medium">
-            </div>
-
-            <!-- Scope Selection -->
-            <div class="space-y-1.5">
-                <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Reading Scope / பகுதி</label>
-                <select id="input-plan-scope" onchange="updateModalCalculations()" class="w-full text-xs p-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 font-medium">
-                    <option value="all">Entire Bible (1,189 Chapters)</option>
-                    <option value="nt">New Testament (260 Chapters)</option>
-                    <option value="gospels">The Four Gospels (89 Chapters)</option>
-                    <option value="psalms_proverbs">Psalms & Proverbs (181 Chapters)</option>
-                </select>
-            </div>
-
-            <!-- Driver Toggle: End Date vs. Pace -->
-            <div class="space-y-1.5">
-                <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Calculation Method</label>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button type="button" id="toggle-by-date" onclick="setDriver('date')" class="py-2 px-3 rounded-xl border font-semibold text-center cursor-pointer bg-amber-50 dark:bg-amber-950/40 border-amber-600 text-amber-900 dark:text-amber-300">
-                        Target End Date
-                    </button>
-                    <button type="button" id="toggle-by-pace" onclick="setDriver('pace')" class="py-2 px-3 rounded-xl border font-semibold text-center cursor-pointer bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400">
-                        Chapters Per Day
-                    </button>
-                </div>
-            </div>
-
-            <!-- Date / Pace Inputs -->
-            <div class="grid grid-cols-2 gap-3 text-xs">
+            <!-- Whole Bible Card -->
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-amber-900/10 via-stone-50 to-amber-950/5 dark:from-amber-950/40 dark:via-stone-900 dark:to-stone-900 border border-amber-200/70 dark:border-amber-900/50 flex flex-col justify-between shadow-xs">
                 <div>
-                    <label class="text-[11px] text-stone-500 block mb-1">Start Date</label>
-                    <input type="date" id="input-start-date" onchange="updateModalCalculations()" class="w-full p-2 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs">
+                    <div class="flex items-center justify-between mb-2.5">
+                        <span class="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+                            Whole Bible (Genesis - Revelation)
+                        </span>
+                        <span class="text-xs font-bold text-amber-700 dark:text-amber-500">100 Days</span>
+                    </div>
+                    <h3 class="text-base font-bold text-stone-900 dark:text-stone-100 mb-1">
+                        100 நாட்கள் முழு வேதாகம வாசிப்பு
+                    </h3>
+                    <p class="text-xs text-stone-600 dark:text-stone-400 mb-4 leading-relaxed">
+                        ~7,800 words per day balanced reading covering all 66 books from beginning to end.
+                    </p>
                 </div>
-                <div id="container-end-date">
-                    <label class="text-[11px] text-stone-500 block mb-1">Target End Date</label>
-                    <input type="date" id="input-end-date" onchange="updateModalCalculations()" class="w-full p-2 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs">
-                </div>
-                <div id="container-pace" class="hidden">
-                    <label class="text-[11px] text-stone-500 block mb-1">Chapters Daily</label>
-                    <input type="number" id="input-pace" min="1" max="50" value="3" oninput="updateModalCalculations()" class="w-full p-2 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs font-bold">
+
+                <div class="space-y-3 pt-3 border-t border-stone-200/70 dark:border-stone-800">
+                    <!-- Progress meter -->
+                    <div class="flex items-center justify-between text-[11px] font-semibold text-stone-500">
+                        <span id="wb-progress-text">Progress: Day 0 / 100</span>
+                        <span id="wb-progress-pct">0%</span>
+                    </div>
+                    <div class="w-full bg-stone-200 dark:bg-stone-800 rounded-full h-1.5 overflow-hidden">
+                        <div id="wb-progress-bar" class="bg-amber-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <!-- Direct Action Launch Button -->
+                        <a id="btn-wb-resume" 
+                           href="/plans/read-along/plan_100_whole_bible/1" 
+                           class="flex-1 py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
+                            <span>Start Day 1</span>
+                        </a>
+                        
+                        <!-- Day Dropdown Quick Selector -->
+                        <select onchange="if(this.value) window.location.href='/plans/read-along/plan_100_whole_bible/' + this.value;" 
+                                class="bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-xs font-semibold rounded-xl px-2 py-2 focus:outline-none focus:ring-1 focus:ring-amber-700">
+                            <option value="">Jump to Day...</option>
+                            {% for d in range(1, 101) %}
+                            <option value="{{ d }}">Day {{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <!-- Reminder Time -->
-            <div class="space-y-1.5">
-                <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Daily Reminder Time / நினைவூட்டல் நேரம்</label>
-                <input type="time" id="input-reminder-time" value="07:00" class="w-full p-2 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs">
+            <!-- New Testament Card -->
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-900/10 via-stone-50 to-emerald-950/5 dark:from-emerald-950/40 dark:via-stone-900 dark:to-stone-900 border border-emerald-200/70 dark:border-emerald-900/50 flex flex-col justify-between shadow-xs">
+                <div>
+                    <div class="flex items-center justify-between mb-2.5">
+                        <span class="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                            New Testament (Matthew - Revelation)
+                        </span>
+                        <span class="text-xs font-bold text-emerald-700 dark:text-emerald-500">100 Days</span>
+                    </div>
+                    <h3 class="text-base font-bold text-stone-900 dark:text-stone-100 mb-1">
+                        100 நாட்கள் புதிய ஏற்பாடு வாசிப்பு
+                    </h3>
+                    <p class="text-xs text-stone-600 dark:text-stone-400 mb-4 leading-relaxed">
+                        ~1,800 words per day (~12–15 mins daily) covering all 27 books with focused reflection.
+                    </p>
+                </div>
+
+                <div class="space-y-3 pt-3 border-t border-stone-200/70 dark:border-stone-800">
+                    <!-- Progress meter -->
+                    <div class="flex items-center justify-between text-[11px] font-semibold text-stone-500">
+                        <span id="nt-progress-text">Progress: Day 0 / 100</span>
+                        <span id="nt-progress-pct">0%</span>
+                    </div>
+                    <div class="w-full bg-stone-200 dark:bg-stone-800 rounded-full h-1.5 overflow-hidden">
+                        <div id="nt-progress-bar" class="bg-emerald-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <!-- Direct Action Launch Button -->
+                        <a id="btn-nt-resume" 
+                           href="/plans/read-along/plan_100_new_testament/1" 
+                           class="flex-1 py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
+                            <span>Start Day 1</span>
+                        </a>
+                        
+                        <!-- Day Dropdown Quick Selector -->
+                        <select onchange="if(this.value) window.location.href='/plans/read-along/plan_100_new_testament/' + this.value;" 
+                                class="bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-xs font-semibold rounded-xl px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-700">
+                            <option value="">Jump to Day...</option>
+                            {% for d in range(1, 101) %}
+                            <option value="{{ d }}">Day {{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <!-- Calculation Output -->
-            <div class="p-3 bg-stone-100 dark:bg-stone-800/80 rounded-xl border border-stone-200 dark:border-stone-700 text-xs space-y-1">
-                <div class="flex justify-between">
-                    <span class="text-stone-500">Calculated Pace:</span>
-                    <span id="summary-pace" class="font-bold text-stone-900 dark:text-stone-100">~3.3 chapters / day</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-stone-500">Duration:</span>
-                    <span id="summary-duration" class="font-bold text-stone-900 dark:text-stone-100">365 days</span>
-                </div>
-            </div>
-
-            <div class="flex gap-2 pt-2 border-t border-stone-100 dark:border-stone-800">
-                <button type="button" onclick="closePlanModal()" class="flex-1 py-2 bg-stone-100 dark:bg-stone-800 rounded-xl text-xs font-semibold cursor-pointer">Cancel</button>
-                <button type="button" onclick="saveNewCustomPlan()" class="flex-1 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold cursor-pointer">Save Plan →</button>
-            </div>
         </div>
-    </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- STANDARD HABIT READING TRACKS              -->
+    <!-- ========================================== -->
+    <section>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base sm:text-lg font-bold text-stone-900 dark:text-stone-100">
+                Standard Reading Tracks / இதர வாசிப்பு அட்டவணைகள்
+            </h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {% for plan in plans %}
+            {% if not plan.is_read_along %}
+            <div class="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-800 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-sm text-stone-900 dark:text-stone-100">{{ plan.title }}</h3>
+                    <p class="text-xs text-stone-500 dark:text-stone-400 mt-1 font-serif">{{ plan.title_en }}</p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-stone-200/60 dark:border-stone-700/60 flex items-center justify-between">
+                    <span class="text-[11px] font-semibold text-stone-400">{{ plan.days | length if plan.days else 'Self-Paced' }}</span>
+                    <button type="button" 
+                            onclick="alert('Select a chapter directly in the reader to track habit completion.')"
+                            class="text-xs font-bold text-amber-700 dark:text-amber-500 hover:underline cursor-pointer">
+                        View Track →
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </section>
 
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-const PLAN_SCOPES = {
-    all: { name: "Entire Scripture", startBook: 1, endBook: 66, chapters: 1189 },
-    nt: { name: "New Testament", startBook: 40, endBook: 66, chapters: 260 },
-    gospels: { name: "The Four Gospels", startBook: 40, endBook: 43, chapters: 89 },
-    psalms_proverbs: { name: "Psalms & Proverbs", startBook: 19, endBook: 20, chapters: 181 }
-};
+// Auto-Resume Progress & Progress Bar calculations
+window.addEventListener('DOMContentLoaded', () => {
+    // 1. Whole Bible Progress Check
+    const wbProgress = JSON.parse(localStorage.getItem('readalong_plan_100_whole_bible_progress') || '{"last_completed_day": 0}');
+    const wbCompleted = wbProgress.last_completed_day || 0;
+    const nextWbDay = Math.min(100, wbCompleted + 1);
 
-let activeDriver = 'date';
+    const wbText = document.getElementById('wb-progress-text');
+    const wbPct = document.getElementById('wb-progress-pct');
+    const wbBar = document.getElementById('wb-progress-bar');
+    const wbBtn = document.getElementById('btn-wb-resume');
 
-function setDriver(driver) {
-    activeDriver = driver;
-    const btnDate = document.getElementById('toggle-by-date');
-    const btnPace = document.getElementById('toggle-by-pace');
-    const boxDate = document.getElementById('container-end-date');
-    const boxPace = document.getElementById('container-pace');
+    if (wbText) wbText.innerText = `Progress: Day ${wbCompleted} / 100`;
+    if (wbPct) wbPct.innerText = `${wbCompleted}%`;
+    if (wbBar) wbBar.style.width = `${wbCompleted}%`;
 
-    if (driver === 'date') {
-        btnDate.className = "py-2 px-3 rounded-xl border font-semibold text-center cursor-pointer bg-amber-50 dark:bg-amber-950/40 border-amber-600 text-amber-900 dark:text-amber-300";
-        btnPace.className = "py-2 px-3 rounded-xl border font-semibold text-center cursor-pointer bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400";
-        boxDate.classList.remove('hidden');
-        boxPace.classList.add('hidden');
-    } else {
-        btnPace.className = "py-2 px-3 rounded-xl border font-semibold text-center cursor-pointer bg-amber-50 dark:bg-amber-950/40 border-amber-600 text-amber-900 dark:text-amber-300";
-        btnDate.className = "py-2 px-3 rounded-xl border font-semibold text-center cursor-pointer bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400";
-        boxPace.classList.remove('hidden');
-        boxDate.classList.add('hidden');
-    }
-    updateModalCalculations();
-}
-
-function openPlanModal() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('input-start-date').value = today;
-
-    const defaultEnd = new Date();
-    defaultEnd.setDate(defaultEnd.getDate() + 90);
-    document.getElementById('input-end-date').value = defaultEnd.toISOString().split('T')[0];
-    document.getElementById('input-plan-name').value = '';
-
-    updateModalCalculations();
-    document.getElementById('plan-modal').classList.remove('hidden');
-}
-
-function closePlanModal() {
-    document.getElementById('plan-modal').classList.add('hidden');
-}
-
-function updateModalCalculations() {
-    const scopeKey = document.getElementById('input-plan-scope').value;
-    const totalChapters = PLAN_SCOPES[scopeKey].chapters;
-    const startStr = document.getElementById('input-start-date').value;
-    if (!startStr) return;
-
-    const startDate = new Date(startStr);
-
-    if (activeDriver === 'date') {
-        const endStr = document.getElementById('input-end-date').value;
-        if (!endStr) return;
-        const endDate = new Date(endStr);
-        const diffDays = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)));
-        const chPerDay = (totalChapters / diffDays).toFixed(1);
-
-        document.getElementById('summary-pace').innerText = `${chPerDay} chapters / day`;
-        document.getElementById('summary-duration').innerText = `${diffDays} days`;
-    } else {
-        const pace = Math.max(1, parseInt(document.getElementById('input-pace').value) || 3);
-        const daysRequired = Math.ceil(totalChapters / pace);
-        const estEnd = new Date(startDate);
-        estEnd.setDate(estEnd.getDate() + daysRequired);
-
-        document.getElementById('summary-pace').innerText = `${pace} chapters / day`;
-        document.getElementById('summary-duration').innerText = `${daysRequired} days (Ends ${estEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })})`;
-    }
-}
-
-function saveCustomPlansList(plans) {
-    localStorage.setItem('bible_custom_reading_plans', JSON.stringify(plans));
-    renderAllPlans();
-    if (typeof syncWithSupabase === 'function') syncWithSupabase();
-}
-
-function saveNewCustomPlan() {
-    const scopeKey = document.getElementById('input-plan-scope').value;
-    const titleInput = document.getElementById('input-plan-name').value.trim();
-    const startStr = document.getElementById('input-start-date').value;
-    const reminderTime = document.getElementById('input-reminder-time').value || '07:00';
-    const totalChapters = PLAN_SCOPES[scopeKey].chapters;
-    const startDate = new Date(startStr);
-
-    let pace = 3;
-    let endStr = '';
-
-    if (activeDriver === 'date') {
-        endStr = document.getElementById('input-end-date').value;
-        const diffDays = Math.max(1, Math.ceil((new Date(endStr) - startDate) / (1000 * 60 * 60 * 24)));
-        pace = parseFloat((totalChapters / diffDays).toFixed(2));
-    } else {
-        pace = parseInt(document.getElementById('input-pace').value) || 3;
-        const days = Math.ceil(totalChapters / pace);
-        const end = new Date(startDate);
-        end.setDate(end.getDate() + days);
-        endStr = end.toISOString().split('T')[0];
+    if (wbBtn && wbCompleted > 0) {
+        wbBtn.href = `/plans/read-along/plan_100_whole_bible/${nextWbDay}`;
+        wbBtn.querySelector('span').innerText = `Resume Day ${nextWbDay}`;
     }
 
-    const newPlan = {
-        id: 'plan_' + Date.now(),
-        name: titleInput || PLAN_SCOPES[scopeKey].name,
-        scopeKey,
-        startDate: startStr,
-        endDate: endStr,
-        dailyPace: pace,
-        reminderTime,
-        completedChapters: {},
-        createdAt: new Date().toISOString()
-    };
+    // 2. New Testament Progress Check
+    const ntProgress = JSON.parse(localStorage.getItem('readalong_plan_100_new_testament_progress') || '{"last_completed_day": 0}');
+    const ntCompleted = ntProgress.last_completed_day || 0;
+    const nextNtDay = Math.min(100, ntCompleted + 1);
 
-    const plans = getCustomPlans();
-    plans.unshift(newPlan);
-    saveCustomPlansList(plans);
-    closePlanModal();
-    showToast("New reading plan created! 📖");
-}
+    const ntText = document.getElementById('nt-progress-text');
+    const ntPct = document.getElementById('nt-progress-pct');
+    const ntBar = document.getElementById('nt-progress-bar');
+    const ntBtn = document.getElementById('btn-nt-resume');
 
-function deletePlanById(planId) {
-    if (confirm("Delete this plan? Its separate progress will be removed.")) {
-        let plans = getCustomPlans().filter(p => p.id !== planId);
-        saveCustomPlansList(plans);
-        showToast("Plan deleted");
+    if (ntText) ntText.innerText = `Progress: Day ${ntCompleted} / 100`;
+    if (ntPct) ntPct.innerText = `${ntCompleted}%`;
+    if (ntBar) ntBar.style.width = `${ntCompleted}%`;
+
+    if (ntBtn && ntCompleted > 0) {
+        ntBtn.href = `/plans/read-along/plan_100_new_testament/${nextNtDay}`;
+        ntBtn.querySelector('span').innerText = `Resume Day ${nextNtDay}`;
     }
-}
-
-function recalculatePlanById(planId) {
-    const plans = getCustomPlans();
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) return;
-
-    const stats = getPlanMetrics(plan);
-    if (stats.remainingChapters <= 0) {
-        showToast("Plan already completed! 🎉");
-        return;
-    }
-
-    const today = new Date();
-    const endDate = new Date(plan.endDate);
-    const daysLeft = Math.max(1, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24)));
-    const newPace = parseFloat((stats.remainingChapters / daysLeft).toFixed(2));
-
-    plan.dailyPace = newPace;
-    saveCustomPlansList(plans);
-    showToast(`Pace recalculated: ${newPace} chapters/day to finish by target date! ✓`);
-}
-
-function getPlanMetrics(plan) {
-    const completed = plan.completedChapters || {};
-    const scope = PLAN_SCOPES[plan.scopeKey];
-    let readCount = 0;
-    let firstUnread = null;
-
-    if (plan.scopeKey === 'psalms_proverbs') {
-        for (let c = 1; c <= 150; c++) {
-            if (completed[`19_${c}`]) readCount++;
-            else if (!firstUnread) firstUnread = { book: 19, ch: c };
-        }
-        for (let c = 1; c <= 31; c++) {
-            if (completed[`20_${c}`]) readCount++;
-            else if (!firstUnread) firstUnread = { book: 20, ch: c };
-        }
-    } else {
-        for (let b = scope.startBook; b <= scope.endBook; b++) {
-            const maxCh = (b === 19 ? 150 : (b === 66 ? 22 : 50));
-            for (let c = 1; c <= maxCh; c++) {
-                if (completed[`${b}_${c}`]) {
-                    readCount++;
-                } else if (!firstUnread) {
-                    firstUnread = { book: b, ch: c };
-                }
-            }
-        }
-    }
-
-    const start = new Date(plan.startDate);
-    const today = new Date();
-    const daysElapsed = Math.max(0, Math.floor((today - start) / (1000 * 60 * 60 * 24)));
-    const expectedRead = Math.min(scope.chapters, Math.round(daysElapsed * plan.dailyPace));
-    const variance = readCount - expectedRead;
-
-    return {
-        scope,
-        readCount,
-        remainingChapters: Math.max(0, scope.chapters - readCount),
-        pct: Math.min(100, Math.round((readCount / scope.chapters) * 100)),
-        expectedRead,
-        variance,
-        firstUnread: firstUnread || { book: scope.startBook, ch: 1 }
-    };
-}
-
-function renderAllPlans() {
-    const plans = getCustomPlans();
-    const container = document.getElementById('plans-container');
-    const emptyCard = document.getElementById('no-plans-card');
-
-    container.innerHTML = '';
-
-    if (!plans || plans.length === 0) {
-        emptyCard.classList.remove('hidden');
-        return;
-    }
-
-    emptyCard.classList.add('hidden');
-
-    plans.forEach(plan => {
-        const m = getPlanMetrics(plan);
-
-        let statusHtml = '';
-        if (m.variance >= 0) {
-            statusHtml = `<span class="text-emerald-600 dark:text-emerald-400 font-bold">${m.variance === 0 ? "On Track ✓" : `${m.variance} Ch Ahead! 🚀`}</span>`;
-        } else {
-            const skippedDays = Math.abs(Math.round(m.variance / plan.dailyPace));
-            statusHtml = `<span class="text-rose-600 dark:text-rose-400 font-bold">${Math.abs(m.variance)} Ch Behind (~${skippedDays} days)</span>`;
-        }
-
-        const daysToFinish = plan.dailyPace > 0 ? Math.ceil(m.remainingChapters / plan.dailyPace) : 0;
-        const finishDate = new Date();
-        finishDate.setDate(finishDate.getDate() + daysToFinish);
-        const estFinishStr = m.remainingChapters === 0 ? "Completed! 🎉" : finishDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-
-        const card = document.createElement('div');
-        card.className = "bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4";
-        card.innerHTML = `
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-stone-100 dark:border-stone-800 pb-4">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h2 class="font-cinzel font-bold text-lg text-stone-900 dark:text-stone-100">${plan.name}</h2>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300">${plan.dailyPace} Ch/Day</span>
-                    </div>
-                    <p class="text-xs text-stone-500 mt-0.5">${m.scope.name} • ${plan.startDate} → ${plan.endDate}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a href="/read/${m.firstUnread.book}/${m.firstUnread.ch}?mode=bilingual&plan_id=${plan.id}" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition">
-                        Next: Ch ${m.firstUnread.ch} →
-                    </a>
-                    <button onclick="downloadPlanICS('${plan.id}')" class="p-2 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 border border-stone-300 dark:border-stone-700 rounded-xl text-xs cursor-pointer" title="Export Calendar Reminder">
-                        📅
-                    </button>
-                    <button onclick="deletePlanById('${plan.id}')" class="p-2 text-stone-400 hover:text-rose-600 rounded-xl text-xs cursor-pointer" title="Delete Plan">
-                        🗑️
-                    </button>
-                </div>
-            </div>
-
-            <!-- Stats -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                <div class="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
-                    <span class="text-[10px] uppercase font-bold text-stone-400 block">Progress</span>
-                    <span class="text-xl font-cinzel font-bold text-stone-900 dark:text-stone-100">${m.pct}%</span>
-                    <span class="text-[11px] text-stone-500 font-mono block">${m.readCount} / ${m.scope.chapters} Ch</span>
-                </div>
-                <div class="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
-                    <span class="text-[10px] uppercase font-bold text-stone-400 block">Expected Pace</span>
-                    <span class="text-xl font-cinzel font-bold text-stone-900 dark:text-stone-100">${m.expectedRead}</span>
-                    <span class="text-[11px] text-stone-500 block">Target by today</span>
-                </div>
-                <div class="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
-                    <span class="text-[10px] uppercase font-bold text-stone-400 block">Status</span>
-                    <div class="text-xs mt-1.5">${statusHtml}</div>
-                </div>
-                <div class="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
-                    <span class="text-[10px] uppercase font-bold text-stone-400 block">Est. Completion</span>
-                    <span class="text-xs font-bold text-stone-900 dark:text-stone-100 block mt-1">${estFinishStr}</span>
-                    <button onclick="recalculatePlanById('${plan.id}')" class="text-[10px] text-amber-700 dark:text-amber-400 underline font-semibold mt-0.5 cursor-pointer">
-                        Recalculate
-                    </button>
-                </div>
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
-                <div class="bg-amber-600 h-full rounded-full transition-all duration-500" style="width: ${m.pct}%"></div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-function downloadPlanICS(planId) {
-    const plans = getCustomPlans();
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) return;
-
-    const timeParts = (plan.reminderTime || '07:00').split(':');
-    const hours = timeParts[0].padStart(2, '0');
-    const mins = timeParts[1].padStart(2, '0');
-
-    const dtStart = plan.startDate.replace(/-/g, '') + `T${hours}${mins}00`;
-    const dtEnd = plan.endDate.replace(/-/g, '') + `T235959`;
-
-    const icsContent = [
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//Holy Bible App//Custom Reading Plan//EN",
-        "CALSCALE:GREGORIAN",
-        "METHOD:PUBLISH",
-        "BEGIN:VEVENT",
-        `UID:${plan.id}@felroi-bible`,
-        `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
-        `DTSTART:${dtStart}`,
-        `DTEND:${dtStart}`,
-        `RRULE:FREQ=DAILY;UNTIL=${dtEnd}`,
-        `SUMMARY:${plan.name} (${plan.dailyPace} Ch/Day)`,
-        `DESCRIPTION:Daily portion reminder for ${plan.name}. Open reader: ${window.location.origin}/plans`,
-        "BEGIN:VALARM",
-        "TRIGGER:-PT0M",
-        "ACTION:DISPLAY",
-        "DESCRIPTION:Bible Reading Reminder",
-        "END:VALARM",
-        "END:VEVENT",
-        "END:VCALENDAR"
-    ].join("\r\n");
-
-    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${plan.name.replace(/\s+/g, '_')}_reminder.ics`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 1000);
-
-    showToast("Reminder file saved! Open to add to Calendar 📅");
-}
-
-document.addEventListener('DOMContentLoaded', renderAllPlans);
+});
 </script>
 {% endblock %}
