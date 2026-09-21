@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
+<div class="max-w-5xl mx-auto px-4 py-8">
 
     <!-- Completion Toast / Alert -->
     {% if completed_day %}
@@ -10,7 +10,7 @@
             <span class="text-2xl">🎉</span>
             <div>
                 <h4 class="text-sm font-bold text-emerald-900 dark:text-emerald-200">Day {{ completed_day }} Completed!</h4>
-                <p class="text-xs text-emerald-700 dark:text-emerald-400">Your reading progress and blessing have been recorded.</p>
+                <p class="text-xs text-emerald-700 dark:text-emerald-400">இன்றைய வாசிப்பு வெற்றிகரமாகப் பதிவு செய்யப்பட்டது.</p>
             </div>
         </div>
         <button onclick="this.parentElement.remove()" class="text-emerald-600 dark:text-emerald-400 hover:opacity-75 text-xs font-bold px-2 py-1">
@@ -26,7 +26,7 @@
                 <span>📖</span> வாசிப்புத் திட்டங்கள் / Reading Plans
             </h1>
             <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1">
-                Structured Scripture journeys with isolated progress tracking and daily reminders.
+                தினசரி வேத வாசிப்பு மற்றும் 100 நாட்கள் வாசிப்புப் பயணத் திட்டங்கள்.
             </p>
         </div>
         <div>
@@ -46,7 +46,7 @@
                     <span>🎧</span> 100-Day Read-Along Challenges
                 </h2>
                 <p class="text-xs text-stone-500 dark:text-stone-400">
-                    Word-balanced daily reading with 5s chapter preview & closing blessing benediction.
+                    வார்த்தை வாரியாக சமன் செய்யப்பட்ட வாசிப்பு மற்றும் நிறைவு ஆசீர்வாதம்.
                 </p>
             </div>
         </div>
@@ -71,7 +71,6 @@
                 </div>
 
                 <div class="space-y-3 pt-3 border-t border-stone-200/70 dark:border-stone-800">
-                    <!-- Progress meter -->
                     <div class="flex items-center justify-between text-[11px] font-semibold text-stone-500">
                         <span id="wb-progress-text">Progress: Day 0 / 100</span>
                         <span id="wb-progress-pct">0%</span>
@@ -81,7 +80,6 @@
                     </div>
 
                     <div class="flex items-center gap-2 pt-1">
-                        <!-- Direct Action Launch Button -->
                         <a id="btn-wb-resume" 
                            href="/plans/read-along/plan_100_whole_bible/1" 
                            class="flex-1 py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer">
@@ -89,9 +87,8 @@
                             <span>Start Day 1</span>
                         </a>
                         
-                        <!-- Day Dropdown Quick Selector -->
                         <select onchange="if(this.value) window.location.href='/plans/read-along/plan_100_whole_bible/' + this.value;" 
-                                class="bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-xs font-semibold rounded-xl px-2 py-2 focus:outline-none focus:ring-1 focus:ring-amber-700">
+                                class="bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-xs font-semibold rounded-xl px-2 py-2 focus:outline-none">
                             <option value="">Jump to Day...</option>
                             {% for d in range(1, 101) %}
                             <option value="{{ d }}">Day {{ d }}</option>
@@ -119,7 +116,6 @@
                 </div>
 
                 <div class="space-y-3 pt-3 border-t border-stone-200/70 dark:border-stone-800">
-                    <!-- Progress meter -->
                     <div class="flex items-center justify-between text-[11px] font-semibold text-stone-500">
                         <span id="nt-progress-text">Progress: Day 0 / 100</span>
                         <span id="nt-progress-pct">0%</span>
@@ -129,7 +125,6 @@
                     </div>
 
                     <div class="flex items-center gap-2 pt-1">
-                        <!-- Direct Action Launch Button -->
                         <a id="btn-nt-resume" 
                            href="/plans/read-along/plan_100_new_testament/1" 
                            class="flex-1 py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer">
@@ -137,9 +132,8 @@
                             <span>Start Day 1</span>
                         </a>
                         
-                        <!-- Day Dropdown Quick Selector -->
                         <select onchange="if(this.value) window.location.href='/plans/read-along/plan_100_new_testament/' + this.value;" 
-                                class="bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-xs font-semibold rounded-xl px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-700">
+                                class="bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-xs font-semibold rounded-xl px-2 py-2 focus:outline-none">
                             <option value="">Jump to Day...</option>
                             {% for d in range(1, 101) %}
                             <option value="{{ d }}">Day {{ d }}</option>
@@ -153,7 +147,7 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- STANDARD HABIT READING TRACKS              -->
+    <!-- STANDARD HABIT READING TRACKS (FIXED)      -->
     <!-- ========================================== -->
     <section>
         <div class="flex items-center justify-between mb-4">
@@ -167,13 +161,19 @@
             {% if not plan.is_read_along %}
             <div class="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-800 flex flex-col justify-between">
                 <div>
-                    <h3 class="font-bold text-sm text-stone-900 dark:text-stone-100">{{ plan.title }}</h3>
-                    <p class="text-xs text-stone-500 dark:text-stone-400 mt-1 font-serif">{{ plan.title_en }}</p>
+                    <h3 class="font-bold text-sm text-stone-900 dark:text-stone-100">
+                        {{ plan.get('title') or plan.get('name_ta') or plan.get('name') or 'Reading Track' }}
+                    </h3>
+                    <p class="text-xs text-stone-500 dark:text-stone-400 mt-1 font-serif">
+                        {{ plan.get('title_en') or plan.get('name_en') or plan.get('id') or '' }}
+                    </p>
                 </div>
                 <div class="mt-4 pt-3 border-t border-stone-200/60 dark:border-stone-700/60 flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-stone-400">{{ plan.days | length if plan.days else 'Self-Paced' }}</span>
+                    <span class="text-[11px] font-semibold text-stone-400">
+                        {{ plan.days | length if plan.days else (plan.total_days if plan.total_days else 'Self-Paced') }}
+                    </span>
                     <button type="button" 
-                            onclick="alert('Select a chapter directly in the reader to track habit completion.')"
+                            onclick="alert('வாசிப்புப் பகுதியைத் தொடர அட்டவணையைத் தேர்ந்தெடுக்கவும்.')"
                             class="text-xs font-bold text-amber-700 dark:text-amber-500 hover:underline cursor-pointer">
                         View Track →
                     </button>
@@ -187,9 +187,8 @@
 </div>
 
 <script>
-// Auto-Resume Progress & Progress Bar calculations
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Whole Bible Progress Check
+    // 1. Whole Bible Progress
     const wbProgress = JSON.parse(localStorage.getItem('readalong_plan_100_whole_bible_progress') || '{"last_completed_day": 0}');
     const wbCompleted = wbProgress.last_completed_day || 0;
     const nextWbDay = Math.min(100, wbCompleted + 1);
@@ -208,7 +207,7 @@ window.addEventListener('DOMContentLoaded', () => {
         wbBtn.querySelector('span').innerText = `Resume Day ${nextWbDay}`;
     }
 
-    // 2. New Testament Progress Check
+    // 2. New Testament Progress
     const ntProgress = JSON.parse(localStorage.getItem('readalong_plan_100_new_testament_progress') || '{"last_completed_day": 0}');
     const ntCompleted = ntProgress.last_completed_day || 0;
     const nextNtDay = Math.min(100, ntCompleted + 1);
