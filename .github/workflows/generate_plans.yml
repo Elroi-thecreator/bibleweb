@@ -1,0 +1,39 @@
+name: Generate 100-Day Reading Plans
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  build-and-commit-plans:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Grants push access to git
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Plan Generator Script
+        run: |
+          python scripts/generate_100day_plans.py
+
+      - name: Check and Commit Generated JSONs
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Stage the generated plans
+          git add static/plans/plan_100_whole_bible.json static/plans/plan_100_new_testament.json
+          
+          # Commit and push only if changes exist
+          if git diff --staged --quiet; then
+            echo "No changes detected. Plans are already up to date."
+          else
+            git commit -m "chore(plans): auto-generate 100-day reading plan JSONs [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
