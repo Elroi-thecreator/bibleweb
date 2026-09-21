@@ -251,7 +251,9 @@ async def reader(
     if book_id not in BOOK_MAP:
         book_id = 1
     current_book = BOOK_MAP[book_id]
-    if chapter < 1 or chapter > current_book["total_chapters"]:
+    total_chapters = current_book.get("total_chapters", 1)
+    
+    if chapter < 1 or chapter > total_chapters:
         chapter = 1
 
     try:
@@ -261,7 +263,7 @@ async def reader(
         verses = []
 
     prev_ch = chapter - 1 if chapter > 1 else None
-    next_ch = chapter + 1 if chapter < current_book["total_chapters"] else None
+    next_ch = chapter + 1 if chapter < total_chapters else None
 
     return templates.TemplateResponse(
         request=request,
@@ -270,6 +272,7 @@ async def reader(
             "books": BIBLE_BOOKS,
             "book": current_book,
             "chapter": chapter,
+            "total_chapters": total_chapters,
             "verses": verses,
             "mode": mode,
             "prev_ch": prev_ch,
@@ -286,10 +289,10 @@ async def presenter_mode(request: Request, book_id: int, chapter: int):
     if book_id not in BOOK_MAP:
         book_id = 1
     current_book = BOOK_MAP[book_id]
-    if chapter < 1 or chapter > current_book["total_chapters"]:
+    if chapter < 1 or chapter > current_book.get("total_chapters", 1):
         chapter = 1
 
-    verses = get_chapter_verses(book_id, chapter)
+    verses = get_chapter_verses(book_id, chapter) or []
 
     return templates.TemplateResponse(
         request=request,
@@ -312,7 +315,7 @@ async def plans_page(
     """Loads reading plans safely regardless of whether READING_PLANS is a list or dict."""
     all_plans = []
 
-    # Safely convert READING_PLANS into a list of dicts
+    # Normalize standard tracks into a safe list of dicts
     if isinstance(READING_PLANS, dict):
         for pid, pdata in READING_PLANS.items():
             if isinstance(pdata, dict):
@@ -368,7 +371,7 @@ async def read_along_player(request: Request, plan_id: str, day: int):
     with open(json_path, "r", encoding="utf-8") as f:
         plan_data = json.load(f)
 
-    day_entry = next((d for d in plan_data.get("days", []) if d["day"] == day), None)
+    day_entry = next((d for d in plan_data.get("days", []) if d.get("day") == day), None)
     if not day_entry:
         raise HTTPException(status_code=404, detail=f"Day {day} not found in this plan")
 
