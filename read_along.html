@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if is_plan_mode %}
+        Day {{ day }} - {{ plan_title }} - BibleWeb
+    {% else %}
+        Read-Along - {{ current_book }} {{ current_chapter }} - BibleWeb
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-b border-gray-200 dark:border-gray-800 pb-4 mb-6">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            {% if is_plan_mode %}
+                <div class="flex items-center gap-3">
+                    {% if prev_day %}
+                        <a href="/read-along/plan/{{ plan_type }}/day/{{ prev_day }}"
+                           class="px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                            ← Day {{ prev_day }}
+                        </a>
+                    {% else %}
+                        <span class="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-800 text-sm text-gray-400 dark:text-gray-600 cursor-not-allowed">
+                            ← Start
+                        </span>
+                    {% endif %}
+
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                            {{ plan_title }}
+                        </h1>
+                        <p class="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                            Day {{ day }} of {{ total_days }}
+                        </p>
+                    </div>
+
+                    {% if next_day %}
+                        <a href="/read-along/plan/{{ plan_type }}/day/{{ next_day }}"
+                           class="px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                            Day {{ next_day }} →
+                        </a>
+                    {% endif %}
+                </div>
+            {% else %}
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                    Read-Along Reader
+                </h1>
+            {% endif %}
+
+            <!-- Persistent Audio Player Bar -->
+            <div id="audio-player-wrapper" class="w-full sm:w-auto flex items-center gap-3 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+                <audio id="bible-audio" controls preload="metadata" class="h-9">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+        </div>
+    </header>
+
+    <!-- Readings Container (All Assigned Chapters For The Day) -->
+    <main class="space-y-12">
+        {% if readings %}
+            {% for reading in readings %}
+                <article class="chapter-block border-b border-gray-200 dark:border-gray-800 pb-10"
+                         data-book="{{ reading.book_id }}"
+                         data-chapter="{{ reading.chapter }}">
+                    
+                    <div class="mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                            {{ reading.book_name }} {{ reading.chapter }}
+                        </h2>
+                    </div>
+
+                    <div class="space-y-3 text-lg leading-relaxed text-gray-800 dark:text-gray-200">
+                        {% for verse in reading.verses %}
+                            <span class="verse-item inline"
+                                  id="v-{{ reading.book_id }}-{{ reading.chapter }}-{{ verse.verse }}"
+                                  data-verse="{{ verse.verse }}">
+                                <sup class="text-xs font-bold text-blue-600 dark:text-blue-400 select-none mr-0.5">{{ verse.verse }}</sup>
+                                <span>{{ verse.text }}</span>
+                            </span>
+                        {% endfor %}
+                    </div>
+                </article>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-16 text-gray-500 dark:text-gray-400">
+                No passages found for this day's portion.
+            </div>
+        {% endif %}
+    </main>
+
+    <!-- Bottom Day Navigator (Plan Mode) -->
+    {% if is_plan_mode %}
+    <footer class="mt-12 pt-6 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center">
+        {% if prev_day %}
+            <a href="/read-along/plan/{{ plan_type }}/day/{{ prev_day }}"
+               class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                ← Previous Day (Day {{ prev_day }})
+            </a>
+        {% else %}
+            <div></div>
+        {% endif %}
+
+        {% if next_day %}
+            <a href="/read-along/plan/{{ plan_type }}/day/{{ next_day }}"
+               class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-500 transition">
+                Next Day (Day {{ next_day }}) →
+            </a>
+        {% endif %}
+    </footer>
+    {% endif %}
+
+</div>
+
+<!-- Audio Player Script Integration -->
+<script src="/static/js/audio_player.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Automatically cue audio for the first chapter on page load
+        const firstChapter = document.querySelector(".chapter-block");
+        if (firstChapter && typeof window.initAudioForChapter === "function") {
+            const bookId = firstChapter.dataset.book;
+            const chapter = firstChapter.dataset.chapter;
+            window.initAudioForChapter(bookId, chapter);
+        }
+    });
+</script>
+{% endblock %}
