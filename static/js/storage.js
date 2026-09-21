@@ -1,193 +1,749 @@
-/**
- * storage.js - LocalStorage & State Management for BibleWeb
- * Handles user bookmarks, verse highlights, and reading plan progress.
- */
-
-const StorageManager = {
-    // ------------------------------------------------------------------------
-    // Bookmarks Management
-    // ------------------------------------------------------------------------
-
-    /**
-     * Retrieve all saved bookmarks.
-     * @returns {Array<Object>} Array of bookmark objects: { book, chapter, verse, text, timestamp }
-     */
-    getBookmarks() {
-        try {
-            const raw = localStorage.getItem("bible_bookmarks");
-            return raw ? JSON.parse(raw) : [];
-        } catch (err) {
-            console.error("StorageManager: Failed to parse bookmarks from storage", err);
-            return [];
-        }
-    },
-
-    /**
-     * Add a bookmark or remove it if it already exists for this verse.
-     * @param {Object} item { book: string, chapter: number|string, verse: number|string, text: string }
-     * @returns {boolean} true if added, false if removed
-     */
-    saveBookmark(item) {
-        if (!item || !item.book || item.chapter === undefined || item.verse === undefined) {
-            console.warn("StorageManager: Invalid bookmark item supplied", item);
-            return false;
-        }
-
-        const bookmarks = this.getBookmarks();
-        const index = bookmarks.findIndex(
-            b => b.book.toLowerCase() === item.book.toLowerCase() &&
-                 Number(b.chapter) === Number(item.chapter) &&
-                 Number(b.verse) === Number(item.verse)
-        );
-
-        if (index > -1) {
-            // Verse is already bookmarked; toggle it off
-            bookmarks.splice(index, 1);
-            localStorage.setItem("bible_bookmarks", JSON.stringify(bookmarks));
-            return false;
-        } else {
-            // Add new bookmark at the beginning of list
-            bookmarks.unshift({
-                book: item.book,
-                chapter: Number(item.chapter),
-                verse: Number(item.verse),
-                text: (item.text || "").trim(),
-                timestamp: Date.now()
-            });
-            localStorage.setItem("bible_bookmarks", JSON.stringify(bookmarks));
-            return true;
-        }
-    },
-
-    /**
-     * Check if a specific verse is bookmarked.
-     * @param {string} book
-     * @param {number|string} chapter
-     * @param {number|string} verse
-     * @returns {boolean}
-     */
-    isBookmarked(book, chapter, verse) {
-        if (!book || chapter === undefined || verse === undefined) return false;
-        const bookmarks = this.getBookmarks();
-        return bookmarks.some(
-            b => b.book.toLowerCase() === book.toLowerCase() &&
-                 Number(b.chapter) === Number(chapter) &&
-                 Number(b.verse) === Number(verse)
-        );
-    },
-
-    /**
-     * Delete a single bookmark by reference.
-     * @param {string} book
-     * @param {number|string} chapter
-     * @param {number|string} verse
-     */
-    removeBookmark(book, chapter, verse) {
-        const bookmarks = this.getBookmarks().filter(
-            b => !(b.book.toLowerCase() === book.toLowerCase() &&
-                   Number(b.chapter) === Number(chapter) &&
-                   Number(b.verse) === Number(verse))
-        );
-        localStorage.setItem("bible_bookmarks", JSON.stringify(bookmarks));
-    },
-
-    /**
-     * Remove all saved bookmarks.
-     */
-    clearBookmarks() {
-        localStorage.removeItem("bible_bookmarks");
-    },
-
-    // ------------------------------------------------------------------------
-    // Verse Highlights Management
-    // ------------------------------------------------------------------------
-
-    /**
-     * Retrieve all verse highlights.
-     * @returns {Object} Map of verseKey => CSS class (e.g. { "Genesis_1_1": "bg-yellow-100" })
-     */
-    getHighlights() {
-        try {
-            const raw = localStorage.getItem("bible_highlights");
-            return raw ? JSON.parse(raw) : {};
-        } catch (err) {
-            console.error("StorageManager: Failed to parse highlights from storage", err);
-            return {};
-        }
-    },
-
-    /**
-     * Toggle or update a highlight on a verse key.
-     * @param {string} key Unique verse key, typically "Book_Chapter_Verse"
-     * @param {string} colorClass Tailwind or custom CSS class for background color
-     * @returns {string|null} Applied class string if active, or null if removed
-     */
-    toggleHighlight(key, colorClass = "bg-yellow-100") {
-        if (!key) return null;
-        const highlights = this.getHighlights();
-
-        if (highlights[key]) {
-            delete highlights[key];
-        } else {
-            highlights[key] = colorClass;
-        }
-
-        localStorage.setItem("bible_highlights", JSON.stringify(highlights));
-        return highlights[key] || null;
-    },
-
-    /**
-     * Remove all highlights across all chapters.
-     */
-    clearHighlights() {
-        localStorage.removeItem("bible_highlights");
-    },
-
-    // ------------------------------------------------------------------------
-    // Reading Plans Progress Management
-    // ------------------------------------------------------------------------
-
-    /**
-     * Get completion records for a given plan ID.
-     * @param {string} planId Identifier (e.g., "100_whole_bible", "100_new_testament")
-     * @returns {Object} Map of dayNumber => boolean (e.g., { "1": true, "2": false })
-     */
-    getPlanProgress(planId) {
-        if (!planId) return {};
-        try {
-            const raw = localStorage.getItem(`bible_plan_${planId}`);
-            return raw ? JSON.parse(raw) : {};
-        } catch (err) {
-            console.error(`StorageManager: Failed to parse progress for ${planId}`, err);
-            return {};
-        }
-    },
-
-    /**
-     * Mark a specific day completed or pending.
-     * @param {string} planId
-     * @param {number|string} day
-     * @param {boolean} isCompleted
-     * @returns {Object} The updated progress map
-     */
-    setDayProgress(planId, day, isCompleted) {
-        if (!planId || day === undefined) return {};
-        const progress = this.getPlanProgress(planId);
-        progress[day] = Boolean(isCompleted);
-        localStorage.setItem(`bible_plan_${planId}`, JSON.stringify(progress));
-        return progress;
-    },
-
-    /**
-     * Reset progress for a specific plan.
-     * @param {string} planId
-     */
-    clearPlanProgress(planId) {
-        if (planId) {
-            localStorage.removeItem(`bible_plan_${planId}`);
-        }
-    }
+// LocalStorage Keys
+const STORAGE_KEYS = {
+    BOOKMARKS: 'bilingual_bible_bookmarks',
+    HIGHLIGHTS: 'bilingual_bible_highlights',
+    READ_CHAPTERS: 'bible_read_chapters',
+    THEME: 'bible_app_theme',
+    FONT_SIZE: 'bible_font_size',
+    CACHED_USER_EMAIL: 'bible_cached_auth_email',
+    CUSTOM_PLANS: 'bible_custom_reading_plans'
 };
 
-// Expose globally for vanilla browser scripts
-window.StorageManager = StorageManager;
+// ==========================================
+// VAPID Configuration for Web Push
+// ==========================================
+const VAPID_PUBLIC_KEY = "BGXW2T5SG80VyojeXeZp5VOeGm57Xyc1pwNg_wwrpVz1qLj7DQntm5J_lDerF1pDyjF7rEn8Q8yC71cXHJ3AW2k";
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function subscribeToPushNotifications(reminderTime = "07:00") {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        alert("Push notifications are not supported on this browser.");
+        return false;
+    }
+
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            showToast("Notification permission denied");
+            return false;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+        }
+
+        const subJson = subscription.toJSON();
+
+        if (window.sbClient) {
+            const userId = currentAuthUser ? currentAuthUser.id : null;
+            const { error } = await window.sbClient
+                .from('user_push_subscriptions')
+                .upsert({
+                    user_id: userId,
+                    endpoint: subJson.endpoint,
+                    p256dh: subJson.keys.p256dh,
+                    auth: subJson.keys.auth,
+                    reminder_time: reminderTime
+                }, { onConflict: 'endpoint' });
+
+            if (error) {
+                console.error("Failed saving push subscription to Supabase:", error);
+                showToast("Failed to register subscription");
+                return false;
+            } else {
+                showToast(`Daily push reminder enabled for ${reminderTime}! 🔔`);
+                return true;
+            }
+        } else {
+            showToast("Notifications enabled on device!");
+            return true;
+        }
+    } catch (err) {
+        console.error("Push subscription error:", err);
+        showToast("Push registration failed");
+        return false;
+    }
+}
+window.subscribeToPushNotifications = subscribeToPushNotifications;
+
+// ==========================================
+// 1. Toast Notification Utility
+// ==========================================
+function showToast(message) {
+    try {
+        let toast = document.getElementById('app-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'app-toast';
+            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#18181b;color:#ffffff;font-size:12px;padding:8px 16px;border-radius:9999px;z-index:9999;box-shadow:0 10px 15px -3px rgba(0,0,0,0.3);transition:opacity 0.2s ease;pointer-events:none;opacity:0;';
+            document.body.appendChild(toast);
+        }
+        toast.innerText = message;
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+    } catch (e) {
+        console.log("Toast fallback:", message);
+    }
+}
+window.showToast = showToast;
+
+// ==========================================
+// 2. Canonical Reading Progress (Independent)
+// ==========================================
+function getReadChapters() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.READ_CHAPTERS) || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+window.getReadChapters = getReadChapters;
+
+function isChapterRead(bookId, ch) {
+    const records = getReadChapters();
+    return !!records[`${bookId}_${ch}`];
+}
+window.isChapterRead = isChapterRead;
+
+async function toggleChapterRead(bookId, ch) {
+    const b = parseInt(bookId);
+    const c = parseInt(ch);
+    if (isNaN(b) || isNaN(c)) return;
+
+    let records = getReadChapters();
+    const key = `${b}_${c}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    if (records[key]) {
+        delete records[key];
+        showToast(`Chapter ${c} marked as unread`);
+    } else {
+        records[key] = today;
+        showToast(`Chapter ${c} completed! ✓`);
+    }
+
+    localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(records));
+    updateChapterReadUI(b, c);
+    await syncWithSupabase();
+}
+window.toggleChapterRead = toggleChapterRead;
+
+function updateChapterReadUI(bookId, ch) {
+    const b = parseInt(bookId);
+    const c = parseInt(ch);
+    if (isNaN(b) || isNaN(c)) return;
+
+    const isRead = isChapterRead(b, c);
+
+    const btns = document.querySelectorAll('.chapter-read-btn');
+    btns.forEach(btn => {
+        if (isRead) {
+            btn.innerHTML = `
+                <svg class="w-4 h-4 text-white stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>`;
+            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-emerald-600 text-white border-emerald-500 shrink-0';
+            btn.title = 'Completed (click to mark unread)';
+        } else {
+            btn.innerHTML = `
+                <svg class="w-4 h-4 text-stone-400 dark:text-stone-500 hover:text-amber-600 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>`;
+            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-amber-600 shrink-0';
+            btn.title = 'Mark as Read';
+        }
+    });
+
+    const trayButtons = document.querySelectorAll('.chapter-tray-btn');
+    trayButtons.forEach(btn => {
+        const trayCh = parseInt(btn.dataset.chapter);
+        if (isChapterRead(b, trayCh)) {
+            btn.classList.add('ring-2', 'ring-emerald-500');
+        } else {
+            btn.classList.remove('ring-2', 'ring-emerald-500');
+        }
+    });
+}
+window.updateChapterReadUI = updateChapterReadUI;
+
+function getReadingStreak() {
+    const records = getReadChapters();
+    const dates = [...new Set(Object.values(records))].sort().reverse();
+    if (dates.length === 0) return 0;
+
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    if (!dates.includes(today) && !dates.includes(yesterday)) return 0;
+
+    let streak = 0;
+    let curr = new Date(dates[0]);
+
+    for (const dStr of dates) {
+        const d = new Date(dStr);
+        const diffDays = Math.round((curr - d) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 1) {
+            streak++;
+            curr = d;
+        } else {
+            break;
+        }
+    }
+    return streak;
+}
+window.getReadingStreak = getReadingStreak;
+
+// ==========================================
+// 3. Isolated Custom Plan Operations
+// ==========================================
+function getCustomPlans() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_PLANS) || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+window.getCustomPlans = getCustomPlans;
+
+function isPlanChapterRead(planId, bookId, ch) {
+    const plans = getCustomPlans();
+    const plan = plans.find(p => p.id === planId);
+    if (!plan || !plan.completedChapters) return false;
+    return !!plan.completedChapters[`${bookId}_${ch}`];
+}
+window.isPlanChapterRead = isPlanChapterRead;
+
+async function togglePlanSpecificChapter(planId, bookId, ch) {
+    const b = parseInt(bookId);
+    const c = parseInt(ch);
+    const plans = getCustomPlans();
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+
+    if (!plan.completedChapters) plan.completedChapters = {};
+    const key = `${b}_${c}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    if (plan.completedChapters[key]) {
+        delete plan.completedChapters[key];
+        showToast(`Ch ${c} marked unread in "${plan.name}"`);
+    } else {
+        plan.completedChapters[key] = today;
+        showToast(`Ch ${c} finished in "${plan.name}"! ✓`);
+    }
+
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_PLANS, JSON.stringify(plans));
+    updateReaderUIForPlan(planId, b, c);
+    await syncWithSupabase();
+}
+window.togglePlanSpecificChapter = togglePlanSpecificChapter;
+
+function updateReaderUIForPlan(planId, bookId, ch) {
+    const b = parseInt(bookId);
+    const c = parseInt(ch);
+    const isRead = isPlanChapterRead(planId, b, c);
+
+    const btns = document.querySelectorAll('.chapter-read-btn');
+    btns.forEach(btn => {
+        if (isRead) {
+            btn.innerHTML = `
+                <svg class="w-4 h-4 text-white stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>`;
+            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-emerald-600 text-white border-emerald-500 shrink-0';
+            btn.title = 'Completed in this plan (click to undo)';
+        } else {
+            btn.innerHTML = `
+                <svg class="w-4 h-4 text-stone-400 dark:text-stone-500 hover:text-amber-600 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>`;
+            btn.className = 'chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border shadow-xs transition cursor-pointer bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-amber-600 shrink-0';
+            btn.title = 'Mark as Read for this plan';
+        }
+    });
+
+    const trayButtons = document.querySelectorAll('.chapter-tray-btn');
+    trayButtons.forEach(btn => {
+        const trayCh = parseInt(btn.dataset.chapter);
+        if (isPlanChapterRead(planId, b, trayCh)) {
+            btn.classList.add('ring-2', 'ring-emerald-500');
+        } else {
+            btn.classList.remove('ring-2', 'ring-emerald-500');
+        }
+    });
+}
+window.updateReaderUIForPlan = updateReaderUIForPlan;
+
+// ==========================================
+// 4. Robust Persistent Font-Size Engine
+// ==========================================
+function applyPersistentFontSize() {
+    const size = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
+    document.documentElement.style.setProperty('--reader-font-size', `${size}px`);
+
+    // Ensure style node is present and holds explicit selector rules
+    let styleEl = document.getElementById('dynamic-reader-font-style');
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'dynamic-reader-font-style';
+        document.head.appendChild(styleEl);
+    }
+    styleEl.innerHTML = `
+        :root { --reader-font-size: ${size}px; }
+        #reader-container,
+        #reader-content,
+        #reader-content p,
+        #reader-content span,
+        .verse-item,
+        .verse-item p,
+        .verse-item span,
+        .verse-text,
+        .verse-text-en,
+        .verse-text-ta,
+        .verse-en,
+        .verse-ta {
+            font-size: ${size}px !important;
+        }
+    `;
+}
+window.applyPersistentFontSize = applyPersistentFontSize;
+
+function adjustFontSize(delta) {
+    const currentSize = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
+    let newSize = delta === 0 ? 18 : Math.min(Math.max(currentSize + (delta * 2), 13), 32);
+
+    localStorage.setItem(STORAGE_KEYS.FONT_SIZE, newSize.toString());
+    applyPersistentFontSize();
+    showToast(`Font size: ${newSize}px`);
+}
+window.adjustFontSize = adjustFontSize;
+
+// ==========================================
+// 5. Bookmarks & Color Highlighting
+// ==========================================
+function getBookmarks() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKMARKS) || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+window.getBookmarks = getBookmarks;
+
+function getHighlights() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.HIGHLIGHTS) || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+window.getHighlights = getHighlights;
+
+function isBookmarked(bookId, ch, v) {
+    return getBookmarks().some(b => b.bookId === bookId && b.ch === ch && b.v === v);
+}
+window.isBookmarked = isBookmarked;
+
+async function toggleBookmark(bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa) {
+    let bookmarks = getBookmarks();
+    const idx = bookmarks.findIndex(b => b.bookId === bookId && b.ch === ch && b.v === v);
+
+    if (idx >= 0) {
+        bookmarks.splice(idx, 1);
+        showToast("Bookmark removed");
+    } else {
+        bookmarks.push({
+            bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa,
+            date: new Date().toLocaleDateString()
+        });
+        showToast("Verse bookmarked! ★");
+    }
+
+    localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
+    updateBookmarkUI();
+    await syncWithSupabase();
+}
+window.toggleBookmark = toggleBookmark;
+
+function updateBookmarkUI() {
+    document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        const b = parseInt(btn.dataset.book);
+        const c = parseInt(btn.dataset.chapter);
+        const v = parseInt(btn.dataset.verse);
+        if (isBookmarked(b, c, v)) {
+            btn.innerHTML = '★';
+            btn.classList.add('text-amber-500');
+        } else {
+            btn.innerHTML = '☆';
+            btn.classList.remove('text-amber-500');
+        }
+    });
+}
+window.updateBookmarkUI = updateBookmarkUI;
+
+function setVerseHighlight(bookId, ch, v, colorClass) {
+    const key = `${bookId}_${ch}_${v}`;
+    let highlights = getHighlights();
+
+    if (highlights[key] === colorClass) {
+        delete highlights[key];
+    } else {
+        highlights[key] = colorClass;
+    }
+
+    localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(highlights));
+    applyHighlights();
+    queueCloudSync();
+}
+window.setVerseHighlight = setVerseHighlight;
+
+function applyHighlights() {
+    const highlights = getHighlights();
+    const b = window.CURRENT_BOOK_ID;
+    const c = window.CURRENT_CHAPTER;
+    if (!b || !c) return;
+
+    document.querySelectorAll('.verse-item').forEach(el => {
+        const vNum = el.id.replace('v', '');
+        const key = `${b}_${c}_${vNum}`;
+
+        el.classList.remove('bg-amber-100/50', 'dark:bg-amber-950/30', 'bg-emerald-100/50', 'dark:bg-emerald-950/30', 'bg-rose-100/50', 'dark:bg-rose-950/30');
+
+        if (highlights[key]) {
+            if (highlights[key] === 'yellow') el.classList.add('bg-amber-100/50', 'dark:bg-amber-950/30');
+            if (highlights[key] === 'green') el.classList.add('bg-emerald-100/50', 'dark:bg-emerald-950/30');
+            if (highlights[key] === 'rose') el.classList.add('bg-rose-100/50', 'dark:bg-rose-950/30');
+        }
+    });
+}
+window.applyHighlights = applyHighlights;
+
+function copyBilingualVerse(refEn, refTa, textEn, textTa) {
+    const quote = `"${textEn}"\n— ${refEn}\n\n"${textTa}"\n— ${refTa}\n\nShared via Holy Bible App`;
+    navigator.clipboard.writeText(quote).then(() => {
+        showToast("Verse copied! 📋");
+    });
+}
+window.copyBilingualVerse = copyBilingualVerse;
+
+// ==========================================
+// 6. Universal JSON Backup & Restore
+// ==========================================
+function exportAllUserData() {
+    try {
+        let customPlans = [];
+        try { customPlans = JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_PLANS) || '[]'); } catch(e){}
+
+        const backupPayload = {
+            app: "bilingual_bible_app",
+            version: "2.4",
+            exported_at: new Date().toISOString(),
+            data: {
+                bookmarks: getBookmarks(),
+                highlights: getHighlights(),
+                read_chapters: getReadChapters(),
+                custom_reading_plans: customPlans,
+                theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
+                font_size: localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18'
+            }
+        };
+
+        const jsonString = JSON.stringify(backupPayload, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.setAttribute('download', `bible_backup_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 1500);
+
+        showToast("Backup saved! 💾");
+    } catch (err) {
+        alert("Failed to export backup: " + err.message);
+    }
+}
+window.exportAllUserData = exportAllUserData;
+window.exportProgress = exportAllUserData;
+
+function importAllUserData(fileInputEvent, reloadCallback) {
+    const file = fileInputEvent.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            const payloadData = parsed.data || parsed;
+
+            if (payloadData.bookmarks) localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(payloadData.bookmarks));
+            if (payloadData.highlights) localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(payloadData.highlights));
+            if (payloadData.read_chapters) localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(payloadData.read_chapters));
+            if (payloadData.theme) localStorage.setItem(STORAGE_KEYS.THEME, payloadData.theme);
+            if (payloadData.font_size) localStorage.setItem(STORAGE_KEYS.FONT_SIZE, payloadData.font_size);
+            if (payloadData.custom_reading_plans) {
+                localStorage.setItem(STORAGE_KEYS.CUSTOM_PLANS, JSON.stringify(payloadData.custom_reading_plans));
+            }
+
+            showToast("Backup restored! ✓");
+            await syncWithSupabase();
+            if (typeof reloadCallback === 'function') {
+                reloadCallback();
+            } else {
+                setTimeout(() => window.location.reload(), 600);
+            }
+        } catch (err) {
+            alert("Invalid backup file format.");
+        }
+    };
+    reader.readAsText(file);
+}
+window.importAllUserData = importAllUserData;
+
+// ==========================================
+// 7. Supabase Auth & Multi-Plan Cloud Sync
+// ==========================================
+let currentAuthUser = null;
+
+function applyCachedAuthUI() {
+    const cachedEmail = localStorage.getItem(STORAGE_KEYS.CACHED_USER_EMAIL);
+    const navDot = document.getElementById('nav-auth-dot');
+    const loggedInView = document.getElementById('settings-logged-in-view');
+    const loggedOutView = document.getElementById('settings-logged-out-view');
+    const userEmailDisplay = document.getElementById('settings-user-email');
+    const statusLabel = document.getElementById('settings-auth-status');
+
+    if (cachedEmail) {
+        if (navDot) navDot.classList.remove('hidden');
+        if (loggedInView) loggedInView.classList.remove('hidden');
+        if (loggedOutView) loggedOutView.classList.add('hidden');
+        if (userEmailDisplay) userEmailDisplay.innerText = cachedEmail;
+        if (statusLabel) statusLabel.innerText = "Synced";
+    } else {
+        if (navDot) navDot.classList.add('hidden');
+        if (loggedInView) loggedInView.classList.add('hidden');
+        if (loggedOutView) loggedOutView.classList.remove('hidden');
+        if (statusLabel) statusLabel.innerText = "Not Connected";
+    }
+}
+
+function updateSupabaseAuthUI() {
+    const navDot = document.getElementById('nav-auth-dot');
+    const loggedInView = document.getElementById('settings-logged-in-view');
+    const loggedOutView = document.getElementById('settings-logged-out-view');
+    const userEmailDisplay = document.getElementById('settings-user-email');
+    const statusLabel = document.getElementById('settings-auth-status');
+
+    if (currentAuthUser) {
+        localStorage.setItem(STORAGE_KEYS.CACHED_USER_EMAIL, currentAuthUser.email);
+        if (navDot) navDot.classList.remove('hidden');
+        if (loggedInView) loggedInView.classList.remove('hidden');
+        if (loggedOutView) loggedOutView.classList.add('hidden');
+        if (userEmailDisplay) userEmailDisplay.innerText = currentAuthUser.email;
+        if (statusLabel) statusLabel.innerText = "Synced";
+    } else {
+        localStorage.removeItem(STORAGE_KEYS.CACHED_USER_EMAIL);
+        if (navDot) navDot.classList.add('hidden');
+        if (loggedInView) loggedInView.classList.add('hidden');
+        if (loggedOutView) loggedOutView.classList.remove('hidden');
+        if (statusLabel) statusLabel.innerText = "Not Connected";
+    }
+}
+
+function initSupabaseAuth() {
+    applyCachedAuthUI();
+    if (!window.sbClient) return;
+
+    window.sbClient.auth.onAuthStateChange(async (event, session) => {
+        currentAuthUser = session?.user || null;
+        updateSupabaseAuthUI();
+
+        if (event === 'SIGNED_IN' && currentAuthUser) {
+            showToast(`Signed in as ${currentAuthUser.email}! Syncing... ☁️`);
+            await syncWithSupabase();
+        }
+    });
+
+    window.sbClient.auth.getSession().then(({ data: { session } }) => {
+        currentAuthUser = session?.user || null;
+        updateSupabaseAuthUI();
+        if (currentAuthUser) {
+            syncWithSupabase();
+        }
+    });
+}
+
+async function handleSendMagicLink(e) {
+    e.preventDefault();
+    if (!window.sbClient) {
+        alert("Supabase client is not configured yet. Please check your keys in base.html.");
+        return;
+    }
+
+    const email = document.getElementById('auth-email-input').value.trim();
+    const btn = document.getElementById('magic-link-btn');
+    btn.disabled = true;
+    btn.innerText = "Sending Link...";
+
+    try {
+        const { error } = await window.sbClient.auth.signInWithOtp({
+            email: email,
+            options: { emailRedirectTo: window.location.origin }
+        });
+
+        if (error) {
+            alert("Error sending link: " + error.message);
+        } else {
+            alert(`Sign-in link sent to ${email}!\n\nCheck your inbox and spam folder. Click the link to complete setup.`);
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+    } catch (err) {
+        alert("Request failed: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Send Link →";
+    }
+}
+window.handleSendMagicLink = handleSendMagicLink;
+
+async function handleSignOut() {
+    if (!window.sbClient) return;
+    if (confirm("Sign out on this device? Your local reading progress remains safe.")) {
+        await window.sbClient.auth.signOut();
+        currentAuthUser = null;
+        updateSupabaseAuthUI();
+        showToast("Signed out");
+    }
+}
+window.handleSignOut = handleSignOut;
+
+function mergeSyncData(local, remote) {
+    const mergedChapters = { ...(remote.read_chapters || {}), ...(local.read_chapters || {}) };
+
+    const bookmarkMap = new Map();
+    [...(remote.bookmarks || []), ...(local.bookmarks || [])].forEach(b => {
+        bookmarkMap.set(`${b.bookId}_${b.ch}_${b.v}`, b);
+    });
+
+    const mergedHighlights = { ...(remote.highlights || {}), ...(local.highlights || {}) };
+
+    const planMap = new Map();
+    [...(remote.custom_reading_plans || []), ...(local.custom_reading_plans || [])].forEach(p => {
+        if (!planMap.has(p.id)) {
+            planMap.set(p.id, p);
+        } else {
+            const existing = planMap.get(p.id);
+            planMap.set(p.id, {
+                ...existing,
+                ...p,
+                completedChapters: { ...(existing.completedChapters || {}), ...(p.completedChapters || {}) }
+            });
+        }
+    });
+
+    return {
+        read_chapters: mergedChapters,
+        bookmarks: Array.from(bookmarkMap.values()),
+        highlights: mergedHighlights,
+        custom_reading_plans: Array.from(planMap.values()),
+        theme: local.theme || remote.theme || 'light',
+        font_size: local.font_size || remote.font_size || '18'
+    };
+}
+
+async function syncWithSupabase() {
+    if (!window.sbClient || !currentAuthUser) return;
+
+    try {
+        let customPlans = [];
+        try {
+            customPlans = JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_PLANS) || '[]');
+        } catch (e) {
+            customPlans = [];
+        }
+
+        const localData = {
+            bookmarks: getBookmarks(),
+            highlights: getHighlights(),
+            read_chapters: getReadChapters(),
+            theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
+            font_size: localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18',
+            custom_reading_plans: customPlans
+        };
+
+        const { data: remoteRow } = await window.sbClient
+            .from('user_bible_sync')
+            .select('data')
+            .eq('user_id', currentAuthUser.id)
+            .maybeSingle();
+
+        let merged = localData;
+        if (remoteRow && remoteRow.data) {
+            merged = mergeSyncData(localData, remoteRow.data);
+        }
+
+        localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(merged.bookmarks));
+        localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(merged.highlights));
+        localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(merged.read_chapters));
+        if (merged.font_size) localStorage.setItem(STORAGE_KEYS.FONT_SIZE, merged.font_size);
+        if (merged.custom_reading_plans) {
+            localStorage.setItem(STORAGE_KEYS.CUSTOM_PLANS, JSON.stringify(merged.custom_reading_plans));
+        }
+
+        await window.sbClient
+            .from('user_bible_sync')
+            .upsert({
+                user_id: currentAuthUser.id,
+                email: currentAuthUser.email,
+                data: merged,
+                updated_at: new Date().toISOString()
+            });
+
+        applyPersistentFontSize();
+        if (typeof window.updateBookmarkUI === 'function') window.updateBookmarkUI();
+        if (typeof window.renderAllPlans === 'function') renderAllPlans();
+        if (typeof window.renderProgressDashboard === 'function') renderProgressDashboard();
+
+        console.log("Supabase multi-plans synced.");
+    } catch (err) {
+        console.warn("Supabase multi-plan sync deferred:", err);
+    }
+}
+window.syncWithSupabase = syncWithSupabase;
+
+let cloudSyncTimer = null;
+function queueCloudSync() {
+    if (!currentAuthUser) return;
+    clearTimeout(cloudSyncTimer);
+    cloudSyncTimer = setTimeout(syncWithSupabase, 2000);
+}
+window.queueCloudSync = queueCloudSync;
+
+// Safe Init on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    applyCachedAuthUI();
+    applyPersistentFontSize();
+    updateBookmarkUI();
+    initSupabaseAuth();
+});
