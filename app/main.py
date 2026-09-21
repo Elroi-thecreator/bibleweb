@@ -15,7 +15,7 @@ from fastapi.templating import Jinja2Templates
 CURRENT_FILE_DIR = Path(__file__).resolve().parent          # app/
 PROJECT_ROOT = CURRENT_FILE_DIR.parent                      # repository root
 
-# Database Path Detection: Check project root data/ first, then app/data/
+# Database Path Detection: points to data/bible.sqlite.db
 DB_PATH = PROJECT_ROOT / "data" / "bible.sqlite.db"
 if not DB_PATH.exists():
     alt_db = CURRENT_FILE_DIR / "data" / "bible.sqlite.db"
@@ -49,7 +49,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# English book name fallback mapping (for schema without b.name_en)
+# English book name fallback mapping (for schema with books: id, code, name_ta, testament)
 BOOK_NAMES_EN = {
     1: "Genesis", 2: "Exodus", 3: "Leviticus", 4: "Numbers", 5: "Deuteronomy",
     6: "Joshua", 7: "Judges", 8: "Ruth", 9: "1 Samuel", 10: "2 Samuel",
@@ -90,18 +90,19 @@ async def home_index(request: Request):
             "testament": b["testament"]
         })
 
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "books": books
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"books": books}
+    )
 
 @app.get("/read/{book_id}/{chapter}", response_class=HTMLResponse)
 async def read_chapter(request: Request, book_id: int, chapter: int):
-    """Chapter reader view."""
+    """Chapter reader view targeting reader.html."""
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Fetch current book
+    # Fetch book info
     cur.execute("SELECT id, code, name_ta, testament FROM books WHERE id = ?", (book_id,))
     book_row = cur.fetchone()
     if not book_row:
@@ -116,7 +117,7 @@ async def read_chapter(request: Request, book_id: int, chapter: int):
         "testament": book_row["testament"]
     }
 
-    # Fetch total chapters for this book
+    # Fetch total chapters count for current book
     cur.execute("SELECT MAX(chapter) as total_chapters FROM verses WHERE book_id = ?", (book_id,))
     total_chapters_row = cur.fetchone()
     total_chapters = total_chapters_row["total_chapters"] if total_chapters_row else 1
@@ -134,13 +135,16 @@ async def read_chapter(request: Request, book_id: int, chapter: int):
     if not verses:
         raise HTTPException(status_code=404, detail="Chapter not found")
 
-    return templates.TemplateResponse("read.html", {
-        "request": request,
-        "book": book,
-        "chapter": chapter,
-        "total_chapters": total_chapters,
-        "verses": verses
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="reader.html",
+        context={
+            "book": book,
+            "chapter": chapter,
+            "total_chapters": total_chapters,
+            "verses": verses
+        }
+    )
 
 @app.get("/plans", response_class=HTMLResponse)
 async def view_reading_plans(request: Request, completed_day: Optional[int] = None, plan_id: Optional[str] = None):
@@ -163,12 +167,15 @@ async def view_reading_plans(request: Request, completed_day: Optional[int] = No
             except Exception:
                 continue
 
-    return templates.TemplateResponse("plans.html", {
-        "request": request,
-        "plans": available_plans,
-        "completed_day": completed_day,
-        "active_plan_id": plan_id
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="plans.html",
+        context={
+            "plans": available_plans,
+            "completed_day": completed_day,
+            "active_plan_id": plan_id
+        }
+    )
 
 @app.get("/plans/read-along/{plan_id}/{day}", response_class=HTMLResponse)
 async def read_along_player(request: Request, plan_id: str, day: int):
@@ -208,9 +215,12 @@ async def read_along_player(request: Request, plan_id: str, day: int):
             })
     conn.close()
 
-    return templates.TemplateResponse("read_along.html", {
-        "request": request,
-        "plan": plan_data,
-        "day": day_entry,
-        "chapters": loaded_chapters
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="read_along.html",
+        context={
+            "plan": plan_data,
+            "day": day_entry,
+            "chapters": loaded_chapters
+        }
+    )
