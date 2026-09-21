@@ -3,14 +3,14 @@
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-8">
 
-    <!-- Completion Toast / Alert -->
+    <!-- Completion Toast -->
     {% if completed_day %}
     <div class="mb-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 flex items-center justify-between shadow-xs">
         <div class="flex items-center gap-3">
             <span class="text-2xl">🎉</span>
             <div>
                 <h4 class="text-sm font-bold text-emerald-900 dark:text-emerald-200">Day {{ completed_day }} Completed!</h4>
-                <p class="text-xs text-emerald-700 dark:text-emerald-400">இன்றைய வாசிப்பு வெற்றிகரமாகப் பதிவு செய்யப்பட்டது.</p>
+                <p class="text-xs text-emerald-700 dark:text-emerald-400">Your reading progress and blessing have been recorded.</p>
             </div>
         </div>
         <button onclick="this.parentElement.remove()" class="text-emerald-600 dark:text-emerald-400 hover:opacity-75 text-xs font-bold px-2 py-1">
@@ -23,10 +23,10 @@
     <header class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 dark:border-stone-800 pb-5">
         <div>
             <h1 class="text-2xl font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                <span>📖</span> வாசிப்புத் திட்டங்கள் / Reading Plans
+                <span>📖</span> Reading Plans / வாசிப்புத் திட்டங்கள்
             </h1>
             <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1">
-                தினசரி வேத வாசிப்பு மற்றும் 100 நாட்கள் வாசிப்புப் பயணத் திட்டங்கள்.
+                Structured Scripture journeys with isolated progress tracking and daily reminders.
             </p>
         </div>
         <div>
@@ -46,7 +46,7 @@
                     <span>🎧</span> 100-Day Read-Along Challenges
                 </h2>
                 <p class="text-xs text-stone-500 dark:text-stone-400">
-                    வார்த்தை வாரியாக சமன் செய்யப்பட்ட வாசிப்பு மற்றும் நிறைவு ஆசீர்வாதம்.
+                    Word-balanced daily reading with 5s countdown & closing blessing benediction.
                 </p>
             </div>
         </div>
@@ -147,7 +147,7 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- STANDARD HABIT READING TRACKS (FIXED)      -->
+    <!-- STANDARD HABIT READING TRACKS              -->
     <!-- ========================================== -->
     <section>
         <div class="flex items-center justify-between mb-4">
@@ -158,25 +158,35 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {% for plan in plans %}
-            {% if not plan.is_read_along %}
+            {% if not (plan is mapping and plan.get('is_read_along')) %}
             <div class="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-800 flex flex-col justify-between">
                 <div>
                     <h3 class="font-bold text-sm text-stone-900 dark:text-stone-100">
-                        {{ plan.get('title') or plan.get('name_ta') or plan.get('name') or 'Reading Track' }}
+                        {% if plan is mapping %}
+                            {{ plan.get('name_ta') or plan.get('title') or plan.get('name') or plan.get('id') or 'Reading Track' }}
+                        {% else %}
+                            {{ plan }}
+                        {% endif %}
                     </h3>
                     <p class="text-xs text-stone-500 dark:text-stone-400 mt-1 font-serif">
-                        {{ plan.get('title_en') or plan.get('name_en') or plan.get('id') or '' }}
+                        {% if plan is mapping %}
+                            {{ plan.get('name_en') or plan.get('title_en') or '' }}
+                        {% endif %}
                     </p>
                 </div>
                 <div class="mt-4 pt-3 border-t border-stone-200/60 dark:border-stone-700/60 flex items-center justify-between">
                     <span class="text-[11px] font-semibold text-stone-400">
-                        {{ plan.days | length if plan.days else (plan.total_days if plan.total_days else 'Self-Paced') }}
+                        {% if plan is mapping and plan.get('days') %}
+                            {{ plan.get('days') | length }} days
+                        {% elif plan is mapping and plan.get('total_days') %}
+                            {{ plan.get('total_days') }} days
+                        {% else %}
+                            Self-Paced
+                        {% endif %}
                     </span>
-                    <button type="button" 
-                            onclick="alert('வாசிப்புப் பகுதியைத் தொடர அட்டவணையைத் தேர்ந்தெடுக்கவும்.')"
-                            class="text-xs font-bold text-amber-700 dark:text-amber-500 hover:underline cursor-pointer">
-                        View Track →
-                    </button>
+                    <a href="/read/1/1" class="text-xs font-bold text-amber-700 dark:text-amber-500 hover:underline cursor-pointer">
+                        Open Reader →
+                    </a>
                 </div>
             </div>
             {% endif %}
