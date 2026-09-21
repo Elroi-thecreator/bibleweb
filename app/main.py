@@ -309,10 +309,26 @@ async def plans_page(
     completed_day: Optional[int] = None,
     plan_id: Optional[str] = None
 ):
-    """Combines hardcoded reading tracks with dynamically loaded 100-day JSON plans."""
-    all_plans = list(READING_PLANS)
+    """Loads reading plans safely regardless of whether READING_PLANS is a list or dict."""
+    all_plans = []
 
-    # Check for generated 100-day plans in static/plans/
+    # Safely convert READING_PLANS into a list of dicts
+    if isinstance(READING_PLANS, dict):
+        for pid, pdata in READING_PLANS.items():
+            if isinstance(pdata, dict):
+                p_copy = dict(pdata)
+                p_copy.setdefault("id", pid)
+                all_plans.append(p_copy)
+            else:
+                all_plans.append({"id": pid, "title": str(pdata), "title_en": str(pdata)})
+    elif isinstance(READING_PLANS, list):
+        for p in READING_PLANS:
+            if isinstance(p, dict):
+                all_plans.append(dict(p))
+            else:
+                all_plans.append({"id": str(p), "title": str(p), "title_en": str(p)})
+
+    # Load 100-day read-along plans from static/plans/
     plans_dir = Path("static/plans")
     if plans_dir.exists():
         for file in sorted(plans_dir.glob("*.json")):
