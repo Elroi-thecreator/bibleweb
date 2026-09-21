@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-6 relative pb-32" id="player-container">
+<div class="max-w-4xl mx-auto px-4 py-6 relative pb-24" id="player-container">
 
-    <!-- Audio Element -->
+    <!-- Audio Element (Controlled via JS) -->
     <audio id="readalong-audio" preload="none"></audio>
 
     <!-- ========================================== -->
@@ -20,7 +20,7 @@
             {{ day.intro.display_en }}
         </p>
 
-        <!-- Language Preference Selector before starting -->
+        <!-- Language Selector before starting -->
         <div class="inline-flex rounded-xl bg-stone-900 border border-stone-700 p-1 mb-6 text-xs">
             <button type="button" onclick="setLanguage('ta')" id="intro-lang-ta" class="px-3 py-1.5 rounded-lg font-bold bg-amber-600 text-white transition">
                 தமிழ்
@@ -65,7 +65,7 @@
         </div>
         
         <div class="flex flex-wrap items-center gap-2 self-end sm:self-auto">
-            <!-- Language Toggle -->
+            <!-- Language Toggle (Single language at a time) -->
             <div class="inline-flex rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-0.5 text-xs font-semibold">
                 <button type="button" onclick="setLanguage('ta')" id="nav-lang-ta" class="px-2.5 py-1 rounded-lg bg-amber-700 text-white transition">
                     தமிழ்
@@ -86,7 +86,7 @@
                 </button>
             </div>
 
-            <!-- Start Reading Launch Button -->
+            <!-- Start Reading Action Button -->
             <button id="start-read-btn" 
                     type="button"
                     onclick="startReadingWithAudio()" 
@@ -160,65 +160,59 @@
     </div>
 
     <!-- ======================================================= -->
-    <!-- 4. FLOATING AUDIO CONTROL DOCK (Like Reader & Presenter) -->
+    <!-- 4. SLIM INLINE AUDIO CONTROL PILL                       -->
     <!-- ======================================================= -->
-    <div id="audio-control-bar" class="fixed bottom-4 left-4 right-4 max-w-2xl mx-auto z-40 bg-stone-950/90 dark:bg-stone-900/95 backdrop-blur-lg border border-stone-800 text-white rounded-2xl p-3 shadow-2xl transition-all duration-300 transform translate-y-28 opacity-0">
-        <div class="flex flex-col gap-2">
-            <!-- Top Audio Status Bar -->
-            <div class="flex items-center justify-between px-1">
-                <div class="flex items-center gap-2 overflow-hidden">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="audio-live-indicator"></span>
-                    <span id="current-verse-ref" class="text-xs font-bold text-stone-200 truncate">
-                        Preparing audio...
-                    </span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <span id="audio-progress-count" class="text-[11px] font-mono text-stone-400">0 / 0</span>
-                </div>
-            </div>
+    <div id="audio-control-bar" class="fixed bottom-3 left-3 right-3 max-w-xl mx-auto z-40 bg-stone-950/90 dark:bg-stone-900/95 backdrop-blur-md border border-stone-800 text-white rounded-full px-3 py-1.5 shadow-xl transition-all duration-300 transform translate-y-28 opacity-0 flex items-center justify-between gap-2">
+        
+        <!-- Left: Status & Reference Pill -->
+        <div class="flex items-center gap-1.5 min-w-0 pr-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+            <span id="current-verse-ref" class="text-[11px] font-bold text-stone-200 truncate max-w-[110px] sm:max-w-[150px]">
+                Audio...
+            </span>
+            <span id="audio-progress-count" class="text-[10px] font-mono text-stone-400 hidden sm:inline flex-shrink-0">
+                0/0
+            </span>
+        </div>
 
-            <!-- Main Audio Control Toolbar -->
-            <div class="flex items-center justify-between pt-1 border-t border-stone-800/80">
-                <!-- Speed Toggle -->
-                <button type="button" onclick="cycleAudioSpeed()" id="audio-speed-btn" class="px-2 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 text-[11px] font-mono font-bold transition" title="Change speed">
-                    1.0x
-                </button>
+        <!-- Center: Playback Controls -->
+        <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <!-- Prev Verse -->
+            <button type="button" onclick="stepVerse(-1)" class="p-1 text-stone-400 hover:text-white transition cursor-pointer" title="Previous verse">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
 
-                <!-- Navigation Controls -->
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <!-- Prev Verse -->
-                    <button type="button" onclick="stepVerse(-1)" class="p-2 text-stone-300 hover:text-white transition cursor-pointer" title="Previous verse">
-                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-                    </button>
+            <!-- Rewind 5s -->
+            <button type="button" onclick="seekAudio(-5)" class="p-1 text-stone-400 hover:text-white transition cursor-pointer hidden xs:block" title="Rewind 5s">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.2 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+            </button>
 
-                    <!-- Rewind 5s -->
-                    <button type="button" onclick="seekAudio(-5)" class="p-1.5 text-stone-400 hover:text-stone-200 transition cursor-pointer" title="Rewind 5 seconds">
-                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.2 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
-                    </button>
+            <!-- Play / Pause Compact Button -->
+            <button type="button" onclick="toggleAudioPlayback()" id="dock-play-pause-btn" class="w-8 h-8 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center shadow-md transition cursor-pointer flex-shrink-0">
+                <span id="dock-play-icon">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </span>
+            </button>
 
-                    <!-- Play / Pause Primary -->
-                    <button type="button" onclick="toggleAudioPlayback()" id="dock-play-pause-btn" class="w-11 h-11 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center shadow-lg transition cursor-pointer">
-                        <span id="dock-play-icon">
-                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        </span>
-                    </button>
+            <!-- Forward 5s -->
+            <button type="button" onclick="seekAudio(5)" class="p-1 text-stone-400 hover:text-white transition cursor-pointer hidden xs:block" title="Forward 5s">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M11.5 8c2.65 0 5.05.99 6.9 2.6L22 7v9h-9l3.62-3.62c-1.39-1.2-3.16-1.88-5.12-1.88-3.54 0-6.55 2.31-7.6 5.5l-2.37-.78C2.92 11.03 6.85 8 11.5 8z"/></svg>
+            </button>
 
-                    <!-- Forward 5s -->
-                    <button type="button" onclick="seekAudio(5)" class="p-1.5 text-stone-400 hover:text-stone-200 transition cursor-pointer" title="Forward 5 seconds">
-                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M11.5 8c2.65 0 5.05.99 6.9 2.6L22 7v9h-9l3.62-3.62c-1.39-1.2-3.16-1.88-5.12-1.88-3.54 0-6.55 2.31-7.6 5.5l-2.37-.78C2.92 11.03 6.85 8 11.5 8z"/></svg>
-                    </button>
+            <!-- Next Verse -->
+            <button type="button" onclick="stepVerse(1)" class="p-1 text-stone-400 hover:text-white transition cursor-pointer" title="Next verse">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+        </div>
 
-                    <!-- Next Verse -->
-                    <button type="button" onclick="stepVerse(1)" class="p-2 text-stone-300 hover:text-white transition cursor-pointer" title="Next verse">
-                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-                    </button>
-                </div>
-
-                <!-- Close / Finish Minimal Button -->
-                <button type="button" onclick="triggerOutroBlessing()" class="px-2 py-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition" title="Complete Day">
-                    Finish ✓
-                </button>
-            </div>
+        <!-- Right: Speed Pill & Finish -->
+        <div class="flex items-center gap-1.5 flex-shrink-0 pl-1 border-l border-stone-800">
+            <button type="button" onclick="cycleAudioSpeed()" id="audio-speed-btn" class="px-1.5 py-0.5 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-[10px] font-mono font-bold transition">
+                1.0x
+            </button>
+            <button type="button" onclick="triggerOutroBlessing()" class="px-2 py-0.5 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition cursor-pointer">
+                Finish ✓
+            </button>
         </div>
     </div>
 
@@ -237,7 +231,7 @@
             {{ day.outro.ta }}
         </h2>
 
-        <!-- 5-Second Circular Timer -->
+        <!-- 5-Second Circular Progress Timer -->
         <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
                 <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -452,9 +446,9 @@ function playVerseAudio(index) {
 function updatePlayPauseIcons(playing) {
     const iconSpan = document.getElementById('dock-play-icon');
     if (playing) {
-        iconSpan.innerHTML = '<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+        iconSpan.innerHTML = '<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
     } else {
-        iconSpan.innerHTML = '<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        iconSpan.innerHTML = '<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     }
 }
 
