@@ -387,7 +387,6 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
 
     plan_info = plan_mapping[plan_type]
     file_path = PLANS_DIR / plan_info["file"]
-
     if not file_path.exists():
         file_path = Path("static/plans") / plan_info["file"]
 
@@ -397,7 +396,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
     with open(file_path, "r", encoding="utf-8") as f:
         plan_data = json.load(f)
 
-    # 1. Resolve list of day entries regardless of top-level schema
+    # 1. Parse list of days from JSON structure
     days_list = []
     if isinstance(plan_data, list):
         days_list = plan_data
@@ -406,31 +405,28 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
         if isinstance(raw_days, list):
             days_list = raw_days
         elif isinstance(raw_days, dict):
-            # dict keyed by day numbers
             day_val = raw_days.get(str(day)) or raw_days.get(day)
             if day_val:
                 days_list = [day_val]
         else:
-            # Plan itself might be keyed by day numbers {"1": {...}, "2": {...}}
             day_val = plan_data.get(str(day)) or plan_data.get(day)
             if day_val:
                 days_list = [day_val]
 
-    # Find the target day in the list
+    # Find the target day
     day_entry = None
     for item in days_list:
         if isinstance(item, dict) and item.get("day") == day:
             day_entry = item
             break
 
-    # Fallback to 1-based index if "day" key wasn't explicitly matched
     if not day_entry and days_list and 1 <= day <= len(days_list):
         day_entry = days_list[day - 1]
 
     if not day_entry:
         raise HTTPException(status_code=404, detail=f"Day {day} schedule not found")
 
-    # 2. Extract portions / passages
+    # 2. Extract chapters / portions
     raw_readings = []
     if isinstance(day_entry, dict):
         raw_readings = (
@@ -459,7 +455,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
         elif isinstance(item, (list, tuple)) and len(item) >= 2:
             raw_book, ch = item[0], item[1]
 
-        # Match book identifier against BOOK_MAP
+        # Match book against BOOK_MAP
         book_id = None
         try:
             val = int(raw_book)
@@ -484,10 +480,12 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
                 ch_int = int(ch)
                 verses = get_chapter_verses(book_id, ch_int) or []
                 book_info = BOOK_MAP.get(book_id, {})
+                book_name = f"{book_info.get('name_ta', '')} / {book_info.get('name_en', '')}".strip(" /")
+
                 readings.append(
                     {
                         "book_id": book_id,
-                        "book": book_info,
+                        "book_name": book_name,
                         "chapter": ch_int,
                         "verses": verses,
                     }
