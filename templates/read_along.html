@@ -1,128 +1,132 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-6 relative pb-24" id="player-container">
+<div class="min-h-screen bg-[#faf8f5] dark:bg-[#121110] text-stone-900 dark:text-stone-100 transition-colors pb-32" id="player-container">
 
-    <!-- Audio Element (Controlled via JS) -->
+    <!-- Audio Element -->
     <audio id="readalong-audio" preload="none"></audio>
 
     <!-- ========================================== -->
-    <!-- 1. INTRO OVERLAY (5-Second Animated Cue)   -->
+    <!-- 1. INTRO OVERLAY (Cinematic Ambient Card)  -->
     <!-- ========================================== -->
-    <div id="intro-card" class="fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white">
-        <span class="text-xs uppercase font-bold tracking-widest text-amber-400 mb-2">
-            Day {{ day.day }} of {{ plan.total_days }}
-        </span>
-        <h2 id="intro-title" class="text-2xl sm:text-3xl font-bold mb-3 max-w-xl leading-tight">
-            {{ day.intro.display_ta }}
-        </h2>
-        <p id="intro-subtitle" class="text-stone-300 text-sm sm:text-base mb-6 font-serif">
-            {{ day.intro.display_en }}
-        </p>
+    <div id="intro-card" class="fixed inset-0 z-50 bg-[#0c0a09]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center text-stone-100">
+        <div class="max-w-lg w-full p-8 rounded-3xl border border-amber-500/20 bg-gradient-to-b from-stone-900/80 to-stone-950/90 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-16 -left-16 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -bottom-16 -right-16 w-36 h-36 bg-amber-600/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        <!-- Language Selector before starting -->
-        <div class="inline-flex rounded-xl bg-stone-900 border border-stone-700 p-1 mb-6 text-xs">
-            <button type="button" onclick="setLanguage('ta')" id="intro-lang-ta" class="px-3 py-1.5 rounded-lg font-bold bg-amber-600 text-white transition">
-                தமிழ்
-            </button>
-            <button type="button" onclick="setLanguage('en')" id="intro-lang-en" class="px-3 py-1.5 rounded-lg font-bold text-stone-400 hover:text-white transition">
-                English
-            </button>
-        </div>
+            <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-4">
+                Day {{ day.day }} · {{ plan.total_days }} Days Challenge
+            </span>
 
-        <!-- 5-Second Circular Progress Timer -->
-        <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
-            <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path id="intro-progress-bar" class="text-amber-500 transition-all duration-1000 ease-linear" stroke-dasharray="100, 100" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            </svg>
-            <span id="intro-timer-num" class="absolute font-bold text-lg text-white">5</span>
-        </div>
-
-        <button type="button" onclick="skipIntro()" class="text-xs text-stone-400 hover:text-white underline cursor-pointer">
-            Skip Intro →
-        </button>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- 2. STICKY TOP NAVIGATION HEADER            -->
-    <!-- ========================================== -->
-    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 dark:border-stone-800 pb-4 mb-6 sticky top-14 bg-white/95 dark:bg-stone-900/95 backdrop-blur z-20">
-        <div>
-            <div class="flex items-center gap-2">
-                <a href="/plans" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                </a>
-                <span class="text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-wider">
-                    Day {{ day.day }} of {{ plan.total_days }}
-                </span>
-            </div>
-            <h1 id="header-plan-title" class="text-lg font-bold text-stone-900 dark:text-stone-100 mt-0.5">
+            <h2 id="intro-title" class="text-2xl sm:text-3xl font-serif font-bold text-amber-100 mb-2 leading-snug">
                 {{ day.intro.display_ta }}
-            </h1>
-        </div>
-        
-        <div class="flex flex-wrap items-center gap-2 self-end sm:self-auto">
-            <!-- Language Toggle (Single language at a time) -->
-            <div class="inline-flex rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-0.5 text-xs font-semibold">
-                <button type="button" onclick="setLanguage('ta')" id="nav-lang-ta" class="px-2.5 py-1 rounded-lg bg-amber-700 text-white transition">
+            </h2>
+            <p id="intro-subtitle" class="text-stone-400 text-sm font-serif italic mb-6">
+                {{ day.intro.display_en }}
+            </p>
+
+            <!-- Language Selector -->
+            <div class="inline-flex rounded-xl bg-stone-950/80 border border-stone-800 p-1 mb-8">
+                <button type="button" onclick="setLanguage('ta')" id="intro-lang-ta" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-700 text-white shadow-sm transition">
                     தமிழ்
                 </button>
-                <button type="button" onclick="setLanguage('en')" id="nav-lang-en" class="px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition">
+                <button type="button" onclick="setLanguage('en')" id="intro-lang-en" class="px-4 py-1.5 rounded-lg text-xs font-bold text-stone-400 hover:text-white transition">
                     English
                 </button>
             </div>
 
-            <!-- Font Sizing Controls -->
-            <div class="inline-flex items-center rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-0.5 text-xs font-semibold">
-                <button type="button" onclick="adjustReadAlongFontSize(-1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Decrease font size">
-                    A-
-                </button>
-                <span id="font-size-label" class="px-1.5 text-[11px] text-stone-500 dark:text-stone-400 font-mono select-none">100%</span>
-                <button type="button" onclick="adjustReadAlongFontSize(1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Increase font size">
-                    A+
-                </button>
+            <!-- Animated Ring Countdown -->
+            <div class="relative w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                    <path class="text-stone-800" stroke-width="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path id="intro-progress-bar" class="text-amber-500 transition-all duration-1000 ease-linear" stroke-dasharray="100, 100" stroke-width="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <span id="intro-timer-num" class="absolute font-mono font-bold text-lg text-amber-200">5</span>
             </div>
 
-            <!-- Start Reading Action Button -->
-            <button id="start-read-btn" 
-                    type="button"
-                    onclick="startReadingWithAudio()" 
-                    class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
-                <span>Start Reading 🎧</span>
+            <button type="button" onclick="skipIntro()" class="text-xs font-semibold text-stone-500 hover:text-amber-300 transition cursor-pointer">
+                Enter Reader →
             </button>
-            
-            <!-- Finish / Next Button -->
-            <button id="finish-btn" 
-                    type="button"
-                    onclick="triggerOutroBlessing()" 
-                    class="hidden px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition">
-                <span>Complete Day ✓</span>
-            </button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. STICKY TOP APP HEADER                   -->
+    <!-- ========================================== -->
+    <header class="sticky top-0 z-30 bg-[#faf8f5]/90 dark:bg-[#121110]/90 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 px-4 py-3">
+        <div class="max-w-3xl mx-auto flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <a href="/plans" class="p-1.5 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-500 dark:text-stone-400 transition" title="Back to Plans">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                </a>
+                <div class="min-w-0">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                        Day {{ day.day }} of {{ plan.total_days }}
+                    </span>
+                    <h1 id="header-plan-title" class="text-sm sm:text-base font-bold text-stone-900 dark:text-stone-100 truncate">
+                        {{ day.intro.display_ta }}
+                    </h1>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <!-- Language Segmented Control -->
+                <div class="inline-flex rounded-xl bg-stone-200/70 dark:bg-stone-800/70 p-0.5 text-xs font-semibold">
+                    <button type="button" onclick="setLanguage('ta')" id="nav-lang-ta" class="px-2.5 py-1 rounded-lg bg-amber-700 text-white shadow-xs transition">
+                        தமிழ்
+                    </button>
+                    <button type="button" onclick="setLanguage('en')" id="nav-lang-en" class="px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition">
+                        EN
+                    </button>
+                </div>
+
+                <!-- Font Sizer (A- / A+) -->
+                <div class="inline-flex items-center rounded-xl bg-stone-200/70 dark:bg-stone-800/70 p-0.5 text-xs font-semibold">
+                    <button type="button" onclick="adjustReadAlongFontSize(-1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Smaller font">
+                        A-
+                    </button>
+                    <span id="font-size-label" class="px-1 text-[10px] font-mono text-stone-400 select-none">100%</span>
+                    <button type="button" onclick="adjustReadAlongFontSize(1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Larger font">
+                        A+
+                    </button>
+                </div>
+
+                <!-- Start Action Button -->
+                <button id="start-read-btn" 
+                        type="button"
+                        onclick="startReadingWithAudio()" 
+                        class="px-3.5 py-1.5 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
+                    <span>Read Along 🎧</span>
+                </button>
+            </div>
         </div>
     </header>
 
     <!-- ========================================== -->
-    <!-- 3. MONOLINGUAL BIBLE SCRIPTURE STREAM      -->
+    <!-- 3. SCRIPTURE READER CANVAS                 -->
     <!-- ========================================== -->
-    <main id="scripture-stream" class="space-y-12">
+    <main class="max-w-2xl mx-auto px-5 pt-8 space-y-14" id="scripture-stream">
         {% for ch in chapters %}
         <section class="chapter-block" data-book-id="{{ ch.book_id }}" data-chapter="{{ ch.chapter }}">
-            <div class="mb-4 pb-2 border-b border-stone-200 dark:border-stone-800 flex justify-between items-baseline">
-                <h2 class="text-xl font-bold text-stone-900 dark:text-stone-100 chapter-header-text"
+            
+            <!-- Chapter Decorative Divider -->
+            <div class="text-center my-6">
+                <span class="text-xs uppercase tracking-widest font-semibold text-amber-700/80 dark:text-amber-500/80">✦ CHAPTER {{ ch.chapter }} ✦</span>
+                <h2 class="text-2xl font-serif font-bold text-stone-900 dark:text-stone-100 chapter-header-text mt-1"
                     data-ta="{{ ch.book_name_ta }} {{ ch.chapter }}"
                     data-en="{{ ch.book_name_en }} {{ ch.chapter }}">
                     {{ ch.book_name_ta }} {{ ch.chapter }}
                 </h2>
-                <span class="text-xs text-stone-400 font-mono">Ch {{ ch.chapter }}</span>
+                <div class="w-12 h-0.5 bg-amber-600/30 mx-auto mt-2 rounded-full"></div>
             </div>
 
-            <div class="space-y-3 text-base leading-relaxed">
+            <!-- Verse Flow -->
+            <div class="space-y-1">
                 {% for v in ch.verses %}
-                <div class="verse-row flex gap-3.5 p-2 rounded-xl transition duration-200 cursor-pointer" 
+                <div class="verse-row group relative px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer border-l-2 border-transparent hover:bg-stone-100/70 dark:hover:bg-stone-800/40" 
                      id="verse-node-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}"
                      onclick="jumpToVerseAudio({{ loop.index0 }})"
                      data-book-id="{{ ch.book_id }}"
@@ -133,12 +137,12 @@
                      data-text-ta="{{ v.text_ta }}"
                      data-text-en="{{ v.text_en }}">
                     
-                    <span class="text-xs font-bold text-amber-700 dark:text-amber-500 pt-1 select-none w-5 text-right flex-shrink-0">
-                        {{ v.verse }}
-                    </span>
-                    
-                    <div class="flex-1">
-                        <p class="verse-content text-stone-900 dark:text-stone-100 leading-relaxed transition-all"
+                    <div class="flex items-start gap-2.5">
+                        <span class="text-[11px] font-mono font-semibold text-amber-700/70 dark:text-amber-500/70 pt-1 select-none w-5 text-right flex-shrink-0 group-hover:text-amber-600">
+                            {{ v.verse }}
+                        </span>
+                        
+                        <p class="verse-content text-stone-800 dark:text-stone-200 leading-[1.8] tracking-wide transition-all"
                            style="font-size: var(--bible-font-size, 1.05rem);">
                             {{ v.text_ta }}
                         </p>
@@ -148,55 +152,45 @@
             </div>
         </section>
         {% endfor %}
+
+        <!-- Bottom Completion Callout -->
+        <div class="pt-10 pb-8 text-center border-t border-stone-200 dark:border-stone-800">
+            <button type="button" 
+                    onclick="triggerOutroBlessing()" 
+                    class="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs sm:text-sm font-bold shadow-md cursor-pointer transition">
+                Mark Day Complete & Receive Blessing ✨
+            </button>
+        </div>
     </main>
 
-    <!-- Bottom Day Completion Trigger -->
-    <div class="mt-14 py-8 border-t border-stone-200 dark:border-stone-800 text-center">
-        <button type="button" 
-                onclick="triggerOutroBlessing()" 
-                class="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-bold shadow-md cursor-pointer transition">
-            Finish Reading & Receive Blessing ✨
-        </button>
-    </div>
-
     <!-- ======================================================= -->
-    <!-- 4. SLIM INLINE AUDIO CONTROL PILL                       -->
+    <!-- 4. SLIM FLOATING AUDIO CONTROL PILL                     -->
     <!-- ======================================================= -->
-    <div id="audio-control-bar" class="fixed bottom-3 left-3 right-3 max-w-xl mx-auto z-40 bg-stone-950/90 dark:bg-stone-900/95 backdrop-blur-md border border-stone-800 text-white rounded-full px-3 py-1.5 shadow-xl transition-all duration-300 transform translate-y-28 opacity-0 flex items-center justify-between gap-2">
+    <div id="audio-control-bar" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto z-40 bg-stone-900/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-800/90 text-stone-100 rounded-full px-3 py-1.5 shadow-2xl transition-all duration-300 transform translate-y-28 opacity-0 flex items-center justify-between gap-2">
         
-        <!-- Left: Status & Reference Pill -->
-        <div class="flex items-center gap-1.5 min-w-0 pr-1">
+        <!-- Status & Reference Pill -->
+        <div class="flex items-center gap-1.5 min-w-0 pr-1 pl-1">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
-            <span id="current-verse-ref" class="text-[11px] font-bold text-stone-200 truncate max-w-[110px] sm:max-w-[150px]">
-                Audio...
+            <span id="current-verse-ref" class="text-[11px] font-bold text-stone-200 truncate max-w-[100px] sm:max-w-[130px]">
+                Loading...
             </span>
-            <span id="audio-progress-count" class="text-[10px] font-mono text-stone-400 hidden sm:inline flex-shrink-0">
+            <span id="audio-progress-count" class="text-[10px] font-mono text-stone-400 hidden xs:inline flex-shrink-0">
                 0/0
             </span>
         </div>
 
-        <!-- Center: Playback Controls -->
+        <!-- Controls -->
         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <!-- Prev Verse -->
             <button type="button" onclick="stepVerse(-1)" class="p-1 text-stone-400 hover:text-white transition cursor-pointer" title="Previous verse">
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
             </button>
 
-            <!-- Rewind 5s -->
-            <button type="button" onclick="seekAudio(-5)" class="p-1 text-stone-400 hover:text-white transition cursor-pointer hidden xs:block" title="Rewind 5s">
-                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.2 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
-            </button>
-
-            <!-- Play / Pause Compact Button -->
-            <button type="button" onclick="toggleAudioPlayback()" id="dock-play-pause-btn" class="w-8 h-8 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center shadow-md transition cursor-pointer flex-shrink-0">
+            <!-- Play / Pause Compact -->
+            <button type="button" onclick="toggleAudioPlayback()" id="dock-play-pause-btn" class="w-7 h-7 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center shadow-md transition cursor-pointer flex-shrink-0">
                 <span id="dock-play-icon">
-                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </span>
-            </button>
-
-            <!-- Forward 5s -->
-            <button type="button" onclick="seekAudio(5)" class="p-1 text-stone-400 hover:text-white transition cursor-pointer hidden xs:block" title="Forward 5s">
-                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M11.5 8c2.65 0 5.05.99 6.9 2.6L22 7v9h-9l3.62-3.62c-1.39-1.2-3.16-1.88-5.12-1.88-3.54 0-6.55 2.31-7.6 5.5l-2.37-.78C2.92 11.03 6.85 8 11.5 8z"/></svg>
             </button>
 
             <!-- Next Verse -->
@@ -205,7 +199,7 @@
             </button>
         </div>
 
-        <!-- Right: Speed Pill & Finish -->
+        <!-- Right Side: Speed & Finish Pill -->
         <div class="flex items-center gap-1.5 flex-shrink-0 pl-1 border-l border-stone-800">
             <button type="button" onclick="cycleAudioSpeed()" id="audio-speed-btn" class="px-1.5 py-0.5 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-[10px] font-mono font-bold transition">
                 1.0x
@@ -217,31 +211,32 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 5. OUTRO BLESSING (5s Auto-Complete)       -->
+    <!-- 5. OUTRO BLESSING (Sacred Promise Card)    -->
     <!-- ========================================== -->
-    <div id="outro-card" class="hidden fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white">
-        <span class="text-xs uppercase font-bold tracking-widest text-emerald-400 mb-2">
-            Today's Blessing / ஆசீர்வாத வசனம்
-        </span>
-        <span class="text-amber-400 text-sm font-semibold mb-3">
-            {{ day.outro.ref }}
-        </span>
-        
-        <h2 id="outro-verse-text" class="text-xl sm:text-2xl font-bold mb-6 max-w-xl leading-snug px-4">
-            {{ day.outro.ta }}
-        </h2>
+    <div id="outro-card" class="hidden fixed inset-0 z-50 bg-[#0c0a09]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center text-stone-100">
+        <div class="max-w-md w-full p-8 rounded-3xl border border-emerald-500/30 bg-gradient-to-b from-stone-900/90 to-stone-950/95 shadow-2xl relative overflow-hidden">
+            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3">
+                Daily Blessing / ஆசீர்வாதம்
+            </span>
+            <span class="block text-amber-400 text-xs font-semibold mb-4">{{ day.outro.ref }}</span>
 
-        <!-- 5-Second Circular Progress Timer -->
-        <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
-            <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path id="outro-progress-bar" class="text-emerald-500 transition-all duration-1000 ease-linear" stroke-dasharray="100, 100" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            </svg>
-            <span id="outro-timer-num" class="absolute font-bold text-lg text-white">5</span>
+            <h2 id="outro-verse-text" class="text-lg sm:text-xl font-serif font-bold text-stone-100 mb-6 leading-relaxed">
+                {{ day.outro.ta }}
+            </h2>
+
+            <!-- 5-Second Circular Progress Ring -->
+            <div class="relative w-14 h-14 mx-auto mb-5 flex items-center justify-center">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                    <path class="text-stone-800" stroke-width="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path id="outro-progress-bar" class="text-emerald-500 transition-all duration-1000 ease-linear" stroke-dasharray="100, 100" stroke-width="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <span id="outro-timer-num" class="absolute font-mono font-bold text-base text-emerald-300">5</span>
+            </div>
+
+            <p class="text-[11px] text-stone-400">Marking progress & returning to plans...</p>
         </div>
-
-        <p class="text-xs text-stone-400">Saving completion and syncing to cloud...</p>
     </div>
+
 </div>
 
 <script>
@@ -252,7 +247,7 @@ const OUTRO_BLESSING_TA = {{ day.outro.ta | tojson }};
 const OUTRO_BLESSING_EN = {{ day.outro.en | tojson }};
 
 // ==========================================
-// Font Sizing Engine (Persistent & Reactive)
+// Font Sizing Engine
 // ==========================================
 const FONT_STORAGE_KEY = 'bible_font_size';
 const DEFAULT_FONT_REM = 1.05;
@@ -262,19 +257,13 @@ function applyReadAlongFontSize(remVal) {
     currentFontRem = Math.min(1.8, Math.max(0.85, remVal));
     
     document.documentElement.style.setProperty('--bible-font-size', `${currentFontRem}rem`);
-    const stream = document.getElementById('scripture-stream');
-    if (stream) {
-        stream.style.setProperty('--bible-font-size', `${currentFontRem}rem`);
-    }
-
     document.querySelectorAll('.verse-content').forEach(el => {
         el.style.fontSize = `${currentFontRem}rem`;
     });
 
     const label = document.getElementById('font-size-label');
     if (label) {
-        const pct = Math.round((currentFontRem / DEFAULT_FONT_REM) * 100);
-        label.innerText = `${pct}%`;
+        label.innerText = `${Math.round((currentFontRem / DEFAULT_FONT_REM) * 100)}%`;
     }
 
     localStorage.setItem(FONT_STORAGE_KEY, currentFontRem.toString());
@@ -308,7 +297,7 @@ window.addEventListener('DOMContentLoaded', () => {
         setLanguage(savedLang);
     }
 
-    // 5-Second Intro Countdown
+    // 5s Intro Countdown
     const timerText = document.getElementById('intro-timer-num');
     const progressBar = document.getElementById('intro-progress-bar');
 
@@ -316,8 +305,7 @@ window.addEventListener('DOMContentLoaded', () => {
         introSeconds--;
         if (timerText) timerText.innerText = introSeconds;
         if (progressBar) {
-            const pct = (introSeconds / 5) * 100;
-            progressBar.setAttribute('stroke-dasharray', `${pct}, 100`);
+            progressBar.setAttribute('stroke-dasharray', `${(introSeconds / 5) * 100}, 100`);
         }
 
         if (introSeconds <= 0) {
@@ -336,34 +324,38 @@ function setLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('bible_reading_lang', lang);
 
+    // Intro buttons
     const introTa = document.getElementById('intro-lang-ta');
     const introEn = document.getElementById('intro-lang-en');
     if (introTa && introEn) {
         if (lang === 'ta') {
-            introTa.className = "px-3 py-1.5 rounded-lg font-bold bg-amber-600 text-white transition";
-            introEn.className = "px-3 py-1.5 rounded-lg font-bold text-stone-400 hover:text-white transition";
+            introTa.className = "px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-700 text-white shadow-sm transition";
+            introEn.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-stone-400 hover:text-white transition";
         } else {
-            introEn.className = "px-3 py-1.5 rounded-lg font-bold bg-amber-600 text-white transition";
-            introTa.className = "px-3 py-1.5 rounded-lg font-bold text-stone-400 hover:text-white transition";
+            introEn.className = "px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-700 text-white shadow-sm transition";
+            introTa.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-stone-400 hover:text-white transition";
         }
     }
 
+    // Top navbar buttons
     const navTa = document.getElementById('nav-lang-ta');
     const navEn = document.getElementById('nav-lang-en');
     if (navTa && navEn) {
         if (lang === 'ta') {
-            navTa.className = "px-2.5 py-1 rounded-lg bg-amber-700 text-white transition";
-            navEn.className = "px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition";
+            navTa.className = "px-2.5 py-1 rounded-lg bg-amber-700 text-white shadow-xs transition";
+            navEn.className = "px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition";
         } else {
-            navEn.className = "px-2.5 py-1 rounded-lg bg-amber-700 text-white transition";
-            navTa.className = "px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition";
+            navEn.className = "px-2.5 py-1 rounded-lg bg-amber-700 text-white shadow-xs transition";
+            navTa.className = "px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition";
         }
     }
 
+    // Chapter headers
     document.querySelectorAll('.chapter-header-text').forEach(el => {
         el.innerText = lang === 'ta' ? el.getAttribute('data-ta') : el.getAttribute('data-en');
     });
 
+    // Verses content
     verseNodes.forEach(node => {
         const textEl = node.querySelector('.verse-content');
         if (textEl) {
@@ -371,6 +363,7 @@ function setLanguage(lang) {
         }
     });
 
+    // Outro blessing
     const outroEl = document.getElementById('outro-verse-text');
     if (outroEl) {
         outroEl.innerText = lang === 'ta' ? OUTRO_BLESSING_TA : `"${OUTRO_BLESSING_EN}"`;
@@ -384,7 +377,7 @@ function setLanguage(lang) {
 }
 
 // ==========================================
-// Audio Playback & Control Dock Engine
+// Audio Playback Engine
 // ==========================================
 
 function showAudioControlBar() {
@@ -395,10 +388,7 @@ function showAudioControlBar() {
 
 function startReadingWithAudio() {
     skipIntro();
-
     document.getElementById('start-read-btn').classList.add('hidden');
-    document.getElementById('finish-btn').classList.remove('hidden');
-
     showAudioControlBar();
     currentVerseIndex = 0;
     playVerseAudio(currentVerseIndex);
@@ -415,18 +405,18 @@ function playVerseAudio(index) {
     const text = currentLanguage === 'ta' ? node.getAttribute('data-text-ta') : node.getAttribute('data-text-en');
     const ref = currentLanguage === 'ta' ? node.getAttribute('data-ref-ta') : node.getAttribute('data-ref-en');
 
-    // Update Dock Status
+    // Update Floating Pill Status
     document.getElementById('current-verse-ref').innerText = ref;
-    document.getElementById('audio-progress-count').innerText = `${index + 1} / ${verseNodes.length}`;
+    document.getElementById('audio-progress-count').innerText = `${index + 1}/${verseNodes.length}`;
 
-    // Highlight active verse and center
+    // Highlight active verse with subtle illuminated glow
     verseNodes.forEach(n => {
-        n.classList.remove('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-l-4', 'border-amber-600');
+        n.classList.remove('bg-amber-100/80', 'dark:bg-amber-950/40', '!border-amber-600', 'shadow-xs');
     });
-    node.classList.add('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-l-4', 'border-amber-600');
+    node.classList.add('bg-amber-100/80', 'dark:bg-amber-950/40', '!border-amber-600', 'shadow-xs');
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Request stream from audio route
+    // Request stream from gTTS endpoint
     const streamUrl = `/api/audio/stream?text=${encodeURIComponent(text)}&lang=${currentLanguage}`;
     audioElement.src = streamUrl;
     audioElement.playbackRate = speeds[currentSpeedIndex];
@@ -437,7 +427,7 @@ function playVerseAudio(index) {
             updatePlayPauseIcons(true);
         })
         .catch(err => {
-            console.warn("Audio interrupted:", err);
+            console.warn("Audio waiting for user gesture:", err);
             isAudioPlaying = false;
             updatePlayPauseIcons(false);
         });
@@ -446,9 +436,9 @@ function playVerseAudio(index) {
 function updatePlayPauseIcons(playing) {
     const iconSpan = document.getElementById('dock-play-icon');
     if (playing) {
-        iconSpan.innerHTML = '<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+        iconSpan.innerHTML = '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
     } else {
-        iconSpan.innerHTML = '<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        iconSpan.innerHTML = '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     }
 }
 
@@ -476,12 +466,6 @@ function jumpToVerseAudio(index) {
     playVerseAudio(index);
 }
 
-function seekAudio(seconds) {
-    if (audioElement.currentTime !== undefined) {
-        audioElement.currentTime = Math.max(0, audioElement.currentTime + seconds);
-    }
-}
-
 function cycleAudioSpeed() {
     currentSpeedIndex = (currentSpeedIndex + 1) % speeds.length;
     const rate = speeds[currentSpeedIndex];
@@ -489,7 +473,7 @@ function cycleAudioSpeed() {
     document.getElementById('audio-speed-btn').innerText = `${rate.toFixed(1)}x`;
 }
 
-// Auto-advance
+// Auto-advance verse
 audioElement.addEventListener('ended', () => {
     currentVerseIndex++;
     playVerseAudio(currentVerseIndex);
@@ -509,7 +493,6 @@ function triggerOutroBlessing() {
     audioElement.pause();
     isAudioPlaying = false;
 
-    // Hide control dock
     const dock = document.getElementById('audio-control-bar');
     dock.classList.add('translate-y-28', 'opacity-0');
 
@@ -528,8 +511,7 @@ function triggerOutroBlessing() {
         outroSeconds--;
         if (timerText) timerText.innerText = outroSeconds;
         if (progressBar) {
-            const pct = (outroSeconds / 5) * 100;
-            progressBar.setAttribute('stroke-dasharray', `${pct}, 100`);
+            progressBar.setAttribute('stroke-dasharray', `${(outroSeconds / 5) * 100}, 100`);
         }
 
         if (outroSeconds <= 0) {
