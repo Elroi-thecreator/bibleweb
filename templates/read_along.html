@@ -64,7 +64,7 @@
             </h1>
         </div>
         
-        <div class="flex items-center gap-2 self-end sm:self-auto">
+        <div class="flex flex-wrap items-center gap-2 self-end sm:self-auto">
             <!-- Language Toggle (Single language at a time) -->
             <div class="inline-flex rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-0.5 text-xs font-semibold">
                 <button type="button" onclick="setLanguage('ta')" id="nav-lang-ta" class="px-2.5 py-1 rounded-lg bg-amber-700 text-white transition">
@@ -72,6 +72,17 @@
                 </button>
                 <button type="button" onclick="setLanguage('en')" id="nav-lang-en" class="px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition">
                     English
+                </button>
+            </div>
+
+            <!-- Font Sizing Engine Controls -->
+            <div class="inline-flex items-center rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-0.5 text-xs font-semibold">
+                <button type="button" onclick="adjustReadAlongFontSize(-1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Decrease font size">
+                    A-
+                </button>
+                <span id="font-size-label" class="px-1.5 text-[11px] text-stone-500 dark:text-stone-400 font-mono select-none">100%</span>
+                <button type="button" onclick="adjustReadAlongFontSize(1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Increase font size">
+                    A+
                 </button>
             </div>
 
@@ -84,7 +95,7 @@
                 <span>Start Reading 🎧</span>
             </button>
             
-            <!-- Audio Play/Pause Toggle (Shown once reading begins) -->
+            <!-- Audio Play/Pause Toggle -->
             <button id="audio-pause-btn"
                     type="button"
                     onclick="toggleAudioPlayback()"
@@ -132,8 +143,9 @@
                     </span>
                     
                     <div class="flex-1">
-                        <!-- Single language displayed dynamically -->
-                        <p class="verse-content text-stone-900 dark:text-stone-100 text-[var(--bible-font-size,1.05rem)] leading-relaxed">
+                        <!-- Direct style binding with CSS variable fallback -->
+                        <p class="verse-content text-stone-900 dark:text-stone-100 leading-relaxed transition-all"
+                           style="font-size: var(--bible-font-size, 1.05rem);">
                             {{ v.text_ta }}
                         </p>
                     </div>
@@ -164,12 +176,12 @@
             {{ day.outro.ref }}
         </span>
         
-        <!-- Blessing displayed in selected language -->
+        <!-- Blessing displayed in active selected language -->
         <h2 id="outro-verse-text" class="text-xl sm:text-2xl font-bold mb-6 max-w-xl leading-snug px-4">
             {{ day.outro.ta }}
         </h2>
 
-        <!-- 5-Second Circular Timer -->
+        <!-- 5-Second Circular Progress Timer -->
         <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
                 <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -189,11 +201,51 @@ const CHAPTERS_LIST = {{ day.chapters | tojson }};
 const OUTRO_BLESSING_TA = {{ day.outro.ta | tojson }};
 const OUTRO_BLESSING_EN = {{ day.outro.en | tojson }};
 
-let currentLanguage = 'ta'; // 'ta' or 'en'
+// ==========================================
+// Font Sizing Engine (Persistent & Reactive)
+// ==========================================
+const FONT_STORAGE_KEY = 'bible_font_size';
+const DEFAULT_FONT_REM = 1.05;
+let currentFontRem = parseFloat(localStorage.getItem(FONT_STORAGE_KEY)) || DEFAULT_FONT_REM;
+
+function applyReadAlongFontSize(remVal) {
+    currentFontRem = Math.min(1.8, Math.max(0.85, remVal)); // Clamp between 0.85rem and 1.8rem
+    
+    // Set variable on root and stream container
+    document.documentElement.style.setProperty('--bible-font-size', `${currentFontRem}rem`);
+    const stream = document.getElementById('scripture-stream');
+    if (stream) {
+        stream.style.setProperty('--bible-font-size', `${currentFontRem}rem`);
+    }
+
+    // Directly adjust all rendered verse text nodes
+    document.querySelectorAll('.verse-content').forEach(el => {
+        el.style.fontSize = `${currentFontRem}rem`;
+    });
+
+    // Update percentage label
+    const label = document.getElementById('font-size-label');
+    if (label) {
+        const pct = Math.round((currentFontRem / DEFAULT_FONT_REM) * 100);
+        label.innerText = `${pct}%`;
+    }
+
+    localStorage.setItem(FONT_STORAGE_KEY, currentFontRem.toString());
+}
+
+function adjustReadAlongFontSize(direction) {
+    const step = 0.08;
+    applyReadAlongFontSize(currentFontRem + (direction * step));
+}
+
+// ==========================================
+// Language & State Management
+// ==========================================
+let currentLanguage = 'ta';
 let introTimer = null;
 let introSeconds = 5;
 
-// Audio Stream Queue State
+// Audio Stream State
 const audioElement = document.getElementById('readalong-audio');
 let verseNodes = [];
 let currentVerseIndex = 0;
@@ -201,7 +253,10 @@ let isAudioPlaying = false;
 
 // 1. Run 5s Intro Screen on page load
 window.addEventListener('DOMContentLoaded', () => {
-    // Cache all verse elements in reading order
+    // Apply saved font sizing immediately
+    applyReadAlongFontSize(currentFontRem);
+
+    // Cache all verse elements in reading sequence
     verseNodes = Array.from(document.querySelectorAll('.verse-row'));
 
     // Restore language preference if previously stored
@@ -277,13 +332,16 @@ function setLanguage(lang) {
         }
     });
 
-    // Update outro text
+    // Update outro blessing text
     const outroEl = document.getElementById('outro-verse-text');
     if (outroEl) {
         outroEl.innerText = lang === 'ta' ? OUTRO_BLESSING_TA : `"${OUTRO_BLESSING_EN}"`;
     }
 
-    // If audio is currently playing, reload current verse with new language
+    // Reapply font sizing to ensure new nodes retain size
+    applyReadAlongFontSize(currentFontRem);
+
+    // If audio is playing when language is switched, resume with current language
     if (isAudioPlaying) {
         playVerseAudio(currentVerseIndex);
     }
@@ -304,7 +362,7 @@ function startReadingWithAudio() {
 // Play Audio for a specific verse
 function playVerseAudio(index) {
     if (index >= verseNodes.length) {
-        // All verses finished -> trigger Outro Blessing
+        // All verses completed -> trigger Outro Blessing
         triggerOutroBlessing();
         return;
     }
@@ -313,7 +371,7 @@ function playVerseAudio(index) {
     const node = verseNodes[index];
     const text = currentLanguage === 'ta' ? node.getAttribute('data-text-ta') : node.getAttribute('data-text-en');
 
-    // Highlight active verse and scroll into view smoothly
+    // Highlight active verse and scroll smoothly
     verseNodes.forEach(n => {
         n.classList.remove('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-l-4', 'border-amber-600');
     });
@@ -330,7 +388,7 @@ function playVerseAudio(index) {
             document.getElementById('audio-pause-icon').innerText = '⏸';
         })
         .catch(err => {
-            console.warn("Audio playback interrupted or blocked:", err);
+            console.warn("Audio playback interrupted or waiting for user interaction:", err);
             isAudioPlaying = false;
             document.getElementById('audio-pause-icon').innerText = '▶';
         });
@@ -365,15 +423,12 @@ function toggleAudioPlayback() {
 
 // 4. Trigger Outro Blessing & Auto-Save
 function triggerOutroBlessing() {
-    // Stop audio
     audioElement.pause();
     isAudioPlaying = false;
 
-    // Show Outro Card
     const outroCard = document.getElementById('outro-card');
     outroCard.classList.remove('hidden');
 
-    // Play Outro Blessing Audio
     const blessingText = currentLanguage === 'ta' ? OUTRO_BLESSING_TA : OUTRO_BLESSING_EN;
     audioElement.src = `/api/audio/stream?text=${encodeURIComponent(blessingText)}&lang=${currentLanguage}`;
     audioElement.play().catch(() => {});
@@ -399,20 +454,20 @@ function triggerOutroBlessing() {
 
 // 5. Finalize Day Completion
 async function finalizeDayCompletion() {
-    // 1. Record completed day locally
+    // Save day progress locally
     localStorage.setItem(`readalong_${PLAN_ID}_progress`, JSON.stringify({
         last_completed_day: CURRENT_DAY,
         updated_at: new Date().toISOString()
     }));
 
-    // 2. Mark individual chapters in habit plan storage if available
+    // Record chapter checks if habit tracker function is available
     if (typeof window.markPlanChapterComplete === 'function') {
         for (const ch of CHAPTERS_LIST) {
             window.markPlanChapterComplete(PLAN_ID, ch.book_id, ch.chapter, true);
         }
     }
 
-    // 3. Sync to Supabase cloud
+    // Sync to Supabase cloud
     if (typeof window.syncWithSupabase === 'function') {
         try {
             await window.syncWithSupabase();
@@ -421,7 +476,7 @@ async function finalizeDayCompletion() {
         }
     }
 
-    // 4. Redirect back to plans overview
+    // Redirect to plans page with completion alert
     window.location.href = `/plans?completed_day=${CURRENT_DAY}&plan_id=${PLAN_ID}`;
 }
 </script>
