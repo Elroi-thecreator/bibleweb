@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-6 relative" id="player-container">
+<div class="max-w-4xl mx-auto px-4 py-6 relative pb-32" id="player-container">
 
-    <!-- Audio Element (Controlled via JS) -->
+    <!-- Audio Element -->
     <audio id="readalong-audio" preload="none"></audio>
 
     <!-- ========================================== -->
@@ -45,7 +45,7 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 2. STICKY TOP CONTROL HEADER               -->
+    <!-- 2. STICKY TOP NAVIGATION HEADER            -->
     <!-- ========================================== -->
     <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 dark:border-stone-800 pb-4 mb-6 sticky top-14 bg-white/95 dark:bg-stone-900/95 backdrop-blur z-20">
         <div>
@@ -65,7 +65,7 @@
         </div>
         
         <div class="flex flex-wrap items-center gap-2 self-end sm:self-auto">
-            <!-- Language Toggle (Single language at a time) -->
+            <!-- Language Toggle -->
             <div class="inline-flex rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-0.5 text-xs font-semibold">
                 <button type="button" onclick="setLanguage('ta')" id="nav-lang-ta" class="px-2.5 py-1 rounded-lg bg-amber-700 text-white transition">
                     தமிழ்
@@ -75,7 +75,7 @@
                 </button>
             </div>
 
-            <!-- Font Sizing Engine Controls -->
+            <!-- Font Sizing Controls -->
             <div class="inline-flex items-center rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-0.5 text-xs font-semibold">
                 <button type="button" onclick="adjustReadAlongFontSize(-1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Decrease font size">
                     A-
@@ -86,7 +86,7 @@
                 </button>
             </div>
 
-            <!-- Start Reading Action Button -->
+            <!-- Start Reading Launch Button -->
             <button id="start-read-btn" 
                     type="button"
                     onclick="startReadingWithAudio()" 
@@ -95,14 +95,6 @@
                 <span>Start Reading 🎧</span>
             </button>
             
-            <!-- Audio Play/Pause Toggle -->
-            <button id="audio-pause-btn"
-                    type="button"
-                    onclick="toggleAudioPlayback()"
-                    class="hidden p-2 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 text-xs font-bold transition">
-                <span id="audio-pause-icon">⏸</span>
-            </button>
-
             <!-- Finish / Next Button -->
             <button id="finish-btn" 
                     type="button"
@@ -130,11 +122,14 @@
 
             <div class="space-y-3 text-base leading-relaxed">
                 {% for v in ch.verses %}
-                <div class="verse-row flex gap-3.5 p-2 rounded-xl transition duration-200" 
+                <div class="verse-row flex gap-3.5 p-2 rounded-xl transition duration-200 cursor-pointer" 
                      id="verse-node-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}"
+                     onclick="jumpToVerseAudio({{ loop.index0 }})"
                      data-book-id="{{ ch.book_id }}"
                      data-chapter="{{ ch.chapter }}"
                      data-verse="{{ v.verse }}"
+                     data-ref-ta="{{ ch.book_name_ta }} {{ ch.chapter }}:{{ v.verse }}"
+                     data-ref-en="{{ ch.book_name_en }} {{ ch.chapter }}:{{ v.verse }}"
                      data-text-ta="{{ v.text_ta }}"
                      data-text-en="{{ v.text_en }}">
                     
@@ -143,7 +138,6 @@
                     </span>
                     
                     <div class="flex-1">
-                        <!-- Direct style binding with CSS variable fallback -->
                         <p class="verse-content text-stone-900 dark:text-stone-100 leading-relaxed transition-all"
                            style="font-size: var(--bible-font-size, 1.05rem);">
                             {{ v.text_ta }}
@@ -165,8 +159,71 @@
         </button>
     </div>
 
+    <!-- ======================================================= -->
+    <!-- 4. FLOATING AUDIO CONTROL DOCK (Like Reader & Presenter) -->
+    <!-- ======================================================= -->
+    <div id="audio-control-bar" class="fixed bottom-4 left-4 right-4 max-w-2xl mx-auto z-40 bg-stone-950/90 dark:bg-stone-900/95 backdrop-blur-lg border border-stone-800 text-white rounded-2xl p-3 shadow-2xl transition-all duration-300 transform translate-y-28 opacity-0">
+        <div class="flex flex-col gap-2">
+            <!-- Top Audio Status Bar -->
+            <div class="flex items-center justify-between px-1">
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="audio-live-indicator"></span>
+                    <span id="current-verse-ref" class="text-xs font-bold text-stone-200 truncate">
+                        Preparing audio...
+                    </span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span id="audio-progress-count" class="text-[11px] font-mono text-stone-400">0 / 0</span>
+                </div>
+            </div>
+
+            <!-- Main Audio Control Toolbar -->
+            <div class="flex items-center justify-between pt-1 border-t border-stone-800/80">
+                <!-- Speed Toggle -->
+                <button type="button" onclick="cycleAudioSpeed()" id="audio-speed-btn" class="px-2 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 text-[11px] font-mono font-bold transition" title="Change speed">
+                    1.0x
+                </button>
+
+                <!-- Navigation Controls -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Prev Verse -->
+                    <button type="button" onclick="stepVerse(-1)" class="p-2 text-stone-300 hover:text-white transition cursor-pointer" title="Previous verse">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                    </button>
+
+                    <!-- Rewind 5s -->
+                    <button type="button" onclick="seekAudio(-5)" class="p-1.5 text-stone-400 hover:text-stone-200 transition cursor-pointer" title="Rewind 5 seconds">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.2 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+                    </button>
+
+                    <!-- Play / Pause Primary -->
+                    <button type="button" onclick="toggleAudioPlayback()" id="dock-play-pause-btn" class="w-11 h-11 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center shadow-lg transition cursor-pointer">
+                        <span id="dock-play-icon">
+                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </span>
+                    </button>
+
+                    <!-- Forward 5s -->
+                    <button type="button" onclick="seekAudio(5)" class="p-1.5 text-stone-400 hover:text-stone-200 transition cursor-pointer" title="Forward 5 seconds">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M11.5 8c2.65 0 5.05.99 6.9 2.6L22 7v9h-9l3.62-3.62c-1.39-1.2-3.16-1.88-5.12-1.88-3.54 0-6.55 2.31-7.6 5.5l-2.37-.78C2.92 11.03 6.85 8 11.5 8z"/></svg>
+                    </button>
+
+                    <!-- Next Verse -->
+                    <button type="button" onclick="stepVerse(1)" class="p-2 text-stone-300 hover:text-white transition cursor-pointer" title="Next verse">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                </div>
+
+                <!-- Close / Finish Minimal Button -->
+                <button type="button" onclick="triggerOutroBlessing()" class="px-2 py-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition" title="Complete Day">
+                    Finish ✓
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ========================================== -->
-    <!-- 4. OUTRO BLESSING (5s Auto-Complete)       -->
+    <!-- 5. OUTRO BLESSING (5s Auto-Complete)       -->
     <!-- ========================================== -->
     <div id="outro-card" class="hidden fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white">
         <span class="text-xs uppercase font-bold tracking-widest text-emerald-400 mb-2">
@@ -176,12 +233,11 @@
             {{ day.outro.ref }}
         </span>
         
-        <!-- Blessing displayed in active selected language -->
         <h2 id="outro-verse-text" class="text-xl sm:text-2xl font-bold mb-6 max-w-xl leading-snug px-4">
             {{ day.outro.ta }}
         </h2>
 
-        <!-- 5-Second Circular Progress Timer -->
+        <!-- 5-Second Circular Timer -->
         <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
             <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
                 <path class="text-stone-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -209,21 +265,18 @@ const DEFAULT_FONT_REM = 1.05;
 let currentFontRem = parseFloat(localStorage.getItem(FONT_STORAGE_KEY)) || DEFAULT_FONT_REM;
 
 function applyReadAlongFontSize(remVal) {
-    currentFontRem = Math.min(1.8, Math.max(0.85, remVal)); // Clamp between 0.85rem and 1.8rem
+    currentFontRem = Math.min(1.8, Math.max(0.85, remVal));
     
-    // Set variable on root and stream container
     document.documentElement.style.setProperty('--bible-font-size', `${currentFontRem}rem`);
     const stream = document.getElementById('scripture-stream');
     if (stream) {
         stream.style.setProperty('--bible-font-size', `${currentFontRem}rem`);
     }
 
-    // Directly adjust all rendered verse text nodes
     document.querySelectorAll('.verse-content').forEach(el => {
         el.style.fontSize = `${currentFontRem}rem`;
     });
 
-    // Update percentage label
     const label = document.getElementById('font-size-label');
     if (label) {
         const pct = Math.round((currentFontRem / DEFAULT_FONT_REM) * 100);
@@ -234,8 +287,7 @@ function applyReadAlongFontSize(remVal) {
 }
 
 function adjustReadAlongFontSize(direction) {
-    const step = 0.08;
-    applyReadAlongFontSize(currentFontRem + (direction * step));
+    applyReadAlongFontSize(currentFontRem + (direction * 0.08));
 }
 
 // ==========================================
@@ -245,26 +297,24 @@ let currentLanguage = 'ta';
 let introTimer = null;
 let introSeconds = 5;
 
-// Audio Stream State
+// Audio Stream Engine State
 const audioElement = document.getElementById('readalong-audio');
 let verseNodes = [];
 let currentVerseIndex = 0;
 let isAudioPlaying = false;
+const speeds = [1.0, 1.25, 1.5, 2.0];
+let currentSpeedIndex = 0;
 
-// 1. Run 5s Intro Screen on page load
 window.addEventListener('DOMContentLoaded', () => {
-    // Apply saved font sizing immediately
     applyReadAlongFontSize(currentFontRem);
-
-    // Cache all verse elements in reading sequence
     verseNodes = Array.from(document.querySelectorAll('.verse-row'));
 
-    // Restore language preference if previously stored
     const savedLang = localStorage.getItem('bible_reading_lang');
     if (savedLang === 'en' || savedLang === 'ta') {
         setLanguage(savedLang);
     }
 
+    // 5-Second Intro Countdown
     const timerText = document.getElementById('intro-timer-num');
     const progressBar = document.getElementById('intro-progress-bar');
 
@@ -288,12 +338,10 @@ function skipIntro() {
     document.getElementById('intro-card').classList.add('hidden');
 }
 
-// 2. Language Switcher (Single language mode)
 function setLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('bible_reading_lang', lang);
 
-    // Update intro buttons
     const introTa = document.getElementById('intro-lang-ta');
     const introEn = document.getElementById('intro-lang-en');
     if (introTa && introEn) {
@@ -306,7 +354,6 @@ function setLanguage(lang) {
         }
     }
 
-    // Update nav toggle buttons
     const navTa = document.getElementById('nav-lang-ta');
     const navEn = document.getElementById('nav-lang-en');
     if (navTa && navEn) {
@@ -319,12 +366,10 @@ function setLanguage(lang) {
         }
     }
 
-    // Update chapter headers
     document.querySelectorAll('.chapter-header-text').forEach(el => {
         el.innerText = lang === 'ta' ? el.getAttribute('data-ta') : el.getAttribute('data-en');
     });
 
-    // Update verse text for every verse
     verseNodes.forEach(node => {
         const textEl = node.querySelector('.verse-content');
         if (textEl) {
@@ -332,37 +377,41 @@ function setLanguage(lang) {
         }
     });
 
-    // Update outro blessing text
     const outroEl = document.getElementById('outro-verse-text');
     if (outroEl) {
         outroEl.innerText = lang === 'ta' ? OUTRO_BLESSING_TA : `"${OUTRO_BLESSING_EN}"`;
     }
 
-    // Reapply font sizing to ensure new nodes retain size
     applyReadAlongFontSize(currentFontRem);
 
-    // If audio is playing when language is switched, resume with current language
     if (isAudioPlaying) {
         playVerseAudio(currentVerseIndex);
     }
 }
 
-// 3. Start Reading with Audio Playback
+// ==========================================
+// Audio Playback & Control Dock Engine
+// ==========================================
+
+function showAudioControlBar() {
+    const dock = document.getElementById('audio-control-bar');
+    dock.classList.remove('translate-y-28', 'opacity-0');
+    dock.classList.add('translate-y-0', 'opacity-100');
+}
+
 function startReadingWithAudio() {
     skipIntro();
 
     document.getElementById('start-read-btn').classList.add('hidden');
-    document.getElementById('audio-pause-btn').classList.remove('hidden');
     document.getElementById('finish-btn').classList.remove('hidden');
 
+    showAudioControlBar();
     currentVerseIndex = 0;
     playVerseAudio(currentVerseIndex);
 }
 
-// Play Audio for a specific verse
 function playVerseAudio(index) {
     if (index >= verseNodes.length) {
-        // All verses completed -> trigger Outro Blessing
         triggerOutroBlessing();
         return;
     }
@@ -370,61 +419,105 @@ function playVerseAudio(index) {
     currentVerseIndex = index;
     const node = verseNodes[index];
     const text = currentLanguage === 'ta' ? node.getAttribute('data-text-ta') : node.getAttribute('data-text-en');
+    const ref = currentLanguage === 'ta' ? node.getAttribute('data-ref-ta') : node.getAttribute('data-ref-en');
 
-    // Highlight active verse and scroll smoothly
+    // Update Dock Status
+    document.getElementById('current-verse-ref').innerText = ref;
+    document.getElementById('audio-progress-count').innerText = `${index + 1} / ${verseNodes.length}`;
+
+    // Highlight active verse and center
     verseNodes.forEach(n => {
         n.classList.remove('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-l-4', 'border-amber-600');
     });
     node.classList.add('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-l-4', 'border-amber-600');
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Request audio stream from /api/audio/stream
+    // Request stream from audio route
     const streamUrl = `/api/audio/stream?text=${encodeURIComponent(text)}&lang=${currentLanguage}`;
     audioElement.src = streamUrl;
-    
+    audioElement.playbackRate = speeds[currentSpeedIndex];
+
     audioElement.play()
         .then(() => {
             isAudioPlaying = true;
-            document.getElementById('audio-pause-icon').innerText = '⏸';
+            updatePlayPauseIcons(true);
         })
         .catch(err => {
-            console.warn("Audio playback interrupted or waiting for user interaction:", err);
+            console.warn("Audio interrupted:", err);
             isAudioPlaying = false;
-            document.getElementById('audio-pause-icon').innerText = '▶';
+            updatePlayPauseIcons(false);
         });
 }
 
-// Auto-advance to next verse when audio finishes
+function updatePlayPauseIcons(playing) {
+    const iconSpan = document.getElementById('dock-play-icon');
+    if (playing) {
+        iconSpan.innerHTML = '<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+    } else {
+        iconSpan.innerHTML = '<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+    }
+}
+
+function toggleAudioPlayback() {
+    if (audioElement.paused) {
+        audioElement.play();
+        isAudioPlaying = true;
+        updatePlayPauseIcons(true);
+    } else {
+        audioElement.pause();
+        isAudioPlaying = false;
+        updatePlayPauseIcons(false);
+    }
+}
+
+function stepVerse(direction) {
+    const target = currentVerseIndex + direction;
+    if (target >= 0 && target < verseNodes.length) {
+        playVerseAudio(target);
+    }
+}
+
+function jumpToVerseAudio(index) {
+    showAudioControlBar();
+    playVerseAudio(index);
+}
+
+function seekAudio(seconds) {
+    if (audioElement.currentTime !== undefined) {
+        audioElement.currentTime = Math.max(0, audioElement.currentTime + seconds);
+    }
+}
+
+function cycleAudioSpeed() {
+    currentSpeedIndex = (currentSpeedIndex + 1) % speeds.length;
+    const rate = speeds[currentSpeedIndex];
+    audioElement.playbackRate = rate;
+    document.getElementById('audio-speed-btn').innerText = `${rate.toFixed(1)}x`;
+}
+
+// Auto-advance
 audioElement.addEventListener('ended', () => {
     currentVerseIndex++;
     playVerseAudio(currentVerseIndex);
 });
 
-audioElement.addEventListener('error', (e) => {
-    console.warn("Audio stream error, advancing to next verse:", e);
+audioElement.addEventListener('error', () => {
     setTimeout(() => {
         currentVerseIndex++;
         playVerseAudio(currentVerseIndex);
-    }, 1200);
+    }, 1000);
 });
 
-// Play / Pause Toggle
-function toggleAudioPlayback() {
-    if (audioElement.paused) {
-        audioElement.play();
-        isAudioPlaying = true;
-        document.getElementById('audio-pause-icon').innerText = '⏸';
-    } else {
-        audioElement.pause();
-        isAudioPlaying = false;
-        document.getElementById('audio-pause-icon').innerText = '▶';
-    }
-}
-
-// 4. Trigger Outro Blessing & Auto-Save
+// ==========================================
+// Outro Blessing & Auto-Save
+// ==========================================
 function triggerOutroBlessing() {
     audioElement.pause();
     isAudioPlaying = false;
+
+    // Hide control dock
+    const dock = document.getElementById('audio-control-bar');
+    dock.classList.add('translate-y-28', 'opacity-0');
 
     const outroCard = document.getElementById('outro-card');
     outroCard.classList.remove('hidden');
@@ -452,22 +545,18 @@ function triggerOutroBlessing() {
     }, 1000);
 }
 
-// 5. Finalize Day Completion
 async function finalizeDayCompletion() {
-    // Save day progress locally
     localStorage.setItem(`readalong_${PLAN_ID}_progress`, JSON.stringify({
         last_completed_day: CURRENT_DAY,
         updated_at: new Date().toISOString()
     }));
 
-    // Record chapter checks if habit tracker function is available
     if (typeof window.markPlanChapterComplete === 'function') {
         for (const ch of CHAPTERS_LIST) {
             window.markPlanChapterComplete(PLAN_ID, ch.book_id, ch.chapter, true);
         }
     }
 
-    // Sync to Supabase cloud
     if (typeof window.syncWithSupabase === 'function') {
         try {
             await window.syncWithSupabase();
@@ -476,7 +565,6 @@ async function finalizeDayCompletion() {
         }
     }
 
-    // Redirect to plans page with completion alert
     window.location.href = `/plans?completed_day=${CURRENT_DAY}&plan_id=${PLAN_ID}`;
 }
 </script>
