@@ -401,7 +401,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
     if plan_type not in plan_files:
         raise HTTPException(status_code=404, detail="Plan not found")
 
-    filename, plan_title = plan_files[plan_type]
+    filename, default_title = plan_files[plan_type]
     file_path = PLANS_DIR / filename
     if not file_path.exists():
         file_path = Path("static/plans") / filename
@@ -412,7 +412,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
     with open(file_path, "r", encoding="utf-8") as f:
         plan_json = json.load(f)
 
-    # 1. Parse raw days list
+    # 1. Resolve raw days list
     raw_days = []
     if isinstance(plan_json, list):
         raw_days = plan_json
@@ -424,15 +424,15 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
         else:
             raw_days = [v for k, v in plan_json.items() if isinstance(v, dict)]
 
-    # Locate target day
+    # Locate target day entry
     target_entry = None
     for entry in raw_days:
         if isinstance(entry, dict) and entry.get("day") == day:
-            target_entry = entry
+            target_entry = dict(entry)
             break
 
     if not target_entry and raw_days and (1 <= day <= len(raw_days)):
-        target_entry = raw_days[day - 1]
+        target_entry = dict(raw_days[day - 1])
 
     if not target_entry:
         raise HTTPException(status_code=404, detail=f"Day {day} not found in {plan_type}")
@@ -498,18 +498,42 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
                 }
             )
 
+    # 3. Build plan object
+    plan_title = (
+        (plan_json.get("title") if isinstance(plan_json, dict) else None)
+        or default_title
+    )
+    total_days = (
+        (plan_json.get("total_days") if isinstance(plan_json, dict) else None)
+        or len(raw_days)
+        or 100
+    )
+
     plan_obj = {
         "id": plan_type,
         "type": plan_type,
         "title": plan_title,
         "name": plan_title,
-        "total_days": 100,
+        "total_days": total_days,
     }
 
-    day_obj = {
-        "day": day,
-        "portions": portions,
-    }
+    # 4. Ensure day object contains all keys expected by read_along.html
+    day_obj = dict(target_entry)
+    day_obj["day"] = day
+    day_obj["readings"] = readings
+    day_obj["portions"] = portions
+
+    # Ensure intro and its sub-properties are safely present
+    intro = day_obj.get("intro")
+    if not isinstance(intro, dict):
+        intro = {}
+    intro.setdefault("display_ta", "")
+    intro.setdefault("display_en", "")
+    intro.setdefault("title_ta", "")
+    intro.setdefault("title_en", "")
+    intro.setdefault("summary_ta", "")
+    intro.setdefault("summary_en", "")
+    day_obj["intro"] = intro
 
     return templates.TemplateResponse(
         request=request,
@@ -521,9 +545,9 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
             "day": day_obj,
             "plan_type": plan_type,
             "plan_title": plan_title,
-            "total_days": 100,
+            "total_days": total_days,
             "prev_day": day - 1 if day > 1 else None,
-            "next_day": day + 1 if day < 100 else None,
+            "next_day": day + 1 if day < total_days else None,
             "readings": readings,
             "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
             "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
