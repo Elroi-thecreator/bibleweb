@@ -3,6 +3,9 @@
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-6 relative" id="player-container">
 
+    <!-- Audio Element (Controlled via JS) -->
+    <audio id="readalong-audio" preload="none"></audio>
+
     <!-- ========================================== -->
     <!-- 1. INTRO OVERLAY (5-Second Animated Cue)   -->
     <!-- ========================================== -->
@@ -10,12 +13,22 @@
         <span class="text-xs uppercase font-bold tracking-widest text-amber-400 mb-2">
             Day {{ day.day }} of {{ plan.total_days }}
         </span>
-        <h2 class="text-2xl sm:text-3xl font-bold mb-3 max-w-xl leading-tight">
+        <h2 id="intro-title" class="text-2xl sm:text-3xl font-bold mb-3 max-w-xl leading-tight">
             {{ day.intro.display_ta }}
         </h2>
-        <p class="text-stone-300 text-base sm:text-lg mb-8 font-serif">
+        <p id="intro-subtitle" class="text-stone-300 text-sm sm:text-base mb-6 font-serif">
             {{ day.intro.display_en }}
         </p>
+
+        <!-- Language Preference Selector before starting -->
+        <div class="inline-flex rounded-xl bg-stone-900 border border-stone-700 p-1 mb-6 text-xs">
+            <button type="button" onclick="setLanguage('ta')" id="intro-lang-ta" class="px-3 py-1.5 rounded-lg font-bold bg-amber-600 text-white transition">
+                தமிழ்
+            </button>
+            <button type="button" onclick="setLanguage('en')" id="intro-lang-en" class="px-3 py-1.5 rounded-lg font-bold text-stone-400 hover:text-white transition">
+                English
+            </button>
+        </div>
 
         <!-- 5-Second Circular Progress Timer -->
         <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
@@ -34,7 +47,7 @@
     <!-- ========================================== -->
     <!-- 2. STICKY TOP CONTROL HEADER               -->
     <!-- ========================================== -->
-    <header class="flex items-center justify-between border-b border-stone-200 dark:border-stone-800 pb-4 mb-6 sticky top-14 bg-white/95 dark:bg-stone-900/95 backdrop-blur z-20">
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 dark:border-stone-800 pb-4 mb-6 sticky top-14 bg-white/95 dark:bg-stone-900/95 backdrop-blur z-20">
         <div>
             <div class="flex items-center gap-2">
                 <a href="/plans" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition">
@@ -43,61 +56,85 @@
                     </svg>
                 </a>
                 <span class="text-xs font-bold text-amber-700 dark:text-amber-500 uppercase tracking-wider">
-                    {{ plan.name_ta }} (Day {{ day.day }})
+                    Day {{ day.day }} of {{ plan.total_days }}
                 </span>
             </div>
-            <h1 class="text-lg font-bold text-stone-900 dark:text-stone-100 mt-0.5">
+            <h1 id="header-plan-title" class="text-lg font-bold text-stone-900 dark:text-stone-100 mt-0.5">
                 {{ day.intro.display_ta }}
             </h1>
         </div>
         
-        <div class="flex items-center gap-2">
-            <!-- Start Action Button -->
+        <div class="flex items-center gap-2 self-end sm:self-auto">
+            <!-- Language Toggle (Single language at a time) -->
+            <div class="inline-flex rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-0.5 text-xs font-semibold">
+                <button type="button" onclick="setLanguage('ta')" id="nav-lang-ta" class="px-2.5 py-1 rounded-lg bg-amber-700 text-white transition">
+                    தமிழ்
+                </button>
+                <button type="button" onclick="setLanguage('en')" id="nav-lang-en" class="px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition">
+                    English
+                </button>
+            </div>
+
+            <!-- Start Reading Action Button -->
             <button id="start-read-btn" 
                     type="button"
-                    onclick="startReadingSession()" 
+                    onclick="startReadingWithAudio()" 
                     class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition">
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
-                <span>Start Reading</span>
+                <span>Start Reading 🎧</span>
             </button>
             
-            <!-- Finish & Trigger Blessing -->
+            <!-- Audio Play/Pause Toggle (Shown once reading begins) -->
+            <button id="audio-pause-btn"
+                    type="button"
+                    onclick="toggleAudioPlayback()"
+                    class="hidden p-2 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 text-xs font-bold transition">
+                <span id="audio-pause-icon">⏸</span>
+            </button>
+
+            <!-- Finish / Next Button -->
             <button id="finish-btn" 
                     type="button"
                     onclick="triggerOutroBlessing()" 
-                    class="hidden px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition">
-                <span>Complete Day {{ day.day }} ✓</span>
+                    class="hidden px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition">
+                <span>Complete Day ✓</span>
             </button>
         </div>
     </header>
 
     <!-- ========================================== -->
-    <!-- 3. BIBLE CHAPTERS STREAM                   -->
+    <!-- 3. MONOLINGUAL BIBLE SCRIPTURE STREAM      -->
     <!-- ========================================== -->
     <main id="scripture-stream" class="space-y-12">
         {% for ch in chapters %}
         <section class="chapter-block" data-book-id="{{ ch.book_id }}" data-chapter="{{ ch.chapter }}">
             <div class="mb-4 pb-2 border-b border-stone-200 dark:border-stone-800 flex justify-between items-baseline">
-                <h2 class="text-xl font-bold text-stone-900 dark:text-stone-100">
+                <h2 class="text-xl font-bold text-stone-900 dark:text-stone-100 chapter-header-text"
+                    data-ta="{{ ch.book_name_ta }} {{ ch.chapter }}"
+                    data-en="{{ ch.book_name_en }} {{ ch.chapter }}">
                     {{ ch.book_name_ta }} {{ ch.chapter }}
                 </h2>
-                <span class="text-sm text-stone-400 font-serif">
-                    {{ ch.book_name_en }} {{ ch.chapter }}
-                </span>
+                <span class="text-xs text-stone-400 font-mono">Ch {{ ch.chapter }}</span>
             </div>
 
-            <div class="space-y-4 text-base leading-relaxed">
+            <div class="space-y-3 text-base leading-relaxed">
                 {% for v in ch.verses %}
-                <div class="verse-row flex gap-3.5 p-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800/40 transition group" id="v-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}">
+                <div class="verse-row flex gap-3.5 p-2 rounded-xl transition duration-200" 
+                     id="verse-node-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}"
+                     data-book-id="{{ ch.book_id }}"
+                     data-chapter="{{ ch.chapter }}"
+                     data-verse="{{ v.verse }}"
+                     data-text-ta="{{ v.text_ta }}"
+                     data-text-en="{{ v.text_en }}">
+                    
                     <span class="text-xs font-bold text-amber-700 dark:text-amber-500 pt-1 select-none w-5 text-right flex-shrink-0">
                         {{ v.verse }}
                     </span>
-                    <div class="flex-1 space-y-1">
-                        <p class="verse-ta text-stone-900 dark:text-stone-100 text-[var(--bible-font-size,1rem)] leading-relaxed">
+                    
+                    <div class="flex-1">
+                        <!-- Single language displayed dynamically -->
+                        <p class="verse-content text-stone-900 dark:text-stone-100 text-[var(--bible-font-size,1.05rem)] leading-relaxed">
                             {{ v.text_ta }}
-                        </p>
-                        <p class="verse-en text-stone-500 dark:text-stone-400 font-serif text-[calc(var(--bible-font-size,1rem)*0.92)] leading-relaxed">
-                            {{ v.text_en }}
                         </p>
                     </div>
                 </div>
@@ -112,7 +149,7 @@
         <button type="button" 
                 onclick="triggerOutroBlessing()" 
                 class="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-bold shadow-md cursor-pointer transition">
-            Finish & Receive Today's Blessing ✨
+            Finish Reading & Receive Blessing ✨
         </button>
     </div>
 
@@ -123,16 +160,14 @@
         <span class="text-xs uppercase font-bold tracking-widest text-emerald-400 mb-2">
             Today's Blessing / ஆசீர்வாத வசனம்
         </span>
-        <span class="text-amber-400 text-sm font-semibold mb-4">
+        <span class="text-amber-400 text-sm font-semibold mb-3">
             {{ day.outro.ref }}
         </span>
         
-        <h2 class="text-xl sm:text-2xl font-bold mb-3 max-w-xl leading-snug">
+        <!-- Blessing displayed in selected language -->
+        <h2 id="outro-verse-text" class="text-xl sm:text-2xl font-bold mb-6 max-w-xl leading-snug px-4">
             {{ day.outro.ta }}
         </h2>
-        <p class="text-stone-300 text-sm sm:text-base mb-8 max-w-xl font-serif italic">
-            "{{ day.outro.en }}"
-        </p>
 
         <!-- 5-Second Circular Timer -->
         <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
@@ -151,12 +186,30 @@
 const PLAN_ID = "{{ plan.id }}";
 const CURRENT_DAY = {{ day.day }};
 const CHAPTERS_LIST = {{ day.chapters | tojson }};
+const OUTRO_BLESSING_TA = {{ day.outro.ta | tojson }};
+const OUTRO_BLESSING_EN = {{ day.outro.en | tojson }};
 
+let currentLanguage = 'ta'; // 'ta' or 'en'
 let introTimer = null;
 let introSeconds = 5;
 
-// 1. Run 5s Intro Screen
+// Audio Stream Queue State
+const audioElement = document.getElementById('readalong-audio');
+let verseNodes = [];
+let currentVerseIndex = 0;
+let isAudioPlaying = false;
+
+// 1. Run 5s Intro Screen on page load
 window.addEventListener('DOMContentLoaded', () => {
+    // Cache all verse elements in reading order
+    verseNodes = Array.from(document.querySelectorAll('.verse-row'));
+
+    // Restore language preference if previously stored
+    const savedLang = localStorage.getItem('bible_reading_lang');
+    if (savedLang === 'en' || savedLang === 'ta') {
+        setLanguage(savedLang);
+    }
+
     const timerText = document.getElementById('intro-timer-num');
     const progressBar = document.getElementById('intro-progress-bar');
 
@@ -180,17 +233,150 @@ function skipIntro() {
     document.getElementById('intro-card').classList.add('hidden');
 }
 
-// 2. Start Reading Action
-function startReadingSession() {
-    document.getElementById('start-read-btn').classList.add('hidden');
-    document.getElementById('finish-btn').classList.remove('hidden');
-    window.scrollTo({ top: 120, behavior: 'smooth' });
+// 2. Language Switcher (Single language mode)
+function setLanguage(lang) {
+    currentLanguage = lang;
+    localStorage.setItem('bible_reading_lang', lang);
+
+    // Update intro buttons
+    const introTa = document.getElementById('intro-lang-ta');
+    const introEn = document.getElementById('intro-lang-en');
+    if (introTa && introEn) {
+        if (lang === 'ta') {
+            introTa.className = "px-3 py-1.5 rounded-lg font-bold bg-amber-600 text-white transition";
+            introEn.className = "px-3 py-1.5 rounded-lg font-bold text-stone-400 hover:text-white transition";
+        } else {
+            introEn.className = "px-3 py-1.5 rounded-lg font-bold bg-amber-600 text-white transition";
+            introTa.className = "px-3 py-1.5 rounded-lg font-bold text-stone-400 hover:text-white transition";
+        }
+    }
+
+    // Update nav toggle buttons
+    const navTa = document.getElementById('nav-lang-ta');
+    const navEn = document.getElementById('nav-lang-en');
+    if (navTa && navEn) {
+        if (lang === 'ta') {
+            navTa.className = "px-2.5 py-1 rounded-lg bg-amber-700 text-white transition";
+            navEn.className = "px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition";
+        } else {
+            navEn.className = "px-2.5 py-1 rounded-lg bg-amber-700 text-white transition";
+            navTa.className = "px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 transition";
+        }
+    }
+
+    // Update chapter headers
+    document.querySelectorAll('.chapter-header-text').forEach(el => {
+        el.innerText = lang === 'ta' ? el.getAttribute('data-ta') : el.getAttribute('data-en');
+    });
+
+    // Update verse text for every verse
+    verseNodes.forEach(node => {
+        const textEl = node.querySelector('.verse-content');
+        if (textEl) {
+            textEl.innerText = lang === 'ta' ? node.getAttribute('data-text-ta') : node.getAttribute('data-text-en');
+        }
+    });
+
+    // Update outro text
+    const outroEl = document.getElementById('outro-verse-text');
+    if (outroEl) {
+        outroEl.innerText = lang === 'ta' ? OUTRO_BLESSING_TA : `"${OUTRO_BLESSING_EN}"`;
+    }
+
+    // If audio is currently playing, reload current verse with new language
+    if (isAudioPlaying) {
+        playVerseAudio(currentVerseIndex);
+    }
 }
 
-// 3. Trigger 5-Second Outro Blessing & Complete Plan
+// 3. Start Reading with Audio Playback
+function startReadingWithAudio() {
+    skipIntro();
+
+    document.getElementById('start-read-btn').classList.add('hidden');
+    document.getElementById('audio-pause-btn').classList.remove('hidden');
+    document.getElementById('finish-btn').classList.remove('hidden');
+
+    currentVerseIndex = 0;
+    playVerseAudio(currentVerseIndex);
+}
+
+// Play Audio for a specific verse
+function playVerseAudio(index) {
+    if (index >= verseNodes.length) {
+        // All verses finished -> trigger Outro Blessing
+        triggerOutroBlessing();
+        return;
+    }
+
+    currentVerseIndex = index;
+    const node = verseNodes[index];
+    const text = currentLanguage === 'ta' ? node.getAttribute('data-text-ta') : node.getAttribute('data-text-en');
+
+    // Highlight active verse and scroll into view smoothly
+    verseNodes.forEach(n => {
+        n.classList.remove('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-l-4', 'border-amber-600');
+    });
+    node.classList.add('bg-amber-100/70', 'dark:bg-amber-950/40', 'border-l-4', 'border-amber-600');
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Request audio stream from /api/audio/stream
+    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(text)}&lang=${currentLanguage}`;
+    audioElement.src = streamUrl;
+    
+    audioElement.play()
+        .then(() => {
+            isAudioPlaying = true;
+            document.getElementById('audio-pause-icon').innerText = '⏸';
+        })
+        .catch(err => {
+            console.warn("Audio playback interrupted or blocked:", err);
+            isAudioPlaying = false;
+            document.getElementById('audio-pause-icon').innerText = '▶';
+        });
+}
+
+// Auto-advance to next verse when audio finishes
+audioElement.addEventListener('ended', () => {
+    currentVerseIndex++;
+    playVerseAudio(currentVerseIndex);
+});
+
+audioElement.addEventListener('error', (e) => {
+    console.warn("Audio stream error, advancing to next verse:", e);
+    setTimeout(() => {
+        currentVerseIndex++;
+        playVerseAudio(currentVerseIndex);
+    }, 1200);
+});
+
+// Play / Pause Toggle
+function toggleAudioPlayback() {
+    if (audioElement.paused) {
+        audioElement.play();
+        isAudioPlaying = true;
+        document.getElementById('audio-pause-icon').innerText = '⏸';
+    } else {
+        audioElement.pause();
+        isAudioPlaying = false;
+        document.getElementById('audio-pause-icon').innerText = '▶';
+    }
+}
+
+// 4. Trigger Outro Blessing & Auto-Save
 function triggerOutroBlessing() {
+    // Stop audio
+    audioElement.pause();
+    isAudioPlaying = false;
+
+    // Show Outro Card
     const outroCard = document.getElementById('outro-card');
     outroCard.classList.remove('hidden');
+
+    // Play Outro Blessing Audio
+    const blessingText = currentLanguage === 'ta' ? OUTRO_BLESSING_TA : OUTRO_BLESSING_EN;
+    audioElement.src = `/api/audio/stream?text=${encodeURIComponent(blessingText)}&lang=${currentLanguage}`;
+    audioElement.play().catch(() => {});
 
     let outroSeconds = 5;
     const timerText = document.getElementById('outro-timer-num');
@@ -211,22 +397,22 @@ function triggerOutroBlessing() {
     }, 1000);
 }
 
-// 4. Save Progress & Return to Plans Page
+// 5. Finalize Day Completion
 async function finalizeDayCompletion() {
-    // Record last completed day locally
+    // 1. Record completed day locally
     localStorage.setItem(`readalong_${PLAN_ID}_progress`, JSON.stringify({
         last_completed_day: CURRENT_DAY,
         updated_at: new Date().toISOString()
     }));
 
-    // Record chapter checks if habit tracker function exists
+    // 2. Mark individual chapters in habit plan storage if available
     if (typeof window.markPlanChapterComplete === 'function') {
         for (const ch of CHAPTERS_LIST) {
             window.markPlanChapterComplete(PLAN_ID, ch.book_id, ch.chapter, true);
         }
     }
 
-    // Direct cloud sync to Supabase
+    // 3. Sync to Supabase cloud
     if (typeof window.syncWithSupabase === 'function') {
         try {
             await window.syncWithSupabase();
@@ -235,6 +421,7 @@ async function finalizeDayCompletion() {
         }
     }
 
+    // 4. Redirect back to plans overview
     window.location.href = `/plans?completed_day=${CURRENT_DAY}&plan_id=${PLAN_ID}`;
 }
 </script>
