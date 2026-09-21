@@ -147,7 +147,7 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- STANDARD HABIT READING TRACKS              -->
+    <!-- STANDARD HABIT READING TRACKS (WORKING)    -->
     <!-- ========================================== -->
     <section>
         <div class="flex items-center justify-between mb-4">
@@ -159,7 +159,34 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {% for plan in plans %}
             {% if not (plan is mapping and plan.get('is_read_along')) %}
-            <div class="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-800 flex flex-col justify-between">
+            
+            {% set plan_id = plan.get('id', '') if plan is mapping else '' %}
+            
+            {# Compute the starting passage for this plan #}
+            {% set start_book_id = 1 %}
+            {% set start_chapter = 1 %}
+            {% if plan is mapping and plan.get('days') and plan.get('days')|length > 0 %}
+                {% set first_day = plan.get('days')[0] %}
+                {% if first_day is mapping and first_day.get('readings') and first_day.get('readings')|length > 0 %}
+                    {% set first_reading = first_day.get('readings')[0] %}
+                    {% set start_book_id = first_reading.get('book_id', 1) %}
+                    {% set start_chapter = first_reading.get('chapter', 1) %}
+                {% elif first_day is mapping and first_day.get('book_id') %}
+                    {% set start_book_id = first_day.get('book_id', 1) %}
+                    {% set start_chapter = first_day.get('chapter', 1) %}
+                {% endif %}
+            {% elif plan_id == 'proverbs-31' %}
+                {% set start_book_id = 20 %}
+                {% set start_chapter = 1 %}
+            {% elif plan_id == 'nt-90' %}
+                {% set start_book_id = 40 %}
+                {% set start_chapter = 1 %}
+            {% elif plan_id == 'psalms-comfort' %}
+                {% set start_book_id = 19 %}
+                {% set start_chapter = 23 %}
+            {% endif %}
+
+            <div class="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-800 flex flex-col justify-between" id="track-card-{{ plan_id }}">
                 <div>
                     <h3 class="font-bold text-sm text-stone-900 dark:text-stone-100">
                         {% if plan is mapping %}
@@ -174,7 +201,8 @@
                         {% endif %}
                     </p>
                 </div>
-                <div class="mt-4 pt-3 border-t border-stone-200/60 dark:border-stone-700/60 flex items-center justify-between">
+
+                <div class="mt-4 pt-3 border-t border-stone-200/60 dark:border-stone-700/60 flex items-center justify-between gap-2">
                     <span class="text-[11px] font-semibold text-stone-400">
                         {% if plan is mapping and plan.get('days') %}
                             {{ plan.get('days') | length }} days
@@ -184,10 +212,31 @@
                             Self-Paced
                         {% endif %}
                     </span>
-                    <a href="/read/1/1" class="text-xs font-bold text-amber-700 dark:text-amber-500 hover:underline cursor-pointer">
-                        Open Reader →
-                    </a>
+                    
+                    <div class="flex items-center gap-2">
+                        {% if plan is mapping and plan.get('days') and plan.get('days')|length > 0 %}
+                        <!-- Schedule modal trigger -->
+                        <button type="button" 
+                                onclick="openScheduleModal('{{ plan_id }}')" 
+                                class="text-[11px] font-semibold text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 underline cursor-pointer">
+                            Days
+                        </button>
+                        {% endif %}
+
+                        <!-- Direct Reader Launch Link -->
+                        <a href="/read/{{ start_book_id }}/{{ start_chapter }}?plan={{ plan_id }}" 
+                           class="text-xs font-bold text-amber-700 dark:text-amber-500 hover:underline flex items-center gap-1 cursor-pointer">
+                            Start Track →
+                        </a>
+                    </div>
                 </div>
+
+                <!-- Hidden JSON data for Schedule modal -->
+                {% if plan is mapping and plan.get('days') %}
+                <script type="application/json" id="plan-data-{{ plan_id }}">
+                    {{ plan | tojson }}
+                </script>
+                {% endif %}
             </div>
             {% endif %}
             {% endfor %}
@@ -196,9 +245,96 @@
 
 </div>
 
+<!-- ========================================== -->
+<!-- MODAL: SCHEDULE DETAILS VIEWER             -->
+<!-- ========================================== -->
+<div id="schedule-modal" class="hidden fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <!-- Modal Header -->
+        <div class="p-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
+            <div>
+                <h3 id="modal-plan-title" class="font-bold text-stone-900 dark:text-stone-100 text-base">Plan Schedule</h3>
+                <p id="modal-plan-subtitle" class="text-xs text-stone-400">Daily Reading Checklist</p>
+            </div>
+            <button type="button" onclick="closeScheduleModal()" class="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-500">
+                ✕
+            </button>
+        </div>
+
+        <!-- Modal Days List (Scrollable) -->
+        <div class="p-4 overflow-y-auto space-y-2 flex-1" id="modal-days-list">
+            <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-3 border-t border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 text-right">
+            <button type="button" onclick="closeScheduleModal()" class="px-4 py-1.5 bg-stone-200 dark:bg-stone-800 text-xs font-semibold rounded-lg">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
+// 1. Schedule Modal Mechanics
+function openScheduleModal(planId) {
+    const rawDataEl = document.getElementById(`plan-data-${planId}`);
+    if (!rawDataEl) return;
+
+    try {
+        const plan = JSON.parse(rawDataEl.textContent);
+        document.getElementById('modal-plan-title').innerText = plan.name_ta || plan.title || plan.name || plan.id;
+        document.getElementById('modal-plan-subtitle').innerText = `${plan.days ? plan.days.length : 0} Days Schedule`;
+
+        const listContainer = document.getElementById('modal-days-list');
+        listContainer.innerHTML = '';
+
+        (plan.days || []).forEach((d, idx) => {
+            const dayNum = d.day || (idx + 1);
+            let readSummary = '';
+            let targetBookId = 1;
+            let targetChapter = 1;
+
+            if (d.readings && d.readings.length > 0) {
+                targetBookId = d.readings[0].book_id || 1;
+                targetChapter = d.readings[0].chapter || 1;
+                readSummary = d.readings.map(r => r.ref || `Ch ${r.chapter}`).join(', ');
+            } else if (d.book_id && d.chapter) {
+                targetBookId = d.book_id;
+                targetChapter = d.chapter;
+                readSummary = `Chapter ${d.chapter}`;
+            } else if (d.title) {
+                readSummary = d.title;
+            }
+
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/60 dark:border-stone-700/60 text-xs';
+            row.innerHTML = `
+                <div>
+                    <span class="font-bold text-amber-700 dark:text-amber-500 mr-2">Day ${dayNum}</span>
+                    <span class="text-stone-700 dark:text-stone-300">${readSummary}</span>
+                </div>
+                <a href="/read/${targetBookId}/${targetChapter}?plan=${planId}&day=${dayNum}" 
+                   class="px-2.5 py-1 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-lg text-[11px] transition">
+                    Read →
+                </a>
+            `;
+            listContainer.appendChild(row);
+        });
+
+        document.getElementById('schedule-modal').classList.remove('hidden');
+    } catch (e) {
+        console.error("Failed to load plan modal:", e);
+    }
+}
+
+function closeScheduleModal() {
+    document.getElementById('schedule-modal').classList.add('hidden');
+}
+
+// 2. 100-Day Progress Bar Auto-Sync
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Whole Bible Progress
+    // Whole Bible
     const wbProgress = JSON.parse(localStorage.getItem('readalong_plan_100_whole_bible_progress') || '{"last_completed_day": 0}');
     const wbCompleted = wbProgress.last_completed_day || 0;
     const nextWbDay = Math.min(100, wbCompleted + 1);
@@ -217,7 +353,7 @@ window.addEventListener('DOMContentLoaded', () => {
         wbBtn.querySelector('span').innerText = `Resume Day ${nextWbDay}`;
     }
 
-    // 2. New Testament Progress
+    // New Testament
     const ntProgress = JSON.parse(localStorage.getItem('readalong_plan_100_new_testament_progress') || '{"last_completed_day": 0}');
     const ntCompleted = ntProgress.last_completed_day || 0;
     const nextNtDay = Math.min(100, ntCompleted + 1);
