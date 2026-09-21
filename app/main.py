@@ -14,7 +14,9 @@ app = FastAPI(title="Holy Bible | பரிசுத்த வேதாகமம
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "bible.db")
+# Locate repository root and target database file
+BASE_DIR = Path(__file__).resolve().parent.parent  # Points to project root
+DB_PATH = BASE_DIR / "data" / "bible.sqlite.db"
 
 
 def get_db_connection():
