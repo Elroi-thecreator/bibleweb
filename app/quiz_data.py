@@ -302,5 +302,485 @@ QUIZ_QUESTIONS = [
         "reference": "Revelation / வெளிப்படுத்தின விசேஷம்",
         "explanation_en": "The Revelation of Jesus Christ written by the Apostle John is the 66th and concluding book of Scripture.",
         "explanation_ta": "அப்போஸ்தலனாகிய யோவானால் எழுதப்பட்ட வெளிப்படுத்தின விசேஷம் வேதாகமத்தின் 66வது மற்றும் இறுதிப் புத்தகமாகும்."
+    },
+    {
+        "id": 21,
+        "category": "old_testament",
+        "difficulty": "easy",
+        "question_en": "In how many days did God complete the creation of the heavens and the earth before resting?",
+        "question_ta": "தேவன் எத்தனை நாட்களில் வானத்தையும் பூமியையும் படைத்து முடித்து ஓய்ந்திருந்தார்?",
+        "options_en": ["3 days", "6 days", "7 days", "10 days"],
+        "options_ta": ["3 நாட்கள்", "6 நாட்கள்", "7 நாட்கள்", "10 நாட்கள்"],
+        "correct_index": 1,
+        "reference": "Genesis 1:31-2:2 / ஆதியாகமம் 1:31-2:2",
+        "explanation_en": "God completed His work of creation in 6 days and rested on the seventh day.",
+        "explanation_ta": "தேவன் ஆறு நாட்களில் சிருஷ்டிப்பின் கிரியைகளை முடித்து, ஏழாம் நாளிலே ஓய்ந்திருந்தார்."
+    },
+    {
+        "id": 22,
+        "category": "gospels",
+        "difficulty": "easy",
+        "question_en": "How many disciples did Jesus specifically choose as His primary apostles?",
+        "question_ta": "இயேசு தமக்கு பிரதான அப்போஸ்தலர்களாக எத்தனை சீடர்களைத் தெரிந்துகொண்டார்?",
+        "options_en": ["7", "10", "12", "70"],
+        "options_ta": ["7", "10", "12", "70"],
+        "correct_index": 2,
+        "reference": "Luke 6:13 / லூக்கா 6:13",
+        "explanation_en": "When morning came, Jesus called His disciples and chose twelve of them, whom He also designated apostles.",
+        "explanation_ta": "விடிந்தபோது, அவர் தம்முடைய சீஷர்களை வரவழைத்து, அவர்களில் பன்னிரண்டு பேரைத் தெரிந்துகொண்டு, அவர்களுக்கு அப்போஸ்தலர் என்று பேரிட்டார்."
+    },
+    {
+        "id": 23,
+        "category": "heroes",
+        "difficulty": "easy",
+        "question_en": "Who in Scripture was specifically called the 'friend of God'?",
+        "question_ta": "வேதாகமத்தில் 'தேவனுடைய சிநேகிதன்' என்று அழைக்கப்பட்டவர் யார்?",
+        "options_en": ["Moses", "Abraham", "David", "Elijah"],
+        "options_ta": ["மோசே", "ஆபிரகாம்", "தாவீது", "எலியா"],
+        "correct_index": 1,
+        "reference": "James 2:23 / யாக்கோபு 2:23",
+        "explanation_en": "Abraham believed God, and it was imputed unto him for righteousness: and he was called the Friend of God.",
+        "explanation_ta": "ஆபிரகாம் தேவனை விசுவாசித்தான், அது அவனுக்கு நீதியாக எண்ணப்பட்டது; அவன் தேவனுடைய சிநேகிதன் என்னப்பட்டான்."
+    },
+    {
+        "id": 24,
+        "category": "miracles_parables",
+        "difficulty": "medium",
+        "question_en": "In the Parable of the Prodigal Son, what did the father instruct the servants to put on his returned son?",
+        "question_ta": "காணாமற்போன குமாரனின் உவமையில், திரும்பி வந்த தன் மகனுக்கு எதை அணிவிக்கும்படி தகப்பன் வேலைக்காரருக்குக் கூறினார்?",
+        "options_en": [
+            "A crown of gold",
+            "The best robe, a ring, and sandals",
+            "A shepherd's cloak",
+            "New linen garments only"
+        ],
+        "options_ta": [
+            "பொன் கிரீடம்",
+            "விசேஷித்த வஸ்திரம், மோதிரம், பாதரட்சை",
+            "மேய்ப்பனின் சால்வை",
+            "புதிய மெல்லிய வஸ்திரம் மட்டும்"
+        ],
+        "correct_index": 1,
+        "reference": "Luke 15:22 / லூக்கா 15:22",
+        "explanation_en": "The father said: Bring forth the best robe, and put it on him; and put a ring on his hand, and shoes on his feet.",
+        "explanation_ta": "தகப்பன்: நீங்கள் சீக்கிரமாய் விசேஷித்த வஸ்திரத்தைக் கொண்டுவந்து இவனுக்கு உடுத்தி, இவன் கைக்கு மோதிரத்தையும் கால்களுக்குப் பாதரட்சைகளையும் போடுங்கள் என்றார்."
+    },
+    {
+        "id": 25,
+        "category": "general",
+        "difficulty": "easy",
+        "question_en": "What are the opening four words of the Holy Bible in Genesis 1:1?",
+        "question_ta": "ஆதியாகமம் 1:1 இல் பரிசுத்த வேதாகமத்தின் முதல் வார்த்தைகள் என்ன?",
+        "options_en": [
+            "God created the world",
+            "In the beginning God",
+            "The earth was empty",
+            "Light came into darkness"
+        ],
+        "options_ta": [
+            "தேவன் உலகைப் படைத்தார்",
+            "ஆதியிலே தேவன் வானத்தையும் பூமியையும்",
+            "பூமியானது ஒழுங்கின்மையாய் இருந்தது",
+            "வெளிச்சம் உண்டாயிற்று"
+        ],
+        "correct_index": 1,
+        "reference": "Genesis 1:1 / ஆதியாகமம் 1:1",
+        "explanation_en": "Genesis 1:1 begins: 'In the beginning God created the heaven and the earth.'",
+        "explanation_ta": "ஆதியாகமம் 1:1 'ஆதியிலே தேவன் வானத்தையும் பூமியையும் சிருஷ்டித்தார்' என்று தொடங்குகிறது."
+    },
+    {
+        "id": 26,
+        "category": "old_testament",
+        "difficulty": "easy",
+        "question_en": "What was the name of Abraham's wife and the mother of Isaac?",
+        "question_ta": "ஆபிரகாமின் மனைவியும் ஈசாக்கின் தாயுமானவர் பெயர் என்ன?",
+        "options_en": ["Rebekah", "Rachel", "Sarah", "Leah"],
+        "options_ta": ["ரெபேக்காள்", "ராகேல்", "சாராள்", "லேயாள்"],
+        "correct_index": 2,
+        "reference": "Genesis 17:15-19 / ஆதியாகமம் 17:15-19",
+        "explanation_en": "God said to Abraham, 'As for Sarai your wife, you shall not call her name Sarai, but Sarah shall her name be.'",
+        "explanation_ta": "தேவன் ஆபிரகாமை நோக்கி: உன் மனைவி சாராயை சாராய் என்று அழையாதிருப்பாயாக; சாராள் என்பது அவளுக்குப் பெயராய் இருக்கும் என்றார்."
+    },
+    {
+        "id": 27,
+        "category": "heroes",
+        "difficulty": "medium",
+        "question_en": "Which brave queen risked her life before King Ahasuerus saying, 'If I perish, I perish'?",
+        "question_ta": "'நான் செத்தாலும் சாகிறேன்' என்று கூறி ராஜா அகாஸ்வேருவின் முன் சென்று யூதர்களைக் காப்பாற்றிய ராணி யார்?",
+        "options_en": ["Vashti", "Esther", "Deborah", "Jezebel"],
+        "options_ta": ["வஸ்தி", "எஸ்தர்", "தெபொராள்", "யேசபேல்"],
+        "correct_index": 1,
+        "reference": "Esther 4:16 / எஸ்தர் 4:16",
+        "explanation_en": "Queen Esther approached the king unsummoned to deliver her people from Haman's decree.",
+        "explanation_ta": "ராணி எஸ்தர் ஆமானின் கொடிய திட்டத்திலிருந்து தன் ஜனங்களைக் காப்பாற்ற தன் ஜீவனையும் துச்சமாக எண்ணி ராஜாவிடம் சென்றாள்."
+    },
+    {
+        "id": 28,
+        "category": "miracles_parables",
+        "difficulty": "easy",
+        "question_en": "In Jesus' parable, who stopped to bandage the beaten traveler on the road to Jericho?",
+        "question_ta": "இயேசுவின் உவமையில், எரிகோ வழியில் கள்வரால் அடிபட்டுக் கிடந்த மனிதனுக்கு இரக்கப்பட்டு உதவி செய்தவர் யார்?",
+        "options_en": ["A Priest", "A Levite", "A Good Samaritan", "A Roman Soldier"],
+        "options_ta": ["ஆசாரியன்", "லேவியன்", "நல்ல சமாரியன்", "ரோம போர்வீரன்"],
+        "correct_index": 2,
+        "reference": "Luke 10:33-34 / லூக்கா 10:33-34",
+        "explanation_en": "A certain Samaritan came where he was, and when he saw him, he had compassion and bound up his wounds.",
+        "explanation_ta": "சமாரியன் ஒருவன் பிரயாணமாய் வருகையில், அவனைக் கண்டு, மனதுருகி, அவனுடைய காயங்களில் எண்ணெய் வார்த்து கட்டினான்."
+    },
+    {
+        "id": 29,
+        "category": "gospels",
+        "difficulty": "medium",
+        "question_en": "Which Old Testament figures appeared talking with Jesus at the Transfiguration?",
+        "question_ta": "மறுரூப மலையில் இயேசுவோடு பேசிக்கொண்டிருந்த பழைய ஏற்பாட்டு நபர்கள் யார்?",
+        "options_en": [
+            "Abraham and David",
+            "Moses and Elijah",
+            "Noah and Daniel",
+            "Samuel and Isaiah"
+        ],
+        "options_ta": [
+            "ஆபிரகாம் மற்றும் தாவீது",
+            "மோசே மற்றும் எலியா",
+            "நோவா மற்றும் தானியேல்",
+            "சாமுவேல் மற்றும் ஏசாயா"
+        ],
+        "correct_index": 1,
+        "reference": "Matthew 17:3 / மத்தேயு 17:3",
+        "explanation_en": "Behold, there appeared unto them Moses and Elijah talking with Jesus.",
+        "explanation_ta": "அப்பொழுது மோசேயும் எலியாவும் அவர்களுடனே பேசுகிறவர்களாக அவர்களுக்குக் காணப்பட்டார்கள்."
+    },
+    {
+        "id": 30,
+        "category": "old_testament",
+        "difficulty": "medium",
+        "question_en": "Which prophet was taken up into heaven by a whirlwind in a chariot of fire?",
+        "question_ta": "அக்கினி இரதத்தினாலும் அக்கினிக் குதிரைகளினாலும் சுழல்காற்றிலே பரலோகத்திற்கு எடுத்துக்கொள்ளப்பட்ட தீர்க்கதரிசி யார்?",
+        "options_en": ["Elisha", "Enoch", "Elijah", "Isaiah"],
+        "options_ta": ["எலிசா", "ஏனோக்கு", "எலியா", "ஏசாயா"],
+        "correct_index": 2,
+        "reference": "2 Kings 2:11 / 2 இராஜாக்கள் 2:11",
+        "explanation_en": "Behold, there appeared a chariot of fire, and horses of fire... and Elijah went up by a whirlwind into heaven.",
+        "explanation_ta": "இதோ, ஒரு அக்கினி ரதமும் அக்கினிக் குதிரைகளும்... எலியா சுழல்காற்றிலே பரலோகத்திற்கு ஏறிப்போனான்."
+    },
+    {
+        "id": 31,
+        "category": "heroes",
+        "difficulty": "medium",
+        "question_en": "Who was anointed by Samuel as the very first king of the nation of Israel?",
+        "question_ta": "இஸ்ரவேல் தேசத்தின் முதல் ராஜாவாக சாமுவேலால் அபிஷேகம் பண்ணப்பட்டவர் யார்?",
+        "options_en": ["David", "Saul", "Solomon", "Rehoboam"],
+        "options_ta": ["தாவீது", "சவுல்", "சாலொமோன்", "ரெகொபெயாம்"],
+        "correct_index": 1,
+        "reference": "1 Samuel 10:1 / 1 சாமுவேல் 10:1",
+        "explanation_en": "Samuel took a vial of oil, and poured it upon Saul's head, and anointed him king over Israel.",
+        "explanation_ta": "சாமுவேல் தைலக்குப்பியை எடுத்து, சவுலின் தலையின்மேல் ஊற்றி, அவனை முத்தமிட்டு ராஜாவாக அபிஷேகம் பண்ணினான்."
+    },
+    {
+        "id": 32,
+        "category": "general",
+        "difficulty": "easy",
+        "question_en": "Which New Testament book immediately follows the four Gospels?",
+        "question_ta": "நான்கு சுவிசேஷங்களுக்குப் பிறகு உடனடியாக வரும் புதிய ஏற்பாட்டு புத்தகம் எது?",
+        "options_en": ["Romans", "Acts of the Apostles", "Hebrews", "Galatians"],
+        "options_ta": ["ரோமர்", "அப்போஸ்தலருடைய நடபடிகள்", "எபிரெயர்", "கலாத்தியர்"],
+        "correct_index": 1,
+        "reference": "New Testament Canon (Matthew, Mark, Luke, John, Acts)",
+        "explanation_en": "The Acts of the Apostles, written by Luke, follows the Gospel of John and records the early Church history.",
+        "explanation_ta": "யோவான் சுவிசேஷத்திற்குப் பின் அப்போஸ்தலருடைய நடபடிகள் புத்தகம் வருகிறது."
+    },
+    {
+        "id": 33,
+        "category": "gospels",
+        "difficulty": "easy",
+        "question_en": "What is the famous 'Golden Rule' proclaimed by Jesus in Matthew 7:12?",
+        "question_ta": "மத்தேயு 7:12 இல் இயேசு அருளிய புகழ்பெற்ற 'பொன் விதி' என்ன?",
+        "options_en": [
+            "An eye for an eye",
+            "Do unto others as you would have them do unto you",
+            "Store up treasures on earth",
+            "Love only those who love you"
+        ],
+        "options_ta": [
+            "கண்ணுக்குக் கண், பல்லுக்குப் பல்",
+            "மனுஷர் உங்களுக்கு எவைகளைச் செய்ய விரும்புகிறீர்களோ, அவைகளை நீங்களும் அவர்களுக்குச் செய்யுங்கள்",
+            "பூமியிலே பொக்கிஷங்களைச் சேர்த்துவையுங்கள்",
+            "உங்களைச் சிநேகிக்கிறவர்களை மாத்திரம் சிநேகியுங்கள்"
+        ],
+        "correct_index": 1,
+        "reference": "Matthew 7:12 / மத்தேயு 7:12",
+        "explanation_en": "Therefore all things whatsoever ye would that men should do to you, do ye even so to them.",
+        "explanation_ta": "ஆதலால், மனுஷர் உங்களுக்கு எவைகளைச் செய்ய விரும்புகிறீர்களோ, அவைகளை நீங்களும் அவர்களுக்குச் செய்யுங்கள்; இதுவே நியாயப்பிரமாணமும் தீர்க்கதரிசனங்களுமாம்."
+    },
+    {
+        "id": 34,
+        "category": "old_testament",
+        "difficulty": "medium",
+        "question_en": "For how many pieces of silver was Joseph sold into slavery by his brothers to the Ishmeelites?",
+        "question_ta": "யோசேப்பை அவனுடைய சகோதரர்கள் இஸ்மவேலருக்கு எத்தனை வெள்ளிக்காசுக்கு அடிமையாக விற்றார்கள்?",
+        "options_en": ["10 pieces", "20 pieces", "30 pieces", "50 pieces"],
+        "options_ta": ["10 வெள்ளிக்காசு", "20 வெள்ளிக்காசு", "30 வெள்ளிக்காசு", "50 வெள்ளிக்காசு"],
+        "correct_index": 1,
+        "reference": "Genesis 37:28 / ஆதியாகமம் 37:28",
+        "explanation_en": "The brothers lifted Joseph up out of the pit and sold him to the Ishmeelites for twenty pieces of silver.",
+        "explanation_ta": "யோசேப்பைக் குழியிலிருந்து தூக்கியெடுத்து, இஸ்மவேலரிடத்தில் இருபது வெள்ளிக்காசுக்கு விற்றுப்போட்டார்கள்."
+    },
+    {
+        "id": 35,
+        "category": "miracles_parables",
+        "difficulty": "easy",
+        "question_en": "What words did Jesus speak to calm the raging storm in Mark 4:39?",
+        "question_ta": "மாற்கு 4:39 இல் சீறிப்பாய்ந்த புயலை அமைதிப்படுத்த இயேசு என்ன வார்த்தைகளைச் சொன்னார்?",
+        "options_en": [
+            "Be silent forever",
+            "Peace, be still",
+            "Depart from me",
+            "Let there be rain"
+        ],
+        "options_ta": [
+            "என்றென்றைக்கும் அமைதியாயிரு",
+            "இரையாதே, அமைதலாயிரு",
+            "என்னை விட்டு அகன்று போ",
+            "மழை பெய்யக்கடவது"
+        ],
+        "correct_index": 1,
+        "reference": "Mark 4:39 / மாற்கு 4:39",
+        "explanation_en": "Jesus arose, and rebuked the wind, and said unto the sea, Peace, be still. And the wind ceased, and there was a great calm.",
+        "explanation_ta": "அவர் எழுந்திருந்து, காற்றை அதட்டி, கடலைப்பார்த்து: இரையாதே, அமைதலாயிரு என்றார். அப்பொழுது காற்று நின்றுபோய், மிகுந்த அமைதல் உண்டாயிற்று."
+    },
+    {
+        "id": 36,
+        "category": "heroes",
+        "difficulty": "medium",
+        "question_en": "Which Nazarite judge was endowed with miraculous strength through the Spirit of God?",
+        "question_ta": "தேவனுடைய ஆவியினால் அற்புத பலத்தைப் பெற்று நாசரேயனாய் வாழ்ந்த இஸ்ரவேலின் நியாயாதிபதி யார்?",
+        "options_en": ["Gideon", "Samson", "Barak", "Jephthah"],
+        "options_ta": ["கிதியோன்", "சிம்சோன்", "பாராக்", "யெப்தா"],
+        "correct_index": 1,
+        "reference": "Judges 13:24-25 / நியாயாதிபதிகள் 13:24-25",
+        "explanation_en": "The child Samson grew, and the Lord blessed him. And the Spirit of the Lord began to move him.",
+        "explanation_ta": "பிள்ளை சிம்சோன் வளர்ந்தான்; கர்த்தர் அவனை ஆசீர்வதித்தார். கர்த்தருடைய ஆவியானவர் அவனை ஏவத் தொடங்கினார்."
+    },
+    {
+        "id": 37,
+        "category": "general",
+        "difficulty": "medium",
+        "question_en": "In what primary ancient language was the Old Testament originally penned?",
+        "question_ta": "பழைய ஏற்பாடு ஆரம்பத்தில் பிரதானமாக எந்த பண்டைய மொழியில் எழுதப்பட்டது?",
+        "options_en": ["Latin", "Greek", "Hebrew", "Aramaic"],
+        "options_ta": ["லத்தீன்", "கிரேக்கம்", "எபிரெயம்", "அரமேயம்"],
+        "correct_index": 2,
+        "reference": "Biblical Languages (Hebrew with small portions in Aramaic)",
+        "explanation_en": "The Old Testament was predominantly written in Biblical Hebrew, with a few sections in Aramaic (Daniel & Ezra).",
+        "explanation_ta": "பழைய ஏற்பாடு பெரும்பாலும் எபிரெய மொழியிலும், சில பகுதிகள் அரமேய மொழியிலும் எழுதப்பட்டன."
+    },
+    {
+        "id": 38,
+        "category": "gospels",
+        "difficulty": "easy",
+        "question_en": "Who climbed a sycamore tree in Jericho just to catch a glimpse of Jesus passing by?",
+        "question_ta": "எரிகோவில் இயேசுவைக் காணும் ஆசையினால் காட்டு அத்திமரத்தில் ஏறிக்கொண்ட மனிதர் யார்?",
+        "options_en": ["Bartimaeus", "Nicodemus", "Zacchaeus", "Cornelius"],
+        "options_ta": ["பர்த்திமேயு", "நிக்கோதேமு", "சகேயு", "கொர்நேலியு"],
+        "correct_index": 2,
+        "reference": "Luke 19:1-4 / லூக்கா 19:1-4",
+        "explanation_en": "Zacchaeus was small in stature, so he ran ahead and climbed up into a sycamore tree to see Jesus.",
+        "explanation_ta": "சகேயு குள்ளமானவனாயிருந்தபடியால், இயேசுவைக் காணும்படி முன்னே ஓடி, ஒரு காட்டு அத்திமரத்தின்மேல் ஏறினான்."
+    },
+    {
+        "id": 39,
+        "category": "old_testament",
+        "difficulty": "medium",
+        "question_en": "Which king of Israel asked God for an understanding heart and constructed the First Temple in Jerusalem?",
+        "question_ta": "தேவனிடத்தில் ஞானமுள்ள இருதயத்தைக் கேட்டு, எருசலேமில் முதல் ஆலயத்தைக் கட்டிய இஸ்ரவேலின் ராஜா யார்?",
+        "options_en": ["David", "Solomon", "Hezekiah", "Josiah"],
+        "options_ta": ["தாவீது", "சாலொமோன்", "எசேக்கியா", "யோசியா"],
+        "correct_index": 1,
+        "reference": "1 Kings 3:9-12, 6:1 / 1 இராஜாக்கள் 3:9-12, 6:1",
+        "explanation_en": "God granted Solomon wisdom and discernment beyond measure, and Solomon built the house of the Lord.",
+        "explanation_ta": "தேவன் சாலொமோனுக்கு அளவற்ற ஞானத்தையும் புத்தியையும் தந்தார்; சாலொமோன் கர்த்தரின் ஆலயத்தைக் கட்டினான்."
+    },
+    {
+        "id": 40,
+        "category": "heroes",
+        "difficulty": "easy",
+        "question_en": "Who was struck blind on the road to Damascus before becoming the apostle Paul?",
+        "question_ta": "தமஸ்கு வழியில் பிரகாசமான ஒளியினால் குருடாகி, பின்னர் பவுல் அப்போஸ்தலனாக மாறியவர் யார்?",
+        "options_en": ["Barnabas", "Silas", "Saul of Tarsus", "Apollos"],
+        "options_ta": ["பர்னபா", "சீலா", "தர்சு பட்டணத்து சவுல்", "அப்பொல்லோ"],
+        "correct_index": 2,
+        "reference": "Acts 9:3-6 / அப்போஸ்தலர் 9:3-6",
+        "explanation_en": "As Saul neared Damascus, suddenly a light from heaven flashed around him, and he heard the voice of Jesus.",
+        "explanation_ta": "சவுல் தமஸ்குவுக்குச் சமீபத்தபோது, வானத்திலிருந்து ஒரு ஒளி அவனைச் சுற்றிப் பிரகாசித்தது; இயேசு அவனோடு பேசினார்."
+    },
+    {
+        "id": 41,
+        "category": "miracles_parables",
+        "difficulty": "easy",
+        "question_en": "When Jesus walked on the Sea of Galilee, which disciple stepped out of the boat to walk to Him?",
+        "question_ta": "இயேசு கலிலேயாக் கடலின் மேல் நடந்தபோது, படவிலிருந்து இறங்கி இயேசுவை நோக்கி தண்ணீரின் மேல் நடந்த சீடர் யார்?",
+        "options_en": ["John", "Peter", "Thomas", "Andrew"],
+        "options_ta": ["யோவான்", "பேதுரு", "தோமா", "அந்திரேயா"],
+        "correct_index": 1,
+        "reference": "Matthew 14:28-29 / மத்தேயு 14:28-29",
+        "explanation_en": "Peter walked on the water to go to Jesus, but when he saw the wind boisterous, he was afraid and began to sink.",
+        "explanation_ta": "பேதுரு படவை விட்டு இறங்கி, இயேசுவினிடத்தில் போகத் தண்ணீரின்மேல் நடந்தான்."
+    },
+    {
+        "id": 42,
+        "category": "general",
+        "difficulty": "medium",
+        "question_en": "Which Epistle contains the world-renowned 'Love Chapter' declaring: 'Love is patient, love is kind'?",
+        "question_ta": "'அன்பு நீடிய சாந்தமும் தயவுமுள்ளது' என்று அன்பைக் குறித்து விவரிக்கும் 13-ம் அதிகாரம் எந்த நிருபத்தில் உள்ளது?",
+        "options_en": ["Romans", "1 Corinthians", "Ephesians", "Philippians"],
+        "options_ta": ["ரோமர்", "1 கொரிந்தியர்", "எபேசியர்", "பிலிப்பியர்"],
+        "correct_index": 1,
+        "reference": "1 Corinthians 13:4 / 1 கொரிந்தியர் 13:4",
+        "explanation_en": "1 Corinthians 13 describes the supremacy of Christian agape love over all spiritual gifts.",
+        "explanation_ta": "1 கொரிந்தியர் 13-ம் அதிகாரம் கிறிஸ்தவ அன்பின் மேன்மையை மிக அழகாக விவரிக்கிறது."
+    },
+    {
+        "id": 43,
+        "category": "gospels",
+        "difficulty": "hard",
+        "question_en": "Who was compelled by Roman soldiers to carry Jesus' cross on the path to Golgotha?",
+        "question_ta": "கொல்கொதாவுக்குப் போகும் வழியில் இயேசுவின் சிலுவையைச் சுமக்கும்படி ரோம வீரர்களால் பலவந்தம் பண்ணப்பட்டவர் யார்?",
+        "options_en": [
+            "Joseph of Arimathaea",
+            "Nicodemus",
+            "Simon of Cyrene",
+            "Barabbas"
+        ],
+        "options_ta": [
+            "அரிமத்தியா ஊரானாகிய யோசேப்பு",
+            "நிக்கோதேமு",
+            "சீரேனே ஊரானாகிய சீமோன்",
+            "பரபாஸ்"
+        ],
+        "correct_index": 2,
+        "reference": "Matthew 27:32 / மத்தேயு 27:32",
+        "explanation_en": "As they came out, they found a man of Cyrene, Simon by name: him they compelled to bear his cross.",
+        "explanation_ta": "அவர்கள் புறப்பட்டுப் போகையில், சீரேனே ஊரானாகிய சீமோன் என்னும் பேருள்ள ஒரு மனுஷனைக் கண்டு, அவருடைய சிலுவையைச் சுமக்கும்படி அவனைப் பலவந்தம்பண்ணினார்கள்."
+    },
+    {
+        "id": 44,
+        "category": "old_testament",
+        "difficulty": "easy",
+        "question_en": "What visual sign did God establish in the sky as an everlasting covenant with Noah and every living creature?",
+        "question_ta": "இனி பூமியின்மேல் சகல ஜீவன்களையும் அழிக்கிற ஜலப்பிரளயம் உண்டாவதில்லை என்பதற்கு அடையாளமாக தேவன் ஆகாயத்தில் வைத்தது எது?",
+        "options_en": ["A pillar of cloud", "The rainbow", "A burning bush", "A comet"],
+        "options_ta": ["மேக ஸ்தம்பம்", "வானவில்", "முட்செடி", "வால் நட்சத்திரம்"],
+        "correct_index": 1,
+        "reference": "Genesis 9:13 / ஆதியாகமம் 9:13",
+        "explanation_en": "I do set my bow in the cloud, and it shall be for a token of a covenant between me and the earth.",
+        "explanation_ta": "என் வில்லை மேகத்தில் வைக்கிறேன்; அது எனக்கும் பூமிக்கும் நடுவே உடன்படிக்கைக்கு அடையாளமாயிருக்கும்."
+    },
+    {
+        "id": 45,
+        "category": "heroes",
+        "difficulty": "medium",
+        "question_en": "Which faithful woman pledged to Naomi: 'Whither thou goest, I will go... thy people shall be my people, and thy God my God'?",
+        "question_ta": "'நீர் போகும் இடத்திற்கு நானும் வருவேன்... உம்முடைய ஜனம் என் ஜனம், உம்முடைய தேவன் என் தேவன்' என்று நகோமியிடம் உறுதியாய் நின்ற பெண் யார்?",
+        "options_en": ["Orpah", "Ruth", "Hannah", "Abigail"],
+        "options_ta": ["ஒர்பாள்", "ரூத்", "அன்னாள்", "அபிகாயில்"],
+        "correct_index": 1,
+        "reference": "Ruth 1:16 / ரூத் 1:16",
+        "explanation_en": "Ruth declared loyalty to Naomi and the God of Israel, and she became an ancestor of King David and Jesus Christ.",
+        "explanation_ta": "ரூத் நகோமியைப் பற்றிக்கொண்டு இஸ்ரவேலின் தேவனைப் பின்பற்றினாள்; அவள் தாவீது ராஜா மற்றும் இயேசு கிறிஸ்துவின் வம்சாவளியில் இடம்பெற்றாள்."
+    },
+    {
+        "id": 46,
+        "category": "miracles_parables",
+        "difficulty": "medium",
+        "question_en": "In the Parable of the Sower, what does Jesus explain that the 'seed' represents?",
+        "question_ta": "விதைக்கிறவனின் உவமையில், 'விதை' எதைக் குறிக்கிறது என்று இயேசு விளக்கினார்?",
+        "options_en": [
+            "Worldly wealth",
+            "The Word of God",
+            "Human wisdom",
+            "Good intentions"
+        ],
+        "options_ta": [
+            "உலக ஐசுவரியம்",
+            "தேவனுடைய வசனம்",
+            "மனித ஞானம்",
+            "நல்ல நோக்கங்கள்"
+        ],
+        "correct_index": 1,
+        "reference": "Luke 8:11 / லூக்கா 8:11",
+        "explanation_en": "Now the parable is this: The seed is the word of God.",
+        "explanation_ta": "அந்த உவமையின் கருத்தாவது: விதை தேவனுடைய வசனம்."
+    },
+    {
+        "id": 47,
+        "category": "general",
+        "difficulty": "easy",
+        "question_en": "What is the very final word in the Holy Scriptures in Revelation 22:21?",
+        "question_ta": "வெளிப்படுத்தின விசேஷம் 22:21 இல் பரிசுத்த வேதாகமத்தின் மிகக் கடைசி வார்த்தை என்ன?",
+        "options_en": ["Hallelujah", "Amen", "Peace", "Glory"],
+        "options_ta": ["அல்லேலூயா", "ஆமென்", "சமாதானம்", "மகிமை"],
+        "correct_index": 1,
+        "reference": "Revelation 22:21 / வெளிப்படுத்தின விசேஷம் 22:21",
+        "explanation_en": "The grace of our Lord Jesus Christ be with you all. Amen.",
+        "explanation_ta": "நம்முடைய கர்த்தராகிய இயேசுகிறிஸ்துவின் கிருபை உங்கள் அனைவரோடுங்கூட இருப்பதாக. ஆமென்."
+    },
+    {
+        "id": 48,
+        "category": "gospels",
+        "difficulty": "easy",
+        "question_en": "To whom did the resurrected Jesus first appear on the first Easter Sunday morning?",
+        "question_ta": "உயிர்த்தெழுந்த இயேசு கிறிஸ்து முதல் ஈஸ்டர் ஞாயிறு காலையில் முதலில் யாருக்குக் காட்சியளித்தார்?",
+        "options_en": [
+            "Simon Peter",
+            "Mary Magdalene",
+            "John the Beloved",
+            "Cleopas"
+        ],
+        "options_ta": [
+            "சீமோன் பேதுரு",
+            "மகதலேனா மரியாள்",
+            "அன்பான சீடனாகிய யோவான்",
+            "கிலெயோப்பா"
+        ],
+        "correct_index": 1,
+        "reference": "Mark 16:9 / மாற்கு 16:9",
+        "explanation_en": "Now when Jesus was risen early the first day of the week, he appeared first to Mary Magdalene.",
+        "explanation_ta": "வாரத்தின் முதலாம் நாள் அதிகாலையிலே இயேசு உயிர்த்தெழுந்தபின்பு, மகதலேனா மரியாளுக்கு முதன்முதலாகத் தரிசனமானார்."
+    },
+    {
+        "id": 49,
+        "category": "heroes",
+        "difficulty": "medium",
+        "question_en": "Who became the first recorded Christian martyr, crying out for his executioners' forgiveness as he was stoned?",
+        "question_ta": "தன்னைக் கல்லெறிந்தவர்களுக்காக மன்னிப்புக் கேட்டு ஜெபித்து மரித்த முதல் கிறிஸ்தவ இரத்தசாட்சி யார்?",
+        "options_en": ["James the son of Zebedee", "Stephen", "Philip", "Barnabas"],
+        "options_ta": ["செபதேயுவின் மகன் யாக்கோபு", "ஸ்தேவான்", "பிலிப்பு", "பர்னபா"],
+        "correct_index": 1,
+        "reference": "Acts 7:59-60 / அப்போஸ்தலர் 7:59-60",
+        "explanation_en": "Stephen kneeled down, and cried with a loud voice, Lord, lay not this sin to their charge. And when he had said this, he fell asleep.",
+        "explanation_ta": "ஸ்தேவான் முழங்கால்படியிட்டு: ஆண்டவரே, இவர்கள்மேல் இந்தப் பாவத்தைச் சுமத்தாதிரும் என்று உரத்த சத்தமாய்க் கூப்பிட்டு ஜீவனை விட்டான்."
+    },
+    {
+        "id": 50,
+        "category": "old_testament",
+        "difficulty": "hard",
+        "question_en": "What were the original Hebrew names of Shadrach, Meshach, and Abednego in Daniel 1:6-7?",
+        "question_ta": "தானியேல் 1:6-7 இல் சாத்ராக், மேஷாக், ஆபேத்நேகோ ஆகியோரின் அசல் எபிரெய பெயர்கள் என்ன?",
+        "options_en": [
+            "Eliezer, Gershom, and Hur",
+            "Hananiah, Mishael, and Azariah",
+            "Eliab, Abinadab, and Shammah",
+            "Nadab, Abihu, and Eleazar"
+        ],
+        "options_ta": [
+            "எலியேசர், கெர்சோம், ஊர்",
+            "அனனியா, மீஷாவேல், அசரியா",
+            "எலியாப், அபினதாப், சம்மா",
+            "நாதாப், அபியூ, எலெயாசார்"
+        ],
+        "correct_index": 1,
+        "reference": "Daniel 1:6-7 / தானியேல் 1:6-7",
+        "explanation_en": "Among these were of the children of Judah, Daniel, Hananiah, Mishael, and Azariah, whom the prince of the eunuchs renamed.",
+        "explanation_ta": "யூதா புத்திரரில் தானியேல், அனனியா, மீஷாவேல், அசரியா என்பவர்கள் இருந்தார்கள்; பிரதானி அவர்களுக்கு சாத்ராக், மேஷாக், ஆபேத்நேகோ என்று மறுபேரிட்டான்."
     }
 ]
