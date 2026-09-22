@@ -3,6 +3,8 @@ import io
 import json
 from pathlib import Path
 import platform
+import random
+import re
 import time
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import (
@@ -19,6 +21,7 @@ from gtts import gTTS
 
 from app.db import BIBLE_BOOKS, BOOK_MAP, get_chapter_verses, search_verses
 from app.plans_data import READING_PLANS
+from app.quiz_data import QUIZ_CATEGORIES, QUIZ_QUESTIONS
 
 app = FastAPI(title="Holy Bible - வேதம்")
 
@@ -349,6 +352,48 @@ async def bookmarks_page(request: Request):
         request=request,
         name="bookmarks.html",
         context={"books": BIBLE_BOOKS},
+    )
+
+
+@app.get("/quiz", response_class=HTMLResponse)
+async def quiz_page(request: Request):
+    """Interactive Bible Quiz / Trivia game page."""
+    return templates.TemplateResponse(
+        request=request,
+        name="quiz.html",
+        context={
+            "books": BIBLE_BOOKS,
+            "categories": QUIZ_CATEGORIES,
+            "total_questions": len(QUIZ_QUESTIONS),
+        },
+    )
+
+
+@app.get("/api/quiz/questions")
+async def get_quiz_questions(
+    category: str = Query("all"),
+    difficulty: str = Query("all"),
+    limit: int = Query(10, ge=1, le=50),
+    randomize: bool = Query(True),
+):
+    """Returns filtered and optionally shuffled quiz questions."""
+    filtered = QUIZ_QUESTIONS
+    if category != "all":
+        filtered = [q for q in filtered if q.get("category") == category]
+    if difficulty != "all":
+        filtered = [q for q in filtered if q.get("difficulty") == difficulty]
+
+    results = list(filtered)
+    if randomize:
+        random.shuffle(results)
+
+    return JSONResponse(
+        content={
+            "category": category,
+            "difficulty": difficulty,
+            "total_available": len(filtered),
+            "questions": results[:limit],
+        }
     )
 
 

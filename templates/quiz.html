@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block title %}Bible Quiz & Trivia | வேதாகம வினாடி வினா - Holy Bible{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+    <!-- Quiz Header / Hero -->
+    <div class="text-center mb-8 space-y-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-semibold uppercase tracking-wider">
+            <span>✨</span> Bible Trivia Challenge
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">
+            Scripture Quiz
+        </h1>
+        <h2 class="font-tamil text-lg sm:text-xl text-amber-800 dark:text-amber-400 font-medium">
+            வேதாகம வினாடி வினா
+        </h2>
+        <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-400 max-w-lg mx-auto">
+            Test and sharpen your biblical knowledge in English & Tamil. Choose a category, challenge yourself, and discover scripture references.
+        </p>
+    </div>
+
+    <!-- Quiz Config Panel (Lobby) -->
+    <div id="quiz-lobby" class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+        
+        <!-- Category Selection -->
+        <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-3">
+                1. Select Category / பிரிவைத் தேர்ந்தெடுக்கவும்
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="category-picker">
+                {% for key, cat in categories.items() %}
+                <button type="button" 
+                        onclick="selectCategory('{{ key }}')" 
+                        data-cat="{{ key }}"
+                        class="cat-btn p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer {% if loop.first %}border-amber-600 bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 font-semibold{% else %}border-stone-200 dark:border-stone-800 hover:border-amber-400 text-stone-700 dark:text-stone-300 bg-stone-50 dark:bg-stone-800/50{% endif %}">
+                    <span class="text-xl mb-1.5">{{ cat.icon }}</span>
+                    <span class="text-xs font-medium block leading-snug">{{ cat.name_en }}</span>
+                    <span class="font-tamil text-[11px] text-stone-500 dark:text-stone-400 block mt-0.5">{{ cat.name_ta }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Options Row: Language & Game Mode -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <!-- Language Mode -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2">
+                    2. Display Language / மொழி
+                </label>
+                <div class="grid grid-cols-3 gap-2 p-1 bg-stone-100 dark:bg-stone-800 rounded-xl">
+                    <button type="button" onclick="setLangMode('bilingual')" id="lang-btn-bilingual" class="lang-btn py-2 text-xs rounded-lg font-semibold bg-white dark:bg-stone-700 shadow-xs text-amber-800 dark:text-amber-300">
+                        Both (இருமொழி)
+                    </button>
+                    <button type="button" onclick="setLangMode('ta')" id="lang-btn-ta" class="lang-btn py-2 text-xs rounded-lg font-medium text-stone-600 dark:text-stone-400">
+                        தமிழ்
+                    </button>
+                    <button type="button" onclick="setLangMode('en')" id="lang-btn-en" class="lang-btn py-2 text-xs rounded-lg font-medium text-stone-600 dark:text-stone-400">
+                        English
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Mode -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2">
+                    3. Challenge Style / முறை
+                </label>
+                <div class="grid grid-cols-2 gap-2 p-1 bg-stone-100 dark:bg-stone-800 rounded-xl">
+                    <button type="button" onclick="setGameMode('standard')" id="mode-btn-standard" class="mode-btn py-2 text-xs rounded-lg font-semibold bg-white dark:bg-stone-700 shadow-xs text-amber-800 dark:text-amber-300">
+                        ☕ Relaxed (No Timer)
+                    </button>
+                    <button type="button" onclick="setGameMode('timed')" id="mode-btn-timed" class="mode-btn py-2 text-xs rounded-lg font-medium text-stone-600 dark:text-stone-400">
+                        ⚡ Timed (20s / Q)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- High Score Badge -->
+        <div class="pt-2 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 border-t border-stone-100 dark:border-stone-800">
+            <span class="flex items-center gap-1.5">
+                🏆 Best Score: <strong id="best-score-display" class="font-mono text-amber-700 dark:text-amber-400">0</strong>
+            </span>
+            <span id="total-pool-info" class="text-[11px]">Questions available: {{ total_questions }}</span>
+        </div>
+
+        <!-- Start Button -->
+        <button type="button" 
+                onclick="startQuiz()" 
+                class="w-full py-3.5 px-6 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-[0.99] text-white font-cinzel font-bold text-sm tracking-wider uppercase shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+            <span>Start Bible Quiz</span>
+            <span>→</span>
+        </button>
+    </div>
+
+    <!-- Active Question View -->
+    <div id="quiz-game" class="hidden space-y-4">
+        <!-- Top Stats Bar -->
+        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl p-3 sm:px-5 flex items-center justify-between text-xs shadow-xs">
+            <div class="flex items-center gap-3">
+                <button onclick="confirmExitQuiz()" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-sm" title="Exit Quiz">
+                    ✕
+                </button>
+                <span class="font-bold text-stone-700 dark:text-stone-300">
+                    Question <span id="current-q-num">1</span> of <span id="total-q-num">10</span>
+                </span>
+            </div>
+
+            <!-- Timer (if active) -->
+            <div id="timer-box" class="hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-mono font-bold">
+                <span>⏱️</span> <span id="timer-sec">20</span>s
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-bold" title="Current Streak">
+                    <span>🔥</span> <span id="streak-counter">0</span>
+                </div>
+                <div class="font-mono font-bold text-amber-700 dark:text-amber-400">
+                    Score: <span id="current-score">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-stone-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
+            <div id="quiz-progress-bar" class="bg-amber-600 h-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+            <!-- Category Tag -->
+            <div class="flex items-center justify-between text-xs">
+                <span id="question-cat-tag" class="px-2.5 py-1 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 font-medium">
+                    Category
+                </span>
+                <span id="question-difficulty-tag" class="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                    Easy
+                </span>
+            </div>
+
+            <!-- Question Text -->
+            <div class="space-y-2">
+                <h3 id="question-text-en" class="font-cinzel text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100 leading-snug"></h3>
+                <h4 id="question-text-ta" class="font-tamil text-base sm:text-lg text-amber-900 dark:text-amber-300 font-medium leading-relaxed"></h4>
+            </div>
+
+            <!-- Options Grid -->
+            <div id="options-container" class="grid grid-cols-1 gap-3 pt-2">
+                <!-- Options injected via JavaScript -->
+            </div>
+
+            <!-- Explanation & Reference Card (Revealed after answer) -->
+            <div id="answer-feedback" class="hidden p-4 rounded-xl border transition animate-in fade-in duration-200 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span id="feedback-badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full"></span>
+                    <span id="feedback-ref" class="text-xs font-semibold text-amber-800 dark:text-amber-400 font-mono"></span>
+                </div>
+                <p id="feedback-exp-en" class="text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed"></p>
+                <p id="feedback-exp-ta" class="font-tamil text-xs sm:text-sm text-stone-600 dark:text-stone-400 leading-relaxed"></p>
+            </div>
+
+            <!-- Next Button -->
+            <div id="next-action-container" class="hidden pt-2 flex justify-end">
+                <button type="button" 
+                        onclick="nextQuestion()" 
+                        class="px-6 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-cinzel font-bold text-xs tracking-wider uppercase shadow-xs transition flex items-center gap-2 cursor-pointer">
+                    <span id="next-btn-text">Next Question</span>
+                    <span>→</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Results Screen -->
+    <div id="quiz-results" class="hidden bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 sm:p-10 shadow-sm text-center space-y-6 animate-in zoom-in-95 duration-200">
+        <div class="space-y-2">
+            <span id="result-emoji" class="text-5xl block">🎉</span>
+            <h2 id="result-headline" class="font-cinzel text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100">
+                Quiz Complete!
+            </h2>
+            <p id="result-subtext" class="font-tamil text-sm text-amber-800 dark:text-amber-400 font-medium">
+                நன்றாக விளையாடினீர்கள்!
+            </p>
+        </div>
+
+        <!-- Score Ring / Box -->
+        <div class="inline-flex flex-col items-center justify-center p-6 rounded-2xl bg-amber-50 dark:bg-stone-800/70 border border-amber-200 dark:border-stone-700 min-w-[200px]">
+            <span class="text-xs uppercase font-bold tracking-widest text-stone-500 dark:text-stone-400">Final Score</span>
+            <div class="text-4xl font-mono font-black text-amber-800 dark:text-amber-400 my-1">
+                <span id="final-score">0</span> / <span id="final-max-score">100</span>
+            </div>
+            <span id="score-percentage" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-200/80 dark:bg-amber-950 text-amber-900 dark:text-amber-300">
+                0%
+            </span>
+        </div>
+
+        <!-- Quick Summary Stats -->
+        <div class="grid grid-cols-3 gap-3 max-w-sm mx-auto text-xs">
+            <div class="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
+                <span class="text-emerald-600 dark:text-emerald-400 font-bold text-base block" id="stat-correct">0</span>
+                <span class="text-stone-500 text-[11px]">Correct</span>
+            </div>
+            <div class="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
+                <span class="text-rose-600 dark:text-rose-400 font-bold text-base block" id="stat-wrong">0</span>
+                <span class="text-stone-500 text-[11px]">Incorrect</span>
+            </div>
+            <div class="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
+                <span class="text-orange-500 font-bold text-base block" id="stat-max-streak">0</span>
+                <span class="text-stone-500 text-[11px]">Best Streak</span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button type="button" 
+                    onclick="restartQuiz()" 
+                    class="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-cinzel font-bold text-xs uppercase tracking-wider shadow-sm transition cursor-pointer">
+                🔄 Play Again / மீண்டும் விளையாடு
+            </button>
+            <a href="/" 
+               class="w-full sm:w-auto px-6 py-3 rounded-xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 font-cinzel font-semibold text-xs uppercase tracking-wider transition">
+                ← Back to Bible
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Quiz JavaScript Engine -->
+<script>
+    let selectedCategory = 'all';
+    let selectedLang = 'bilingual';
+    let gameMode = 'standard'; // 'standard' or 'timed'
+
+    let questionPool = [];
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let streak = 0;
+    let maxStreak = 0;
+    let correctCount = 0;
+    let wrongCount = 0;
+    let hasAnsweredCurrent = false;
+
+    let timerInterval = null;
+    let timeLeft = 20;
+
+    // Load High Score on Init
+    document.addEventListener('DOMContentLoaded', () => {
+        const best = localStorage.getItem('bible_quiz_highscore') || '0';
+        document.getElementById('best-score-display').innerText = best;
+    });
+
+    function selectCategory(catKey) {
+        selectedCategory = catKey;
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+            if (btn.dataset.cat === catKey) {
+                btn.className = 'cat-btn p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer border-amber-600 bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 font-semibold';
+            } else {
+                btn.className = 'cat-btn p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer border-stone-200 dark:border-stone-800 hover:border-amber-400 text-stone-700 dark:text-stone-300 bg-stone-50 dark:bg-stone-800/50';
+            }
+        });
+    }
+
+    function setLangMode(lang) {
+        selectedLang = lang;
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.className = 'lang-btn py-2 text-xs rounded-lg font-medium text-stone-600 dark:text-stone-400 cursor-pointer';
+        });
+        const activeBtn = document.getElementById(`lang-btn-${lang}`);
+        if (activeBtn) {
+            activeBtn.className = 'lang-btn py-2 text-xs rounded-lg font-semibold bg-white dark:bg-stone-700 shadow-xs text-amber-800 dark:text-amber-300 cursor-pointer';
+        }
+    }
+
+    function setGameMode(mode) {
+        gameMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.className = 'mode-btn py-2 text-xs rounded-lg font-medium text-stone-600 dark:text-stone-400 cursor-pointer';
+        });
+        const activeBtn = document.getElementById(`mode-btn-${mode}`);
+        if (activeBtn) {
+            activeBtn.className = 'mode-btn py-2 text-xs rounded-lg font-semibold bg-white dark:bg-stone-700 shadow-xs text-amber-800 dark:text-amber-300 cursor-pointer';
+        }
+    }
+
+    async function startQuiz() {
+        try {
+            const res = await fetch(`/api/quiz/questions?category=${selectedCategory}&limit=10&randomize=true`);
+            const data = await res.json();
+            if (!data.questions || data.questions.length === 0) {
+                alert('No questions found for this category. Please choose another.');
+                return;
+            }
+            currentQuestions = data.questions;
+            currentIndex = 0;
+            score = 0;
+            streak = 0;
+            maxStreak = 0;
+            correctCount = 0;
+            wrongCount = 0;
+
+            document.getElementById('quiz-lobby').classList.add('hidden');
+            document.getElementById('quiz-results').classList.add('hidden');
+            document.getElementById('quiz-game').classList.remove('hidden');
+            document.getElementById('total-q-num').innerText = currentQuestions.length;
+
+            loadQuestion(currentIndex);
+        } catch (err) {
+            console.error('Failed to load quiz:', err);
+            alert('Failed to load quiz questions. Please check connection.');
+        }
+    }
+
+    function loadQuestion(index) {
+        hasAnsweredCurrent = false;
+        clearInterval(timerInterval);
+
+        const q = currentQuestions[index];
+        document.getElementById('current-q-num').innerText = index + 1;
+        document.getElementById('current-score').innerText = score;
+        document.getElementById('streak-counter').innerText = streak;
+
+        // Progress bar
+        const pct = (index / currentQuestions.length) * 100;
+        document.getElementById('quiz-progress-bar').style.width = `${pct}%`;
+
+        // Tags
+        document.getElementById('question-cat-tag').innerText = q.category.replace('_', ' ').toUpperCase();
+        document.getElementById('question-difficulty-tag').innerText = q.difficulty;
+
+        // Question texts based on language
+        const qEn = document.getElementById('question-text-en');
+        const qTa = document.getElementById('question-text-ta');
+
+        if (selectedLang === 'ta') {
+            qEn.classList.add('hidden');
+            qTa.classList.remove('hidden');
+            qTa.innerText = q.question_ta;
+        } else if (selectedLang === 'en') {
+            qEn.classList.remove('hidden');
+            qTa.classList.add('hidden');
+            qEn.innerText = q.question_en;
+        } else {
+            qEn.classList.remove('hidden');
+            qTa.classList.remove('hidden');
+            qEn.innerText = q.question_en;
+            qTa.innerText = q.question_ta;
+        }
+
+        // Render Options
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+
+        q.options_en.forEach((optEn, i) => {
+            const optTa = q.options_ta[i] || '';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'opt-btn w-full p-4 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-800/40 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 text-left transition flex items-center justify-between group cursor-pointer';
+            btn.onclick = () => selectOption(i);
+
+            let contentHtml = '';
+            if (selectedLang === 'ta') {
+                contentHtml = `<span class="font-tamil text-sm font-medium text-stone-800 dark:text-stone-200">${optTa}</span>`;
+            } else if (selectedLang === 'en') {
+                contentHtml = `<span class="text-sm font-medium text-stone-800 dark:text-stone-200">${optEn}</span>`;
+            } else {
+                contentHtml = `
+                    <div>
+                        <span class="text-sm font-medium block text-stone-900 dark:text-stone-100">${optEn}</span>
+                        <span class="font-tamil text-xs text-stone-500 dark:text-stone-400 block mt-0.5">${optTa}</span>
+                    </div>
+                `;
+            }
+
+            btn.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center text-xs font-mono font-bold text-stone-500 group-hover:border-amber-600 group-hover:text-amber-600">
+                        ${String.fromCharCode(65 + i)}
+                    </span>
+                    ${contentHtml}
+                </div>
+                <span class="opt-indicator text-base"></span>
+            `;
+            container.appendChild(btn);
+        });
+
+        // Hide feedback and next button
+        document.getElementById('answer-feedback').classList.add('hidden');
+        document.getElementById('next-action-container').classList.add('hidden');
+
+        // Setup timer if timed mode
+        const timerBox = document.getElementById('timer-box');
+        if (gameMode === 'timed') {
+            timerBox.classList.remove('hidden');
+            timeLeft = 20;
+            document.getElementById('timer-sec').innerText = timeLeft;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-sec').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        } else {
+            timerBox.classList.add('hidden');
+        }
+    }
+
+    function handleTimeOut() {
+        if (hasAnsweredCurrent) return;
+        selectOption(-1); // -1 indicates timeout
+    }
+
+    function selectOption(chosenIndex) {
+        if (hasAnsweredCurrent) return;
+        hasAnsweredCurrent = true;
+        clearInterval(timerInterval);
+
+        const q = currentQuestions[currentIndex];
+        const isCorrect = chosenIndex === q.correct_index;
+        const optButtons = document.querySelectorAll('.opt-btn');
+
+        optButtons.forEach((btn, i) => {
+            btn.disabled = true;
+            btn.classList.remove('cursor-pointer');
+            const indicator = btn.querySelector('.opt-indicator');
+
+            if (i === q.correct_index) {
+                btn.className = 'w-full p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-left transition flex items-center justify-between';
+                if (indicator) indicator.innerHTML = '✅';
+            } else if (i === chosenIndex && !isCorrect) {
+                btn.className = 'w-full p-4 rounded-xl border-2 border-rose-500 bg-rose-50 dark:bg-rose-950/30 text-left transition flex items-center justify-between opacity-80';
+                if (indicator) indicator.innerHTML = '❌';
+            } else {
+                btn.classList.add('opacity-40');
+            }
+        });
+
+        // Score Calculation
+        if (isCorrect) {
+            streak++;
+            if (streak > maxStreak) maxStreak = streak;
+            correctCount++;
+            let earned = 10;
+            if (gameMode === 'timed') {
+                earned += Math.floor(timeLeft / 2); // Speed bonus
+            }
+            if (streak > 1) {
+                earned += (streak * 2); // Streak multiplier
+            }
+            score += earned;
+        } else {
+            streak = 0;
+            wrongCount++;
+        }
+
+        document.getElementById('current-score').innerText = score;
+        document.getElementById('streak-counter').innerText = streak;
+
+        // Feedback Card
+        const feedback = document.getElementById('answer-feedback');
+        const badge = document.getElementById('feedback-badge');
+        const refSpan = document.getElementById('feedback-ref');
+        const expEn = document.getElementById('feedback-exp-en');
+        const expTa = document.getElementById('feedback-exp-ta');
+
+        feedback.classList.remove('hidden');
+        if (isCorrect) {
+            feedback.className = 'p-4 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/20 space-y-2';
+            badge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200';
+            badge.innerText = '✓ Correct Answer / சரியானது!';
+        } else {
+            feedback.className = 'p-4 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50/70 dark:bg-rose-950/20 space-y-2';
+            badge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200';
+            badge.innerText = chosenIndex === -1 ? '⏱️ Time Out / நேரம் முடிந்தது' : '✕ Incorrect / தவறானது';
+        }
+
+        refSpan.innerText = q.reference || '';
+        expEn.innerText = q.explanation_en || '';
+        expTa.innerText = q.explanation_ta || '';
+
+        // Next Button
+        const nextContainer = document.getElementById('next-action-container');
+        nextContainer.classList.remove('hidden');
+        const nextBtnText = document.getElementById('next-btn-text');
+        if (currentIndex + 1 >= currentQuestions.length) {
+            nextBtnText.innerText = 'View Results';
+        } else {
+            nextBtnText.innerText = 'Next Question';
+        }
+    }
+
+    function nextQuestion() {
+        if (currentIndex + 1 < currentQuestions.length) {
+            currentIndex++;
+            loadQuestion(currentIndex);
+        } else {
+            showFinalResults();
+        }
+    }
+
+    function showFinalResults() {
+        clearInterval(timerInterval);
+        document.getElementById('quiz-game').classList.add('hidden');
+        document.getElementById('quiz-results').classList.remove('hidden');
+
+        const totalQ = currentQuestions.length;
+        const maxScore = totalQ * 10;
+        const pct = Math.round((correctCount / totalQ) * 100);
+
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('final-max-score').innerText = maxScore;
+        document.getElementById('score-percentage').innerText = `${pct}% Correct`;
+
+        document.getElementById('stat-correct').innerText = correctCount;
+        document.getElementById('stat-wrong').innerText = wrongCount;
+        document.getElementById('stat-max-streak').innerText = maxStreak;
+
+        const emoji = document.getElementById('result-emoji');
+        const headline = document.getElementById('result-headline');
+        const subtext = document.getElementById('result-subtext');
+
+        if (pct >= 90) {
+            emoji.innerText = '👑';
+            headline.innerText = 'Bible Scholar!';
+            subtext.innerText = 'அற்புதமான அறிவு! வேதாகமத்தில் சிறந்த தேர்ச்சி!';
+        } else if (pct >= 70) {
+            emoji.innerText = '🌟';
+            headline.innerText = 'Great Job!';
+            subtext.innerText = 'மிகவும் நன்று! நல்ல வேதாகம அறிவு!';
+        } else if (pct >= 50) {
+            emoji.innerText = '📖';
+            headline.innerText = 'Good Effort!';
+            subtext.innerText = 'தொடர்ந்து வாசித்து அறிவை வளர்த்துக் கொள்ளுங்கள்!';
+        } else {
+            emoji.innerText = '🌱';
+            headline.innerText = 'Keep Reading & Learning!';
+            subtext.innerText = 'வேதத்தை மீண்டும் வாசித்து சோதித்துப் பாருங்கள்!';
+        }
+
+        // Save High Score
+        const prevBest = parseInt(localStorage.getItem('bible_quiz_highscore') || '0', 10);
+        if (score > prevBest) {
+            localStorage.setItem('bible_quiz_highscore', score.toString());
+            document.getElementById('best-score-display').innerText = score;
+        }
+    }
+
+    function confirmExitQuiz() {
+        if (confirm('Are you sure you want to exit the current quiz? Progress will be lost.')) {
+            clearInterval(timerInterval);
+            document.getElementById('quiz-game').classList.add('hidden');
+            document.getElementById('quiz-lobby').classList.remove('hidden');
+        }
+    }
+
+    function restartQuiz() {
+        clearInterval(timerInterval);
+        document.getElementById('quiz-results').classList.add('hidden');
+        document.getElementById('quiz-lobby').classList.remove('hidden');
+    }
+</script>
+{% endblock %}
