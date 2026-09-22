@@ -3,28 +3,28 @@
 {% block title %}Saved Bookmarks & Highlights{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
-    <div class="flex flex-wrap justify-between items-center gap-4 mb-8 pb-4 border-b border-stone-200 dark:border-stone-800">
+<div class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8 pb-4 border-b border-stone-200 dark:border-stone-800">
         <div>
-            <h1 class="text-2xl font-cinzel font-bold text-stone-900 dark:text-stone-100">Bookmarks & Highlights</h1>
+            <h1 class="text-xl sm:text-2xl font-cinzel font-bold text-stone-900 dark:text-stone-100">Bookmarks & Highlights</h1>
             <p class="font-tamil text-xs text-stone-500">சேமிக்கப்பட்ட வசனங்கள்</p>
         </div>
 
         <!-- Unified Backup & Restore Actions -->
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center flex-wrap gap-2">
             <!-- Backup Button -->
             <button onclick="exportAllUserData()" 
-                    class="text-xs px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 font-semibold">
+                    class="text-xs px-2.5 sm:px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 font-semibold cursor-pointer">
                 <span>💾</span> <span>Backup</span>
             </button>
 
             <!-- Restore Button -->
-            <label class="text-xs px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 cursor-pointer font-semibold">
+            <label class="text-xs px-2.5 sm:px-3 py-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-lg hover:border-amber-700 flex items-center gap-1 cursor-pointer font-semibold">
                 <span>📥</span> <span>Restore</span>
                 <input type="file" accept=".json" class="hidden" onchange="importAllUserData(event, renderBookmarks)">
             </label>
 
-            <button onclick="clearAllBookmarks()" class="text-xs text-rose-600 hover:underline ml-2">Clear All</button>
+            <button onclick="clearAllBookmarks()" class="text-xs text-rose-600 hover:underline px-1 cursor-pointer">Clear All</button>
         </div>
     </div>
 

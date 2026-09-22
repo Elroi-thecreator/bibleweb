@@ -1,26 +1,50 @@
 {% extends "base.html" %}
 
-{% block title %}Search results for "{{ query }}"{% endblock %}
+{% block title %}Search results for "{{ query }}" | வேதாகமத் தேடல்{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <h1 class="text-xl font-bold mb-4">Results for: <span class="text-blue-700">"{{ query }}"</span></h1>
+<div class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-6">
+    <!-- Search Bar on Search Page for Instant Mobile & Desktop Queries -->
+    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs">
+        <form action="/search" method="get" class="flex gap-2">
+            <div class="relative flex-1">
+                <input type="text" name="q" value="{{ query }}" placeholder="Search English or Tamil verses (e.g., love, யோவான், light)..."
+                       class="w-full text-xs sm:text-sm bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-amber-700 text-stone-900 dark:text-stone-100">
+                <span class="absolute left-3 top-3 text-stone-400 text-xs sm:text-sm">🔍</span>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Results Header -->
+    <div class="flex items-center justify-between">
+        <h1 class="text-lg sm:text-xl font-cinzel font-bold text-stone-900 dark:text-stone-100">
+            Results for: <span class="text-amber-800 dark:text-amber-400 font-serif">"{{ query }}"</span>
+        </h1>
+        {% if results %}
+        <span class="text-xs text-stone-500 font-mono">{{ results|length }} found</span>
+        {% endif %}
+    </div>
 
     {% if results %}
-        <div class="space-y-4">
+        <div class="space-y-3 sm:space-y-4">
             {% for r in results %}
-            <div class="bg-white p-4 rounded-lg shadow-sm border space-y-2">
-                <a href="/book/{{ r.book_id }}/chapter/{{ r.chapter }}" class="text-sm font-semibold text-blue-700 hover:underline block">
-                    {{ r.book_name_en }} {{ r.chapter }}:{{ r.verse }} — {{ r.book_name_ta }} {{ r.chapter }}:{{ r.verse }}
+            <div class="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-2xl shadow-xs border border-stone-200 dark:border-stone-800 space-y-2.5 transition hover:border-amber-600/50">
+                <a href="/read/{{ r.book_id }}/{{ r.chapter }}?mode=bilingual#v{{ r.verse }}" class="font-cinzel text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-400 hover:underline block">
+                    {{ r.book_name_en }} {{ r.chapter }}:{{ r.verse }} • <span class="font-tamil font-normal text-stone-500">{{ r.book_name_ta }} {{ r.chapter }}:{{ r.verse }}</span>
                 </a>
-                <p class="text-sm text-gray-700">{{ r.text_en }}</p>
-                <p class="tamil-text text-sm text-gray-900">{{ r.text_ta }}</p>
+                <p class="font-english text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed">{{ r.text_en }}</p>
+                <p class="font-tamil text-xs sm:text-sm text-stone-900 dark:text-stone-100 border-t border-stone-100 dark:border-stone-800 pt-2 leading-relaxed" translate="no">{{ r.text_ta }}</p>
             </div>
             {% endfor %}
         </div>
     {% else %}
-        <div class="bg-white p-8 text-center text-gray-500 rounded border">
-            No verses found matching your query.
+        <div class="bg-white dark:bg-stone-900 p-8 sm:p-12 text-center rounded-2xl border border-stone-200 dark:border-stone-800 space-y-2">
+            <span class="text-3xl block">🔍</span>
+            <p class="font-cinzel text-sm sm:text-base font-bold text-stone-800 dark:text-stone-200">No verses found matching "{{ query }}"</p>
+            <p class="font-tamil text-xs text-stone-500">மற்றொரு வார்த்தையை உள்ளிட்டு தேடிப் பார்க்கவும்.</p>
         </div>
     {% endif %}
 </div>

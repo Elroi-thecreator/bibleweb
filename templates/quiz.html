@@ -3,16 +3,16 @@
 {% block title %}Bible Quiz & Trivia | வேதாகம வினாடி வினா - Holy Bible{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+<div class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-10">
     <!-- Quiz Header / Hero -->
-    <div class="text-center mb-8 space-y-2">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-semibold uppercase tracking-wider">
+    <div class="text-center mb-6 sm:mb-8 space-y-1.5 sm:space-y-2">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
             <span>✨</span> Bible Trivia Challenge
         </div>
-        <h1 class="text-3xl sm:text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">
+        <h1 class="text-2xl sm:text-4xl font-cinzel font-bold text-stone-900 dark:text-stone-100">
             Scripture Quiz
         </h1>
-        <h2 class="font-tamil text-lg sm:text-xl text-amber-800 dark:text-amber-400 font-medium">
+        <h2 class="font-tamil text-base sm:text-xl text-amber-800 dark:text-amber-400 font-medium">
             வேதாகம வினாடி வினா
         </h2>
         <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-400 max-w-lg mx-auto">
@@ -21,14 +21,14 @@
     </div>
 
     <!-- Quiz Config Panel (Lobby) -->
-    <div id="quiz-lobby" class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+    <div id="quiz-lobby" class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 sm:p-8 shadow-xs space-y-5 sm:space-y-6">
         
         <!-- Category Selection -->
         <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-3">
+            <label class="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2.5">
                 1. Select Category / பிரிவைத் தேர்ந்தெடுக்கவும்
             </label>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="category-picker">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5" id="category-picker">
                 {% for key, cat in categories.items() %}
                 <button type="button" 
                         onclick="selectCategory('{{ key }}')" 

@@ -2,13 +2,14 @@
 <html lang="ta" translate="no" class="notranslate scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="google" content="notranslate">
     <title>{% block title %}வேதம் | Holy Bible{% endblock %}</title>
 
     <!-- PWA Manifest & Browser Meta -->
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#b45309">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Holy Bible">
@@ -114,8 +115,8 @@
                 </div>
             </form>
 
-            <!-- Nav Actions -->
-            <div class="flex items-center space-x-1 sm:space-x-1.5 text-xs shrink-0">
+            <!-- Desktop & Tablet Nav Actions (Hidden on Mobile Phones) -->
+            <div class="hidden sm:flex items-center space-x-1 sm:space-x-1.5 text-xs shrink-0">
                 <a href="/plans" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center gap-1 font-medium" title="Reading Plans">
                     <span>📅</span> <span class="hidden md:inline">Plans</span>
                 </a>
@@ -141,16 +142,55 @@
                     <span id="nav-auth-dot" class="hidden w-2 h-2 rounded-full bg-emerald-500 absolute -top-0.5 -right-0.5 ring-2 ring-white dark:ring-stone-900"></span>
                 </button>
             </div>
+
+            <!-- Mobile Quick Header Actions (Search + Settings) -->
+            <div class="flex sm:hidden items-center space-x-1 text-xs shrink-0">
+                <a href="/search" class="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition" title="Search Bible">
+                    <span class="text-sm">🔍</span>
+                </a>
+                <button onclick="toggleSettingsModal()" 
+                        class="relative p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
+                        title="Appearance & Settings">
+                    <span class="text-sm">⚙️</span>
+                    <span id="nav-auth-dot-mobile" class="hidden w-2 h-2 rounded-full bg-emerald-500 absolute top-1 right-1 ring-2 ring-white dark:ring-stone-900"></span>
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- Main Content Canvas -->
-    <main class="flex-1">
+    <!-- Main Content Canvas with Mobile Bottom Padding -->
+    <main class="flex-1 pb-20 sm:pb-0">
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Mobile Bottom App Navigation Bar (All Smartphones) -->
+    <nav id="mobile-bottom-nav" class="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 pb-[env(safe-area-inset-bottom,0px)] shadow-lg transition-transform duration-200">
+        <div class="grid grid-cols-5 h-14 items-center text-center">
+            <a href="/read/43/1" class="mobile-nav-link flex flex-col items-center justify-center py-1 text-[10px] font-medium text-stone-600 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-400" data-path="/read">
+                <span class="text-base leading-none mb-0.5">📖</span>
+                <span>Read</span>
+            </a>
+            <a href="/plans" class="mobile-nav-link flex flex-col items-center justify-center py-1 text-[10px] font-medium text-stone-600 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-400" data-path="/plans">
+                <span class="text-base leading-none mb-0.5">📅</span>
+                <span>Plans</span>
+            </a>
+            <a href="/progress" class="mobile-nav-link flex flex-col items-center justify-center py-1 text-[10px] font-medium text-stone-600 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-400" data-path="/progress">
+                <span class="text-base leading-none mb-0.5">📊</span>
+                <span>Progress</span>
+            </a>
+            <a href="/quiz" class="mobile-nav-link flex flex-col items-center justify-center py-1 text-[10px] font-medium text-stone-600 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-400" data-path="/quiz">
+                <span class="text-base leading-none mb-0.5">✨</span>
+                <span>Quiz</span>
+            </a>
+            <a href="/bookmarks" class="mobile-nav-link flex flex-col items-center justify-center py-1 text-[10px] font-medium text-stone-600 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-400" data-path="/bookmarks">
+                <span class="text-base leading-none mb-0.5">★</span>
+                <span>Saved</span>
+            </a>
+        </div>
+    </nav>
+
     <!-- Footer -->
-    <footer class="border-t border-stone-200 dark:border-stone-800 py-6 bg-stone-100 dark:bg-stone-950 text-center text-[11px] text-stone-500">
+    <footer class="border-t border-stone-200 dark:border-stone-800 py-6 pb-20 sm:pb-6 bg-stone-100 dark:bg-stone-950 text-center text-[11px] text-stone-500">
         <p class="font-cinzel tracking-widest text-stone-700 dark:text-stone-400">SOLI DEO GLORIA</p>
         <p class="mt-0.5 font-tamil notranslate" translate="no">பரிசுத்த வேதாகமம் • Bilingual Scripture</p>
     </footer>
@@ -407,6 +447,20 @@
                 });
             });
         }
+
+        // Highlight active link in mobile bottom nav bar
+        (function() {
+            try {
+                const path = window.location.pathname;
+                document.querySelectorAll('.mobile-nav-link').forEach(link => {
+                    const match = link.getAttribute('data-path');
+                    if (match && path.startsWith(match)) {
+                        link.classList.remove('text-stone-600', 'dark:text-stone-400');
+                        link.classList.add('text-amber-700', 'dark:text-amber-400', 'font-bold');
+                    }
+                });
+            } catch(e) {}
+        })();
     </script>
     {% block scripts %}{% endblock %}
 </body>
