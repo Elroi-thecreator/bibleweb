@@ -15,6 +15,9 @@
                 <span class="truncate">{{ book.name_en }}</span>
                 <span class="text-[10px] text-stone-400 shrink-0">▾</span>
             </button>
+            {% if book.id >= 67 %}
+            <span class="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-semibold shrink-0" title="Deuterocanonical Book (திருவிவிலியம்)">Deuterocanon</span>
+            {% endif %}
             <span class="text-stone-400 font-tamil text-xs hidden md:inline truncate notranslate" translate="no">({{ book.name_ta }})</span>
 
             <!-- Compact Chapter Dropdown -->
@@ -119,6 +122,16 @@
                                 class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition text-left cursor-pointer">
                             <span class="flex items-center gap-2"><span>🧘</span> Zen Distraction-Free</span>
                             <span class="text-[10px] text-stone-400">Hide UI</span>
+                        </button>
+                    </div>
+
+                    <!-- Tradition / Canon Status in View Menu -->
+                    <div class="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs">
+                        <span class="text-stone-500 dark:text-stone-400">Tradition</span>
+                        <button onclick="toggleSettingsModal(); toggleViewMenu();" 
+                                class="font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer">
+                            <span>{% if is_catholic %}✝️ Catholic (73){% else %}📖 Protestant (66){% endif %}</span>
+                            <span class="text-[10px]">⚙️</span>
                         </button>
                     </div>
 
@@ -277,16 +290,57 @@
 </div>
 
 <!-- Modal Quick Book Navigator -->
-<div id="quick-nav-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-xl w-full p-5 max-h-[80vh] flex flex-col border border-stone-200 dark:border-stone-800">
-        <div class="flex justify-between items-center pb-3 border-b border-stone-100 dark:border-stone-800">
-            <h3 class="font-cinzel font-bold text-base">Select Book</h3>
-            <button onclick="document.getElementById('quick-nav-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-600 text-xl leading-none cursor-pointer">&times;</button>
+<div id="quick-nav-modal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-xl w-full p-4 sm:p-5 max-h-[85vh] flex flex-col border border-stone-200 dark:border-stone-800">
+        <!-- Top Bar -->
+        <div class="flex justify-between items-center pb-2.5 border-b border-stone-100 dark:border-stone-800">
+            <div class="flex items-center gap-2">
+                <h3 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Select Book</h3>
+                <span class="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-500 font-sans">
+                    {% if is_catholic %}✝️ Catholic (73){% else %}📖 Protestant (66){% endif %}
+                </span>
+            </div>
+            <button onclick="document.getElementById('quick-nav-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-xl leading-none cursor-pointer">&times;</button>
         </div>
-        <div class="overflow-y-auto pr-1 py-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs" id="quick-nav-books-list">
-            {% for b in books %}
-            <a href="/read/{{ b[0] }}/1?mode={{ mode }}" class="quick-nav-book-link p-2 rounded-xl border border-stone-200 dark:border-stone-800 hover:border-amber-700 hover:bg-amber-50/40 dark:hover:bg-stone-800/60 block">
-                <span class="font-semibold block text-stone-900 dark:text-stone-100">{{ b[1] }}</span>
+
+        <!-- Quick Filter & Search Controls -->
+        <div class="pt-3 pb-2 space-y-2">
+            <input type="text" id="quick-nav-search" placeholder="Search book by name (e.g. Tobit, John, யோவான்)..." 
+                   oninput="filterQuickNavBooks(this.value)" 
+                   class="w-full text-xs bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-700 text-stone-900 dark:text-stone-100">
+            
+            <!-- Category Tabs -->
+            <div class="flex flex-wrap gap-1 text-[11px]">
+                <button type="button" onclick="setQuickNavGroup('all')" class="quick-nav-tab px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-50/50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-semibold cursor-pointer" data-target-group="all">
+                    All
+                </button>
+                <button type="button" onclick="setQuickNavGroup('ot')" class="quick-nav-tab px-2.5 py-1 rounded-lg border border-stone-200 dark:border-stone-700 hover:border-amber-600 text-stone-600 dark:text-stone-400 cursor-pointer" data-target-group="ot">
+                    OT (39)
+                </button>
+                <button type="button" onclick="setQuickNavGroup('dc')" class="quick-nav-tab px-2.5 py-1 rounded-lg border border-stone-200 dark:border-stone-700 hover:border-amber-600 text-stone-600 dark:text-stone-400 cursor-pointer flex items-center gap-1" data-target-group="dc">
+                    <span>✝️ Deuterocanon (7)</span>
+                </button>
+                <button type="button" onclick="setQuickNavGroup('nt')" class="quick-nav-tab px-2.5 py-1 rounded-lg border border-stone-200 dark:border-stone-700 hover:border-amber-600 text-stone-600 dark:text-stone-400 cursor-pointer" data-target-group="nt">
+                    NT (27)
+                </button>
+            </div>
+        </div>
+
+        <!-- Books Grid -->
+        <div class="overflow-y-auto pr-1 py-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 text-xs flex-1" id="quick-nav-books-list">
+            {% for b in all_books %}
+            <a href="/read/{{ b[0] }}/1?mode={{ mode }}" 
+               data-book-id="{{ b[0] }}"
+               data-group="{% if b[0] <= 39 %}ot{% elif b[0] <= 66 %}nt{% else %}dc{% endif %}"
+               data-name-en="{{ b[1]|lower }}"
+               data-name-ta="{{ b[2]|lower }}"
+               class="quick-nav-book-link p-2 rounded-xl border border-stone-200 dark:border-stone-800 hover:border-amber-700 hover:bg-amber-50/40 dark:hover:bg-stone-800/60 block transition {% if not is_catholic and b[0] >= 67 %}hidden{% endif %}">
+                <div class="flex items-center justify-between">
+                    <span class="font-semibold block text-stone-900 dark:text-stone-100 truncate">{{ b[1] }}</span>
+                    {% if b[0] >= 67 %}
+                    <span class="text-[9px] px-1 py-0.2 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold shrink-0">DC</span>
+                    {% endif %}
+                </div>
                 <span class="font-tamil text-stone-500 text-[11px] block truncate notranslate" translate="no">{{ b[2] }}</span>
             </a>
             {% endfor %}
@@ -302,6 +356,45 @@
     window.CURRENT_CHAPTER = Number({{ chapter }});
     window.CURRENT_BOOK_EN = "{{ book.name_en }}";
     window.CURRENT_BOOK_TA = "{{ book.name_ta }}";
+
+    // Quick Book Navigator Tab and Search Filter
+    let activeQuickNavGroup = 'all';
+    function setQuickNavGroup(group) {
+        activeQuickNavGroup = group;
+        document.querySelectorAll('.quick-nav-tab').forEach(t => {
+            if (t.dataset.targetGroup === group) {
+                t.className = 'quick-nav-tab px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-50/50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-semibold cursor-pointer';
+            } else {
+                t.className = 'quick-nav-tab px-2.5 py-1 rounded-lg border border-stone-200 dark:border-stone-700 hover:border-amber-600 text-stone-600 dark:text-stone-400 cursor-pointer';
+            }
+        });
+        const searchInput = document.getElementById('quick-nav-search');
+        filterQuickNavBooks(searchInput ? searchInput.value : '');
+    }
+
+    function filterQuickNavBooks(query) {
+        const q = (query || '').trim().toLowerCase();
+        const isCatholicMode = {{ 'true' if is_catholic else 'false' }};
+        document.querySelectorAll('.quick-nav-book-link').forEach(link => {
+            const group = link.dataset.group;
+            const nameEn = link.dataset.nameEn || '';
+            const nameTa = link.dataset.nameTa || '';
+            const matchesQuery = !q || nameEn.includes(q) || nameTa.includes(q);
+
+            let matchesGroup = false;
+            if (activeQuickNavGroup === 'all') {
+                matchesGroup = isCatholicMode ? true : (group !== 'dc' || q.length > 0);
+            } else {
+                matchesGroup = (group === activeQuickNavGroup);
+            }
+
+            if (matchesQuery && matchesGroup) {
+                link.classList.remove('hidden');
+            } else {
+                link.classList.add('hidden');
+            }
+        });
+    }
 
     // 1. Detect Active Plan Context from URL
     const urlParams = new URLSearchParams(window.location.search);

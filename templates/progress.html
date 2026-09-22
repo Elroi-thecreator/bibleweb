@@ -34,8 +34,78 @@
     </div>
 
     <!-- Metric Cards -->
+    {% if is_catholic %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-10">
+        <!-- Total Bible Card -->
+        <div class="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs flex flex-col justify-between">
+            <div>
+                <span class="text-[10px] sm:text-xs font-cinzel font-bold uppercase tracking-wider text-amber-700 dark:text-amber-500 block mb-1">Entire Catholic Bible</span>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-total-pct" class="text-2xl sm:text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-total-fraction" class="text-xs text-stone-400 font-mono">0 / {{ total_chapters }} Ch</span>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
+                    <div id="bar-total" class="bg-amber-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="stat-pending" class="text-[10px] sm:text-[11px] text-stone-500 mt-1.5 font-medium">{{ total_chapters }} chapters remaining</p>
+            </div>
+        </div>
+
+        <!-- Old Testament Card -->
+        <div class="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs flex flex-col justify-between">
+            <div>
+                <span class="text-[10px] sm:text-xs font-cinzel font-bold uppercase tracking-wider text-stone-500 block mb-1">OT (பழைய ஏற்பாடு)</span>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-ot-pct" class="text-2xl sm:text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-ot-fraction" class="text-xs text-stone-400 font-mono">0 / 929 Ch</span>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
+                    <div id="bar-ot" class="bg-stone-600 dark:bg-stone-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="stat-ot-pending" class="text-[10px] sm:text-[11px] text-stone-500 mt-1.5 font-medium">929 chapters remaining</p>
+            </div>
+        </div>
+
+        <!-- Deuterocanonical Books Card -->
+        <div class="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-2xl border border-amber-300 dark:border-amber-800 shadow-xs flex flex-col justify-between ring-1 ring-amber-500/20">
+            <div>
+                <span class="text-[10px] sm:text-xs font-cinzel font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block mb-1">✝️ Deuterocanon (2-ஆம் திருமுறை)</span>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-dc-pct" class="text-2xl sm:text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-dc-fraction" class="text-xs text-stone-400 font-mono">0 / 137 Ch</span>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
+                    <div id="bar-dc" class="bg-amber-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="stat-dc-pending" class="text-[10px] sm:text-[11px] text-stone-500 mt-1.5 font-medium">137 chapters remaining</p>
+            </div>
+        </div>
+
+        <!-- New Testament Card -->
+        <div class="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs flex flex-col justify-between">
+            <div>
+                <span class="text-[10px] sm:text-xs font-cinzel font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-1">NT (புதிய ஏற்பாடு)</span>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-nt-pct" class="text-2xl sm:text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">0.0%</span>
+                    <span id="stat-nt-fraction" class="text-xs text-stone-400 font-mono">0 / 260 Ch</span>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
+                    <div id="bar-nt" class="bg-emerald-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="stat-nt-pending" class="text-[10px] sm:text-[11px] text-stone-500 mt-1.5 font-medium">260 chapters remaining</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-10">
-        
         <!-- Total Bible Card -->
         <div class="bg-white dark:bg-stone-900 p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs flex flex-col justify-between">
             <div>
@@ -87,6 +157,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Projected Finish Date Calculator -->
     <div class="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-10">
@@ -136,6 +207,35 @@
                 {% endfor %}
             </div>
         </div>
+
+        {% if is_catholic %}
+        <div>
+            <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 pb-2 mb-3 border-b flex justify-between items-center">
+                <span class="flex items-center gap-1.5">
+                    <span>✝️</span> <span>DEUTEROCANONICAL BOOKS (7)</span>
+                </span>
+                <span class="font-tamil text-xs text-amber-700 dark:text-amber-400">இரண்டாம் திருமுறை</span>
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 text-xs" id="grid-dc">
+                {% for b in deuterocanon_books %}
+                <button type="button" 
+                        onclick="openChapterModal({{ b[0] }}, '{{ b[1] }}', '{{ b[2] }}', {{ b[3] }})"
+                        class="book-card text-left p-2.5 sm:p-3 rounded-xl bg-white dark:bg-stone-900 border border-amber-200/80 dark:border-amber-800/50 hover:border-amber-600 transition block cursor-pointer w-full overflow-hidden" 
+                        data-book-id="{{ b[0] }}" 
+                        data-chapters="{{ b[3] }}">
+                    <div class="flex justify-between items-start mb-0.5">
+                        <span class="font-semibold text-stone-900 dark:text-stone-100 truncate text-xs">{{ b[1] }}</span>
+                        <span class="book-pct text-[9px] sm:text-[10px] text-stone-400 font-mono ml-1">0%</span>
+                    </div>
+                    <span class="font-tamil text-[10px] sm:text-[11px] text-amber-700 dark:text-amber-400 block truncate">{{ b[2] }}</span>
+                    <div class="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden mt-2">
+                        <div class="book-bar bg-amber-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
 
         <div>
             <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 pb-2 mb-3 border-b flex justify-between items-center">
@@ -217,9 +317,16 @@
 
 {% block scripts %}
 <script>
+const IS_CATHOLIC = {{ 'true' if is_catholic else 'false' }};
+const TOTAL_CHAPTERS = {{ total_chapters }};
+const OT_CHAPTERS = 929;
+const DC_CHAPTERS = 137;
+const NT_CHAPTERS = 260;
+
 function renderProgressDashboard() {
     const records = getReadChapters();
     let otCount = 0;
+    let dcCount = 0;
     let ntCount = 0;
 
     document.querySelectorAll('.book-card').forEach(card => {
@@ -230,7 +337,9 @@ function renderProgressDashboard() {
         for (let c = 1; c <= totalCh; c++) {
             if (records[`${bookId}_${c}`]) {
                 readInBook++;
-                if (bookId <= 39) otCount++; else ntCount++;
+                if (bookId <= 39) otCount++;
+                else if (bookId >= 67) dcCount++;
+                else ntCount++;
             }
         }
 
@@ -245,29 +354,54 @@ function renderProgressDashboard() {
         }
     });
 
-    const totalRead = otCount + ntCount;
-    const totalPending = 1189 - totalRead;
+    const totalRead = otCount + (IS_CATHOLIC ? dcCount : 0) + ntCount;
+    const totalPending = TOTAL_CHAPTERS - totalRead;
 
-    const totalPct = ((totalRead / 1189) * 100).toFixed(1);
-    document.getElementById('stat-total-pct').innerText = `${totalPct}%`;
-    document.getElementById('stat-total-fraction').innerText = `${totalRead} / 1189 Ch`;
-    document.getElementById('bar-total').style.width = `${totalPct}%`;
-    document.getElementById('stat-pending').innerText = `${totalPending} chapters remaining`;
+    const totalPct = ((totalRead / TOTAL_CHAPTERS) * 100).toFixed(1);
+    const statTotalPct = document.getElementById('stat-total-pct');
+    if (statTotalPct) statTotalPct.innerText = `${totalPct}%`;
+    const statTotalFrac = document.getElementById('stat-total-fraction');
+    if (statTotalFrac) statTotalFrac.innerText = `${totalRead} / ${TOTAL_CHAPTERS} Ch`;
+    const barTotal = document.getElementById('bar-total');
+    if (barTotal) barTotal.style.width = `${totalPct}%`;
+    const statPending = document.getElementById('stat-pending');
+    if (statPending) statPending.innerText = `${totalPending} chapters remaining`;
 
-    const otPct = ((otCount / 929) * 100).toFixed(1);
-    document.getElementById('stat-ot-pct').innerText = `${otPct}%`;
-    document.getElementById('stat-ot-fraction').innerText = `${otCount} / 929 Ch`;
-    document.getElementById('bar-ot').style.width = `${otPct}%`;
-    document.getElementById('stat-ot-pending').innerText = `${929 - otCount} chapters remaining`;
+    const otPct = ((otCount / OT_CHAPTERS) * 100).toFixed(1);
+    const statOtPct = document.getElementById('stat-ot-pct');
+    if (statOtPct) statOtPct.innerText = `${otPct}%`;
+    const statOtFrac = document.getElementById('stat-ot-fraction');
+    if (statOtFrac) statOtFrac.innerText = `${otCount} / ${OT_CHAPTERS} Ch`;
+    const barOt = document.getElementById('bar-ot');
+    if (barOt) barOt.style.width = `${otPct}%`;
+    const statOtPending = document.getElementById('stat-ot-pending');
+    if (statOtPending) statOtPending.innerText = `${OT_CHAPTERS - otCount} chapters remaining`;
 
-    const ntPct = ((ntCount / 260) * 100).toFixed(1);
-    document.getElementById('stat-nt-pct').innerText = `${ntPct}%`;
-    document.getElementById('stat-nt-fraction').innerText = `${ntCount} / 260 Ch`;
-    document.getElementById('bar-nt').style.width = `${ntPct}%`;
-    document.getElementById('stat-nt-pending').innerText = `${260 - ntCount} chapters remaining`;
+    if (IS_CATHOLIC) {
+        const dcPct = ((dcCount / DC_CHAPTERS) * 100).toFixed(1);
+        const statDcPct = document.getElementById('stat-dc-pct');
+        if (statDcPct) statDcPct.innerText = `${dcPct}%`;
+        const statDcFrac = document.getElementById('stat-dc-fraction');
+        if (statDcFrac) statDcFrac.innerText = `${dcCount} / ${DC_CHAPTERS} Ch`;
+        const barDc = document.getElementById('bar-dc');
+        if (barDc) barDc.style.width = `${dcPct}%`;
+        const statDcPending = document.getElementById('stat-dc-pending');
+        if (statDcPending) statDcPending.innerText = `${DC_CHAPTERS - dcCount} chapters remaining`;
+    }
+
+    const ntPct = ((ntCount / NT_CHAPTERS) * 100).toFixed(1);
+    const statNtPct = document.getElementById('stat-nt-pct');
+    if (statNtPct) statNtPct.innerText = `${ntPct}%`;
+    const statNtFrac = document.getElementById('stat-nt-fraction');
+    if (statNtFrac) statNtFrac.innerText = `${ntCount} / ${NT_CHAPTERS} Ch`;
+    const barNt = document.getElementById('bar-nt');
+    if (barNt) barNt.style.width = `${ntPct}%`;
+    const statNtPending = document.getElementById('stat-nt-pending');
+    if (statNtPending) statNtPending.innerText = `${NT_CHAPTERS - ntCount} chapters remaining`;
 
     const streak = getReadingStreak();
-    document.getElementById('streak-counter').innerText = `${streak} Streak`;
+    const streakCounter = document.getElementById('streak-counter');
+    if (streakCounter) streakCounter.innerText = `${streak} Streak`;
 
     calculateFinishEstimates(totalPending);
 }

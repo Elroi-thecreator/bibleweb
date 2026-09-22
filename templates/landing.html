@@ -73,12 +73,91 @@
 </section>
 
 <!-- Canonical Book Navigator -->
-<section class="max-w-7xl mx-auto px-4 py-16">
-    <div class="text-center mb-10">
-        <h3 class="font-cinzel text-xl font-bold text-stone-900 dark:text-stone-100">EXPLORE SCRIPTURE</h3>
-        <p class="text-xs text-stone-500 mt-1 font-tamil">பழைய ஏற்பாடு மற்றும் புதிய ஏற்பாடு</p>
+<section class="max-w-7xl mx-auto px-4 py-12 sm:py-16">
+    <div class="text-center mb-6 sm:mb-8">
+        <h3 class="font-cinzel text-xl sm:text-2xl font-bold text-stone-900 dark:text-stone-100">EXPLORE SCRIPTURE</h3>
+        <p class="text-xs text-stone-500 mt-1 font-tamil">பழைய ஏற்பாடு, இரண்டாம் திருமுறை மற்றும் புதிய ஏற்பாடு</p>
+
+        <!-- Canon Tradition Switcher -->
+        <div class="flex justify-center mt-3.5">
+            <div class="inline-flex bg-stone-100 dark:bg-stone-800 p-1 rounded-xl border border-stone-200 dark:border-stone-700 text-xs">
+                <button type="button" onclick="setBibleCanon('protestant')" 
+                        class="px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer {% if not is_catholic %}bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-300 shadow-xs{% else %}text-stone-500 hover:text-stone-800 dark:hover:text-stone-200{% endif %}">
+                    📖 Protestant (66)
+                </button>
+                <button type="button" onclick="setBibleCanon('catholic')" 
+                        class="px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer {% if is_catholic %}bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-300 shadow-xs{% else %}text-stone-500 hover:text-stone-800 dark:hover:text-stone-200{% endif %}">
+                    ✝️ Catholic (73)
+                </button>
+            </div>
+        </div>
     </div>
 
+    {% if is_catholic %}
+    <!-- Catholic 3-Section Grid (OT, Deuterocanon, NT) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <!-- Old Testament -->
+        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+            <div>
+                <h4 class="font-cinzel font-bold text-amber-900 dark:text-amber-400 text-xs sm:text-sm pb-2 mb-3 border-b flex justify-between items-center">
+                    <span>OLD TESTAMENT (39)</span>
+                    <span class="font-tamil text-xs text-stone-500">பழைய ஏற்பாடு</span>
+                </h4>
+                <div class="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs">
+                    {% for b in ot_books %}
+                    <a href="/read/{{ b[0] }}/1?mode=bilingual" class="p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-stone-800/80 border border-stone-100 dark:border-stone-800/60 hover:border-amber-200 block transition">
+                        <span class="font-semibold block text-stone-800 dark:text-stone-200 truncate">{{ b[1] }}</span>
+                        <span class="font-tamil text-[10px] text-stone-500 block truncate">{{ b[2] }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Deuterocanonical Books (Catholic 7 Books) -->
+        <div class="bg-white dark:bg-stone-900 border border-amber-300/80 dark:border-amber-800/60 rounded-2xl p-4 sm:p-5 shadow-xs ring-1 ring-amber-500/20 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between pb-2 mb-3 border-b border-amber-200/50 dark:border-amber-900/40">
+                    <h4 class="font-cinzel font-bold text-amber-900 dark:text-amber-400 text-xs sm:text-sm flex items-center gap-1.5">
+                        <span>✝️ DEUTEROCANON (7)</span>
+                    </h4>
+                    <span class="font-tamil text-[11px] text-amber-700 dark:text-amber-400 font-medium">இரண்டாம் திருமுறை</span>
+                </div>
+                <p class="text-[11px] text-stone-500 mb-3">7 Deuterocanonical books with Douay-Rheims English and POC திருவிவிலியம் Tamil:</p>
+                <div class="space-y-1.5 text-xs">
+                    {% for b in deuterocanon_books %}
+                    <a href="/read/{{ b[0] }}/1?mode=bilingual" class="p-2.5 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/50 block transition group">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-stone-900 dark:text-stone-100 group-hover:text-amber-700">{{ b[1] }}</span>
+                            <span class="text-[10px] text-stone-400 font-mono">{{ b[3] }} Ch</span>
+                        </div>
+                        <span class="font-tamil text-xs text-amber-700 dark:text-amber-400 block mt-0.5">{{ b[2] }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- New Testament -->
+        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+            <div>
+                <h4 class="font-cinzel font-bold text-emerald-800 dark:text-emerald-400 text-xs sm:text-sm pb-2 mb-3 border-b flex justify-between items-center">
+                    <span>NEW TESTAMENT (27)</span>
+                    <span class="font-tamil text-xs text-stone-500">புதிய ஏற்பாடு</span>
+                </h4>
+                <div class="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs">
+                    {% for b in nt_books %}
+                    <a href="/read/{{ b[0] }}/1?mode=bilingual" class="p-2 rounded-xl hover:bg-emerald-50 dark:hover:bg-stone-800/80 border border-stone-100 dark:border-stone-800/60 hover:border-emerald-200 block transition">
+                        <span class="font-semibold block text-stone-800 dark:text-stone-200 truncate">{{ b[1] }}</span>
+                        <span class="font-tamil text-[10px] text-stone-500 block truncate">{{ b[2] }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Protestant 2-Section Grid (OT 39, NT 27) -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
         <!-- Old Testament -->
         <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 sm:p-6 shadow-xs">
@@ -112,5 +191,18 @@
             </div>
         </div>
     </div>
+
+    <!-- Catholic Canon Discovery Prompt -->
+    <div class="mt-6 p-4 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+        <div>
+            <p class="font-cinzel font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100">Looking for Catholic Deuterocanonical Books? (73-Book Canon)</p>
+            <p class="font-tamil text-xs text-stone-600 dark:text-stone-400 mt-0.5">தோபித்து, யூதித்து, ஞானம், சீராக், பாரூக், மக்கபேயர் நூல்களை வாசிக்கலாம்.</p>
+        </div>
+        <button type="button" onclick="setBibleCanon('catholic')" 
+                class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition shrink-0 cursor-pointer shadow-xs">
+            Switch to Catholic (73) →
+        </button>
+    </div>
+    {% endif %}
 </section>
 {% endblock %}

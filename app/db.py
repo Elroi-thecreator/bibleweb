@@ -96,6 +96,19 @@ BIBLE_BOOKS = [
     (66, "Revelation", "வெளிப்படுத்தின விசேஷம்", 22),
 ]
 
+# 7 Catholic Deuterocanonical Books (73-Book Canon)
+DEUTEROCANONICAL_BOOKS = [
+    (67, "Tobit", "தோபித்து", 14),
+    (68, "Judith", "யூதித்து", 16),
+    (69, "Wisdom of Solomon", "சாலமோனின் ஞானம்", 19),
+    (70, "Sirach", "சீராக் (சீராக்கின் ஞானம்)", 51),
+    (71, "Baruch", "பாரூக்", 6),
+    (72, "1 Maccabees", "1 மக்கபேயர்", 16),
+    (73, "2 Maccabees", "2 மக்கபேயர்", 15),
+]
+
+CATHOLIC_BOOKS = BIBLE_BOOKS + DEUTEROCANONICAL_BOOKS
+
 BOOK_MAP = {
     b[0]: {
         "id": b[0],
@@ -103,8 +116,16 @@ BOOK_MAP = {
         "name_ta": b[2],
         "total_chapters": b[3]
     }
-    for b in BIBLE_BOOKS
+    for b in CATHOLIC_BOOKS
 }
+
+
+def get_books(canon: str = "protestant"):
+    """Returns list of books based on canon preference."""
+    if canon and canon.lower() == "catholic":
+        return CATHOLIC_BOOKS
+    return BIBLE_BOOKS
+
 
 
 def _resolve_schema(cursor: sqlite3.Cursor):

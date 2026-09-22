@@ -19,7 +19,15 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from gtts import gTTS
 
-from app.db import BIBLE_BOOKS, BOOK_MAP, get_chapter_verses, search_verses
+from app.db import (
+    BIBLE_BOOKS,
+    DEUTEROCANONICAL_BOOKS,
+    CATHOLIC_BOOKS,
+    BOOK_MAP,
+    get_books,
+    get_chapter_verses,
+    search_verses,
+)
 from app.plans_data import READING_PLANS
 from app.quiz_data import QUIZ_CATEGORIES, QUIZ_QUESTIONS
 
@@ -228,19 +236,59 @@ async def status_page():
 
 
 # ==========================================
-# 5. Main Bible Pages
+# 5. Canon Helpers & Main Bible Pages
 # ==========================================
 
+def resolve_canon(request: Request, canon: str = None, book_id: int = None) -> str:
+    """Resolves active canon ('protestant' or 'catholic') from query, current book, or cookie."""
+    if canon and canon.lower() in ("catholic", "protestant"):
+        return canon.lower()
+    if book_id is not None and book_id >= 67:
+        return "catholic"
+    cookie_canon = request.cookies.get("bible_canon")
+    if cookie_canon and cookie_canon.lower() in ("catholic", "protestant"):
+        return cookie_canon.lower()
+    return "protestant"
+
+
+def get_canon_context(canon: str = "protestant"):
+    """Returns standardized book lists and chapter counts for template contexts."""
+    is_catholic = (canon == "catholic")
+    books = CATHOLIC_BOOKS if is_catholic else BIBLE_BOOKS
+    ot_books = [b for b in BIBLE_BOOKS if b[0] <= 39]
+    nt_books = [b for b in BIBLE_BOOKS if b[0] > 39 and b[0] <= 66]
+    dc_books = DEUTEROCANONICAL_BOOKS
+    
+    total_chapters = 1326 if is_catholic else 1189
+    ot_chapters = 1066 if is_catholic else 929
+    dc_chapters = 137
+    nt_chapters = 260
+
+    return {
+        "canon": canon,
+        "is_catholic": is_catholic,
+        "books": books,
+        "all_books": CATHOLIC_BOOKS,
+        "ot_books": ot_books,
+        "nt_books": nt_books,
+        "deuterocanon_books": dc_books,
+        "total_chapters": total_chapters,
+        "ot_chapters": ot_chapters,
+        "dc_chapters": dc_chapters,
+        "nt_chapters": nt_chapters,
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
-async def landing_page(request: Request):
+async def landing_page(request: Request, canon: str = Query(None)):
+    active_canon = resolve_canon(request, canon)
+    canon_ctx = get_canon_context(active_canon)
     return templates.TemplateResponse(
         request=request,
         name="landing.html",
         context={
-            "books": BIBLE_BOOKS,
+            **canon_ctx,
             "daily_verse": DAILY_VERSE,
-            "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
-            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
         },
     )
 
@@ -251,7 +299,9 @@ async def reader(
     book_id: int,
     chapter: int,
     mode: str = Query("bilingual"),
+    canon: str = Query(None),
 ):
+    active_canon = resolve_canon(request, canon, book_id)
     if book_id not in BOOK_MAP:
         book_id = 1
     current_book = BOOK_MAP[book_id]
@@ -266,27 +316,27 @@ async def reader(
 
     prev_ch = chapter - 1 if chapter > 1 else None
     next_ch = chapter + 1 if chapter < current_book["total_chapters"] else None
+    canon_ctx = get_canon_context(active_canon)
 
     return templates.TemplateResponse(
         request=request,
         name="reader.html",
         context={
-            "books": BIBLE_BOOKS,
+            **canon_ctx,
             "book": current_book,
             "chapter": chapter,
             "verses": verses,
             "mode": mode,
             "prev_ch": prev_ch,
             "next_ch": next_ch,
-            "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
-            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
         },
     )
 
 
 @app.get("/present/{book_id}/{chapter}", response_class=HTMLResponse)
-async def presenter_mode(request: Request, book_id: int, chapter: int):
+async def presenter_mode(request: Request, book_id: int, chapter: int, canon: str = Query(None)):
     """Church / TV / Projector presentation mode with extra-large bilingual slides."""
+    active_canon = resolve_canon(request, canon, book_id)
     if book_id not in BOOK_MAP:
         book_id = 1
     current_book = BOOK_MAP[book_id]
@@ -294,12 +344,13 @@ async def presenter_mode(request: Request, book_id: int, chapter: int):
         chapter = 1
 
     verses = get_chapter_verses(book_id, chapter)
+    canon_ctx = get_canon_context(active_canon)
 
     return templates.TemplateResponse(
         request=request,
         name="presenter.html",
         context={
-            "books": BIBLE_BOOKS,
+            **canon_ctx,
             "book": current_book,
             "chapter": chapter,
             "verses": verses,
@@ -308,61 +359,72 @@ async def presenter_mode(request: Request, book_id: int, chapter: int):
 
 
 @app.get("/plans", response_class=HTMLResponse)
-async def plans_page(request: Request):
+async def plans_page(request: Request, canon: str = Query(None)):
     """Daily habit reading tracks with day-by-day progress checkoffs."""
+    active_canon = resolve_canon(request, canon)
+    canon_ctx = get_canon_context(active_canon)
     return templates.TemplateResponse(
         request=request,
         name="plans.html",
         context={
+            **canon_ctx,
             "plans": READING_PLANS,
-            "books": BIBLE_BOOKS,
         },
     )
 
 
 @app.get("/progress", response_class=HTMLResponse)
-async def progress_page(request: Request):
+async def progress_page(request: Request, canon: str = Query(None)):
+    active_canon = resolve_canon(request, canon)
+    canon_ctx = get_canon_context(active_canon)
     return templates.TemplateResponse(
         request=request,
         name="progress.html",
-        context={
-            "books": BIBLE_BOOKS,
-            "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
-            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
-            "total_chapters": 1189,
-            "ot_chapters": 929,
-            "nt_chapters": 260,
-        },
+        context=canon_ctx,
     )
 
 
 @app.get("/search", response_class=HTMLResponse)
-async def search_page(request: Request, q: str = Query("", min_length=1)):
+async def search_page(request: Request, q: str = Query("", min_length=1), canon: str = Query(None)):
+    active_canon = resolve_canon(request, canon)
+    canon_ctx = get_canon_context(active_canon)
     results = search_verses(q) if q.strip() else []
+    # If Protestant mode, filter out Deuterocanonical results (IDs > 66)
+    if not canon_ctx["is_catholic"]:
+        results = [r for r in results if r["book_id"] <= 66]
+
     return templates.TemplateResponse(
         request=request,
         name="search.html",
-        context={"query": q, "results": results, "books": BIBLE_BOOKS},
+        context={
+            **canon_ctx,
+            "query": q,
+            "results": results,
+        },
     )
 
 
 @app.get("/bookmarks", response_class=HTMLResponse)
-async def bookmarks_page(request: Request):
+async def bookmarks_page(request: Request, canon: str = Query(None)):
+    active_canon = resolve_canon(request, canon)
+    canon_ctx = get_canon_context(active_canon)
     return templates.TemplateResponse(
         request=request,
         name="bookmarks.html",
-        context={"books": BIBLE_BOOKS},
+        context=canon_ctx,
     )
 
 
 @app.get("/quiz", response_class=HTMLResponse)
-async def quiz_page(request: Request):
+async def quiz_page(request: Request, canon: str = Query(None)):
     """Interactive Bible Quiz / Trivia game page."""
+    active_canon = resolve_canon(request, canon)
+    canon_ctx = get_canon_context(active_canon)
     return templates.TemplateResponse(
         request=request,
         name="quiz.html",
         context={
-            "books": BIBLE_BOOKS,
+            **canon_ctx,
             "categories": QUIZ_CATEGORIES,
             "total_questions": len(QUIZ_QUESTIONS),
         },
@@ -558,11 +620,14 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
         "total_days": len(raw_days) or 100,
     }
 
+    active_canon = resolve_canon(request)
+    canon_ctx = get_canon_context(active_canon)
+
     return templates.TemplateResponse(
         request=request,
         name="read_along.html",
         context={
-            "books": BIBLE_BOOKS,
+            **canon_ctx,
             "is_plan_mode": True,
             "plan": plan_obj,
             "plan_type": plan_type,
@@ -573,7 +638,5 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
             "total_days": plan_obj["total_days"],
             "prev_day": day - 1 if day > 1 else None,
             "next_day": day + 1 if day < plan_obj["total_days"] else None,
-            "ot_books": [b for b in BIBLE_BOOKS if b[0] <= 39],
-            "nt_books": [b for b in BIBLE_BOOKS if b[0] > 39],
         },
     )
