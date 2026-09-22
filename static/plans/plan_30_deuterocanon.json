@@ -1,0 +1,1097 @@
+{
+  "id": "plan_30_deuterocanon",
+  "name_en": "30-Day Deuterocanonical Books Read-Along",
+  "name_ta": "30 நாட்கள் இரண்டாம் திருமுறை வாசிப்பு",
+  "total_days": 30,
+  "total_words": 99566,
+  "days": [
+    {
+      "day": 1,
+      "title": "Day 1",
+      "word_count": 3312,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Tobit 1 - Tobit 6",
+        "display_ta": "தோபித்து 1 முதல் தோபித்து 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 67,
+          "chapter": 1
+        },
+        {
+          "book_id": 67,
+          "chapter": 2
+        },
+        {
+          "book_id": 67,
+          "chapter": 3
+        },
+        {
+          "book_id": 67,
+          "chapter": 4
+        },
+        {
+          "book_id": 67,
+          "chapter": 5
+        },
+        {
+          "book_id": 67,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Tobit 13:14",
+        "ta": "உன்னை நேசிப்போரும் உன் அமைதியில் மகிழ்வோரும் பேறுபெற்றோர்.",
+        "en": "Blessed are all they that love thee, and that rejoice in thy peace."
+      }
+    },
+    {
+      "day": 2,
+      "title": "Day 2",
+      "word_count": 3169,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Tobit 7 - Tobit 13",
+        "display_ta": "தோபித்து 7 முதல் தோபித்து 13 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 67,
+          "chapter": 7
+        },
+        {
+          "book_id": 67,
+          "chapter": 8
+        },
+        {
+          "book_id": 67,
+          "chapter": 9
+        },
+        {
+          "book_id": 67,
+          "chapter": 10
+        },
+        {
+          "book_id": 67,
+          "chapter": 11
+        },
+        {
+          "book_id": 67,
+          "chapter": 12
+        },
+        {
+          "book_id": 67,
+          "chapter": 13
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Tobit 13:14",
+        "ta": "உன்னை நேசிப்போரும் உன் அமைதியில் மகிழ்வோரும் பேறுபெற்றோர்.",
+        "en": "Blessed are all they that love thee, and that rejoice in thy peace."
+      }
+    },
+    {
+      "day": 3,
+      "title": "Day 3",
+      "word_count": 3445,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Tobit 14 - Judith 6",
+        "display_ta": "தோபித்து 14 முதல் யூதித்து 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 67,
+          "chapter": 14
+        },
+        {
+          "book_id": 68,
+          "chapter": 1
+        },
+        {
+          "book_id": 68,
+          "chapter": 2
+        },
+        {
+          "book_id": 68,
+          "chapter": 3
+        },
+        {
+          "book_id": 68,
+          "chapter": 4
+        },
+        {
+          "book_id": 68,
+          "chapter": 5
+        },
+        {
+          "book_id": 68,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 4,
+      "title": "Day 4",
+      "word_count": 3236,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Judith 7 - Judith 11",
+        "display_ta": "யூதித்து 7 முதல் யூதித்து 11 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 68,
+          "chapter": 7
+        },
+        {
+          "book_id": 68,
+          "chapter": 8
+        },
+        {
+          "book_id": 68,
+          "chapter": 9
+        },
+        {
+          "book_id": 68,
+          "chapter": 10
+        },
+        {
+          "book_id": 68,
+          "chapter": 11
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 5,
+      "title": "Day 5",
+      "word_count": 3296,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Judith 12 - Wisdom 1",
+        "display_ta": "யூதித்து 12 முதல் சாலமோனின் ஞானம் 1 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 68,
+          "chapter": 12
+        },
+        {
+          "book_id": 68,
+          "chapter": 13
+        },
+        {
+          "book_id": 68,
+          "chapter": 14
+        },
+        {
+          "book_id": 68,
+          "chapter": 15
+        },
+        {
+          "book_id": 68,
+          "chapter": 16
+        },
+        {
+          "book_id": 69,
+          "chapter": 1
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Wisdom 3:9",
+        "ta": "ஆண்டவரை நம்பியோர் உண்மையை அறிந்துகொள்வர்.",
+        "en": "They that put their trust in him shall understand the truth."
+      }
+    },
+    {
+      "day": 6,
+      "title": "Day 6",
+      "word_count": 3138,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Wisdom 2 - Wisdom 7",
+        "display_ta": "சாலமோனின் ஞானம் 2 முதல் சாலமோனின் ஞானம் 7 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 69,
+          "chapter": 2
+        },
+        {
+          "book_id": 69,
+          "chapter": 3
+        },
+        {
+          "book_id": 69,
+          "chapter": 4
+        },
+        {
+          "book_id": 69,
+          "chapter": 5
+        },
+        {
+          "book_id": 69,
+          "chapter": 6
+        },
+        {
+          "book_id": 69,
+          "chapter": 7
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Wisdom 3:9",
+        "ta": "ஆண்டவரை நம்பியோர் உண்மையை அறிந்துகொள்வர்.",
+        "en": "They that put their trust in him shall understand the truth."
+      }
+    },
+    {
+      "day": 7,
+      "title": "Day 7",
+      "word_count": 3150,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Wisdom 8 - Wisdom 13",
+        "display_ta": "சாலமோனின் ஞானம் 8 முதல் சாலமோனின் ஞானம் 13 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 69,
+          "chapter": 8
+        },
+        {
+          "book_id": 69,
+          "chapter": 9
+        },
+        {
+          "book_id": 69,
+          "chapter": 10
+        },
+        {
+          "book_id": 69,
+          "chapter": 11
+        },
+        {
+          "book_id": 69,
+          "chapter": 12
+        },
+        {
+          "book_id": 69,
+          "chapter": 13
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Wisdom 3:9",
+        "ta": "ஆண்டவரை நம்பியோர் உண்மையை அறிந்துகொள்வர்.",
+        "en": "They that put their trust in him shall understand the truth."
+      }
+    },
+    {
+      "day": 8,
+      "title": "Day 8",
+      "word_count": 3135,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Wisdom 14 - Wisdom 18",
+        "display_ta": "சாலமோனின் ஞானம் 14 முதல் சாலமோனின் ஞானம் 18 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 69,
+          "chapter": 14
+        },
+        {
+          "book_id": 69,
+          "chapter": 15
+        },
+        {
+          "book_id": 69,
+          "chapter": 16
+        },
+        {
+          "book_id": 69,
+          "chapter": 17
+        },
+        {
+          "book_id": 69,
+          "chapter": 18
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Wisdom 3:9",
+        "ta": "ஆண்டவரை நம்பியோர் உண்மையை அறிந்துகொள்வர்.",
+        "en": "They that put their trust in him shall understand the truth."
+      }
+    },
+    {
+      "day": 9,
+      "title": "Day 9",
+      "word_count": 3276,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Wisdom 19 - Sirach 5",
+        "display_ta": "சாலமோனின் ஞானம் 19 முதல் சீராக் (சீராக்கின் ஞானம்) 5 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 69,
+          "chapter": 19
+        },
+        {
+          "book_id": 70,
+          "chapter": 1
+        },
+        {
+          "book_id": 70,
+          "chapter": 2
+        },
+        {
+          "book_id": 70,
+          "chapter": 3
+        },
+        {
+          "book_id": 70,
+          "chapter": 4
+        },
+        {
+          "book_id": 70,
+          "chapter": 5
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 10,
+      "title": "Day 10",
+      "word_count": 3621,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 6 - Sirach 11",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 6 முதல் சீராக் (சீராக்கின் ஞானம்) 11 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 6
+        },
+        {
+          "book_id": 70,
+          "chapter": 7
+        },
+        {
+          "book_id": 70,
+          "chapter": 8
+        },
+        {
+          "book_id": 70,
+          "chapter": 9
+        },
+        {
+          "book_id": 70,
+          "chapter": 10
+        },
+        {
+          "book_id": 70,
+          "chapter": 11
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 11,
+      "title": "Day 11",
+      "word_count": 3107,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 12 - Sirach 17",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 12 முதல் சீராக் (சீராக்கின் ஞானம்) 17 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 12
+        },
+        {
+          "book_id": 70,
+          "chapter": 13
+        },
+        {
+          "book_id": 70,
+          "chapter": 14
+        },
+        {
+          "book_id": 70,
+          "chapter": 15
+        },
+        {
+          "book_id": 70,
+          "chapter": 16
+        },
+        {
+          "book_id": 70,
+          "chapter": 17
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 12,
+      "title": "Day 12",
+      "word_count": 3001,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 18 - Sirach 22",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 18 முதல் சீராக் (சீராக்கின் ஞானம்) 22 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 18
+        },
+        {
+          "book_id": 70,
+          "chapter": 19
+        },
+        {
+          "book_id": 70,
+          "chapter": 20
+        },
+        {
+          "book_id": 70,
+          "chapter": 21
+        },
+        {
+          "book_id": 70,
+          "chapter": 22
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 13,
+      "title": "Day 13",
+      "word_count": 3375,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 23 - Sirach 27",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 23 முதல் சீராக் (சீராக்கின் ஞானம்) 27 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 23
+        },
+        {
+          "book_id": 70,
+          "chapter": 24
+        },
+        {
+          "book_id": 70,
+          "chapter": 25
+        },
+        {
+          "book_id": 70,
+          "chapter": 26
+        },
+        {
+          "book_id": 70,
+          "chapter": 27
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 14,
+      "title": "Day 14",
+      "word_count": 3516,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 28 - Sirach 33",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 28 முதல் சீராக் (சீராக்கின் ஞானம்) 33 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 28
+        },
+        {
+          "book_id": 70,
+          "chapter": 29
+        },
+        {
+          "book_id": 70,
+          "chapter": 30
+        },
+        {
+          "book_id": 70,
+          "chapter": 31
+        },
+        {
+          "book_id": 70,
+          "chapter": 32
+        },
+        {
+          "book_id": 70,
+          "chapter": 33
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 15,
+      "title": "Day 15",
+      "word_count": 3698,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 34 - Sirach 39",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 34 முதல் சீராக் (சீராக்கின் ஞானம்) 39 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 34
+        },
+        {
+          "book_id": 70,
+          "chapter": 35
+        },
+        {
+          "book_id": 70,
+          "chapter": 36
+        },
+        {
+          "book_id": 70,
+          "chapter": 37
+        },
+        {
+          "book_id": 70,
+          "chapter": 38
+        },
+        {
+          "book_id": 70,
+          "chapter": 39
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 16,
+      "title": "Day 16",
+      "word_count": 3496,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 40 - Sirach 45",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 40 முதல் சீராக் (சீராக்கின் ஞானம்) 45 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 40
+        },
+        {
+          "book_id": 70,
+          "chapter": 41
+        },
+        {
+          "book_id": 70,
+          "chapter": 42
+        },
+        {
+          "book_id": 70,
+          "chapter": 43
+        },
+        {
+          "book_id": 70,
+          "chapter": 44
+        },
+        {
+          "book_id": 70,
+          "chapter": 45
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 17,
+      "title": "Day 17",
+      "word_count": 3326,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 46 - Sirach 51",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 46 முதல் சீராக் (சீராக்கின் ஞானம்) 51 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 46
+        },
+        {
+          "book_id": 70,
+          "chapter": 47
+        },
+        {
+          "book_id": 70,
+          "chapter": 48
+        },
+        {
+          "book_id": 70,
+          "chapter": 49
+        },
+        {
+          "book_id": 70,
+          "chapter": 50
+        },
+        {
+          "book_id": 70,
+          "chapter": 51
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 18,
+      "title": "Day 18",
+      "word_count": 3431,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Baruch 1 - Baruch 5",
+        "display_ta": "பாரூக் 1 முதல் பாரூக் 5 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 71,
+          "chapter": 1
+        },
+        {
+          "book_id": 71,
+          "chapter": 2
+        },
+        {
+          "book_id": 71,
+          "chapter": 3
+        },
+        {
+          "book_id": 71,
+          "chapter": 4
+        },
+        {
+          "book_id": 71,
+          "chapter": 5
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 19,
+      "title": "Day 19",
+      "word_count": 3076,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Baruch 6 - 1 Maccabees 1",
+        "display_ta": "பாரூக் 6 முதல் 1 மக்கபேயர் 1 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 71,
+          "chapter": 6
+        },
+        {
+          "book_id": 72,
+          "chapter": 1
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 20,
+      "title": "Day 20",
+      "word_count": 2921,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 2 - 1 Maccabees 3",
+        "display_ta": "1 மக்கபேயர் 2 முதல் 1 மக்கபேயர் 3 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 2
+        },
+        {
+          "book_id": 72,
+          "chapter": 3
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 21,
+      "title": "Day 21",
+      "word_count": 3130,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 4 - 1 Maccabees 5",
+        "display_ta": "1 மக்கபேயர் 4 முதல் 1 மக்கபேயர் 5 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 4
+        },
+        {
+          "book_id": 72,
+          "chapter": 5
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 22,
+      "title": "Day 22",
+      "word_count": 3736,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 6 - 1 Maccabees 8",
+        "display_ta": "1 மக்கபேயர் 6 முதல் 1 மக்கபேயர் 8 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 6
+        },
+        {
+          "book_id": 72,
+          "chapter": 7
+        },
+        {
+          "book_id": 72,
+          "chapter": 8
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 23,
+      "title": "Day 23",
+      "word_count": 3958,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 9 - 1 Maccabees 10",
+        "display_ta": "1 மக்கபேயர் 9 முதல் 1 மக்கபேயர் 10 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 9
+        },
+        {
+          "book_id": 72,
+          "chapter": 10
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 24,
+      "title": "Day 24",
+      "word_count": 3087,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 11 - 1 Maccabees 12",
+        "display_ta": "1 மக்கபேயர் 11 முதல் 1 மக்கபேயர் 12 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 11
+        },
+        {
+          "book_id": 72,
+          "chapter": 12
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 25,
+      "title": "Day 25",
+      "word_count": 3706,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 13 - 1 Maccabees 15",
+        "display_ta": "1 மக்கபேயர் 13 முதல் 1 மக்கபேயர் 15 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 13
+        },
+        {
+          "book_id": 72,
+          "chapter": 14
+        },
+        {
+          "book_id": 72,
+          "chapter": 15
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 26,
+      "title": "Day 26",
+      "word_count": 3639,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 16 - 2 Maccabees 3",
+        "display_ta": "1 மக்கபேயர் 16 முதல் 2 மக்கபேயர் 3 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 16
+        },
+        {
+          "book_id": 73,
+          "chapter": 1
+        },
+        {
+          "book_id": 73,
+          "chapter": 2
+        },
+        {
+          "book_id": 73,
+          "chapter": 3
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 27,
+      "title": "Day 27",
+      "word_count": 3154,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Maccabees 4 - 2 Maccabees 6",
+        "display_ta": "2 மக்கபேயர் 4 முதல் 2 மக்கபேயர் 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 73,
+          "chapter": 4
+        },
+        {
+          "book_id": 73,
+          "chapter": 5
+        },
+        {
+          "book_id": 73,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 28,
+      "title": "Day 28",
+      "word_count": 3205,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Maccabees 7 - 2 Maccabees 9",
+        "display_ta": "2 மக்கபேயர் 7 முதல் 2 மக்கபேயர் 9 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 73,
+          "chapter": 7
+        },
+        {
+          "book_id": 73,
+          "chapter": 8
+        },
+        {
+          "book_id": 73,
+          "chapter": 9
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 29,
+      "title": "Day 29",
+      "word_count": 3214,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Maccabees 10 - 2 Maccabees 12",
+        "display_ta": "2 மக்கபேயர் 10 முதல் 2 மக்கபேயர் 12 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 73,
+          "chapter": 10
+        },
+        {
+          "book_id": 73,
+          "chapter": 11
+        },
+        {
+          "book_id": 73,
+          "chapter": 12
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 30,
+      "title": "Day 30",
+      "word_count": 3012,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Maccabees 13 - 2 Maccabees 15",
+        "display_ta": "2 மக்கபேயர் 13 முதல் 2 மக்கபேயர் 15 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 73,
+          "chapter": 13
+        },
+        {
+          "book_id": 73,
+          "chapter": 14
+        },
+        {
+          "book_id": 73,
+          "chapter": 15
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    }
+  ]
+}

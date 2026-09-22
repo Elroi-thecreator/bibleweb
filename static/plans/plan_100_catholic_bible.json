@@ -1,0 +1,7113 @@
+{
+  "id": "plan_100_catholic_bible",
+  "name_en": "100-Day Catholic Bible Read-Along",
+  "name_ta": "100 நாட்கள் கத்தோலிக்க திருவிவிலிய வாசிப்பு",
+  "total_days": 100,
+  "total_words": 933170,
+  "days": [
+    {
+      "day": 1,
+      "title": "Day 1",
+      "word_count": 9498,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Genesis 1 - Genesis 15",
+        "display_ta": "ஆதியாகமம் 1 முதல் ஆதியாகமம் 15 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 1,
+          "chapter": 1
+        },
+        {
+          "book_id": 1,
+          "chapter": 2
+        },
+        {
+          "book_id": 1,
+          "chapter": 3
+        },
+        {
+          "book_id": 1,
+          "chapter": 4
+        },
+        {
+          "book_id": 1,
+          "chapter": 5
+        },
+        {
+          "book_id": 1,
+          "chapter": 6
+        },
+        {
+          "book_id": 1,
+          "chapter": 7
+        },
+        {
+          "book_id": 1,
+          "chapter": 8
+        },
+        {
+          "book_id": 1,
+          "chapter": 9
+        },
+        {
+          "book_id": 1,
+          "chapter": 10
+        },
+        {
+          "book_id": 1,
+          "chapter": 11
+        },
+        {
+          "book_id": 1,
+          "chapter": 12
+        },
+        {
+          "book_id": 1,
+          "chapter": 13
+        },
+        {
+          "book_id": 1,
+          "chapter": 14
+        },
+        {
+          "book_id": 1,
+          "chapter": 15
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Genesis 1:28",
+        "ta": "தேவன் அவர்களை ஆசீர்வதித்து, நீங்கள் பலுகிப் பெருகி, பூமியை நிரப்புங்கள் என்றார்.",
+        "en": "And God blessed them, saying, Be fruitful, and multiply, and fill the earth."
+      }
+    },
+    {
+      "day": 2,
+      "title": "Day 2",
+      "word_count": 9240,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Genesis 16 - Genesis 26",
+        "display_ta": "ஆதியாகமம் 16 முதல் ஆதியாகமம் 26 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 1,
+          "chapter": 16
+        },
+        {
+          "book_id": 1,
+          "chapter": 17
+        },
+        {
+          "book_id": 1,
+          "chapter": 18
+        },
+        {
+          "book_id": 1,
+          "chapter": 19
+        },
+        {
+          "book_id": 1,
+          "chapter": 20
+        },
+        {
+          "book_id": 1,
+          "chapter": 21
+        },
+        {
+          "book_id": 1,
+          "chapter": 22
+        },
+        {
+          "book_id": 1,
+          "chapter": 23
+        },
+        {
+          "book_id": 1,
+          "chapter": 24
+        },
+        {
+          "book_id": 1,
+          "chapter": 25
+        },
+        {
+          "book_id": 1,
+          "chapter": 26
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Genesis 1:28",
+        "ta": "தேவன் அவர்களை ஆசீர்வதித்து, நீங்கள் பலுகிப் பெருகி, பூமியை நிரப்புங்கள் என்றார்.",
+        "en": "And God blessed them, saying, Be fruitful, and multiply, and fill the earth."
+      }
+    },
+    {
+      "day": 3,
+      "title": "Day 3",
+      "word_count": 9252,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Genesis 27 - Genesis 36",
+        "display_ta": "ஆதியாகமம் 27 முதல் ஆதியாகமம் 36 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 1,
+          "chapter": 27
+        },
+        {
+          "book_id": 1,
+          "chapter": 28
+        },
+        {
+          "book_id": 1,
+          "chapter": 29
+        },
+        {
+          "book_id": 1,
+          "chapter": 30
+        },
+        {
+          "book_id": 1,
+          "chapter": 31
+        },
+        {
+          "book_id": 1,
+          "chapter": 32
+        },
+        {
+          "book_id": 1,
+          "chapter": 33
+        },
+        {
+          "book_id": 1,
+          "chapter": 34
+        },
+        {
+          "book_id": 1,
+          "chapter": 35
+        },
+        {
+          "book_id": 1,
+          "chapter": 36
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Genesis 1:28",
+        "ta": "தேவன் அவர்களை ஆசீர்வதித்து, நீங்கள் பலுகிப் பெருகி, பூமியை நிரப்புங்கள் என்றார்.",
+        "en": "And God blessed them, saying, Be fruitful, and multiply, and fill the earth."
+      }
+    },
+    {
+      "day": 4,
+      "title": "Day 4",
+      "word_count": 9214,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Genesis 37 - Genesis 46",
+        "display_ta": "ஆதியாகமம் 37 முதல் ஆதியாகமம் 46 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 1,
+          "chapter": 37
+        },
+        {
+          "book_id": 1,
+          "chapter": 38
+        },
+        {
+          "book_id": 1,
+          "chapter": 39
+        },
+        {
+          "book_id": 1,
+          "chapter": 40
+        },
+        {
+          "book_id": 1,
+          "chapter": 41
+        },
+        {
+          "book_id": 1,
+          "chapter": 42
+        },
+        {
+          "book_id": 1,
+          "chapter": 43
+        },
+        {
+          "book_id": 1,
+          "chapter": 44
+        },
+        {
+          "book_id": 1,
+          "chapter": 45
+        },
+        {
+          "book_id": 1,
+          "chapter": 46
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Genesis 1:28",
+        "ta": "தேவன் அவர்களை ஆசீர்வதித்து, நீங்கள் பலுகிப் பெருகி, பூமியை நிரப்புங்கள் என்றார்.",
+        "en": "And God blessed them, saying, Be fruitful, and multiply, and fill the earth."
+      }
+    },
+    {
+      "day": 5,
+      "title": "Day 5",
+      "word_count": 9145,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Genesis 47 - Exodus 8",
+        "display_ta": "ஆதியாகமம் 47 முதல் யாத்திராகமம் 8 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 1,
+          "chapter": 47
+        },
+        {
+          "book_id": 1,
+          "chapter": 48
+        },
+        {
+          "book_id": 1,
+          "chapter": 49
+        },
+        {
+          "book_id": 1,
+          "chapter": 50
+        },
+        {
+          "book_id": 2,
+          "chapter": 1
+        },
+        {
+          "book_id": 2,
+          "chapter": 2
+        },
+        {
+          "book_id": 2,
+          "chapter": 3
+        },
+        {
+          "book_id": 2,
+          "chapter": 4
+        },
+        {
+          "book_id": 2,
+          "chapter": 5
+        },
+        {
+          "book_id": 2,
+          "chapter": 6
+        },
+        {
+          "book_id": 2,
+          "chapter": 7
+        },
+        {
+          "book_id": 2,
+          "chapter": 8
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Exodus 14:14",
+        "ta": "கர்த்தர் உங்களுக்காக யுத்தம்பண்ணுவார்; நீங்கள் சும்மாயிருப்பீர்கள்.",
+        "en": "The Lord will fight for you; you need only to be still."
+      }
+    },
+    {
+      "day": 6,
+      "title": "Day 6",
+      "word_count": 9320,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Exodus 9 - Exodus 19",
+        "display_ta": "யாத்திராகமம் 9 முதல் யாத்திராகமம் 19 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 2,
+          "chapter": 9
+        },
+        {
+          "book_id": 2,
+          "chapter": 10
+        },
+        {
+          "book_id": 2,
+          "chapter": 11
+        },
+        {
+          "book_id": 2,
+          "chapter": 12
+        },
+        {
+          "book_id": 2,
+          "chapter": 13
+        },
+        {
+          "book_id": 2,
+          "chapter": 14
+        },
+        {
+          "book_id": 2,
+          "chapter": 15
+        },
+        {
+          "book_id": 2,
+          "chapter": 16
+        },
+        {
+          "book_id": 2,
+          "chapter": 17
+        },
+        {
+          "book_id": 2,
+          "chapter": 18
+        },
+        {
+          "book_id": 2,
+          "chapter": 19
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Exodus 14:14",
+        "ta": "கர்த்தர் உங்களுக்காக யுத்தம்பண்ணுவார்; நீங்கள் சும்மாயிருப்பீர்கள்.",
+        "en": "The Lord will fight for you; you need only to be still."
+      }
+    },
+    {
+      "day": 7,
+      "title": "Day 7",
+      "word_count": 8876,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Exodus 20 - Exodus 29",
+        "display_ta": "யாத்திராகமம் 20 முதல் யாத்திராகமம் 29 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 2,
+          "chapter": 20
+        },
+        {
+          "book_id": 2,
+          "chapter": 21
+        },
+        {
+          "book_id": 2,
+          "chapter": 22
+        },
+        {
+          "book_id": 2,
+          "chapter": 23
+        },
+        {
+          "book_id": 2,
+          "chapter": 24
+        },
+        {
+          "book_id": 2,
+          "chapter": 25
+        },
+        {
+          "book_id": 2,
+          "chapter": 26
+        },
+        {
+          "book_id": 2,
+          "chapter": 27
+        },
+        {
+          "book_id": 2,
+          "chapter": 28
+        },
+        {
+          "book_id": 2,
+          "chapter": 29
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Exodus 14:14",
+        "ta": "கர்த்தர் உங்களுக்காக யுத்தம்பண்ணுவார்; நீங்கள் சும்மாயிருப்பீர்கள்.",
+        "en": "The Lord will fight for you; you need only to be still."
+      }
+    },
+    {
+      "day": 8,
+      "title": "Day 8",
+      "word_count": 9583,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Exodus 30 - Exodus 40",
+        "display_ta": "யாத்திராகமம் 30 முதல் யாத்திராகமம் 40 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 2,
+          "chapter": 30
+        },
+        {
+          "book_id": 2,
+          "chapter": 31
+        },
+        {
+          "book_id": 2,
+          "chapter": 32
+        },
+        {
+          "book_id": 2,
+          "chapter": 33
+        },
+        {
+          "book_id": 2,
+          "chapter": 34
+        },
+        {
+          "book_id": 2,
+          "chapter": 35
+        },
+        {
+          "book_id": 2,
+          "chapter": 36
+        },
+        {
+          "book_id": 2,
+          "chapter": 37
+        },
+        {
+          "book_id": 2,
+          "chapter": 38
+        },
+        {
+          "book_id": 2,
+          "chapter": 39
+        },
+        {
+          "book_id": 2,
+          "chapter": 40
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Exodus 14:14",
+        "ta": "கர்த்தர் உங்களுக்காக யுத்தம்பண்ணுவார்; நீங்கள் சும்மாயிருப்பீர்கள்.",
+        "en": "The Lord will fight for you; you need only to be still."
+      }
+    },
+    {
+      "day": 9,
+      "title": "Day 9",
+      "word_count": 9151,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Leviticus 1 - Leviticus 12",
+        "display_ta": "லேவியராகமம் 1 முதல் லேவியராகமம் 12 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 3,
+          "chapter": 1
+        },
+        {
+          "book_id": 3,
+          "chapter": 2
+        },
+        {
+          "book_id": 3,
+          "chapter": 3
+        },
+        {
+          "book_id": 3,
+          "chapter": 4
+        },
+        {
+          "book_id": 3,
+          "chapter": 5
+        },
+        {
+          "book_id": 3,
+          "chapter": 6
+        },
+        {
+          "book_id": 3,
+          "chapter": 7
+        },
+        {
+          "book_id": 3,
+          "chapter": 8
+        },
+        {
+          "book_id": 3,
+          "chapter": 9
+        },
+        {
+          "book_id": 3,
+          "chapter": 10
+        },
+        {
+          "book_id": 3,
+          "chapter": 11
+        },
+        {
+          "book_id": 3,
+          "chapter": 12
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 10,
+      "title": "Day 10",
+      "word_count": 9452,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Leviticus 13 - Leviticus 21",
+        "display_ta": "லேவியராகமம் 13 முதல் லேவியராகமம் 21 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 3,
+          "chapter": 13
+        },
+        {
+          "book_id": 3,
+          "chapter": 14
+        },
+        {
+          "book_id": 3,
+          "chapter": 15
+        },
+        {
+          "book_id": 3,
+          "chapter": 16
+        },
+        {
+          "book_id": 3,
+          "chapter": 17
+        },
+        {
+          "book_id": 3,
+          "chapter": 18
+        },
+        {
+          "book_id": 3,
+          "chapter": 19
+        },
+        {
+          "book_id": 3,
+          "chapter": 20
+        },
+        {
+          "book_id": 3,
+          "chapter": 21
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 11,
+      "title": "Day 11",
+      "word_count": 8812,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Leviticus 22 - Numbers 2",
+        "display_ta": "லேவியராகமம் 22 முதல் எண்ணாகமம் 2 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 3,
+          "chapter": 22
+        },
+        {
+          "book_id": 3,
+          "chapter": 23
+        },
+        {
+          "book_id": 3,
+          "chapter": 24
+        },
+        {
+          "book_id": 3,
+          "chapter": 25
+        },
+        {
+          "book_id": 3,
+          "chapter": 26
+        },
+        {
+          "book_id": 3,
+          "chapter": 27
+        },
+        {
+          "book_id": 4,
+          "chapter": 1
+        },
+        {
+          "book_id": 4,
+          "chapter": 2
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 12,
+      "title": "Day 12",
+      "word_count": 9894,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Numbers 3 - Numbers 11",
+        "display_ta": "எண்ணாகமம் 3 முதல் எண்ணாகமம் 11 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 4,
+          "chapter": 3
+        },
+        {
+          "book_id": 4,
+          "chapter": 4
+        },
+        {
+          "book_id": 4,
+          "chapter": 5
+        },
+        {
+          "book_id": 4,
+          "chapter": 6
+        },
+        {
+          "book_id": 4,
+          "chapter": 7
+        },
+        {
+          "book_id": 4,
+          "chapter": 8
+        },
+        {
+          "book_id": 4,
+          "chapter": 9
+        },
+        {
+          "book_id": 4,
+          "chapter": 10
+        },
+        {
+          "book_id": 4,
+          "chapter": 11
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 13,
+      "title": "Day 13",
+      "word_count": 8776,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Numbers 12 - Numbers 21",
+        "display_ta": "எண்ணாகமம் 12 முதல் எண்ணாகமம் 21 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 4,
+          "chapter": 12
+        },
+        {
+          "book_id": 4,
+          "chapter": 13
+        },
+        {
+          "book_id": 4,
+          "chapter": 14
+        },
+        {
+          "book_id": 4,
+          "chapter": 15
+        },
+        {
+          "book_id": 4,
+          "chapter": 16
+        },
+        {
+          "book_id": 4,
+          "chapter": 17
+        },
+        {
+          "book_id": 4,
+          "chapter": 18
+        },
+        {
+          "book_id": 4,
+          "chapter": 19
+        },
+        {
+          "book_id": 4,
+          "chapter": 20
+        },
+        {
+          "book_id": 4,
+          "chapter": 21
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 14,
+      "title": "Day 14",
+      "word_count": 8852,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Numbers 22 - Numbers 31",
+        "display_ta": "எண்ணாகமம் 22 முதல் எண்ணாகமம் 31 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 4,
+          "chapter": 22
+        },
+        {
+          "book_id": 4,
+          "chapter": 23
+        },
+        {
+          "book_id": 4,
+          "chapter": 24
+        },
+        {
+          "book_id": 4,
+          "chapter": 25
+        },
+        {
+          "book_id": 4,
+          "chapter": 26
+        },
+        {
+          "book_id": 4,
+          "chapter": 27
+        },
+        {
+          "book_id": 4,
+          "chapter": 28
+        },
+        {
+          "book_id": 4,
+          "chapter": 29
+        },
+        {
+          "book_id": 4,
+          "chapter": 30
+        },
+        {
+          "book_id": 4,
+          "chapter": 31
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 15,
+      "title": "Day 15",
+      "word_count": 9799,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Numbers 32 - Deuteronomy 5",
+        "display_ta": "எண்ணாகமம் 32 முதல் உபாகமம் 5 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 4,
+          "chapter": 32
+        },
+        {
+          "book_id": 4,
+          "chapter": 33
+        },
+        {
+          "book_id": 4,
+          "chapter": 34
+        },
+        {
+          "book_id": 4,
+          "chapter": 35
+        },
+        {
+          "book_id": 4,
+          "chapter": 36
+        },
+        {
+          "book_id": 5,
+          "chapter": 1
+        },
+        {
+          "book_id": 5,
+          "chapter": 2
+        },
+        {
+          "book_id": 5,
+          "chapter": 3
+        },
+        {
+          "book_id": 5,
+          "chapter": 4
+        },
+        {
+          "book_id": 5,
+          "chapter": 5
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 16,
+      "title": "Day 16",
+      "word_count": 9304,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Deuteronomy 6 - Deuteronomy 17",
+        "display_ta": "உபாகமம் 6 முதல் உபாகமம் 17 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 5,
+          "chapter": 6
+        },
+        {
+          "book_id": 5,
+          "chapter": 7
+        },
+        {
+          "book_id": 5,
+          "chapter": 8
+        },
+        {
+          "book_id": 5,
+          "chapter": 9
+        },
+        {
+          "book_id": 5,
+          "chapter": 10
+        },
+        {
+          "book_id": 5,
+          "chapter": 11
+        },
+        {
+          "book_id": 5,
+          "chapter": 12
+        },
+        {
+          "book_id": 5,
+          "chapter": 13
+        },
+        {
+          "book_id": 5,
+          "chapter": 14
+        },
+        {
+          "book_id": 5,
+          "chapter": 15
+        },
+        {
+          "book_id": 5,
+          "chapter": 16
+        },
+        {
+          "book_id": 5,
+          "chapter": 17
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 17,
+      "title": "Day 17",
+      "word_count": 9113,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Deuteronomy 18 - Deuteronomy 28",
+        "display_ta": "உபாகமம் 18 முதல் உபாகமம் 28 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 5,
+          "chapter": 18
+        },
+        {
+          "book_id": 5,
+          "chapter": 19
+        },
+        {
+          "book_id": 5,
+          "chapter": 20
+        },
+        {
+          "book_id": 5,
+          "chapter": 21
+        },
+        {
+          "book_id": 5,
+          "chapter": 22
+        },
+        {
+          "book_id": 5,
+          "chapter": 23
+        },
+        {
+          "book_id": 5,
+          "chapter": 24
+        },
+        {
+          "book_id": 5,
+          "chapter": 25
+        },
+        {
+          "book_id": 5,
+          "chapter": 26
+        },
+        {
+          "book_id": 5,
+          "chapter": 27
+        },
+        {
+          "book_id": 5,
+          "chapter": 28
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 18,
+      "title": "Day 18",
+      "word_count": 9451,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Deuteronomy 29 - Joshua 6",
+        "display_ta": "உபாகமம் 29 முதல் யோசுவா 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 5,
+          "chapter": 29
+        },
+        {
+          "book_id": 5,
+          "chapter": 30
+        },
+        {
+          "book_id": 5,
+          "chapter": 31
+        },
+        {
+          "book_id": 5,
+          "chapter": 32
+        },
+        {
+          "book_id": 5,
+          "chapter": 33
+        },
+        {
+          "book_id": 5,
+          "chapter": 34
+        },
+        {
+          "book_id": 6,
+          "chapter": 1
+        },
+        {
+          "book_id": 6,
+          "chapter": 2
+        },
+        {
+          "book_id": 6,
+          "chapter": 3
+        },
+        {
+          "book_id": 6,
+          "chapter": 4
+        },
+        {
+          "book_id": 6,
+          "chapter": 5
+        },
+        {
+          "book_id": 6,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 19,
+      "title": "Day 19",
+      "word_count": 9047,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Joshua 7 - Joshua 17",
+        "display_ta": "யோசுவா 7 முதல் யோசுவா 17 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 6,
+          "chapter": 7
+        },
+        {
+          "book_id": 6,
+          "chapter": 8
+        },
+        {
+          "book_id": 6,
+          "chapter": 9
+        },
+        {
+          "book_id": 6,
+          "chapter": 10
+        },
+        {
+          "book_id": 6,
+          "chapter": 11
+        },
+        {
+          "book_id": 6,
+          "chapter": 12
+        },
+        {
+          "book_id": 6,
+          "chapter": 13
+        },
+        {
+          "book_id": 6,
+          "chapter": 14
+        },
+        {
+          "book_id": 6,
+          "chapter": 15
+        },
+        {
+          "book_id": 6,
+          "chapter": 16
+        },
+        {
+          "book_id": 6,
+          "chapter": 17
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 20,
+      "title": "Day 20",
+      "word_count": 9512,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Joshua 18 - Judges 4",
+        "display_ta": "யோசுவா 18 முதல் நியாயாதிபதிகள் 4 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 6,
+          "chapter": 18
+        },
+        {
+          "book_id": 6,
+          "chapter": 19
+        },
+        {
+          "book_id": 6,
+          "chapter": 20
+        },
+        {
+          "book_id": 6,
+          "chapter": 21
+        },
+        {
+          "book_id": 6,
+          "chapter": 22
+        },
+        {
+          "book_id": 6,
+          "chapter": 23
+        },
+        {
+          "book_id": 6,
+          "chapter": 24
+        },
+        {
+          "book_id": 7,
+          "chapter": 1
+        },
+        {
+          "book_id": 7,
+          "chapter": 2
+        },
+        {
+          "book_id": 7,
+          "chapter": 3
+        },
+        {
+          "book_id": 7,
+          "chapter": 4
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 21,
+      "title": "Day 21",
+      "word_count": 9038,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Judges 5 - Judges 13",
+        "display_ta": "நியாயாதிபதிகள் 5 முதல் நியாயாதிபதிகள் 13 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 7,
+          "chapter": 5
+        },
+        {
+          "book_id": 7,
+          "chapter": 6
+        },
+        {
+          "book_id": 7,
+          "chapter": 7
+        },
+        {
+          "book_id": 7,
+          "chapter": 8
+        },
+        {
+          "book_id": 7,
+          "chapter": 9
+        },
+        {
+          "book_id": 7,
+          "chapter": 10
+        },
+        {
+          "book_id": 7,
+          "chapter": 11
+        },
+        {
+          "book_id": 7,
+          "chapter": 12
+        },
+        {
+          "book_id": 7,
+          "chapter": 13
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 22,
+      "title": "Day 22",
+      "word_count": 9143,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Judges 14 - Ruth 2",
+        "display_ta": "நியாயாதிபதிகள் 14 முதல் ரூத் 2 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 7,
+          "chapter": 14
+        },
+        {
+          "book_id": 7,
+          "chapter": 15
+        },
+        {
+          "book_id": 7,
+          "chapter": 16
+        },
+        {
+          "book_id": 7,
+          "chapter": 17
+        },
+        {
+          "book_id": 7,
+          "chapter": 18
+        },
+        {
+          "book_id": 7,
+          "chapter": 19
+        },
+        {
+          "book_id": 7,
+          "chapter": 20
+        },
+        {
+          "book_id": 7,
+          "chapter": 21
+        },
+        {
+          "book_id": 8,
+          "chapter": 1
+        },
+        {
+          "book_id": 8,
+          "chapter": 2
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 23,
+      "title": "Day 23",
+      "word_count": 9553,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Ruth 3 - 1 Samuel 11",
+        "display_ta": "ரூத் 3 முதல் 1 சாமுவேல் 11 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 8,
+          "chapter": 3
+        },
+        {
+          "book_id": 8,
+          "chapter": 4
+        },
+        {
+          "book_id": 9,
+          "chapter": 1
+        },
+        {
+          "book_id": 9,
+          "chapter": 2
+        },
+        {
+          "book_id": 9,
+          "chapter": 3
+        },
+        {
+          "book_id": 9,
+          "chapter": 4
+        },
+        {
+          "book_id": 9,
+          "chapter": 5
+        },
+        {
+          "book_id": 9,
+          "chapter": 6
+        },
+        {
+          "book_id": 9,
+          "chapter": 7
+        },
+        {
+          "book_id": 9,
+          "chapter": 8
+        },
+        {
+          "book_id": 9,
+          "chapter": 9
+        },
+        {
+          "book_id": 9,
+          "chapter": 10
+        },
+        {
+          "book_id": 9,
+          "chapter": 11
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 24,
+      "title": "Day 24",
+      "word_count": 9797,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Samuel 12 - 1 Samuel 20",
+        "display_ta": "1 சாமுவேல் 12 முதல் 1 சாமுவேல் 20 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 9,
+          "chapter": 12
+        },
+        {
+          "book_id": 9,
+          "chapter": 13
+        },
+        {
+          "book_id": 9,
+          "chapter": 14
+        },
+        {
+          "book_id": 9,
+          "chapter": 15
+        },
+        {
+          "book_id": 9,
+          "chapter": 16
+        },
+        {
+          "book_id": 9,
+          "chapter": 17
+        },
+        {
+          "book_id": 9,
+          "chapter": 18
+        },
+        {
+          "book_id": 9,
+          "chapter": 19
+        },
+        {
+          "book_id": 9,
+          "chapter": 20
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 25,
+      "title": "Day 25",
+      "word_count": 9134,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Samuel 21 - 2 Samuel 1",
+        "display_ta": "1 சாமுவேல் 21 முதல் 2 சாமுவேல் 1 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 9,
+          "chapter": 21
+        },
+        {
+          "book_id": 9,
+          "chapter": 22
+        },
+        {
+          "book_id": 9,
+          "chapter": 23
+        },
+        {
+          "book_id": 9,
+          "chapter": 24
+        },
+        {
+          "book_id": 9,
+          "chapter": 25
+        },
+        {
+          "book_id": 9,
+          "chapter": 26
+        },
+        {
+          "book_id": 9,
+          "chapter": 27
+        },
+        {
+          "book_id": 9,
+          "chapter": 28
+        },
+        {
+          "book_id": 9,
+          "chapter": 29
+        },
+        {
+          "book_id": 9,
+          "chapter": 30
+        },
+        {
+          "book_id": 9,
+          "chapter": 31
+        },
+        {
+          "book_id": 10,
+          "chapter": 1
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 26,
+      "title": "Day 26",
+      "word_count": 9742,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Samuel 2 - 2 Samuel 13",
+        "display_ta": "2 சாமுவேல் 2 முதல் 2 சாமுவேல் 13 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 10,
+          "chapter": 2
+        },
+        {
+          "book_id": 10,
+          "chapter": 3
+        },
+        {
+          "book_id": 10,
+          "chapter": 4
+        },
+        {
+          "book_id": 10,
+          "chapter": 5
+        },
+        {
+          "book_id": 10,
+          "chapter": 6
+        },
+        {
+          "book_id": 10,
+          "chapter": 7
+        },
+        {
+          "book_id": 10,
+          "chapter": 8
+        },
+        {
+          "book_id": 10,
+          "chapter": 9
+        },
+        {
+          "book_id": 10,
+          "chapter": 10
+        },
+        {
+          "book_id": 10,
+          "chapter": 11
+        },
+        {
+          "book_id": 10,
+          "chapter": 12
+        },
+        {
+          "book_id": 10,
+          "chapter": 13
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 27,
+      "title": "Day 27",
+      "word_count": 9737,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Samuel 14 - 2 Samuel 22",
+        "display_ta": "2 சாமுவேல் 14 முதல் 2 சாமுவேல் 22 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 10,
+          "chapter": 14
+        },
+        {
+          "book_id": 10,
+          "chapter": 15
+        },
+        {
+          "book_id": 10,
+          "chapter": 16
+        },
+        {
+          "book_id": 10,
+          "chapter": 17
+        },
+        {
+          "book_id": 10,
+          "chapter": 18
+        },
+        {
+          "book_id": 10,
+          "chapter": 19
+        },
+        {
+          "book_id": 10,
+          "chapter": 20
+        },
+        {
+          "book_id": 10,
+          "chapter": 21
+        },
+        {
+          "book_id": 10,
+          "chapter": 22
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 28,
+      "title": "Day 28",
+      "word_count": 9921,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Samuel 23 - 1 Kings 7",
+        "display_ta": "2 சாமுவேல் 23 முதல் 1 இராஜாக்கள் 7 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 10,
+          "chapter": 23
+        },
+        {
+          "book_id": 10,
+          "chapter": 24
+        },
+        {
+          "book_id": 11,
+          "chapter": 1
+        },
+        {
+          "book_id": 11,
+          "chapter": 2
+        },
+        {
+          "book_id": 11,
+          "chapter": 3
+        },
+        {
+          "book_id": 11,
+          "chapter": 4
+        },
+        {
+          "book_id": 11,
+          "chapter": 5
+        },
+        {
+          "book_id": 11,
+          "chapter": 6
+        },
+        {
+          "book_id": 11,
+          "chapter": 7
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 29,
+      "title": "Day 29",
+      "word_count": 9621,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Kings 8 - 1 Kings 15",
+        "display_ta": "1 இராஜாக்கள் 8 முதல் 1 இராஜாக்கள் 15 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 11,
+          "chapter": 8
+        },
+        {
+          "book_id": 11,
+          "chapter": 9
+        },
+        {
+          "book_id": 11,
+          "chapter": 10
+        },
+        {
+          "book_id": 11,
+          "chapter": 11
+        },
+        {
+          "book_id": 11,
+          "chapter": 12
+        },
+        {
+          "book_id": 11,
+          "chapter": 13
+        },
+        {
+          "book_id": 11,
+          "chapter": 14
+        },
+        {
+          "book_id": 11,
+          "chapter": 15
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 30,
+      "title": "Day 30",
+      "word_count": 9701,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Kings 16 - 2 Kings 2",
+        "display_ta": "1 இராஜாக்கள் 16 முதல் 2 இராஜாக்கள் 2 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 11,
+          "chapter": 16
+        },
+        {
+          "book_id": 11,
+          "chapter": 17
+        },
+        {
+          "book_id": 11,
+          "chapter": 18
+        },
+        {
+          "book_id": 11,
+          "chapter": 19
+        },
+        {
+          "book_id": 11,
+          "chapter": 20
+        },
+        {
+          "book_id": 11,
+          "chapter": 21
+        },
+        {
+          "book_id": 11,
+          "chapter": 22
+        },
+        {
+          "book_id": 12,
+          "chapter": 1
+        },
+        {
+          "book_id": 12,
+          "chapter": 2
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 31,
+      "title": "Day 31",
+      "word_count": 9650,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Kings 3 - 2 Kings 11",
+        "display_ta": "2 இராஜாக்கள் 3 முதல் 2 இராஜாக்கள் 11 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 12,
+          "chapter": 3
+        },
+        {
+          "book_id": 12,
+          "chapter": 4
+        },
+        {
+          "book_id": 12,
+          "chapter": 5
+        },
+        {
+          "book_id": 12,
+          "chapter": 6
+        },
+        {
+          "book_id": 12,
+          "chapter": 7
+        },
+        {
+          "book_id": 12,
+          "chapter": 8
+        },
+        {
+          "book_id": 12,
+          "chapter": 9
+        },
+        {
+          "book_id": 12,
+          "chapter": 10
+        },
+        {
+          "book_id": 12,
+          "chapter": 11
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 32,
+      "title": "Day 32",
+      "word_count": 9545,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Kings 12 - 2 Kings 21",
+        "display_ta": "2 இராஜாக்கள் 12 முதல் 2 இராஜாக்கள் 21 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 12,
+          "chapter": 12
+        },
+        {
+          "book_id": 12,
+          "chapter": 13
+        },
+        {
+          "book_id": 12,
+          "chapter": 14
+        },
+        {
+          "book_id": 12,
+          "chapter": 15
+        },
+        {
+          "book_id": 12,
+          "chapter": 16
+        },
+        {
+          "book_id": 12,
+          "chapter": 17
+        },
+        {
+          "book_id": 12,
+          "chapter": 18
+        },
+        {
+          "book_id": 12,
+          "chapter": 19
+        },
+        {
+          "book_id": 12,
+          "chapter": 20
+        },
+        {
+          "book_id": 12,
+          "chapter": 21
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 33,
+      "title": "Day 33",
+      "word_count": 9035,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Kings 22 - 1 Chronicles 6",
+        "display_ta": "2 இராஜாக்கள் 22 முதல் 1 நாளாகமம் 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 12,
+          "chapter": 22
+        },
+        {
+          "book_id": 12,
+          "chapter": 23
+        },
+        {
+          "book_id": 12,
+          "chapter": 24
+        },
+        {
+          "book_id": 12,
+          "chapter": 25
+        },
+        {
+          "book_id": 13,
+          "chapter": 1
+        },
+        {
+          "book_id": 13,
+          "chapter": 2
+        },
+        {
+          "book_id": 13,
+          "chapter": 3
+        },
+        {
+          "book_id": 13,
+          "chapter": 4
+        },
+        {
+          "book_id": 13,
+          "chapter": 5
+        },
+        {
+          "book_id": 13,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 34,
+      "title": "Day 34",
+      "word_count": 9386,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Chronicles 7 - 1 Chronicles 19",
+        "display_ta": "1 நாளாகமம் 7 முதல் 1 நாளாகமம் 19 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 13,
+          "chapter": 7
+        },
+        {
+          "book_id": 13,
+          "chapter": 8
+        },
+        {
+          "book_id": 13,
+          "chapter": 9
+        },
+        {
+          "book_id": 13,
+          "chapter": 10
+        },
+        {
+          "book_id": 13,
+          "chapter": 11
+        },
+        {
+          "book_id": 13,
+          "chapter": 12
+        },
+        {
+          "book_id": 13,
+          "chapter": 13
+        },
+        {
+          "book_id": 13,
+          "chapter": 14
+        },
+        {
+          "book_id": 13,
+          "chapter": 15
+        },
+        {
+          "book_id": 13,
+          "chapter": 16
+        },
+        {
+          "book_id": 13,
+          "chapter": 17
+        },
+        {
+          "book_id": 13,
+          "chapter": 18
+        },
+        {
+          "book_id": 13,
+          "chapter": 19
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 35,
+      "title": "Day 35",
+      "word_count": 9135,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Chronicles 20 - 2 Chronicles 3",
+        "display_ta": "1 நாளாகமம் 20 முதல் 2 நாளாகமம் 3 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 13,
+          "chapter": 20
+        },
+        {
+          "book_id": 13,
+          "chapter": 21
+        },
+        {
+          "book_id": 13,
+          "chapter": 22
+        },
+        {
+          "book_id": 13,
+          "chapter": 23
+        },
+        {
+          "book_id": 13,
+          "chapter": 24
+        },
+        {
+          "book_id": 13,
+          "chapter": 25
+        },
+        {
+          "book_id": 13,
+          "chapter": 26
+        },
+        {
+          "book_id": 13,
+          "chapter": 27
+        },
+        {
+          "book_id": 13,
+          "chapter": 28
+        },
+        {
+          "book_id": 13,
+          "chapter": 29
+        },
+        {
+          "book_id": 14,
+          "chapter": 1
+        },
+        {
+          "book_id": 14,
+          "chapter": 2
+        },
+        {
+          "book_id": 14,
+          "chapter": 3
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 36,
+      "title": "Day 36",
+      "word_count": 9243,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Chronicles 4 - 2 Chronicles 17",
+        "display_ta": "2 நாளாகமம் 4 முதல் 2 நாளாகமம் 17 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 14,
+          "chapter": 4
+        },
+        {
+          "book_id": 14,
+          "chapter": 5
+        },
+        {
+          "book_id": 14,
+          "chapter": 6
+        },
+        {
+          "book_id": 14,
+          "chapter": 7
+        },
+        {
+          "book_id": 14,
+          "chapter": 8
+        },
+        {
+          "book_id": 14,
+          "chapter": 9
+        },
+        {
+          "book_id": 14,
+          "chapter": 10
+        },
+        {
+          "book_id": 14,
+          "chapter": 11
+        },
+        {
+          "book_id": 14,
+          "chapter": 12
+        },
+        {
+          "book_id": 14,
+          "chapter": 13
+        },
+        {
+          "book_id": 14,
+          "chapter": 14
+        },
+        {
+          "book_id": 14,
+          "chapter": 15
+        },
+        {
+          "book_id": 14,
+          "chapter": 16
+        },
+        {
+          "book_id": 14,
+          "chapter": 17
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 37,
+      "title": "Day 37",
+      "word_count": 9871,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Chronicles 18 - 2 Chronicles 29",
+        "display_ta": "2 நாளாகமம் 18 முதல் 2 நாளாகமம் 29 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 14,
+          "chapter": 18
+        },
+        {
+          "book_id": 14,
+          "chapter": 19
+        },
+        {
+          "book_id": 14,
+          "chapter": 20
+        },
+        {
+          "book_id": 14,
+          "chapter": 21
+        },
+        {
+          "book_id": 14,
+          "chapter": 22
+        },
+        {
+          "book_id": 14,
+          "chapter": 23
+        },
+        {
+          "book_id": 14,
+          "chapter": 24
+        },
+        {
+          "book_id": 14,
+          "chapter": 25
+        },
+        {
+          "book_id": 14,
+          "chapter": 26
+        },
+        {
+          "book_id": 14,
+          "chapter": 27
+        },
+        {
+          "book_id": 14,
+          "chapter": 28
+        },
+        {
+          "book_id": 14,
+          "chapter": 29
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 38,
+      "title": "Day 38",
+      "word_count": 9716,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Chronicles 30 - Ezra 4",
+        "display_ta": "2 நாளாகமம் 30 முதல் எஸ்றா 4 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 14,
+          "chapter": 30
+        },
+        {
+          "book_id": 14,
+          "chapter": 31
+        },
+        {
+          "book_id": 14,
+          "chapter": 32
+        },
+        {
+          "book_id": 14,
+          "chapter": 33
+        },
+        {
+          "book_id": 14,
+          "chapter": 34
+        },
+        {
+          "book_id": 14,
+          "chapter": 35
+        },
+        {
+          "book_id": 14,
+          "chapter": 36
+        },
+        {
+          "book_id": 15,
+          "chapter": 1
+        },
+        {
+          "book_id": 15,
+          "chapter": 2
+        },
+        {
+          "book_id": 15,
+          "chapter": 3
+        },
+        {
+          "book_id": 15,
+          "chapter": 4
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 39,
+      "title": "Day 39",
+      "word_count": 9128,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Ezra 5 - Nehemiah 6",
+        "display_ta": "எஸ்றா 5 முதல் நெகேமியா 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 15,
+          "chapter": 5
+        },
+        {
+          "book_id": 15,
+          "chapter": 6
+        },
+        {
+          "book_id": 15,
+          "chapter": 7
+        },
+        {
+          "book_id": 15,
+          "chapter": 8
+        },
+        {
+          "book_id": 15,
+          "chapter": 9
+        },
+        {
+          "book_id": 15,
+          "chapter": 10
+        },
+        {
+          "book_id": 16,
+          "chapter": 1
+        },
+        {
+          "book_id": 16,
+          "chapter": 2
+        },
+        {
+          "book_id": 16,
+          "chapter": 3
+        },
+        {
+          "book_id": 16,
+          "chapter": 4
+        },
+        {
+          "book_id": 16,
+          "chapter": 5
+        },
+        {
+          "book_id": 16,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 40,
+      "title": "Day 40",
+      "word_count": 9214,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Nehemiah 7 - Esther 3",
+        "display_ta": "நெகேமியா 7 முதல் எஸ்தர் 3 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 16,
+          "chapter": 7
+        },
+        {
+          "book_id": 16,
+          "chapter": 8
+        },
+        {
+          "book_id": 16,
+          "chapter": 9
+        },
+        {
+          "book_id": 16,
+          "chapter": 10
+        },
+        {
+          "book_id": 16,
+          "chapter": 11
+        },
+        {
+          "book_id": 16,
+          "chapter": 12
+        },
+        {
+          "book_id": 16,
+          "chapter": 13
+        },
+        {
+          "book_id": 17,
+          "chapter": 1
+        },
+        {
+          "book_id": 17,
+          "chapter": 2
+        },
+        {
+          "book_id": 17,
+          "chapter": 3
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 41,
+      "title": "Day 41",
+      "word_count": 9137,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Esther 4 - Job 11",
+        "display_ta": "எஸ்தர் 4 முதல் யோபு 11 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 17,
+          "chapter": 4
+        },
+        {
+          "book_id": 17,
+          "chapter": 5
+        },
+        {
+          "book_id": 17,
+          "chapter": 6
+        },
+        {
+          "book_id": 17,
+          "chapter": 7
+        },
+        {
+          "book_id": 17,
+          "chapter": 8
+        },
+        {
+          "book_id": 17,
+          "chapter": 9
+        },
+        {
+          "book_id": 17,
+          "chapter": 10
+        },
+        {
+          "book_id": 18,
+          "chapter": 1
+        },
+        {
+          "book_id": 18,
+          "chapter": 2
+        },
+        {
+          "book_id": 18,
+          "chapter": 3
+        },
+        {
+          "book_id": 18,
+          "chapter": 4
+        },
+        {
+          "book_id": 18,
+          "chapter": 5
+        },
+        {
+          "book_id": 18,
+          "chapter": 6
+        },
+        {
+          "book_id": 18,
+          "chapter": 7
+        },
+        {
+          "book_id": 18,
+          "chapter": 8
+        },
+        {
+          "book_id": 18,
+          "chapter": 9
+        },
+        {
+          "book_id": 18,
+          "chapter": 10
+        },
+        {
+          "book_id": 18,
+          "chapter": 11
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 42,
+      "title": "Day 42",
+      "word_count": 9182,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Job 12 - Job 31",
+        "display_ta": "யோபு 12 முதல் யோபு 31 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 18,
+          "chapter": 12
+        },
+        {
+          "book_id": 18,
+          "chapter": 13
+        },
+        {
+          "book_id": 18,
+          "chapter": 14
+        },
+        {
+          "book_id": 18,
+          "chapter": 15
+        },
+        {
+          "book_id": 18,
+          "chapter": 16
+        },
+        {
+          "book_id": 18,
+          "chapter": 17
+        },
+        {
+          "book_id": 18,
+          "chapter": 18
+        },
+        {
+          "book_id": 18,
+          "chapter": 19
+        },
+        {
+          "book_id": 18,
+          "chapter": 20
+        },
+        {
+          "book_id": 18,
+          "chapter": 21
+        },
+        {
+          "book_id": 18,
+          "chapter": 22
+        },
+        {
+          "book_id": 18,
+          "chapter": 23
+        },
+        {
+          "book_id": 18,
+          "chapter": 24
+        },
+        {
+          "book_id": 18,
+          "chapter": 25
+        },
+        {
+          "book_id": 18,
+          "chapter": 26
+        },
+        {
+          "book_id": 18,
+          "chapter": 27
+        },
+        {
+          "book_id": 18,
+          "chapter": 28
+        },
+        {
+          "book_id": 18,
+          "chapter": 29
+        },
+        {
+          "book_id": 18,
+          "chapter": 30
+        },
+        {
+          "book_id": 18,
+          "chapter": 31
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 43,
+      "title": "Day 43",
+      "word_count": 9301,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Job 32 - Psalms 16",
+        "display_ta": "யோபு 32 முதல் சங்கீதம் 16 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 18,
+          "chapter": 32
+        },
+        {
+          "book_id": 18,
+          "chapter": 33
+        },
+        {
+          "book_id": 18,
+          "chapter": 34
+        },
+        {
+          "book_id": 18,
+          "chapter": 35
+        },
+        {
+          "book_id": 18,
+          "chapter": 36
+        },
+        {
+          "book_id": 18,
+          "chapter": 37
+        },
+        {
+          "book_id": 18,
+          "chapter": 38
+        },
+        {
+          "book_id": 18,
+          "chapter": 39
+        },
+        {
+          "book_id": 18,
+          "chapter": 40
+        },
+        {
+          "book_id": 18,
+          "chapter": 41
+        },
+        {
+          "book_id": 18,
+          "chapter": 42
+        },
+        {
+          "book_id": 19,
+          "chapter": 1
+        },
+        {
+          "book_id": 19,
+          "chapter": 2
+        },
+        {
+          "book_id": 19,
+          "chapter": 3
+        },
+        {
+          "book_id": 19,
+          "chapter": 4
+        },
+        {
+          "book_id": 19,
+          "chapter": 5
+        },
+        {
+          "book_id": 19,
+          "chapter": 6
+        },
+        {
+          "book_id": 19,
+          "chapter": 7
+        },
+        {
+          "book_id": 19,
+          "chapter": 8
+        },
+        {
+          "book_id": 19,
+          "chapter": 9
+        },
+        {
+          "book_id": 19,
+          "chapter": 10
+        },
+        {
+          "book_id": 19,
+          "chapter": 11
+        },
+        {
+          "book_id": 19,
+          "chapter": 12
+        },
+        {
+          "book_id": 19,
+          "chapter": 13
+        },
+        {
+          "book_id": 19,
+          "chapter": 14
+        },
+        {
+          "book_id": 19,
+          "chapter": 15
+        },
+        {
+          "book_id": 19,
+          "chapter": 16
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Psalm 23:1",
+        "ta": "கர்த்தர் என் மேய்ப்பராயிருக்கிறார்; நான் தாழ்ச்சியடையேன்.",
+        "en": "The Lord is my shepherd; I shall not want."
+      }
+    },
+    {
+      "day": 44,
+      "title": "Day 44",
+      "word_count": 9395,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Psalms 17 - Psalms 40",
+        "display_ta": "சங்கீதம் 17 முதல் சங்கீதம் 40 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 19,
+          "chapter": 17
+        },
+        {
+          "book_id": 19,
+          "chapter": 18
+        },
+        {
+          "book_id": 19,
+          "chapter": 19
+        },
+        {
+          "book_id": 19,
+          "chapter": 20
+        },
+        {
+          "book_id": 19,
+          "chapter": 21
+        },
+        {
+          "book_id": 19,
+          "chapter": 22
+        },
+        {
+          "book_id": 19,
+          "chapter": 23
+        },
+        {
+          "book_id": 19,
+          "chapter": 24
+        },
+        {
+          "book_id": 19,
+          "chapter": 25
+        },
+        {
+          "book_id": 19,
+          "chapter": 26
+        },
+        {
+          "book_id": 19,
+          "chapter": 27
+        },
+        {
+          "book_id": 19,
+          "chapter": 28
+        },
+        {
+          "book_id": 19,
+          "chapter": 29
+        },
+        {
+          "book_id": 19,
+          "chapter": 30
+        },
+        {
+          "book_id": 19,
+          "chapter": 31
+        },
+        {
+          "book_id": 19,
+          "chapter": 32
+        },
+        {
+          "book_id": 19,
+          "chapter": 33
+        },
+        {
+          "book_id": 19,
+          "chapter": 34
+        },
+        {
+          "book_id": 19,
+          "chapter": 35
+        },
+        {
+          "book_id": 19,
+          "chapter": 36
+        },
+        {
+          "book_id": 19,
+          "chapter": 37
+        },
+        {
+          "book_id": 19,
+          "chapter": 38
+        },
+        {
+          "book_id": 19,
+          "chapter": 39
+        },
+        {
+          "book_id": 19,
+          "chapter": 40
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Psalm 23:1",
+        "ta": "கர்த்தர் என் மேய்ப்பராயிருக்கிறார்; நான் தாழ்ச்சியடையேன்.",
+        "en": "The Lord is my shepherd; I shall not want."
+      }
+    },
+    {
+      "day": 45,
+      "title": "Day 45",
+      "word_count": 9335,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Psalms 41 - Psalms 70",
+        "display_ta": "சங்கீதம் 41 முதல் சங்கீதம் 70 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 19,
+          "chapter": 41
+        },
+        {
+          "book_id": 19,
+          "chapter": 42
+        },
+        {
+          "book_id": 19,
+          "chapter": 43
+        },
+        {
+          "book_id": 19,
+          "chapter": 44
+        },
+        {
+          "book_id": 19,
+          "chapter": 45
+        },
+        {
+          "book_id": 19,
+          "chapter": 46
+        },
+        {
+          "book_id": 19,
+          "chapter": 47
+        },
+        {
+          "book_id": 19,
+          "chapter": 48
+        },
+        {
+          "book_id": 19,
+          "chapter": 49
+        },
+        {
+          "book_id": 19,
+          "chapter": 50
+        },
+        {
+          "book_id": 19,
+          "chapter": 51
+        },
+        {
+          "book_id": 19,
+          "chapter": 52
+        },
+        {
+          "book_id": 19,
+          "chapter": 53
+        },
+        {
+          "book_id": 19,
+          "chapter": 54
+        },
+        {
+          "book_id": 19,
+          "chapter": 55
+        },
+        {
+          "book_id": 19,
+          "chapter": 56
+        },
+        {
+          "book_id": 19,
+          "chapter": 57
+        },
+        {
+          "book_id": 19,
+          "chapter": 58
+        },
+        {
+          "book_id": 19,
+          "chapter": 59
+        },
+        {
+          "book_id": 19,
+          "chapter": 60
+        },
+        {
+          "book_id": 19,
+          "chapter": 61
+        },
+        {
+          "book_id": 19,
+          "chapter": 62
+        },
+        {
+          "book_id": 19,
+          "chapter": 63
+        },
+        {
+          "book_id": 19,
+          "chapter": 64
+        },
+        {
+          "book_id": 19,
+          "chapter": 65
+        },
+        {
+          "book_id": 19,
+          "chapter": 66
+        },
+        {
+          "book_id": 19,
+          "chapter": 67
+        },
+        {
+          "book_id": 19,
+          "chapter": 68
+        },
+        {
+          "book_id": 19,
+          "chapter": 69
+        },
+        {
+          "book_id": 19,
+          "chapter": 70
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Psalm 23:1",
+        "ta": "கர்த்தர் என் மேய்ப்பராயிருக்கிறார்; நான் தாழ்ச்சியடையேன்.",
+        "en": "The Lord is my shepherd; I shall not want."
+      }
+    },
+    {
+      "day": 46,
+      "title": "Day 46",
+      "word_count": 9403,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Psalms 71 - Psalms 95",
+        "display_ta": "சங்கீதம் 71 முதல் சங்கீதம் 95 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 19,
+          "chapter": 71
+        },
+        {
+          "book_id": 19,
+          "chapter": 72
+        },
+        {
+          "book_id": 19,
+          "chapter": 73
+        },
+        {
+          "book_id": 19,
+          "chapter": 74
+        },
+        {
+          "book_id": 19,
+          "chapter": 75
+        },
+        {
+          "book_id": 19,
+          "chapter": 76
+        },
+        {
+          "book_id": 19,
+          "chapter": 77
+        },
+        {
+          "book_id": 19,
+          "chapter": 78
+        },
+        {
+          "book_id": 19,
+          "chapter": 79
+        },
+        {
+          "book_id": 19,
+          "chapter": 80
+        },
+        {
+          "book_id": 19,
+          "chapter": 81
+        },
+        {
+          "book_id": 19,
+          "chapter": 82
+        },
+        {
+          "book_id": 19,
+          "chapter": 83
+        },
+        {
+          "book_id": 19,
+          "chapter": 84
+        },
+        {
+          "book_id": 19,
+          "chapter": 85
+        },
+        {
+          "book_id": 19,
+          "chapter": 86
+        },
+        {
+          "book_id": 19,
+          "chapter": 87
+        },
+        {
+          "book_id": 19,
+          "chapter": 88
+        },
+        {
+          "book_id": 19,
+          "chapter": 89
+        },
+        {
+          "book_id": 19,
+          "chapter": 90
+        },
+        {
+          "book_id": 19,
+          "chapter": 91
+        },
+        {
+          "book_id": 19,
+          "chapter": 92
+        },
+        {
+          "book_id": 19,
+          "chapter": 93
+        },
+        {
+          "book_id": 19,
+          "chapter": 94
+        },
+        {
+          "book_id": 19,
+          "chapter": 95
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Psalm 23:1",
+        "ta": "கர்த்தர் என் மேய்ப்பராயிருக்கிறார்; நான் தாழ்ச்சியடையேன்.",
+        "en": "The Lord is my shepherd; I shall not want."
+      }
+    },
+    {
+      "day": 47,
+      "title": "Day 47",
+      "word_count": 10109,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Psalms 96 - Psalms 119",
+        "display_ta": "சங்கீதம் 96 முதல் சங்கீதம் 119 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 19,
+          "chapter": 96
+        },
+        {
+          "book_id": 19,
+          "chapter": 97
+        },
+        {
+          "book_id": 19,
+          "chapter": 98
+        },
+        {
+          "book_id": 19,
+          "chapter": 99
+        },
+        {
+          "book_id": 19,
+          "chapter": 100
+        },
+        {
+          "book_id": 19,
+          "chapter": 101
+        },
+        {
+          "book_id": 19,
+          "chapter": 102
+        },
+        {
+          "book_id": 19,
+          "chapter": 103
+        },
+        {
+          "book_id": 19,
+          "chapter": 104
+        },
+        {
+          "book_id": 19,
+          "chapter": 105
+        },
+        {
+          "book_id": 19,
+          "chapter": 106
+        },
+        {
+          "book_id": 19,
+          "chapter": 107
+        },
+        {
+          "book_id": 19,
+          "chapter": 108
+        },
+        {
+          "book_id": 19,
+          "chapter": 109
+        },
+        {
+          "book_id": 19,
+          "chapter": 110
+        },
+        {
+          "book_id": 19,
+          "chapter": 111
+        },
+        {
+          "book_id": 19,
+          "chapter": 112
+        },
+        {
+          "book_id": 19,
+          "chapter": 113
+        },
+        {
+          "book_id": 19,
+          "chapter": 114
+        },
+        {
+          "book_id": 19,
+          "chapter": 115
+        },
+        {
+          "book_id": 19,
+          "chapter": 116
+        },
+        {
+          "book_id": 19,
+          "chapter": 117
+        },
+        {
+          "book_id": 19,
+          "chapter": 118
+        },
+        {
+          "book_id": 19,
+          "chapter": 119
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Psalm 23:1",
+        "ta": "கர்த்தர் என் மேய்ப்பராயிருக்கிறார்; நான் தாழ்ச்சியடையேன்.",
+        "en": "The Lord is my shepherd; I shall not want."
+      }
+    },
+    {
+      "day": 48,
+      "title": "Day 48",
+      "word_count": 9498,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Psalms 120 - Proverbs 7",
+        "display_ta": "சங்கீதம் 120 முதல் நீதிமொழிகள் 7 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 19,
+          "chapter": 120
+        },
+        {
+          "book_id": 19,
+          "chapter": 121
+        },
+        {
+          "book_id": 19,
+          "chapter": 122
+        },
+        {
+          "book_id": 19,
+          "chapter": 123
+        },
+        {
+          "book_id": 19,
+          "chapter": 124
+        },
+        {
+          "book_id": 19,
+          "chapter": 125
+        },
+        {
+          "book_id": 19,
+          "chapter": 126
+        },
+        {
+          "book_id": 19,
+          "chapter": 127
+        },
+        {
+          "book_id": 19,
+          "chapter": 128
+        },
+        {
+          "book_id": 19,
+          "chapter": 129
+        },
+        {
+          "book_id": 19,
+          "chapter": 130
+        },
+        {
+          "book_id": 19,
+          "chapter": 131
+        },
+        {
+          "book_id": 19,
+          "chapter": 132
+        },
+        {
+          "book_id": 19,
+          "chapter": 133
+        },
+        {
+          "book_id": 19,
+          "chapter": 134
+        },
+        {
+          "book_id": 19,
+          "chapter": 135
+        },
+        {
+          "book_id": 19,
+          "chapter": 136
+        },
+        {
+          "book_id": 19,
+          "chapter": 137
+        },
+        {
+          "book_id": 19,
+          "chapter": 138
+        },
+        {
+          "book_id": 19,
+          "chapter": 139
+        },
+        {
+          "book_id": 19,
+          "chapter": 140
+        },
+        {
+          "book_id": 19,
+          "chapter": 141
+        },
+        {
+          "book_id": 19,
+          "chapter": 142
+        },
+        {
+          "book_id": 19,
+          "chapter": 143
+        },
+        {
+          "book_id": 19,
+          "chapter": 144
+        },
+        {
+          "book_id": 19,
+          "chapter": 145
+        },
+        {
+          "book_id": 19,
+          "chapter": 146
+        },
+        {
+          "book_id": 19,
+          "chapter": 147
+        },
+        {
+          "book_id": 19,
+          "chapter": 148
+        },
+        {
+          "book_id": 19,
+          "chapter": 149
+        },
+        {
+          "book_id": 19,
+          "chapter": 150
+        },
+        {
+          "book_id": 20,
+          "chapter": 1
+        },
+        {
+          "book_id": 20,
+          "chapter": 2
+        },
+        {
+          "book_id": 20,
+          "chapter": 3
+        },
+        {
+          "book_id": 20,
+          "chapter": 4
+        },
+        {
+          "book_id": 20,
+          "chapter": 5
+        },
+        {
+          "book_id": 20,
+          "chapter": 6
+        },
+        {
+          "book_id": 20,
+          "chapter": 7
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Proverbs 3:5-6",
+        "ta": "உன் முழு இருதயத்தோடும் கர்த்தரில் நம்பிக்கையாயிரு; அவர் உன் பாதைகளைச் செவ்வைப்படுத்துவார்.",
+        "en": "Trust in the Lord with all your heart; and he shall direct your paths."
+      }
+    },
+    {
+      "day": 49,
+      "title": "Day 49",
+      "word_count": 9255,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Proverbs 8 - Proverbs 24",
+        "display_ta": "நீதிமொழிகள் 8 முதல் நீதிமொழிகள் 24 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 20,
+          "chapter": 8
+        },
+        {
+          "book_id": 20,
+          "chapter": 9
+        },
+        {
+          "book_id": 20,
+          "chapter": 10
+        },
+        {
+          "book_id": 20,
+          "chapter": 11
+        },
+        {
+          "book_id": 20,
+          "chapter": 12
+        },
+        {
+          "book_id": 20,
+          "chapter": 13
+        },
+        {
+          "book_id": 20,
+          "chapter": 14
+        },
+        {
+          "book_id": 20,
+          "chapter": 15
+        },
+        {
+          "book_id": 20,
+          "chapter": 16
+        },
+        {
+          "book_id": 20,
+          "chapter": 17
+        },
+        {
+          "book_id": 20,
+          "chapter": 18
+        },
+        {
+          "book_id": 20,
+          "chapter": 19
+        },
+        {
+          "book_id": 20,
+          "chapter": 20
+        },
+        {
+          "book_id": 20,
+          "chapter": 21
+        },
+        {
+          "book_id": 20,
+          "chapter": 22
+        },
+        {
+          "book_id": 20,
+          "chapter": 23
+        },
+        {
+          "book_id": 20,
+          "chapter": 24
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Proverbs 3:5-6",
+        "ta": "உன் முழு இருதயத்தோடும் கர்த்தரில் நம்பிக்கையாயிரு; அவர் உன் பாதைகளைச் செவ்வைப்படுத்துவார்.",
+        "en": "Trust in the Lord with all your heart; and he shall direct your paths."
+      }
+    },
+    {
+      "day": 50,
+      "title": "Day 50",
+      "word_count": 9262,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Proverbs 25 - Ecclesiastes 10",
+        "display_ta": "நீதிமொழிகள் 25 முதல் பிரசங்கி 10 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 20,
+          "chapter": 25
+        },
+        {
+          "book_id": 20,
+          "chapter": 26
+        },
+        {
+          "book_id": 20,
+          "chapter": 27
+        },
+        {
+          "book_id": 20,
+          "chapter": 28
+        },
+        {
+          "book_id": 20,
+          "chapter": 29
+        },
+        {
+          "book_id": 20,
+          "chapter": 30
+        },
+        {
+          "book_id": 20,
+          "chapter": 31
+        },
+        {
+          "book_id": 21,
+          "chapter": 1
+        },
+        {
+          "book_id": 21,
+          "chapter": 2
+        },
+        {
+          "book_id": 21,
+          "chapter": 3
+        },
+        {
+          "book_id": 21,
+          "chapter": 4
+        },
+        {
+          "book_id": 21,
+          "chapter": 5
+        },
+        {
+          "book_id": 21,
+          "chapter": 6
+        },
+        {
+          "book_id": 21,
+          "chapter": 7
+        },
+        {
+          "book_id": 21,
+          "chapter": 8
+        },
+        {
+          "book_id": 21,
+          "chapter": 9
+        },
+        {
+          "book_id": 21,
+          "chapter": 10
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 51,
+      "title": "Day 51",
+      "word_count": 9440,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Ecclesiastes 11 - Isaiah 9",
+        "display_ta": "பிரசங்கி 11 முதல் ஏசாயா 9 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 21,
+          "chapter": 11
+        },
+        {
+          "book_id": 21,
+          "chapter": 12
+        },
+        {
+          "book_id": 22,
+          "chapter": 1
+        },
+        {
+          "book_id": 22,
+          "chapter": 2
+        },
+        {
+          "book_id": 22,
+          "chapter": 3
+        },
+        {
+          "book_id": 22,
+          "chapter": 4
+        },
+        {
+          "book_id": 22,
+          "chapter": 5
+        },
+        {
+          "book_id": 22,
+          "chapter": 6
+        },
+        {
+          "book_id": 22,
+          "chapter": 7
+        },
+        {
+          "book_id": 22,
+          "chapter": 8
+        },
+        {
+          "book_id": 23,
+          "chapter": 1
+        },
+        {
+          "book_id": 23,
+          "chapter": 2
+        },
+        {
+          "book_id": 23,
+          "chapter": 3
+        },
+        {
+          "book_id": 23,
+          "chapter": 4
+        },
+        {
+          "book_id": 23,
+          "chapter": 5
+        },
+        {
+          "book_id": 23,
+          "chapter": 6
+        },
+        {
+          "book_id": 23,
+          "chapter": 7
+        },
+        {
+          "book_id": 23,
+          "chapter": 8
+        },
+        {
+          "book_id": 23,
+          "chapter": 9
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Isaiah 40:31",
+        "ta": "கர்த்தருக்குக் காத்திருக்கிறவர்களோ புதுப்பெலன் அடைந்து, கழுகுகளைப்போலச் செட்டைகளை அடித்து எழும்புவார்கள்.",
+        "en": "They that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles."
+      }
+    },
+    {
+      "day": 52,
+      "title": "Day 52",
+      "word_count": 9151,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Isaiah 10 - Isaiah 26",
+        "display_ta": "ஏசாயா 10 முதல் ஏசாயா 26 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 23,
+          "chapter": 10
+        },
+        {
+          "book_id": 23,
+          "chapter": 11
+        },
+        {
+          "book_id": 23,
+          "chapter": 12
+        },
+        {
+          "book_id": 23,
+          "chapter": 13
+        },
+        {
+          "book_id": 23,
+          "chapter": 14
+        },
+        {
+          "book_id": 23,
+          "chapter": 15
+        },
+        {
+          "book_id": 23,
+          "chapter": 16
+        },
+        {
+          "book_id": 23,
+          "chapter": 17
+        },
+        {
+          "book_id": 23,
+          "chapter": 18
+        },
+        {
+          "book_id": 23,
+          "chapter": 19
+        },
+        {
+          "book_id": 23,
+          "chapter": 20
+        },
+        {
+          "book_id": 23,
+          "chapter": 21
+        },
+        {
+          "book_id": 23,
+          "chapter": 22
+        },
+        {
+          "book_id": 23,
+          "chapter": 23
+        },
+        {
+          "book_id": 23,
+          "chapter": 24
+        },
+        {
+          "book_id": 23,
+          "chapter": 25
+        },
+        {
+          "book_id": 23,
+          "chapter": 26
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Isaiah 40:31",
+        "ta": "கர்த்தருக்குக் காத்திருக்கிறவர்களோ புதுப்பெலன் அடைந்து, கழுகுகளைப்போலச் செட்டைகளை அடித்து எழும்புவார்கள்.",
+        "en": "They that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles."
+      }
+    },
+    {
+      "day": 53,
+      "title": "Day 53",
+      "word_count": 9426,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Isaiah 27 - Isaiah 40",
+        "display_ta": "ஏசாயா 27 முதல் ஏசாயா 40 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 23,
+          "chapter": 27
+        },
+        {
+          "book_id": 23,
+          "chapter": 28
+        },
+        {
+          "book_id": 23,
+          "chapter": 29
+        },
+        {
+          "book_id": 23,
+          "chapter": 30
+        },
+        {
+          "book_id": 23,
+          "chapter": 31
+        },
+        {
+          "book_id": 23,
+          "chapter": 32
+        },
+        {
+          "book_id": 23,
+          "chapter": 33
+        },
+        {
+          "book_id": 23,
+          "chapter": 34
+        },
+        {
+          "book_id": 23,
+          "chapter": 35
+        },
+        {
+          "book_id": 23,
+          "chapter": 36
+        },
+        {
+          "book_id": 23,
+          "chapter": 37
+        },
+        {
+          "book_id": 23,
+          "chapter": 38
+        },
+        {
+          "book_id": 23,
+          "chapter": 39
+        },
+        {
+          "book_id": 23,
+          "chapter": 40
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Isaiah 40:31",
+        "ta": "கர்த்தருக்குக் காத்திருக்கிறவர்களோ புதுப்பெலன் அடைந்து, கழுகுகளைப்போலச் செட்டைகளை அடித்து எழும்புவார்கள்.",
+        "en": "They that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles."
+      }
+    },
+    {
+      "day": 54,
+      "title": "Day 54",
+      "word_count": 9488,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Isaiah 41 - Isaiah 55",
+        "display_ta": "ஏசாயா 41 முதல் ஏசாயா 55 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 23,
+          "chapter": 41
+        },
+        {
+          "book_id": 23,
+          "chapter": 42
+        },
+        {
+          "book_id": 23,
+          "chapter": 43
+        },
+        {
+          "book_id": 23,
+          "chapter": 44
+        },
+        {
+          "book_id": 23,
+          "chapter": 45
+        },
+        {
+          "book_id": 23,
+          "chapter": 46
+        },
+        {
+          "book_id": 23,
+          "chapter": 47
+        },
+        {
+          "book_id": 23,
+          "chapter": 48
+        },
+        {
+          "book_id": 23,
+          "chapter": 49
+        },
+        {
+          "book_id": 23,
+          "chapter": 50
+        },
+        {
+          "book_id": 23,
+          "chapter": 51
+        },
+        {
+          "book_id": 23,
+          "chapter": 52
+        },
+        {
+          "book_id": 23,
+          "chapter": 53
+        },
+        {
+          "book_id": 23,
+          "chapter": 54
+        },
+        {
+          "book_id": 23,
+          "chapter": 55
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Isaiah 40:31",
+        "ta": "கர்த்தருக்குக் காத்திருக்கிறவர்களோ புதுப்பெலன் அடைந்து, கழுகுகளைப்போலச் செட்டைகளை அடித்து எழும்புவார்கள்.",
+        "en": "They that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles."
+      }
+    },
+    {
+      "day": 55,
+      "title": "Day 55",
+      "word_count": 9677,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Isaiah 56 - Jeremiah 4",
+        "display_ta": "ஏசாயா 56 முதல் எரேமியா 4 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 23,
+          "chapter": 56
+        },
+        {
+          "book_id": 23,
+          "chapter": 57
+        },
+        {
+          "book_id": 23,
+          "chapter": 58
+        },
+        {
+          "book_id": 23,
+          "chapter": 59
+        },
+        {
+          "book_id": 23,
+          "chapter": 60
+        },
+        {
+          "book_id": 23,
+          "chapter": 61
+        },
+        {
+          "book_id": 23,
+          "chapter": 62
+        },
+        {
+          "book_id": 23,
+          "chapter": 63
+        },
+        {
+          "book_id": 23,
+          "chapter": 64
+        },
+        {
+          "book_id": 23,
+          "chapter": 65
+        },
+        {
+          "book_id": 23,
+          "chapter": 66
+        },
+        {
+          "book_id": 24,
+          "chapter": 1
+        },
+        {
+          "book_id": 24,
+          "chapter": 2
+        },
+        {
+          "book_id": 24,
+          "chapter": 3
+        },
+        {
+          "book_id": 24,
+          "chapter": 4
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 56,
+      "title": "Day 56",
+      "word_count": 9495,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Jeremiah 5 - Jeremiah 16",
+        "display_ta": "எரேமியா 5 முதல் எரேமியா 16 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 24,
+          "chapter": 5
+        },
+        {
+          "book_id": 24,
+          "chapter": 6
+        },
+        {
+          "book_id": 24,
+          "chapter": 7
+        },
+        {
+          "book_id": 24,
+          "chapter": 8
+        },
+        {
+          "book_id": 24,
+          "chapter": 9
+        },
+        {
+          "book_id": 24,
+          "chapter": 10
+        },
+        {
+          "book_id": 24,
+          "chapter": 11
+        },
+        {
+          "book_id": 24,
+          "chapter": 12
+        },
+        {
+          "book_id": 24,
+          "chapter": 13
+        },
+        {
+          "book_id": 24,
+          "chapter": 14
+        },
+        {
+          "book_id": 24,
+          "chapter": 15
+        },
+        {
+          "book_id": 24,
+          "chapter": 16
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 57,
+      "title": "Day 57",
+      "word_count": 9129,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Jeremiah 17 - Jeremiah 28",
+        "display_ta": "எரேமியா 17 முதல் எரேமியா 28 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 24,
+          "chapter": 17
+        },
+        {
+          "book_id": 24,
+          "chapter": 18
+        },
+        {
+          "book_id": 24,
+          "chapter": 19
+        },
+        {
+          "book_id": 24,
+          "chapter": 20
+        },
+        {
+          "book_id": 24,
+          "chapter": 21
+        },
+        {
+          "book_id": 24,
+          "chapter": 22
+        },
+        {
+          "book_id": 24,
+          "chapter": 23
+        },
+        {
+          "book_id": 24,
+          "chapter": 24
+        },
+        {
+          "book_id": 24,
+          "chapter": 25
+        },
+        {
+          "book_id": 24,
+          "chapter": 26
+        },
+        {
+          "book_id": 24,
+          "chapter": 27
+        },
+        {
+          "book_id": 24,
+          "chapter": 28
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 58,
+      "title": "Day 58",
+      "word_count": 8804,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Jeremiah 29 - Jeremiah 37",
+        "display_ta": "எரேமியா 29 முதல் எரேமியா 37 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 24,
+          "chapter": 29
+        },
+        {
+          "book_id": 24,
+          "chapter": 30
+        },
+        {
+          "book_id": 24,
+          "chapter": 31
+        },
+        {
+          "book_id": 24,
+          "chapter": 32
+        },
+        {
+          "book_id": 24,
+          "chapter": 33
+        },
+        {
+          "book_id": 24,
+          "chapter": 34
+        },
+        {
+          "book_id": 24,
+          "chapter": 35
+        },
+        {
+          "book_id": 24,
+          "chapter": 36
+        },
+        {
+          "book_id": 24,
+          "chapter": 37
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 59,
+      "title": "Day 59",
+      "word_count": 9390,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Jeremiah 38 - Jeremiah 49",
+        "display_ta": "எரேமியா 38 முதல் எரேமியா 49 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 24,
+          "chapter": 38
+        },
+        {
+          "book_id": 24,
+          "chapter": 39
+        },
+        {
+          "book_id": 24,
+          "chapter": 40
+        },
+        {
+          "book_id": 24,
+          "chapter": 41
+        },
+        {
+          "book_id": 24,
+          "chapter": 42
+        },
+        {
+          "book_id": 24,
+          "chapter": 43
+        },
+        {
+          "book_id": 24,
+          "chapter": 44
+        },
+        {
+          "book_id": 24,
+          "chapter": 45
+        },
+        {
+          "book_id": 24,
+          "chapter": 46
+        },
+        {
+          "book_id": 24,
+          "chapter": 47
+        },
+        {
+          "book_id": 24,
+          "chapter": 48
+        },
+        {
+          "book_id": 24,
+          "chapter": 49
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 60,
+      "title": "Day 60",
+      "word_count": 9251,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Jeremiah 50 - Ezekiel 1",
+        "display_ta": "எரேமியா 50 முதல் எசேக்கியேல் 1 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 24,
+          "chapter": 50
+        },
+        {
+          "book_id": 24,
+          "chapter": 51
+        },
+        {
+          "book_id": 24,
+          "chapter": 52
+        },
+        {
+          "book_id": 25,
+          "chapter": 1
+        },
+        {
+          "book_id": 25,
+          "chapter": 2
+        },
+        {
+          "book_id": 25,
+          "chapter": 3
+        },
+        {
+          "book_id": 25,
+          "chapter": 4
+        },
+        {
+          "book_id": 25,
+          "chapter": 5
+        },
+        {
+          "book_id": 26,
+          "chapter": 1
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 61,
+      "title": "Day 61",
+      "word_count": 8886,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Ezekiel 2 - Ezekiel 15",
+        "display_ta": "எசேக்கியேல் 2 முதல் எசேக்கியேல் 15 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 26,
+          "chapter": 2
+        },
+        {
+          "book_id": 26,
+          "chapter": 3
+        },
+        {
+          "book_id": 26,
+          "chapter": 4
+        },
+        {
+          "book_id": 26,
+          "chapter": 5
+        },
+        {
+          "book_id": 26,
+          "chapter": 6
+        },
+        {
+          "book_id": 26,
+          "chapter": 7
+        },
+        {
+          "book_id": 26,
+          "chapter": 8
+        },
+        {
+          "book_id": 26,
+          "chapter": 9
+        },
+        {
+          "book_id": 26,
+          "chapter": 10
+        },
+        {
+          "book_id": 26,
+          "chapter": 11
+        },
+        {
+          "book_id": 26,
+          "chapter": 12
+        },
+        {
+          "book_id": 26,
+          "chapter": 13
+        },
+        {
+          "book_id": 26,
+          "chapter": 14
+        },
+        {
+          "book_id": 26,
+          "chapter": 15
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 62,
+      "title": "Day 62",
+      "word_count": 9165,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Ezekiel 16 - Ezekiel 23",
+        "display_ta": "எசேக்கியேல் 16 முதல் எசேக்கியேல் 23 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 26,
+          "chapter": 16
+        },
+        {
+          "book_id": 26,
+          "chapter": 17
+        },
+        {
+          "book_id": 26,
+          "chapter": 18
+        },
+        {
+          "book_id": 26,
+          "chapter": 19
+        },
+        {
+          "book_id": 26,
+          "chapter": 20
+        },
+        {
+          "book_id": 26,
+          "chapter": 21
+        },
+        {
+          "book_id": 26,
+          "chapter": 22
+        },
+        {
+          "book_id": 26,
+          "chapter": 23
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 63,
+      "title": "Day 63",
+      "word_count": 9572,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Ezekiel 24 - Ezekiel 34",
+        "display_ta": "எசேக்கியேல் 24 முதல் எசேக்கியேல் 34 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 26,
+          "chapter": 24
+        },
+        {
+          "book_id": 26,
+          "chapter": 25
+        },
+        {
+          "book_id": 26,
+          "chapter": 26
+        },
+        {
+          "book_id": 26,
+          "chapter": 27
+        },
+        {
+          "book_id": 26,
+          "chapter": 28
+        },
+        {
+          "book_id": 26,
+          "chapter": 29
+        },
+        {
+          "book_id": 26,
+          "chapter": 30
+        },
+        {
+          "book_id": 26,
+          "chapter": 31
+        },
+        {
+          "book_id": 26,
+          "chapter": 32
+        },
+        {
+          "book_id": 26,
+          "chapter": 33
+        },
+        {
+          "book_id": 26,
+          "chapter": 34
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 64,
+      "title": "Day 64",
+      "word_count": 9529,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Ezekiel 35 - Ezekiel 44",
+        "display_ta": "எசேக்கியேல் 35 முதல் எசேக்கியேல் 44 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 26,
+          "chapter": 35
+        },
+        {
+          "book_id": 26,
+          "chapter": 36
+        },
+        {
+          "book_id": 26,
+          "chapter": 37
+        },
+        {
+          "book_id": 26,
+          "chapter": 38
+        },
+        {
+          "book_id": 26,
+          "chapter": 39
+        },
+        {
+          "book_id": 26,
+          "chapter": 40
+        },
+        {
+          "book_id": 26,
+          "chapter": 41
+        },
+        {
+          "book_id": 26,
+          "chapter": 42
+        },
+        {
+          "book_id": 26,
+          "chapter": 43
+        },
+        {
+          "book_id": 26,
+          "chapter": 44
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 65,
+      "title": "Day 65",
+      "word_count": 9548,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Ezekiel 45 - Daniel 5",
+        "display_ta": "எசேக்கியேல் 45 முதல் தானியேல் 5 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 26,
+          "chapter": 45
+        },
+        {
+          "book_id": 26,
+          "chapter": 46
+        },
+        {
+          "book_id": 26,
+          "chapter": 47
+        },
+        {
+          "book_id": 26,
+          "chapter": 48
+        },
+        {
+          "book_id": 27,
+          "chapter": 1
+        },
+        {
+          "book_id": 27,
+          "chapter": 2
+        },
+        {
+          "book_id": 27,
+          "chapter": 3
+        },
+        {
+          "book_id": 27,
+          "chapter": 4
+        },
+        {
+          "book_id": 27,
+          "chapter": 5
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 66,
+      "title": "Day 66",
+      "word_count": 9316,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Daniel 6 - Hosea 6",
+        "display_ta": "தானியேல் 6 முதல் ஓசியா 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 27,
+          "chapter": 6
+        },
+        {
+          "book_id": 27,
+          "chapter": 7
+        },
+        {
+          "book_id": 27,
+          "chapter": 8
+        },
+        {
+          "book_id": 27,
+          "chapter": 9
+        },
+        {
+          "book_id": 27,
+          "chapter": 10
+        },
+        {
+          "book_id": 27,
+          "chapter": 11
+        },
+        {
+          "book_id": 27,
+          "chapter": 12
+        },
+        {
+          "book_id": 28,
+          "chapter": 1
+        },
+        {
+          "book_id": 28,
+          "chapter": 2
+        },
+        {
+          "book_id": 28,
+          "chapter": 3
+        },
+        {
+          "book_id": 28,
+          "chapter": 4
+        },
+        {
+          "book_id": 28,
+          "chapter": 5
+        },
+        {
+          "book_id": 28,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 67,
+      "title": "Day 67",
+      "word_count": 9382,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Hosea 7 - Amos 8",
+        "display_ta": "ஓசியா 7 முதல் ஆமோஸ் 8 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 28,
+          "chapter": 7
+        },
+        {
+          "book_id": 28,
+          "chapter": 8
+        },
+        {
+          "book_id": 28,
+          "chapter": 9
+        },
+        {
+          "book_id": 28,
+          "chapter": 10
+        },
+        {
+          "book_id": 28,
+          "chapter": 11
+        },
+        {
+          "book_id": 28,
+          "chapter": 12
+        },
+        {
+          "book_id": 28,
+          "chapter": 13
+        },
+        {
+          "book_id": 28,
+          "chapter": 14
+        },
+        {
+          "book_id": 29,
+          "chapter": 1
+        },
+        {
+          "book_id": 29,
+          "chapter": 2
+        },
+        {
+          "book_id": 29,
+          "chapter": 3
+        },
+        {
+          "book_id": 30,
+          "chapter": 1
+        },
+        {
+          "book_id": 30,
+          "chapter": 2
+        },
+        {
+          "book_id": 30,
+          "chapter": 3
+        },
+        {
+          "book_id": 30,
+          "chapter": 4
+        },
+        {
+          "book_id": 30,
+          "chapter": 5
+        },
+        {
+          "book_id": 30,
+          "chapter": 6
+        },
+        {
+          "book_id": 30,
+          "chapter": 7
+        },
+        {
+          "book_id": 30,
+          "chapter": 8
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 68,
+      "title": "Day 68",
+      "word_count": 9491,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Amos 9 - Habakkuk 3",
+        "display_ta": "ஆமோஸ் 9 முதல் அபகூக் 3 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 30,
+          "chapter": 9
+        },
+        {
+          "book_id": 31,
+          "chapter": 1
+        },
+        {
+          "book_id": 32,
+          "chapter": 1
+        },
+        {
+          "book_id": 32,
+          "chapter": 2
+        },
+        {
+          "book_id": 32,
+          "chapter": 3
+        },
+        {
+          "book_id": 32,
+          "chapter": 4
+        },
+        {
+          "book_id": 33,
+          "chapter": 1
+        },
+        {
+          "book_id": 33,
+          "chapter": 2
+        },
+        {
+          "book_id": 33,
+          "chapter": 3
+        },
+        {
+          "book_id": 33,
+          "chapter": 4
+        },
+        {
+          "book_id": 33,
+          "chapter": 5
+        },
+        {
+          "book_id": 33,
+          "chapter": 6
+        },
+        {
+          "book_id": 33,
+          "chapter": 7
+        },
+        {
+          "book_id": 34,
+          "chapter": 1
+        },
+        {
+          "book_id": 34,
+          "chapter": 2
+        },
+        {
+          "book_id": 34,
+          "chapter": 3
+        },
+        {
+          "book_id": 35,
+          "chapter": 1
+        },
+        {
+          "book_id": 35,
+          "chapter": 2
+        },
+        {
+          "book_id": 35,
+          "chapter": 3
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 69,
+      "title": "Day 69",
+      "word_count": 9055,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Zephaniah 1 - Zechariah 13",
+        "display_ta": "செப்பனியா 1 முதல் சகரியா 13 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 36,
+          "chapter": 1
+        },
+        {
+          "book_id": 36,
+          "chapter": 2
+        },
+        {
+          "book_id": 36,
+          "chapter": 3
+        },
+        {
+          "book_id": 37,
+          "chapter": 1
+        },
+        {
+          "book_id": 37,
+          "chapter": 2
+        },
+        {
+          "book_id": 38,
+          "chapter": 1
+        },
+        {
+          "book_id": 38,
+          "chapter": 2
+        },
+        {
+          "book_id": 38,
+          "chapter": 3
+        },
+        {
+          "book_id": 38,
+          "chapter": 4
+        },
+        {
+          "book_id": 38,
+          "chapter": 5
+        },
+        {
+          "book_id": 38,
+          "chapter": 6
+        },
+        {
+          "book_id": 38,
+          "chapter": 7
+        },
+        {
+          "book_id": 38,
+          "chapter": 8
+        },
+        {
+          "book_id": 38,
+          "chapter": 9
+        },
+        {
+          "book_id": 38,
+          "chapter": 10
+        },
+        {
+          "book_id": 38,
+          "chapter": 11
+        },
+        {
+          "book_id": 38,
+          "chapter": 12
+        },
+        {
+          "book_id": 38,
+          "chapter": 13
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 70,
+      "title": "Day 70",
+      "word_count": 9011,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Zechariah 14 - Matthew 9",
+        "display_ta": "சகரியா 14 முதல் மத்தேயு 9 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 38,
+          "chapter": 14
+        },
+        {
+          "book_id": 39,
+          "chapter": 1
+        },
+        {
+          "book_id": 39,
+          "chapter": 2
+        },
+        {
+          "book_id": 39,
+          "chapter": 3
+        },
+        {
+          "book_id": 39,
+          "chapter": 4
+        },
+        {
+          "book_id": 40,
+          "chapter": 1
+        },
+        {
+          "book_id": 40,
+          "chapter": 2
+        },
+        {
+          "book_id": 40,
+          "chapter": 3
+        },
+        {
+          "book_id": 40,
+          "chapter": 4
+        },
+        {
+          "book_id": 40,
+          "chapter": 5
+        },
+        {
+          "book_id": 40,
+          "chapter": 6
+        },
+        {
+          "book_id": 40,
+          "chapter": 7
+        },
+        {
+          "book_id": 40,
+          "chapter": 8
+        },
+        {
+          "book_id": 40,
+          "chapter": 9
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Matthew 11:28",
+        "ta": "வருத்தப்பட்டுப் பாரஞ்சுமக்கிறவர்களே! நீங்கள் எல்லாரும் என்னிடத்தில் வாருங்கள்; நான் உங்களுக்கு இளைப்பாறுதல் தருவேன்.",
+        "en": "Come unto me, all ye that labour and are heavy laden, and I will give you rest."
+      }
+    },
+    {
+      "day": 71,
+      "title": "Day 71",
+      "word_count": 9545,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Matthew 10 - Matthew 20",
+        "display_ta": "மத்தேயு 10 முதல் மத்தேயு 20 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 40,
+          "chapter": 10
+        },
+        {
+          "book_id": 40,
+          "chapter": 11
+        },
+        {
+          "book_id": 40,
+          "chapter": 12
+        },
+        {
+          "book_id": 40,
+          "chapter": 13
+        },
+        {
+          "book_id": 40,
+          "chapter": 14
+        },
+        {
+          "book_id": 40,
+          "chapter": 15
+        },
+        {
+          "book_id": 40,
+          "chapter": 16
+        },
+        {
+          "book_id": 40,
+          "chapter": 17
+        },
+        {
+          "book_id": 40,
+          "chapter": 18
+        },
+        {
+          "book_id": 40,
+          "chapter": 19
+        },
+        {
+          "book_id": 40,
+          "chapter": 20
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Matthew 11:28",
+        "ta": "வருத்தப்பட்டுப் பாரஞ்சுமக்கிறவர்களே! நீங்கள் எல்லாரும் என்னிடத்தில் வாருங்கள்; நான் உங்களுக்கு இளைப்பாறுதல் தருவேன்.",
+        "en": "Come unto me, all ye that labour and are heavy laden, and I will give you rest."
+      }
+    },
+    {
+      "day": 72,
+      "title": "Day 72",
+      "word_count": 9282,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Matthew 21 - Mark 1",
+        "display_ta": "மத்தேயு 21 முதல் மாற்கு 1 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 40,
+          "chapter": 21
+        },
+        {
+          "book_id": 40,
+          "chapter": 22
+        },
+        {
+          "book_id": 40,
+          "chapter": 23
+        },
+        {
+          "book_id": 40,
+          "chapter": 24
+        },
+        {
+          "book_id": 40,
+          "chapter": 25
+        },
+        {
+          "book_id": 40,
+          "chapter": 26
+        },
+        {
+          "book_id": 40,
+          "chapter": 27
+        },
+        {
+          "book_id": 40,
+          "chapter": 28
+        },
+        {
+          "book_id": 41,
+          "chapter": 1
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 73,
+      "title": "Day 73",
+      "word_count": 9556,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Mark 2 - Mark 11",
+        "display_ta": "மாற்கு 2 முதல் மாற்கு 11 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 41,
+          "chapter": 2
+        },
+        {
+          "book_id": 41,
+          "chapter": 3
+        },
+        {
+          "book_id": 41,
+          "chapter": 4
+        },
+        {
+          "book_id": 41,
+          "chapter": 5
+        },
+        {
+          "book_id": 41,
+          "chapter": 6
+        },
+        {
+          "book_id": 41,
+          "chapter": 7
+        },
+        {
+          "book_id": 41,
+          "chapter": 8
+        },
+        {
+          "book_id": 41,
+          "chapter": 9
+        },
+        {
+          "book_id": 41,
+          "chapter": 10
+        },
+        {
+          "book_id": 41,
+          "chapter": 11
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 74,
+      "title": "Day 74",
+      "word_count": 9762,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Mark 12 - Luke 4",
+        "display_ta": "மாற்கு 12 முதல் லூக்கா 4 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 41,
+          "chapter": 12
+        },
+        {
+          "book_id": 41,
+          "chapter": 13
+        },
+        {
+          "book_id": 41,
+          "chapter": 14
+        },
+        {
+          "book_id": 41,
+          "chapter": 15
+        },
+        {
+          "book_id": 41,
+          "chapter": 16
+        },
+        {
+          "book_id": 42,
+          "chapter": 1
+        },
+        {
+          "book_id": 42,
+          "chapter": 2
+        },
+        {
+          "book_id": 42,
+          "chapter": 3
+        },
+        {
+          "book_id": 42,
+          "chapter": 4
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 75,
+      "title": "Day 75",
+      "word_count": 8688,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Luke 5 - Luke 11",
+        "display_ta": "லூக்கா 5 முதல் லூக்கா 11 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 42,
+          "chapter": 5
+        },
+        {
+          "book_id": 42,
+          "chapter": 6
+        },
+        {
+          "book_id": 42,
+          "chapter": 7
+        },
+        {
+          "book_id": 42,
+          "chapter": 8
+        },
+        {
+          "book_id": 42,
+          "chapter": 9
+        },
+        {
+          "book_id": 42,
+          "chapter": 10
+        },
+        {
+          "book_id": 42,
+          "chapter": 11
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 76,
+      "title": "Day 76",
+      "word_count": 9229,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Luke 12 - Luke 21",
+        "display_ta": "லூக்கா 12 முதல் லூக்கா 21 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 42,
+          "chapter": 12
+        },
+        {
+          "book_id": 42,
+          "chapter": 13
+        },
+        {
+          "book_id": 42,
+          "chapter": 14
+        },
+        {
+          "book_id": 42,
+          "chapter": 15
+        },
+        {
+          "book_id": 42,
+          "chapter": 16
+        },
+        {
+          "book_id": 42,
+          "chapter": 17
+        },
+        {
+          "book_id": 42,
+          "chapter": 18
+        },
+        {
+          "book_id": 42,
+          "chapter": 19
+        },
+        {
+          "book_id": 42,
+          "chapter": 20
+        },
+        {
+          "book_id": 42,
+          "chapter": 21
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 77,
+      "title": "Day 77",
+      "word_count": 9573,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Luke 22 - John 6",
+        "display_ta": "லூக்கா 22 முதல் யோவான் 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 42,
+          "chapter": 22
+        },
+        {
+          "book_id": 42,
+          "chapter": 23
+        },
+        {
+          "book_id": 42,
+          "chapter": 24
+        },
+        {
+          "book_id": 43,
+          "chapter": 1
+        },
+        {
+          "book_id": 43,
+          "chapter": 2
+        },
+        {
+          "book_id": 43,
+          "chapter": 3
+        },
+        {
+          "book_id": 43,
+          "chapter": 4
+        },
+        {
+          "book_id": 43,
+          "chapter": 5
+        },
+        {
+          "book_id": 43,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "John 14:27",
+        "ta": "சமாதானத்தை உங்களுக்கு வைத்துப்போகிறேன், என்னுடைய சமாதானத்தையே உங்களுக்குக் கொடுக்கிறேன்.",
+        "en": "Peace I leave with you, my peace I give unto you."
+      }
+    },
+    {
+      "day": 78,
+      "title": "Day 78",
+      "word_count": 9289,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "John 7 - John 16",
+        "display_ta": "யோவான் 7 முதல் யோவான் 16 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 43,
+          "chapter": 7
+        },
+        {
+          "book_id": 43,
+          "chapter": 8
+        },
+        {
+          "book_id": 43,
+          "chapter": 9
+        },
+        {
+          "book_id": 43,
+          "chapter": 10
+        },
+        {
+          "book_id": 43,
+          "chapter": 11
+        },
+        {
+          "book_id": 43,
+          "chapter": 12
+        },
+        {
+          "book_id": 43,
+          "chapter": 13
+        },
+        {
+          "book_id": 43,
+          "chapter": 14
+        },
+        {
+          "book_id": 43,
+          "chapter": 15
+        },
+        {
+          "book_id": 43,
+          "chapter": 16
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "John 14:27",
+        "ta": "சமாதானத்தை உங்களுக்கு வைத்துப்போகிறேன், என்னுடைய சமாதானத்தையே உங்களுக்குக் கொடுக்கிறேன்.",
+        "en": "Peace I leave with you, my peace I give unto you."
+      }
+    },
+    {
+      "day": 79,
+      "title": "Day 79",
+      "word_count": 8700,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "John 17 - Acts 6",
+        "display_ta": "யோவான் 17 முதல் அப்போஸ்தலர் 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 43,
+          "chapter": 17
+        },
+        {
+          "book_id": 43,
+          "chapter": 18
+        },
+        {
+          "book_id": 43,
+          "chapter": 19
+        },
+        {
+          "book_id": 43,
+          "chapter": 20
+        },
+        {
+          "book_id": 43,
+          "chapter": 21
+        },
+        {
+          "book_id": 44,
+          "chapter": 1
+        },
+        {
+          "book_id": 44,
+          "chapter": 2
+        },
+        {
+          "book_id": 44,
+          "chapter": 3
+        },
+        {
+          "book_id": 44,
+          "chapter": 4
+        },
+        {
+          "book_id": 44,
+          "chapter": 5
+        },
+        {
+          "book_id": 44,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 80,
+      "title": "Day 80",
+      "word_count": 8806,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Acts 7 - Acts 15",
+        "display_ta": "அப்போஸ்தலர் 7 முதல் அப்போஸ்தலர் 15 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 44,
+          "chapter": 7
+        },
+        {
+          "book_id": 44,
+          "chapter": 8
+        },
+        {
+          "book_id": 44,
+          "chapter": 9
+        },
+        {
+          "book_id": 44,
+          "chapter": 10
+        },
+        {
+          "book_id": 44,
+          "chapter": 11
+        },
+        {
+          "book_id": 44,
+          "chapter": 12
+        },
+        {
+          "book_id": 44,
+          "chapter": 13
+        },
+        {
+          "book_id": 44,
+          "chapter": 14
+        },
+        {
+          "book_id": 44,
+          "chapter": 15
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 81,
+      "title": "Day 81",
+      "word_count": 9370,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Acts 16 - Acts 26",
+        "display_ta": "அப்போஸ்தலர் 16 முதல் அப்போஸ்தலர் 26 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 44,
+          "chapter": 16
+        },
+        {
+          "book_id": 44,
+          "chapter": 17
+        },
+        {
+          "book_id": 44,
+          "chapter": 18
+        },
+        {
+          "book_id": 44,
+          "chapter": 19
+        },
+        {
+          "book_id": 44,
+          "chapter": 20
+        },
+        {
+          "book_id": 44,
+          "chapter": 21
+        },
+        {
+          "book_id": 44,
+          "chapter": 22
+        },
+        {
+          "book_id": 44,
+          "chapter": 23
+        },
+        {
+          "book_id": 44,
+          "chapter": 24
+        },
+        {
+          "book_id": 44,
+          "chapter": 25
+        },
+        {
+          "book_id": 44,
+          "chapter": 26
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 82,
+      "title": "Day 82",
+      "word_count": 9101,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Acts 27 - Romans 11",
+        "display_ta": "அப்போஸ்தலர் 27 முதல் ரோமர் 11 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 44,
+          "chapter": 27
+        },
+        {
+          "book_id": 44,
+          "chapter": 28
+        },
+        {
+          "book_id": 45,
+          "chapter": 1
+        },
+        {
+          "book_id": 45,
+          "chapter": 2
+        },
+        {
+          "book_id": 45,
+          "chapter": 3
+        },
+        {
+          "book_id": 45,
+          "chapter": 4
+        },
+        {
+          "book_id": 45,
+          "chapter": 5
+        },
+        {
+          "book_id": 45,
+          "chapter": 6
+        },
+        {
+          "book_id": 45,
+          "chapter": 7
+        },
+        {
+          "book_id": 45,
+          "chapter": 8
+        },
+        {
+          "book_id": 45,
+          "chapter": 9
+        },
+        {
+          "book_id": 45,
+          "chapter": 10
+        },
+        {
+          "book_id": 45,
+          "chapter": 11
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Romans 8:28",
+        "ta": "தேவனிடத்தில் அன்புகூருகிறவர்களுக்குச் சகலமும் நன்மைக்கு ஏதுவாக நடக்கிறது.",
+        "en": "All things work together for good to them that love God."
+      }
+    },
+    {
+      "day": 83,
+      "title": "Day 83",
+      "word_count": 9594,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Romans 12 - 1 Corinthians 12",
+        "display_ta": "ரோமர் 12 முதல் 1 கொரிந்தியர் 12 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 45,
+          "chapter": 12
+        },
+        {
+          "book_id": 45,
+          "chapter": 13
+        },
+        {
+          "book_id": 45,
+          "chapter": 14
+        },
+        {
+          "book_id": 45,
+          "chapter": 15
+        },
+        {
+          "book_id": 45,
+          "chapter": 16
+        },
+        {
+          "book_id": 46,
+          "chapter": 1
+        },
+        {
+          "book_id": 46,
+          "chapter": 2
+        },
+        {
+          "book_id": 46,
+          "chapter": 3
+        },
+        {
+          "book_id": 46,
+          "chapter": 4
+        },
+        {
+          "book_id": 46,
+          "chapter": 5
+        },
+        {
+          "book_id": 46,
+          "chapter": 6
+        },
+        {
+          "book_id": 46,
+          "chapter": 7
+        },
+        {
+          "book_id": 46,
+          "chapter": 8
+        },
+        {
+          "book_id": 46,
+          "chapter": 9
+        },
+        {
+          "book_id": 46,
+          "chapter": 10
+        },
+        {
+          "book_id": 46,
+          "chapter": 11
+        },
+        {
+          "book_id": 46,
+          "chapter": 12
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 84,
+      "title": "Day 84",
+      "word_count": 9200,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Corinthians 13 - 2 Corinthians 13",
+        "display_ta": "1 கொரிந்தியர் 13 முதல் 2 கொரிந்தியர் 13 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 46,
+          "chapter": 13
+        },
+        {
+          "book_id": 46,
+          "chapter": 14
+        },
+        {
+          "book_id": 46,
+          "chapter": 15
+        },
+        {
+          "book_id": 46,
+          "chapter": 16
+        },
+        {
+          "book_id": 47,
+          "chapter": 1
+        },
+        {
+          "book_id": 47,
+          "chapter": 2
+        },
+        {
+          "book_id": 47,
+          "chapter": 3
+        },
+        {
+          "book_id": 47,
+          "chapter": 4
+        },
+        {
+          "book_id": 47,
+          "chapter": 5
+        },
+        {
+          "book_id": 47,
+          "chapter": 6
+        },
+        {
+          "book_id": 47,
+          "chapter": 7
+        },
+        {
+          "book_id": 47,
+          "chapter": 8
+        },
+        {
+          "book_id": 47,
+          "chapter": 9
+        },
+        {
+          "book_id": 47,
+          "chapter": 10
+        },
+        {
+          "book_id": 47,
+          "chapter": 11
+        },
+        {
+          "book_id": 47,
+          "chapter": 12
+        },
+        {
+          "book_id": 47,
+          "chapter": 13
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 85,
+      "title": "Day 85",
+      "word_count": 9338,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Galatians 1 - Colossians 1",
+        "display_ta": "கலாத்தியர் 1 முதல் கொலோசெயர் 1 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 48,
+          "chapter": 1
+        },
+        {
+          "book_id": 48,
+          "chapter": 2
+        },
+        {
+          "book_id": 48,
+          "chapter": 3
+        },
+        {
+          "book_id": 48,
+          "chapter": 4
+        },
+        {
+          "book_id": 48,
+          "chapter": 5
+        },
+        {
+          "book_id": 48,
+          "chapter": 6
+        },
+        {
+          "book_id": 49,
+          "chapter": 1
+        },
+        {
+          "book_id": 49,
+          "chapter": 2
+        },
+        {
+          "book_id": 49,
+          "chapter": 3
+        },
+        {
+          "book_id": 49,
+          "chapter": 4
+        },
+        {
+          "book_id": 49,
+          "chapter": 5
+        },
+        {
+          "book_id": 49,
+          "chapter": 6
+        },
+        {
+          "book_id": 50,
+          "chapter": 1
+        },
+        {
+          "book_id": 50,
+          "chapter": 2
+        },
+        {
+          "book_id": 50,
+          "chapter": 3
+        },
+        {
+          "book_id": 50,
+          "chapter": 4
+        },
+        {
+          "book_id": 51,
+          "chapter": 1
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 86,
+      "title": "Day 86",
+      "word_count": 9224,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Colossians 2 - Titus 2",
+        "display_ta": "கொலோசெயர் 2 முதல் தீத்து 2 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 51,
+          "chapter": 2
+        },
+        {
+          "book_id": 51,
+          "chapter": 3
+        },
+        {
+          "book_id": 51,
+          "chapter": 4
+        },
+        {
+          "book_id": 52,
+          "chapter": 1
+        },
+        {
+          "book_id": 52,
+          "chapter": 2
+        },
+        {
+          "book_id": 52,
+          "chapter": 3
+        },
+        {
+          "book_id": 52,
+          "chapter": 4
+        },
+        {
+          "book_id": 52,
+          "chapter": 5
+        },
+        {
+          "book_id": 53,
+          "chapter": 1
+        },
+        {
+          "book_id": 53,
+          "chapter": 2
+        },
+        {
+          "book_id": 53,
+          "chapter": 3
+        },
+        {
+          "book_id": 54,
+          "chapter": 1
+        },
+        {
+          "book_id": 54,
+          "chapter": 2
+        },
+        {
+          "book_id": 54,
+          "chapter": 3
+        },
+        {
+          "book_id": 54,
+          "chapter": 4
+        },
+        {
+          "book_id": 54,
+          "chapter": 5
+        },
+        {
+          "book_id": 54,
+          "chapter": 6
+        },
+        {
+          "book_id": 55,
+          "chapter": 1
+        },
+        {
+          "book_id": 55,
+          "chapter": 2
+        },
+        {
+          "book_id": 55,
+          "chapter": 3
+        },
+        {
+          "book_id": 55,
+          "chapter": 4
+        },
+        {
+          "book_id": 56,
+          "chapter": 1
+        },
+        {
+          "book_id": 56,
+          "chapter": 2
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 87,
+      "title": "Day 87",
+      "word_count": 9172,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Titus 3 - James 2",
+        "display_ta": "தீத்து 3 முதல் யாக்கோபு 2 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 56,
+          "chapter": 3
+        },
+        {
+          "book_id": 57,
+          "chapter": 1
+        },
+        {
+          "book_id": 58,
+          "chapter": 1
+        },
+        {
+          "book_id": 58,
+          "chapter": 2
+        },
+        {
+          "book_id": 58,
+          "chapter": 3
+        },
+        {
+          "book_id": 58,
+          "chapter": 4
+        },
+        {
+          "book_id": 58,
+          "chapter": 5
+        },
+        {
+          "book_id": 58,
+          "chapter": 6
+        },
+        {
+          "book_id": 58,
+          "chapter": 7
+        },
+        {
+          "book_id": 58,
+          "chapter": 8
+        },
+        {
+          "book_id": 58,
+          "chapter": 9
+        },
+        {
+          "book_id": 58,
+          "chapter": 10
+        },
+        {
+          "book_id": 58,
+          "chapter": 11
+        },
+        {
+          "book_id": 58,
+          "chapter": 12
+        },
+        {
+          "book_id": 58,
+          "chapter": 13
+        },
+        {
+          "book_id": 59,
+          "chapter": 1
+        },
+        {
+          "book_id": 59,
+          "chapter": 2
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 88,
+      "title": "Day 88",
+      "word_count": 9318,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "James 3 - Jude 1",
+        "display_ta": "யாக்கோபு 3 முதல் யூதா 1 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 59,
+          "chapter": 3
+        },
+        {
+          "book_id": 59,
+          "chapter": 4
+        },
+        {
+          "book_id": 59,
+          "chapter": 5
+        },
+        {
+          "book_id": 60,
+          "chapter": 1
+        },
+        {
+          "book_id": 60,
+          "chapter": 2
+        },
+        {
+          "book_id": 60,
+          "chapter": 3
+        },
+        {
+          "book_id": 60,
+          "chapter": 4
+        },
+        {
+          "book_id": 60,
+          "chapter": 5
+        },
+        {
+          "book_id": 61,
+          "chapter": 1
+        },
+        {
+          "book_id": 61,
+          "chapter": 2
+        },
+        {
+          "book_id": 61,
+          "chapter": 3
+        },
+        {
+          "book_id": 62,
+          "chapter": 1
+        },
+        {
+          "book_id": 62,
+          "chapter": 2
+        },
+        {
+          "book_id": 62,
+          "chapter": 3
+        },
+        {
+          "book_id": 62,
+          "chapter": 4
+        },
+        {
+          "book_id": 62,
+          "chapter": 5
+        },
+        {
+          "book_id": 63,
+          "chapter": 1
+        },
+        {
+          "book_id": 64,
+          "chapter": 1
+        },
+        {
+          "book_id": 65,
+          "chapter": 1
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 89,
+      "title": "Day 89",
+      "word_count": 8962,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Revelation 1 - Revelation 17",
+        "display_ta": "வெளிப்படுத்தின விசேஷம் 1 முதல் வெளிப்படுத்தின விசேஷம் 17 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 66,
+          "chapter": 1
+        },
+        {
+          "book_id": 66,
+          "chapter": 2
+        },
+        {
+          "book_id": 66,
+          "chapter": 3
+        },
+        {
+          "book_id": 66,
+          "chapter": 4
+        },
+        {
+          "book_id": 66,
+          "chapter": 5
+        },
+        {
+          "book_id": 66,
+          "chapter": 6
+        },
+        {
+          "book_id": 66,
+          "chapter": 7
+        },
+        {
+          "book_id": 66,
+          "chapter": 8
+        },
+        {
+          "book_id": 66,
+          "chapter": 9
+        },
+        {
+          "book_id": 66,
+          "chapter": 10
+        },
+        {
+          "book_id": 66,
+          "chapter": 11
+        },
+        {
+          "book_id": 66,
+          "chapter": 12
+        },
+        {
+          "book_id": 66,
+          "chapter": 13
+        },
+        {
+          "book_id": 66,
+          "chapter": 14
+        },
+        {
+          "book_id": 66,
+          "chapter": 15
+        },
+        {
+          "book_id": 66,
+          "chapter": 16
+        },
+        {
+          "book_id": 66,
+          "chapter": 17
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Revelation 22:21",
+        "ta": "நம்முடைய கர்த்தராகிய இயேசு கிறிஸ்துவின் கிருபை உங்கள் அனைவரோடுங்கூட இருப்பதாக. ஆமென்.",
+        "en": "The grace of our Lord Jesus Christ be with you all. Amen."
+      }
+    },
+    {
+      "day": 90,
+      "title": "Day 90",
+      "word_count": 9224,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Revelation 18 - Tobit 12",
+        "display_ta": "வெளிப்படுத்தின விசேஷம் 18 முதல் தோபித்து 12 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 66,
+          "chapter": 18
+        },
+        {
+          "book_id": 66,
+          "chapter": 19
+        },
+        {
+          "book_id": 66,
+          "chapter": 20
+        },
+        {
+          "book_id": 66,
+          "chapter": 21
+        },
+        {
+          "book_id": 66,
+          "chapter": 22
+        },
+        {
+          "book_id": 67,
+          "chapter": 1
+        },
+        {
+          "book_id": 67,
+          "chapter": 2
+        },
+        {
+          "book_id": 67,
+          "chapter": 3
+        },
+        {
+          "book_id": 67,
+          "chapter": 4
+        },
+        {
+          "book_id": 67,
+          "chapter": 5
+        },
+        {
+          "book_id": 67,
+          "chapter": 6
+        },
+        {
+          "book_id": 67,
+          "chapter": 7
+        },
+        {
+          "book_id": 67,
+          "chapter": 8
+        },
+        {
+          "book_id": 67,
+          "chapter": 9
+        },
+        {
+          "book_id": 67,
+          "chapter": 10
+        },
+        {
+          "book_id": 67,
+          "chapter": 11
+        },
+        {
+          "book_id": 67,
+          "chapter": 12
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Tobit 13:14",
+        "ta": "உன்னை நேசிப்போரும் உன் அமைதியில் மகிழ்வோரும் பேறுபெற்றோர்.",
+        "en": "Blessed are all they that love thee, and that rejoice in thy peace."
+      }
+    },
+    {
+      "day": 91,
+      "title": "Day 91",
+      "word_count": 9383,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Tobit 13 - Judith 15",
+        "display_ta": "தோபித்து 13 முதல் யூதித்து 15 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 67,
+          "chapter": 13
+        },
+        {
+          "book_id": 67,
+          "chapter": 14
+        },
+        {
+          "book_id": 68,
+          "chapter": 1
+        },
+        {
+          "book_id": 68,
+          "chapter": 2
+        },
+        {
+          "book_id": 68,
+          "chapter": 3
+        },
+        {
+          "book_id": 68,
+          "chapter": 4
+        },
+        {
+          "book_id": 68,
+          "chapter": 5
+        },
+        {
+          "book_id": 68,
+          "chapter": 6
+        },
+        {
+          "book_id": 68,
+          "chapter": 7
+        },
+        {
+          "book_id": 68,
+          "chapter": 8
+        },
+        {
+          "book_id": 68,
+          "chapter": 9
+        },
+        {
+          "book_id": 68,
+          "chapter": 10
+        },
+        {
+          "book_id": 68,
+          "chapter": 11
+        },
+        {
+          "book_id": 68,
+          "chapter": 12
+        },
+        {
+          "book_id": 68,
+          "chapter": 13
+        },
+        {
+          "book_id": 68,
+          "chapter": 14
+        },
+        {
+          "book_id": 68,
+          "chapter": 15
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 92,
+      "title": "Day 92",
+      "word_count": 9306,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Judith 16 - Wisdom 16",
+        "display_ta": "யூதித்து 16 முதல் சாலமோனின் ஞானம் 16 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 68,
+          "chapter": 16
+        },
+        {
+          "book_id": 69,
+          "chapter": 1
+        },
+        {
+          "book_id": 69,
+          "chapter": 2
+        },
+        {
+          "book_id": 69,
+          "chapter": 3
+        },
+        {
+          "book_id": 69,
+          "chapter": 4
+        },
+        {
+          "book_id": 69,
+          "chapter": 5
+        },
+        {
+          "book_id": 69,
+          "chapter": 6
+        },
+        {
+          "book_id": 69,
+          "chapter": 7
+        },
+        {
+          "book_id": 69,
+          "chapter": 8
+        },
+        {
+          "book_id": 69,
+          "chapter": 9
+        },
+        {
+          "book_id": 69,
+          "chapter": 10
+        },
+        {
+          "book_id": 69,
+          "chapter": 11
+        },
+        {
+          "book_id": 69,
+          "chapter": 12
+        },
+        {
+          "book_id": 69,
+          "chapter": 13
+        },
+        {
+          "book_id": 69,
+          "chapter": 14
+        },
+        {
+          "book_id": 69,
+          "chapter": 15
+        },
+        {
+          "book_id": 69,
+          "chapter": 16
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Wisdom 3:9",
+        "ta": "ஆண்டவரை நம்பியோர் உண்மையை அறிந்துகொள்வர்.",
+        "en": "They that put their trust in him shall understand the truth."
+      }
+    },
+    {
+      "day": 93,
+      "title": "Day 93",
+      "word_count": 9595,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Wisdom 17 - Sirach 14",
+        "display_ta": "சாலமோனின் ஞானம் 17 முதல் சீராக் (சீராக்கின் ஞானம்) 14 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 69,
+          "chapter": 17
+        },
+        {
+          "book_id": 69,
+          "chapter": 18
+        },
+        {
+          "book_id": 69,
+          "chapter": 19
+        },
+        {
+          "book_id": 70,
+          "chapter": 1
+        },
+        {
+          "book_id": 70,
+          "chapter": 2
+        },
+        {
+          "book_id": 70,
+          "chapter": 3
+        },
+        {
+          "book_id": 70,
+          "chapter": 4
+        },
+        {
+          "book_id": 70,
+          "chapter": 5
+        },
+        {
+          "book_id": 70,
+          "chapter": 6
+        },
+        {
+          "book_id": 70,
+          "chapter": 7
+        },
+        {
+          "book_id": 70,
+          "chapter": 8
+        },
+        {
+          "book_id": 70,
+          "chapter": 9
+        },
+        {
+          "book_id": 70,
+          "chapter": 10
+        },
+        {
+          "book_id": 70,
+          "chapter": 11
+        },
+        {
+          "book_id": 70,
+          "chapter": 12
+        },
+        {
+          "book_id": 70,
+          "chapter": 13
+        },
+        {
+          "book_id": 70,
+          "chapter": 14
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 94,
+      "title": "Day 94",
+      "word_count": 9202,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 15 - Sirach 29",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 15 முதல் சீராக் (சீராக்கின் ஞானம்) 29 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 15
+        },
+        {
+          "book_id": 70,
+          "chapter": 16
+        },
+        {
+          "book_id": 70,
+          "chapter": 17
+        },
+        {
+          "book_id": 70,
+          "chapter": 18
+        },
+        {
+          "book_id": 70,
+          "chapter": 19
+        },
+        {
+          "book_id": 70,
+          "chapter": 20
+        },
+        {
+          "book_id": 70,
+          "chapter": 21
+        },
+        {
+          "book_id": 70,
+          "chapter": 22
+        },
+        {
+          "book_id": 70,
+          "chapter": 23
+        },
+        {
+          "book_id": 70,
+          "chapter": 24
+        },
+        {
+          "book_id": 70,
+          "chapter": 25
+        },
+        {
+          "book_id": 70,
+          "chapter": 26
+        },
+        {
+          "book_id": 70,
+          "chapter": 27
+        },
+        {
+          "book_id": 70,
+          "chapter": 28
+        },
+        {
+          "book_id": 70,
+          "chapter": 29
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 95,
+      "title": "Day 95",
+      "word_count": 9472,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 30 - Sirach 45",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 30 முதல் சீராக் (சீராக்கின் ஞானம்) 45 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 30
+        },
+        {
+          "book_id": 70,
+          "chapter": 31
+        },
+        {
+          "book_id": 70,
+          "chapter": 32
+        },
+        {
+          "book_id": 70,
+          "chapter": 33
+        },
+        {
+          "book_id": 70,
+          "chapter": 34
+        },
+        {
+          "book_id": 70,
+          "chapter": 35
+        },
+        {
+          "book_id": 70,
+          "chapter": 36
+        },
+        {
+          "book_id": 70,
+          "chapter": 37
+        },
+        {
+          "book_id": 70,
+          "chapter": 38
+        },
+        {
+          "book_id": 70,
+          "chapter": 39
+        },
+        {
+          "book_id": 70,
+          "chapter": 40
+        },
+        {
+          "book_id": 70,
+          "chapter": 41
+        },
+        {
+          "book_id": 70,
+          "chapter": 42
+        },
+        {
+          "book_id": 70,
+          "chapter": 43
+        },
+        {
+          "book_id": 70,
+          "chapter": 44
+        },
+        {
+          "book_id": 70,
+          "chapter": 45
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Sirach 2:10",
+        "ta": "முந்தைய தலைமுறைகளை எண்ணிப்பாருங்கள்; ஆண்டவரை நம்பி ஏமாற்றம் அடைந்தவர் யாராவது உண்டா?",
+        "en": "Look at the generations of old, and see; did ever any trust in the Lord, and was confounded?"
+      }
+    },
+    {
+      "day": 96,
+      "title": "Day 96",
+      "word_count": 9833,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "Sirach 46 - 1 Maccabees 1",
+        "display_ta": "சீராக் (சீராக்கின் ஞானம்) 46 முதல் 1 மக்கபேயர் 1 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 70,
+          "chapter": 46
+        },
+        {
+          "book_id": 70,
+          "chapter": 47
+        },
+        {
+          "book_id": 70,
+          "chapter": 48
+        },
+        {
+          "book_id": 70,
+          "chapter": 49
+        },
+        {
+          "book_id": 70,
+          "chapter": 50
+        },
+        {
+          "book_id": 70,
+          "chapter": 51
+        },
+        {
+          "book_id": 71,
+          "chapter": 1
+        },
+        {
+          "book_id": 71,
+          "chapter": 2
+        },
+        {
+          "book_id": 71,
+          "chapter": 3
+        },
+        {
+          "book_id": 71,
+          "chapter": 4
+        },
+        {
+          "book_id": 71,
+          "chapter": 5
+        },
+        {
+          "book_id": 71,
+          "chapter": 6
+        },
+        {
+          "book_id": 72,
+          "chapter": 1
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 97,
+      "title": "Day 97",
+      "word_count": 8910,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 2 - 1 Maccabees 7",
+        "display_ta": "1 மக்கபேயர் 2 முதல் 1 மக்கபேயர் 7 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 2
+        },
+        {
+          "book_id": 72,
+          "chapter": 3
+        },
+        {
+          "book_id": 72,
+          "chapter": 4
+        },
+        {
+          "book_id": 72,
+          "chapter": 5
+        },
+        {
+          "book_id": 72,
+          "chapter": 6
+        },
+        {
+          "book_id": 72,
+          "chapter": 7
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 98,
+      "title": "Day 98",
+      "word_count": 9212,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 8 - 1 Maccabees 13",
+        "display_ta": "1 மக்கபேயர் 8 முதல் 1 மக்கபேயர் 13 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 8
+        },
+        {
+          "book_id": 72,
+          "chapter": 9
+        },
+        {
+          "book_id": 72,
+          "chapter": 10
+        },
+        {
+          "book_id": 72,
+          "chapter": 11
+        },
+        {
+          "book_id": 72,
+          "chapter": 12
+        },
+        {
+          "book_id": 72,
+          "chapter": 13
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 99,
+      "title": "Day 99",
+      "word_count": 9209,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "1 Maccabees 14 - 2 Maccabees 6",
+        "display_ta": "1 மக்கபேயர் 14 முதல் 2 மக்கபேயர் 6 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 72,
+          "chapter": 14
+        },
+        {
+          "book_id": 72,
+          "chapter": 15
+        },
+        {
+          "book_id": 72,
+          "chapter": 16
+        },
+        {
+          "book_id": 73,
+          "chapter": 1
+        },
+        {
+          "book_id": 73,
+          "chapter": 2
+        },
+        {
+          "book_id": 73,
+          "chapter": 3
+        },
+        {
+          "book_id": 73,
+          "chapter": 4
+        },
+        {
+          "book_id": 73,
+          "chapter": 5
+        },
+        {
+          "book_id": 73,
+          "chapter": 6
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    },
+    {
+      "day": 100,
+      "title": "Day 100",
+      "word_count": 9431,
+      "intro": {
+        "duration_sec": 5,
+        "display_en": "2 Maccabees 7 - 2 Maccabees 15",
+        "display_ta": "2 மக்கபேயர் 7 முதல் 2 மக்கபேயர் 15 வரை"
+      },
+      "chapters": [
+        {
+          "book_id": 73,
+          "chapter": 7
+        },
+        {
+          "book_id": 73,
+          "chapter": 8
+        },
+        {
+          "book_id": 73,
+          "chapter": 9
+        },
+        {
+          "book_id": 73,
+          "chapter": 10
+        },
+        {
+          "book_id": 73,
+          "chapter": 11
+        },
+        {
+          "book_id": 73,
+          "chapter": 12
+        },
+        {
+          "book_id": 73,
+          "chapter": 13
+        },
+        {
+          "book_id": 73,
+          "chapter": 14
+        },
+        {
+          "book_id": 73,
+          "chapter": 15
+        }
+      ],
+      "outro": {
+        "duration_sec": 5,
+        "ref": "Numbers 6:24-26",
+        "ta": "கர்த்தர் உன்னை ஆசீர்வதித்து, உன்னைக் காக்கக்கடவர்; கர்த்தர் தம்முடைய முகத்தை உன்மேல் பிரகாசிக்கப்பண்ணி, உன்மேல் கிருபையாயிருக்கக்கடவர்.",
+        "en": "The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you."
+      }
+    }
+  ]
+}

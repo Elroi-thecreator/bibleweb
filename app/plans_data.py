@@ -77,4 +77,16 @@ READING_PLANS = {
             {"day": 15, "book_id": 19, "chapter": 150, "ref": "Psalm 150 / சங்கீதம் 150"},
         ],
     },
+    "deuterocanon-30": {
+        "id": "deuterocanon-30",
+        "title_en": "Deuterocanonical Books in 30 Days",
+        "title_ta": "இரண்டாம் திருமுறை 30 நாட்களில்",
+        "tagline": "Tobit, Judith, Wisdom, Sirach, Baruch & Maccabees • ~4-5 Chapters a day",
+        "total_days": 30,
+        "badge": "Catholic",
+        "days": [
+            {"day": d, "ref": f"Deuterocanon Day {d} / இரண்டாம் திருமுறை நாள் {d}"}
+            for d in range(1, 31)
+        ],
+    },
 }

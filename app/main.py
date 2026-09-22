@@ -503,6 +503,10 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
     plan_files = {
         "whole-bible-100": ("plan_100_whole_bible.json", "Whole Bible in 100 Days"),
         "new-testament-100": ("plan_100_new_testament.json", "New Testament in 100 Days"),
+        "deuterocanon-30": ("plan_30_deuterocanon.json", "Deuterocanon in 30 Days"),
+        "deuterocanonical-30": ("plan_30_deuterocanon.json", "Deuterocanon in 30 Days"),
+        "catholic-100": ("plan_100_catholic_bible.json", "Catholic Bible in 100 Days"),
+        "catholic-bible-100": ("plan_100_catholic_bible.json", "Catholic Bible in 100 Days"),
     }
 
     if plan_type not in plan_files:

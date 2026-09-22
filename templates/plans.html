@@ -8,24 +8,127 @@
     <!-- Header -->
     <div class="border-b border-stone-200 dark:border-stone-800 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">Reading Plans</h1>
+            <div class="flex items-center gap-2">
+                <h1 class="text-2xl sm:text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100">Reading Plans</h1>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold {% if is_catholic %}bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700{% else %}bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border border-stone-300 dark:border-stone-700{% endif %}">
+                    {% if is_catholic %}✝️ Catholic (73 Books){% else %}📖 Protestant (66 Books){% endif %}
+                </span>
+            </div>
             <p class="font-tamil text-xs sm:text-sm text-stone-500">தனிப்பயன் வாசிப்புத் திட்டங்கள் (முழு வேதாகம பதிவிலிருந்து தனிப்பட்டது)</p>
         </div>
-        <button onclick="openPlanModal()" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer self-start sm:self-auto">
-            <span>+</span> <span>Create New Plan</span>
-        </button>
+        <div class="flex items-center gap-2 self-start sm:self-auto">
+            <!-- Canon Toggle Pill -->
+            <div class="inline-flex bg-stone-100 dark:bg-stone-800 p-1 rounded-xl border border-stone-200 dark:border-stone-700 text-xs">
+                <button type="button" onclick="setBibleCanon('protestant')" 
+                        class="px-2.5 sm:px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer {% if not is_catholic %}bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-300 shadow-xs{% else %}text-stone-500 hover:text-stone-800 dark:hover:text-stone-200{% endif %}">
+                    📖 Protestant
+                </button>
+                <button type="button" onclick="setBibleCanon('catholic')" 
+                        class="px-2.5 sm:px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer {% if is_catholic %}bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-300 shadow-xs{% else %}text-stone-500 hover:text-stone-800 dark:hover:text-stone-200{% endif %}">
+                    ✝️ Catholic
+                </button>
+            </div>
+            <button onclick="openPlanModal()" class="px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
+                <span>+</span> <span>Create Plan</span>
+            </button>
+        </div>
     </div>
 
-    <!-- 100-Day Reading Plans with Read-Along & Day Selector -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Featured Read-Along Challenges (1 Page Per Day) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {% if is_catholic %}
+        <!-- Catholic Bible in 100 Days -->
+        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3">
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">73 Books Canon</span>
+                    <span class="text-[10px] text-stone-400 font-mono">1,326 Ch</span>
+                </div>
+                <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100">Catholic Bible in 100 Days</h3>
+                <p class="font-tamil text-xs text-stone-500">முழு கத்தோலிக்க திருவிவிலியம் 100 நாட்களில்</p>
+            </div>
+            <div class="space-y-2">
+                <a href="/read-along/plan/catholic-100/day/1" class="w-full py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs">
+                    <span>Start Day 1</span> <span>→</span>
+                </a>
+                <div class="flex items-center gap-2">
+                    <label for="cat-day-select" class="text-[11px] font-bold text-stone-500 flex-shrink-0">Day:</label>
+                    <select id="cat-day-select" onchange="if(this.value) window.location.href='/read-along/plan/catholic-100/day/' + this.value" class="w-full text-xs p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-200 font-mono">
+                        <option value="">Jump to Day (1 - 100)...</option>
+                        {% for d in range(1, 101) %}
+                            <option value="{{ d }}">Day {{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deuterocanonical Books in 30 Days -->
+        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3">
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">Deuterocanon Track</span>
+                    <span class="text-[10px] text-stone-400 font-mono">137 Ch</span>
+                </div>
+                <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100">Deuterocanon in 30 Days</h3>
+                <p class="font-tamil text-xs text-stone-500">இரண்டாம் திருமுறை 30 நாட்களில் (தோபித்து முதல் மக்கபேயர்)</p>
+            </div>
+            <div class="space-y-2">
+                <a href="/read-along/plan/deuterocanon-30/day/1" class="w-full py-2 px-3 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs">
+                    <span>Start Day 1</span> <span>→</span>
+                </a>
+                <div class="flex items-center gap-2">
+                    <label for="dc-day-select" class="text-[11px] font-bold text-stone-500 flex-shrink-0">Day:</label>
+                    <select id="dc-day-select" onchange="if(this.value) window.location.href='/read-along/plan/deuterocanon-30/day/' + this.value" class="w-full text-xs p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-200 font-mono">
+                        <option value="">Jump to Day (1 - 30)...</option>
+                        {% for d in range(1, 31) %}
+                            <option value="{{ d }}">Day {{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Testament in 100 Days -->
+        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3">
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">New Testament</span>
+                    <span class="text-[10px] text-stone-400 font-mono">260 Ch</span>
+                </div>
+                <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100">New Testament in 100 Days</h3>
+                <p class="font-tamil text-xs text-stone-500">புதிய ஏற்பாடு 100 நாட்களில் (Read-Along)</p>
+            </div>
+            <div class="space-y-2">
+                <a href="/read-along/plan/new-testament-100/day/1" class="w-full py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs">
+                    <span>Start Day 1</span> <span>→</span>
+                </a>
+                <div class="flex items-center gap-2">
+                    <label for="nt-day-select" class="text-[11px] font-bold text-stone-500 flex-shrink-0">Day:</label>
+                    <select id="nt-day-select" onchange="if(this.value) window.location.href='/read-along/plan/new-testament-100/day/' + this.value" class="w-full text-xs p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-200 font-mono">
+                        <option value="">Jump to Day (1 - 100)...</option>
+                        {% for d in range(1, 101) %}
+                            <option value="{{ d }}">Day {{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+
         <!-- Whole Bible in 100 Days -->
         <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3">
             <div>
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">66 Books Canon</span>
+                    <span class="text-[10px] text-stone-400 font-mono">1,189 Ch</span>
+                </div>
                 <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100">Whole Bible in 100 Days</h3>
                 <p class="font-tamil text-xs text-stone-500">முழு வேதாகமம் 100 நாட்களில் (Read-Along)</p>
             </div>
             <div class="space-y-2">
-                <a href="/read-along/plan/whole-bible-100/day/1" class="w-full py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                <a href="/read-along/plan/whole-bible-100/day/1" class="w-full py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs">
                     <span>Start Day 1</span> <span>→</span>
                 </a>
                 <div class="flex items-center gap-2">
@@ -40,14 +143,44 @@
             </div>
         </div>
 
+        <!-- Deuterocanonical Books in 30 Days (Direct Link to Catholic Track) -->
+        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3">
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">Catholic Deuterocanon</span>
+                    <span class="text-[10px] text-stone-400 font-mono">137 Ch</span>
+                </div>
+                <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100">Deuterocanon in 30 Days</h3>
+                <p class="font-tamil text-xs text-stone-500">இரண்டாம் திருமுறை 30 நாட்களில் (7 நூல்கள்)</p>
+            </div>
+            <div class="space-y-2">
+                <a href="/read-along/plan/deuterocanon-30/day/1" class="w-full py-2 px-3 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs">
+                    <span>Start Day 1</span> <span>→</span>
+                </a>
+                <div class="flex items-center gap-2">
+                    <label for="dc-day-select" class="text-[11px] font-bold text-stone-500 flex-shrink-0">Day:</label>
+                    <select id="dc-day-select" onchange="if(this.value) window.location.href='/read-along/plan/deuterocanon-30/day/' + this.value" class="w-full text-xs p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-200 font-mono">
+                        <option value="">Jump to Day (1 - 30)...</option>
+                        {% for d in range(1, 31) %}
+                            <option value="{{ d }}">Day {{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <!-- New Testament in 100 Days -->
         <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3">
             <div>
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">New Testament</span>
+                    <span class="text-[10px] text-stone-400 font-mono">260 Ch</span>
+                </div>
                 <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100">New Testament in 100 Days</h3>
                 <p class="font-tamil text-xs text-stone-500">புதிய ஏற்பாடு 100 நாட்களில் (Read-Along)</p>
             </div>
             <div class="space-y-2">
-                <a href="/read-along/plan/new-testament-100/day/1" class="w-full py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                <a href="/read-along/plan/new-testament-100/day/1" class="w-full py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs">
                     <span>Start Day 1</span> <span>→</span>
                 </a>
                 <div class="flex items-center gap-2">
@@ -61,6 +194,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <!-- Active Plans Grid Container -->
@@ -99,10 +233,21 @@
             <div class="space-y-1.5">
                 <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Reading Scope / பகுதி</label>
                 <select id="input-plan-scope" onchange="updateModalCalculations()" class="w-full text-xs p-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 font-medium">
-                    <option value="all">Entire Bible (1,189 Chapters)</option>
-                    <option value="nt">New Testament (260 Chapters)</option>
-                    <option value="gospels">The Four Gospels (89 Chapters)</option>
-                    <option value="psalms_proverbs">Psalms & Proverbs (181 Chapters)</option>
+                    {% if is_catholic %}
+                    <option value="catholic_all" selected>Entire Catholic Bible (1,326 Chapters / 73 நூல்கள்)</option>
+                    <option value="deuterocanon">Deuterocanonical Books (137 Chapters / 2-ஆம் திருமுறை)</option>
+                    <option value="all">Entire Protestant Bible (1,189 Chapters / 66 நூல்கள்)</option>
+                    <option value="nt">New Testament (260 Chapters / புதிய ஏற்பாடு)</option>
+                    <option value="gospels">The Four Gospels (89 Chapters / நற்செய்திகள்)</option>
+                    <option value="psalms_proverbs">Psalms & Proverbs (181 Chapters / சங்கீதம் & நீதிமொழிகள்)</option>
+                    {% else %}
+                    <option value="all" selected>Entire Protestant Bible (1,189 Chapters / 66 நூல்கள்)</option>
+                    <option value="catholic_all">Entire Catholic Bible (1,326 Chapters / 73 நூல்கள்)</option>
+                    <option value="deuterocanon">Deuterocanonical Books (137 Chapters / 2-ஆம் திருமுறை)</option>
+                    <option value="nt">New Testament (260 Chapters / புதிய ஏற்பாடு)</option>
+                    <option value="gospels">The Four Gospels (89 Chapters / நற்செய்திகள்)</option>
+                    <option value="psalms_proverbs">Psalms & Proverbs (181 Chapters / சங்கீதம் & நீதிமொழிகள்)</option>
+                    {% endif %}
                 </select>
             </div>
 
@@ -164,11 +309,24 @@
 
 {% block scripts %}
 <script>
+const BOOK_CHAPTER_COUNTS = {
+    1: 50, 2: 40, 3: 27, 4: 36, 5: 34, 6: 24, 7: 21, 8: 4, 9: 31, 10: 24,
+    11: 22, 12: 25, 13: 29, 14: 36, 15: 10, 16: 13, 17: 10, 18: 42, 19: 150, 20: 31,
+    21: 12, 22: 8, 23: 66, 24: 52, 25: 5, 26: 48, 27: 12, 28: 14, 29: 3, 30: 9,
+    31: 1, 32: 4, 33: 7, 34: 3, 35: 3, 36: 3, 37: 2, 38: 14, 39: 4, 40: 28,
+    41: 16, 42: 24, 43: 21, 44: 28, 45: 16, 46: 16, 47: 13, 48: 6, 49: 6, 50: 4,
+    51: 4, 52: 5, 53: 3, 54: 6, 55: 4, 56: 3, 57: 1, 58: 13, 59: 5, 60: 5,
+    61: 3, 62: 5, 63: 1, 64: 1, 65: 1, 66: 22,
+    67: 14, 68: 16, 69: 19, 70: 51, 71: 6, 72: 16, 73: 15
+};
+
 const PLAN_SCOPES = {
-    all: { name: "Entire Scripture", startBook: 1, endBook: 66, chapters: 1189 },
-    nt: { name: "New Testament", startBook: 40, endBook: 66, chapters: 260 },
-    gospels: { name: "The Four Gospels", startBook: 40, endBook: 43, chapters: 89 },
-    psalms_proverbs: { name: "Psalms & Proverbs", startBook: 19, endBook: 20, chapters: 181 }
+    all: { name: "Entire Protestant Bible (66 Books)", chapters: 1189, books: Array.from({length: 66}, (_, i) => i + 1) },
+    catholic_all: { name: "Entire Catholic Bible (73 Books)", chapters: 1326, books: Array.from({length: 73}, (_, i) => i + 1) },
+    deuterocanon: { name: "Deuterocanonical Books (2-ஆம் திருமுறை)", chapters: 137, books: [67, 68, 69, 70, 71, 72, 73] },
+    nt: { name: "New Testament", chapters: 260, books: Array.from({length: 27}, (_, i) => i + 40) },
+    gospels: { name: "The Four Gospels", chapters: 89, books: [40, 41, 42, 43] },
+    psalms_proverbs: { name: "Psalms & Proverbs", chapters: 181, books: [19, 20] }
 };
 
 let activeDriver = 'date';
@@ -318,28 +476,19 @@ function recalculatePlanById(planId) {
 
 function getPlanMetrics(plan) {
     const completed = plan.completedChapters || {};
-    const scope = PLAN_SCOPES[plan.scopeKey];
+    const scope = PLAN_SCOPES[plan.scopeKey] || PLAN_SCOPES.all;
     let readCount = 0;
     let firstUnread = null;
 
-    if (plan.scopeKey === 'psalms_proverbs') {
-        for (let c = 1; c <= 150; c++) {
-            if (completed[`19_${c}`]) readCount++;
-            else if (!firstUnread) firstUnread = { book: 19, ch: c };
-        }
-        for (let c = 1; c <= 31; c++) {
-            if (completed[`20_${c}`]) readCount++;
-            else if (!firstUnread) firstUnread = { book: 20, ch: c };
-        }
-    } else {
-        for (let b = scope.startBook; b <= scope.endBook; b++) {
-            const maxCh = (b === 19 ? 150 : (b === 66 ? 22 : 50));
-            for (let c = 1; c <= maxCh; c++) {
-                if (completed[`${b}_${c}`]) {
-                    readCount++;
-                } else if (!firstUnread) {
-                    firstUnread = { book: b, ch: c };
-                }
+    const bookList = scope.books || (scope.startBook && scope.endBook ? Array.from({length: scope.endBook - scope.startBook + 1}, (_, i) => scope.startBook + i) : [1]);
+
+    for (const b of bookList) {
+        const maxCh = BOOK_CHAPTER_COUNTS[b] || 50;
+        for (let c = 1; c <= maxCh; c++) {
+            if (completed[`${b}_${c}`]) {
+                readCount++;
+            } else if (!firstUnread) {
+                firstUnread = { book: b, ch: c };
             }
         }
     }
@@ -357,7 +506,7 @@ function getPlanMetrics(plan) {
         pct: Math.min(100, Math.round((readCount / scope.chapters) * 100)),
         expectedRead,
         variance,
-        firstUnread: firstUnread || { book: scope.startBook, ch: 1 }
+        firstUnread: firstUnread || { book: bookList[0] || 1, ch: 1 }
     };
 }
 
