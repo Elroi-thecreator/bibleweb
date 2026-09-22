@@ -403,22 +403,52 @@
             document.cookie = `bible_canon=${canon}; path=/; max-age=31536000; SameSite=Lax`;
             updateCanonUI(canon);
 
-            // If reading a Deuterocanonical book (>= 67) and switching to Protestant, redirect to Genesis 1
+            // 1. Instant optimistic DOM toggle on Landing Page (0ms delay, no reload needed)
+            const catSec = document.getElementById('landing-canon-catholic');
+            const protSec = document.getElementById('landing-canon-protestant');
+            const landingPillProt = document.getElementById('landing-pill-protestant');
+            const landingPillCat = document.getElementById('landing-pill-catholic');
+            if (catSec && protSec) {
+                if (canon === 'catholic') {
+                    catSec.classList.remove('hidden');
+                    protSec.classList.add('hidden');
+                    if (landingPillCat) {
+                        landingPillCat.className = 'px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-300 shadow-xs';
+                    }
+                    if (landingPillProt) {
+                        landingPillProt.className = 'px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer text-stone-500 hover:text-stone-800 dark:hover:text-stone-200';
+                    }
+                } else {
+                    catSec.classList.add('hidden');
+                    protSec.classList.remove('hidden');
+                    if (landingPillProt) {
+                        landingPillProt.className = 'px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-300 shadow-xs';
+                    }
+                    if (landingPillCat) {
+                        landingPillCat.className = 'px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer text-stone-500 hover:text-stone-800 dark:hover:text-stone-200';
+                    }
+                }
+                try {
+                    window.history.replaceState(null, '', `/?canon=${canon}`);
+                } catch(e) {}
+                const modal = document.getElementById('settings-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    toggleSettingsModal();
+                }
+                return;
+            }
+
+            // 2. If reading a Deuterocanonical book (>= 67) and switching to Protestant, redirect to Genesis 1
             const pathParts = window.location.pathname.split('/');
             if (canon === 'protestant' && pathParts[1] === 'read' && parseInt(pathParts[2]) >= 67) {
-                window.location.href = '/read/1/1?mode=bilingual';
+                window.location.href = '/read/1/1?mode=bilingual&canon=protestant';
                 return;
             }
 
-            // If URL has canon param, preserve or update it
+            // 3. For all other pages, navigate with explicit ?canon= parameter to guarantee fresh server render on single click
             const currentUrl = new URL(window.location.href);
-            if (currentUrl.searchParams.has('canon')) {
-                currentUrl.searchParams.set('canon', canon);
-                window.location.href = currentUrl.toString();
-                return;
-            }
-
-            window.location.reload();
+            currentUrl.searchParams.set('canon', canon);
+            window.location.href = currentUrl.toString();
         }
 
         function updateCanonUI(canon) {
@@ -442,6 +472,31 @@
                 updateCanonUI(activeCanon);
                 if (!document.cookie.includes('bible_canon=' + activeCanon)) {
                     document.cookie = `bible_canon=${activeCanon}; path=/; max-age=31536000; SameSite=Lax`;
+                }
+                const catSec = document.getElementById('landing-canon-catholic');
+                const protSec = document.getElementById('landing-canon-protestant');
+                const landingPillProt = document.getElementById('landing-pill-protestant');
+                const landingPillCat = document.getElementById('landing-pill-catholic');
+                if (catSec && protSec) {
+                    if (activeCanon === 'catholic') {
+                        catSec.classList.remove('hidden');
+                        protSec.classList.add('hidden');
+                        if (landingPillCat) {
+                            landingPillCat.className = 'px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-300 shadow-xs';
+                        }
+                        if (landingPillProt) {
+                            landingPillProt.className = 'px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer text-stone-500 hover:text-stone-800 dark:hover:text-stone-200';
+                        }
+                    } else {
+                        catSec.classList.add('hidden');
+                        protSec.classList.remove('hidden');
+                        if (landingPillProt) {
+                            landingPillProt.className = 'px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer bg-white dark:bg-stone-700 text-amber-800 dark:text-amber-300 shadow-xs';
+                        }
+                        if (landingPillCat) {
+                            landingPillCat.className = 'px-3 sm:px-4 py-1.5 rounded-lg font-semibold transition cursor-pointer text-stone-500 hover:text-stone-800 dark:hover:text-stone-200';
+                        }
+                    }
                 }
             } catch(e) {}
         })();

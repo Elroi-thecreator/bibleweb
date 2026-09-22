@@ -1,9 +1,6 @@
-const CACHE_NAME = 'bible-app-v2';
+const CACHE_NAME = 'bible-app-v3';
 const STATIC_ASSETS = [
   '/',
-  '/progress',
-  '/plans',
-  '/bookmarks',
   '/static/js/storage.js',
   '/static/js/audio_player.js',
   '/static/manifest.json'
@@ -28,32 +25,42 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Do not intercept streaming audio responses
-  if (url.pathname.startsWith('/api/audio')) {
+  // 1. Do not intercept streaming audio or API endpoints
+  if (url.pathname.startsWith('/api/')) {
     return;
   }
 
+  // 2. Navigation / HTML Pages: Always Network-First (respects cookies, canon params, zero-stale-lag)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const resClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Offline fallback
+          return caches.match(event.request).then((cached) => cached || caches.match('/'));
+        })
+    );
+    return;
+  }
+
+  // 3. Static assets (JS, CSS, icons, fonts): Cache-First
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cached and update in background
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
-          }
-        }).catch(() => {});
         return cachedResponse;
       }
-
       return fetch(event.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
           const resClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
         }
         return networkResponse;
-      }).catch(() => {
-        // Offline fallback
-        return caches.match('/');
       });
     })
   );
