@@ -6,20 +6,20 @@
 <div class="max-w-5xl mx-auto px-2.5 sm:px-4 py-3 sm:py-6 pb-32">
 
     <!-- Minimalist Sticky Header Dock -->
-    <div id="reader-toolbar" class="sticky top-14 sm:top-16 z-30 mb-4 sm:mb-6 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-200/80 dark:border-stone-800 rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 shadow-xs flex items-center justify-between gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap transition-all duration-200">
+    <div id="reader-toolbar" class="sticky top-14 sm:top-16 z-30 mb-4 sm:mb-6 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-200/80 dark:border-stone-800 rounded-2xl px-2.5 sm:px-4 py-2 sm:py-2.5 shadow-xs flex items-center justify-between gap-1 sm:gap-2 transition-all duration-200">
         
         <!-- Left: Quick Book & Chapter Selectors -->
         <div class="flex items-center space-x-1.5 sm:space-x-2.5 min-w-0">
             <button onclick="document.getElementById('quick-nav-modal').classList.remove('hidden')" 
-                    class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 hover:text-amber-700 flex items-center gap-1 truncate cursor-pointer">
-                <span>{{ book.name_en }}</span>
-                <span class="text-[10px] text-stone-400">▾</span>
+                    class="font-cinzel font-bold text-xs sm:text-base text-stone-900 dark:text-stone-100 hover:text-amber-700 flex items-center gap-1 truncate cursor-pointer max-w-[110px] sm:max-w-none">
+                <span class="truncate">{{ book.name_en }}</span>
+                <span class="text-[10px] text-stone-400 shrink-0">▾</span>
             </button>
-            <span class="text-stone-400 font-tamil text-xs hidden sm:inline truncate notranslate" translate="no">({{ book.name_ta }})</span>
+            <span class="text-stone-400 font-tamil text-xs hidden md:inline truncate notranslate" translate="no">({{ book.name_ta }})</span>
 
             <!-- Compact Chapter Dropdown -->
             <select id="chapter-select-dropdown" onchange="navigateWithPlan(this.value)" 
-                    class="bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-semibold rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-700 cursor-pointer">
+                    class="bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-semibold rounded-lg px-1.5 sm:px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-amber-700 cursor-pointer shrink-0">
                 {% for c in range(1, book.total_chapters + 1) %}
                 <option value="{{ c }}" {% if c == chapter %}selected{% endif %}>Ch {{ c }}</option>
                 {% endfor %}
@@ -34,45 +34,48 @@
         </div>
 
         <!-- Right: Primary Actions & View Menu Popup -->
-        <div class="flex items-center space-x-1.5 sm:space-x-2">
+        <div class="flex items-center space-x-1 sm:space-x-2 shrink-0">
             
             <!-- Quick Listen Button -->
             <button type="button" 
                     onclick="window.bibleAudio ? window.bibleAudio.play(0) : null" 
-                    class="flex items-center gap-1 px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
+                    class="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
                     title="Listen to this chapter">
                 <span>▶</span> <span class="hidden sm:inline">Listen</span>
             </button>
 
-            <!-- Context-Aware Read Checkbox Button (Strictly Icon Only) -->
-            <button type="button"
-                    onclick="handleChapterTick()"
-                    class="chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 transition shadow-xs cursor-pointer shrink-0"
-                    title="Mark chapter as read">
-                <svg class="w-4 h-4 text-stone-400 dark:text-stone-500 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-            </button>
+            <!-- Context-Aware Read Checkbox Button (Desktop Only; available in View Menu on mobile) -->
+            <div class="hidden sm:block">
+                <button type="button"
+                        onclick="handleChapterTick()"
+                        class="chapter-read-btn flex items-center justify-center w-8 h-8 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 transition shadow-xs cursor-pointer shrink-0"
+                        title="Mark chapter as read">
+                    <svg class="w-4 h-4 text-stone-400 dark:text-stone-500 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </button>
+            </div>
 
             <!-- Prev / Next Chapter Buttons -->
             <div class="flex items-center border border-stone-200 dark:border-stone-700 rounded-xl overflow-hidden text-xs">
                 {% if prev_ch %}
-                <a id="link-prev-ch" href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="px-2.5 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300">‹</a>
+                <a id="link-prev-ch" href="/read/{{ book.id }}/{{ prev_ch }}?mode={{ mode }}" class="px-2 sm:px-2.5 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300">‹</a>
                 {% endif %}
                 {% if next_ch %}
-                <a id="link-next-ch" href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="px-2.5 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300">›</a>
+                <a id="link-next-ch" href="/read/{{ book.id }}/{{ next_ch }}?mode={{ mode }}" class="px-2 sm:px-2.5 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300">›</a>
                 {% endif %}
             </div>
 
             <!-- Unified View Menu Popup -->
             <div class="relative">
                 <button id="view-menu-btn" onclick="toggleViewMenu()" 
-                        class="px-2.5 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl text-xs font-semibold flex items-center gap-1 text-stone-700 dark:text-stone-300 transition cursor-pointer">
+                        class="px-2 sm:px-2.5 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl text-xs font-semibold flex items-center gap-1 text-stone-700 dark:text-stone-300 transition cursor-pointer"
+                        title="View settings and options">
                     <span>⚙</span> <span class="hidden sm:inline">View</span>
                 </button>
 
-                <!-- Floating Dropdown Card -->
-                <div id="view-menu-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-stone-200 dark:border-stone-800 p-3.5 space-y-3 z-50">
+                <!-- Floating Dropdown Card (Safe max width on narrow phones) -->
+                <div id="view-menu-dropdown" class="hidden absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-stone-200 dark:border-stone-800 p-3.5 space-y-3 z-50">
                     
                     <!-- Language Mode Switcher -->
                     <div>
@@ -119,6 +122,17 @@
                         </button>
                     </div>
 
+                    <!-- Mobile Action: Mark Chapter Completed -->
+                    <div class="sm:hidden pt-2 border-t border-stone-100 dark:border-stone-800">
+                        <button type="button" onclick="handleChapterTick(); toggleViewMenu();" 
+                                class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition text-left cursor-pointer">
+                            <span class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                <span>✓</span> <span>Toggle Read Status</span>
+                            </span>
+                            <span class="text-[10px] text-stone-400">Mark / Unmark</span>
+                        </button>
+                    </div>
+
                 </div>
             </div>
 
@@ -152,7 +166,7 @@
                 <span class="font-cinzel font-bold text-amber-800/80 dark:text-amber-500/80 text-xs tracking-wider">{{ chapter }}:{{ v.verse }}</span>
                 
                 <!-- Subdued Touch & Hover Actions -->
-                <div class="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 flex items-center space-x-1.5 sm:space-x-2 text-stone-400 transition-opacity">
+                <div class="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 flex items-center space-x-1.5 sm:space-x-2 text-stone-400 transition-opacity shrink-0">
                     <div class="flex items-center space-x-1">
                         <button type="button" onclick="window.setVerseHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'yellow')" class="w-3.5 h-3.5 sm:w-3 sm:h-3 rounded-full bg-amber-300 hover:scale-110 cursor-pointer" title="Highlight"></button>
                         <button type="button" onclick="window.setVerseHighlight({{ book.id }}, {{ chapter }}, {{ v.verse }}, 'green')" class="w-3.5 h-3.5 sm:w-3 sm:h-3 rounded-full bg-emerald-300 hover:scale-110 cursor-pointer" title="Highlight"></button>
@@ -224,32 +238,35 @@
 </div>
 
 <!-- Persistent Audio Dock -->
-<div id="audio-dock" class="fixed bottom-14 sm:bottom-0 inset-x-0 bg-stone-950/95 backdrop-blur-md text-stone-100 p-2.5 sm:p-3 sm:px-8 border-t border-stone-800 shadow-2xl z-50 transform translate-y-full transition-transform duration-300 ease-in-out">
-    <div class="max-w-4xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
-        <div class="flex items-center space-x-2.5">
-            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-            <div>
-                <span class="font-cinzel text-[11px] text-stone-400 block leading-none">{{ book.name_en }} {{ chapter }}</span>
-                <span id="audio-verse-label" class="font-bold text-xs text-white font-cinzel leading-tight">Verse 1</span>
+<div id="audio-dock" class="fixed bottom-14 sm:bottom-0 inset-x-0 bg-stone-950/95 backdrop-blur-md text-stone-100 p-2 sm:p-3 sm:px-8 border-t border-stone-800 shadow-2xl z-50 transform translate-y-full transition-transform duration-300 ease-in-out">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3">
+        <div class="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
+            <span class="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+            <div class="min-w-0">
+                <span class="font-cinzel text-[10px] sm:text-[11px] text-stone-400 block leading-none truncate max-w-[85px] sm:max-w-none">{{ book.name_en }} {{ chapter }}</span>
+                <span id="audio-verse-label" class="font-bold text-xs text-white font-cinzel leading-tight truncate block">Verse 1</span>
             </div>
         </div>
 
-        <div class="flex items-center space-x-3">
-            <button onclick="window.bibleAudio ? window.bibleAudio.prev() : null" class="text-stone-400 hover:text-white text-base cursor-pointer">⏮</button>
+        <div class="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
+            <button onclick="window.bibleAudio ? window.bibleAudio.prev() : null" class="text-stone-400 hover:text-white text-sm sm:text-base p-1 cursor-pointer" title="Previous verse">⏮</button>
             <button id="audio-play-pause-btn" onclick="window.bibleAudio ? (window.bibleAudio.isPaused ? window.bibleAudio.resume() : window.bibleAudio.pause()) : null" 
-                    class="w-9 h-9 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center text-sm font-bold shadow-md cursor-pointer">
+                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center text-xs sm:text-sm font-bold shadow-md cursor-pointer shrink-0">
                 ⏸
             </button>
-            <button onclick="window.bibleAudio ? window.bibleAudio.next() : null" class="text-stone-400 hover:text-white text-base cursor-pointer">⏭</button>
-            <button onclick="window.bibleAudio ? window.bibleAudio.stop() : null" class="text-stone-400 hover:text-rose-400 text-xs px-2 py-1 rounded border border-stone-800 cursor-pointer">Stop</button>
+            <button onclick="window.bibleAudio ? window.bibleAudio.next() : null" class="text-stone-400 hover:text-white text-sm sm:text-base p-1 cursor-pointer" title="Next verse">⏭</button>
+            <button onclick="window.bibleAudio ? window.bibleAudio.stop() : null" class="text-stone-400 hover:text-rose-400 text-[11px] sm:text-xs px-1.5 sm:px-2 py-1 rounded border border-stone-800 cursor-pointer shrink-0" title="Stop audio">
+                <span class="sm:hidden">⏹</span>
+                <span class="hidden sm:inline">Stop</span>
+            </button>
         </div>
 
-        <div class="flex items-center space-x-2 text-xs">
-            <select id="audio-lang-select" onchange="window.bibleAudio ? window.bibleAudio.setLanguage(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-2 py-1 text-[11px] focus:outline-none">
-                <option value="ta" selected>Tamil (தமிழ்)</option>
+        <div class="flex items-center space-x-1 sm:space-x-2 text-xs shrink-0">
+            <select id="audio-lang-select" onchange="window.bibleAudio ? window.bibleAudio.setLanguage(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1.5 sm:px-2 py-1 text-[11px] focus:outline-none max-w-[72px] sm:max-w-none">
+                <option value="ta" selected>Tamil</option>
                 <option value="en">English</option>
             </select>
-            <select id="audio-rate-select" onchange="window.bibleAudio ? window.bibleAudio.setRate(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-2 py-1 text-[11px] focus:outline-none">
+            <select id="audio-rate-select" onchange="window.bibleAudio ? window.bibleAudio.setRate(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1 sm:px-2 py-1 text-[11px] focus:outline-none">
                 <option value="0.75">0.75x</option>
                 <option value="1.0" selected>1.0x</option>
                 <option value="1.25">1.25x</option>

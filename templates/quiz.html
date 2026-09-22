@@ -98,27 +98,27 @@
     <!-- Active Question View -->
     <div id="quiz-game" class="hidden space-y-4">
         <!-- Top Stats Bar -->
-        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl p-3 sm:px-5 flex items-center justify-between text-xs shadow-xs">
-            <div class="flex items-center gap-3">
-                <button onclick="confirmExitQuiz()" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-sm" title="Exit Quiz">
+        <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl p-2.5 sm:px-5 flex items-center justify-between text-xs shadow-xs gap-1.5 sm:gap-3">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                <button onclick="confirmExitQuiz()" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-sm p-1 cursor-pointer shrink-0" title="Exit Quiz">
                     ✕
                 </button>
-                <span class="font-bold text-stone-700 dark:text-stone-300">
-                    Question <span id="current-q-num">1</span> of <span id="total-q-num">10</span>
+                <span class="font-bold text-stone-700 dark:text-stone-300 text-[11px] sm:text-xs truncate">
+                    <span class="hidden sm:inline">Question </span><span id="current-q-num">1</span>/<span id="total-q-num">10</span>
                 </span>
             </div>
 
             <!-- Timer (if active) -->
-            <div id="timer-box" class="hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-mono font-bold">
+            <div id="timer-box" class="hidden flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-mono font-bold text-[11px] sm:text-xs shrink-0">
                 <span>⏱️</span> <span id="timer-sec">20</span>s
             </div>
 
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-bold" title="Current Streak">
+            <div class="flex items-center gap-2 sm:gap-4 shrink-0 text-[11px] sm:text-xs">
+                <div class="flex items-center gap-0.5 sm:gap-1 text-orange-600 dark:text-orange-400 font-bold" title="Current Streak">
                     <span>🔥</span> <span id="streak-counter">0</span>
                 </div>
                 <div class="font-mono font-bold text-amber-700 dark:text-amber-400">
-                    Score: <span id="current-score">0</span>
+                    <span class="hidden xs:inline">Score: </span><span id="current-score">0</span>
                 </div>
             </div>
         </div>

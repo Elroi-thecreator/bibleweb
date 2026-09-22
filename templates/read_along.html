@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    /* Dedicated immersive reading mode for Read-Along: hide global site header, bottom nav, and footer to avoid overlay and stacking conflicts */
+    #site-header, #mobile-bottom-nav, footer { display: none !important; }
+    main { padding-bottom: 0 !important; }
+</style>
 <div class="min-h-screen bg-[#faf8f5] dark:bg-[#11100f] text-stone-900 dark:text-stone-100 transition-colors" id="player-container">
 
     <!-- Audio Element -->
@@ -50,37 +55,37 @@
     <!-- ========================================== -->
     <!-- 2. STICKY TOP APP HEADER                   -->
     <!-- ========================================== -->
-    <header class="sticky top-0 z-30 bg-[#faf8f5]/95 dark:bg-[#11100f]/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 px-4 sm:px-8 py-3">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-                <a href="/plans" class="p-1.5 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-500 dark:text-stone-400 transition" title="Back to Plans">
+    <header class="sticky top-0 z-30 bg-[#faf8f5]/95 dark:bg-[#11100f]/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 px-3 sm:px-8 py-2.5 sm:py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <a href="/plans" class="p-1.5 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-500 dark:text-stone-400 transition shrink-0" title="Back to Plans">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
                 </a>
-                <div class="min-w-0">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                        Day {{ day.day }} of {{ plan.total_days }}
+                <div class="min-w-0 truncate">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block leading-tight">
+                        Day {{ day.day }} / {{ plan.total_days }}
                     </span>
-                    <h1 id="header-plan-title" class="text-sm sm:text-base font-bold text-stone-900 dark:text-stone-100 truncate">
+                    <h1 id="header-plan-title" class="text-xs sm:text-base font-bold text-stone-900 dark:text-stone-100 truncate leading-snug">
                         {{ day.intro.display_ta }}
                     </h1>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <!-- Language Toggle -->
                 <div class="inline-flex rounded-xl bg-stone-200/70 dark:bg-stone-800/70 p-0.5 text-xs font-semibold">
-                    <button type="button" onclick="setLanguage('ta')" id="nav-lang-ta" class="px-2.5 py-1 rounded-lg bg-amber-700 text-white shadow-xs transition">
+                    <button type="button" onclick="setLanguage('ta')" id="nav-lang-ta" class="px-2 sm:px-2.5 py-1 rounded-lg bg-amber-700 text-white shadow-xs transition">
                         தமிழ்
                     </button>
-                    <button type="button" onclick="setLanguage('en')" id="nav-lang-en" class="px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition">
+                    <button type="button" onclick="setLanguage('en')" id="nav-lang-en" class="px-2 sm:px-2.5 py-1 rounded-lg text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition">
                         EN
                     </button>
                 </div>
 
-                <!-- Font Sizer -->
-                <div class="inline-flex items-center rounded-xl bg-stone-200/70 dark:bg-stone-800/70 p-0.5 text-xs font-semibold">
+                <!-- Font Sizer (Desktop / Tablet only to prevent mobile crowding) -->
+                <div class="hidden sm:inline-flex items-center rounded-xl bg-stone-200/70 dark:bg-stone-800/70 p-0.5 text-xs font-semibold">
                     <button type="button" onclick="adjustReadAlongFontSize(-1)" class="px-2 py-1 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg transition" title="Smaller font">
                         A-
                     </button>
@@ -94,9 +99,9 @@
                 <button id="start-read-btn" 
                         type="button"
                         onclick="startReadingWithAudio()" 
-                        class="px-3.5 py-1.5 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer">
-                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
-                    <span>Read Along 🎧</span>
+                        class="px-2.5 sm:px-3.5 py-1.5 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white text-xs font-bold rounded-xl flex items-center gap-1 sm:gap-1.5 shadow-sm transition cursor-pointer shrink-0">
+                    <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"/></svg>
+                    <span class="hidden xs:inline">Read Along </span><span>🎧</span>
                 </button>
             </div>
         </div>
@@ -157,7 +162,7 @@
             {% endfor %}
 
             <!-- Bottom Completion Trigger -->
-            <div class="pt-10 pb-8 text-center border-t border-stone-200 dark:border-stone-800">
+            <div class="pt-10 pb-28 lg:pb-8 text-center border-t border-stone-200 dark:border-stone-800">
                 <button type="button" 
                         onclick="triggerOutroBlessing()" 
                         class="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs sm:text-sm font-bold shadow-sm cursor-pointer transition">
@@ -226,7 +231,7 @@
     <!-- ========================================================================= -->
     <!-- 4. BOTTOM ACTION FOOTER BAR (MOBILE ONLY)                                 -->
     <!-- ========================================================================= -->
-    <div id="mobile-audio-bar" class="lg:hidden sticky bottom-0 z-30 bg-[#faf8f5]/95 dark:bg-[#11100f]/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 px-4 py-2">
+    <div id="mobile-audio-bar" class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#faf8f5]/95 dark:bg-[#11100f]/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 px-3.5 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-lg">
         <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
@@ -236,18 +241,18 @@
             </div>
 
             <div class="flex items-center gap-1 flex-shrink-0">
-                <button type="button" onclick="stepItem(-1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
+                <button type="button" onclick="stepItem(-1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition cursor-pointer">
                     <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                 </button>
-                <button type="button" onclick="toggleAudioPlayback()" class="w-7 h-7 rounded-full bg-amber-700 text-white flex items-center justify-center shadow-xs">
+                <button type="button" onclick="toggleAudioPlayback()" class="w-7 h-7 rounded-full bg-amber-700 text-white flex items-center justify-center shadow-xs cursor-pointer">
                     <span id="mobile-play-icon">
                         <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     </span>
                 </button>
-                <button type="button" onclick="stepItem(1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition">
+                <button type="button" onclick="stepItem(1)" class="p-1 text-stone-500 hover:text-stone-900 dark:hover:text-white transition cursor-pointer">
                     <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
                 </button>
-                <button type="button" onclick="cycleAudioSpeed()" id="mobile-speed-btn" class="px-1.5 py-0.5 rounded-md bg-stone-200 dark:bg-stone-800 text-[10px] font-mono font-bold ml-1">
+                <button type="button" onclick="cycleAudioSpeed()" id="mobile-speed-btn" class="px-1.5 py-0.5 rounded-md bg-stone-200 dark:bg-stone-800 text-[10px] font-mono font-bold ml-1 cursor-pointer">
                     1.0x
                 </button>
             </div>
