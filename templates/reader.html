@@ -275,9 +275,13 @@
         </div>
 
         <div class="flex items-center space-x-1 sm:space-x-2 text-xs shrink-0">
-            <select id="audio-lang-select" onchange="window.bibleAudio ? window.bibleAudio.setLanguage(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1.5 sm:px-2 py-1 text-[11px] focus:outline-none max-w-[72px] sm:max-w-none">
+            <select id="audio-lang-select" onchange="window.bibleAudio ? window.bibleAudio.setLanguage(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1.5 sm:px-2 py-1 text-[11px] focus:outline-none max-w-[65px] sm:max-w-none">
                 <option value="ta" selected>Tamil</option>
                 <option value="en">English</option>
+            </select>
+            <select id="audio-voice-select" onchange="window.bibleAudio ? window.bibleAudio.setVoice(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1 sm:px-2 py-1 text-[11px] focus:outline-none max-w-[95px] sm:max-w-none" title="Select Voice">
+                <option value="ta-IN-ValluvarNeural">வள்ளுவர் (Male)</option>
+                <option value="ta-IN-PallaviNeural">பல்லவி (Female)</option>
             </select>
             <select id="audio-rate-select" onchange="window.bibleAudio ? window.bibleAudio.setRate(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1 sm:px-2 py-1 text-[11px] focus:outline-none">
                 <option value="0.75">0.75x</option>

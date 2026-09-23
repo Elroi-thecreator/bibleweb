@@ -496,7 +496,10 @@ function playQueueIndex(index) {
     }
 
     // Stream audio via endpoint
-    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(text)}&lang=${currentLanguage}`;
+    const activeVoice = (currentLanguage === 'ta')
+        ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
+        : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
+    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(text)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
     audioElement.src = streamUrl;
     audioElement.playbackRate = speeds[currentSpeedIndex];
 
@@ -586,7 +589,10 @@ function triggerOutroBlessing() {
     outroCard.classList.remove('hidden');
 
     const blessingText = currentLanguage === 'ta' ? OUTRO_BLESSING_TA : OUTRO_BLESSING_EN;
-    audioElement.src = `/api/audio/stream?text=${encodeURIComponent(blessingText)}&lang=${currentLanguage}`;
+    const outroVoice = (currentLanguage === 'ta')
+        ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
+        : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
+    audioElement.src = `/api/audio/stream?text=${encodeURIComponent(blessingText)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
     audioElement.play().catch(() => {});
 
     let outroSeconds = 5;

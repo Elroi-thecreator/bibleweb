@@ -18,6 +18,11 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from gtts import gTTS
+try:
+    import edge_tts
+    HAS_EDGE_TTS = True
+except ImportError:
+    HAS_EDGE_TTS = False
 
 from app.db import (
     BIBLE_BOOKS,
@@ -75,32 +80,163 @@ async def service_worker():
 
 
 # ==========================================
-# 3. Audio Streaming Engine (gTTS)
+# 3. Audio Streaming Engine (Microsoft Neural Edge-TTS + gTTS Fallback)
 # ==========================================
 
+VOICE_CONFIG = {
+    "ta": {
+        "default": "ta-IN-ValluvarNeural",
+        "male": "ta-IN-ValluvarNeural",
+        "valluvar": "ta-IN-ValluvarNeural",
+        "female": "ta-IN-PallaviNeural",
+        "pallavi": "ta-IN-PallaviNeural",
+    },
+    "en": {
+        "default": "en-US-JennyNeural",
+        "female": "en-US-JennyNeural",
+        "jenny": "en-US-JennyNeural",
+        "male": "en-US-GuyNeural",
+        "guy": "en-US-GuyNeural",
+        "neerja": "en-IN-NeerjaNeural",
+    },
+}
+
+
+def normalize_speech_rate(raw_rate: str) -> str:
+    """Normalizes playback rates for scripture reading into Edge-TTS rate string."""
+    if not raw_rate:
+        return "-4%"
+    rate_str = str(raw_rate).strip()
+    if rate_str.endswith("%"):
+        return rate_str
+    try:
+        val = float(rate_str)
+        # Slower by 4% relative to 1.0 for solemn scripture meditation
+        pct_diff = int(round((val - 1.0) * 100)) - 4
+        return f"+{pct_diff}%" if pct_diff >= 0 else f"{pct_diff}%"
+    except (ValueError, TypeError):
+        return "-4%"
+
+
+def resolve_voice_name(lang: str, voice_param: str = None) -> str:
+    """Maps voice alias or parameter to valid neural voice name."""
+    lang_key = "ta" if lang == "ta" else "en"
+    cfg = VOICE_CONFIG.get(lang_key, VOICE_CONFIG["ta"])
+    if not voice_param:
+        return cfg["default"]
+    clean_v = str(voice_param).strip().lower()
+    if clean_v in cfg:
+        return cfg[clean_v]
+    if "neural" in str(voice_param).lower():
+        return str(voice_param).strip()
+    return cfg["default"]
+
+
+def preprocess_scripture_text(text: str, lang: str = "ta") -> str:
+    """Refines scripture text with natural breath pauses and pronunciation cleanups."""
+    clean = text.strip()
+    # Strip footnote markers and editorial brackets
+    clean = re.sub(r"[\*†‡]", "", clean)
+    clean = re.sub(r"\[(.*?)\]", r"\1", clean)
+    clean = re.sub(r"[—–]", " - ", clean)
+
+    if lang == "ta":
+        # Expand common Tamil Bible book abbreviations
+        abbrevs = {
+            r"\bஆதி\.": "ஆதியாகமம்",
+            r"\bயாத்\.": "யாத்திராகமம்",
+            r"\bலேவி\.": "லேவியராகமம்",
+            r"\bஎண்\.": "எண்ணாகமம்",
+            r"\bஉபா\.": "உபாகமம்",
+            r"\bயோசு\.": "யோசுவா",
+            r"\bநியாயா\.": "நியாயாதிபதிகள்",
+            r"\bசங்\.": "சங்கீதம்",
+            r"\bநீதி\.": "நீதிமொழிகள்",
+            r"\bஏசா\.": "ஏசாயா",
+            r"\bமத்\.": "மத்தேயு",
+            r"\bமாற்\.": "மாற்கு",
+            r"\bலூக்\.": "லூக்கா",
+            r"\bயோவா\.": "யோவான்",
+            r"\bஅப்\.": "அப்போஸ்தலர் நடபடிகள்",
+            r"\bரோம\.": "ரோமர்",
+            r"\bவெளி\.": "வெளிப்படுத்தின விசேஷம்",
+            r"\bதோபி\.": "தோபித்து",
+            r"\bயூதி\.": "யூதித்து",
+            r"\bசீரா\.": "சீராக்",
+            r"\bபாரூ\.": "பாரூக்",
+            r"\bமக்க\.": "மக்கபேயர்",
+        }
+        for pat, repl in abbrevs.items():
+            clean = re.sub(pat, repl, clean)
+        # Semicolons and colons create natural breathing pauses in Tamil
+        clean = clean.replace(";", ", ").replace(":", ", ")
+    return clean
+
+
 @app.get("/api/audio/stream")
-async def stream_audio(text: str = Query(..., min_length=1), lang: str = Query("ta")):
-    clean_text = text.strip()
+async def stream_audio(
+    text: str = Query(..., min_length=1),
+    lang: str = Query("ta"),
+    voice: str = Query(None),
+    rate: str = Query(None),
+):
     target_lang = "ta" if lang == "ta" else "en"
-    cache_key = hashlib.md5(f"{target_lang}:{clean_text}".encode("utf-8")).hexdigest()
+    clean_text = preprocess_scripture_text(text, target_lang)
+    target_voice = resolve_voice_name(target_lang, voice)
+    target_rate = normalize_speech_rate(rate)
+
+    cache_key = hashlib.md5(f"{target_voice}:{target_rate}:{clean_text}".encode("utf-8")).hexdigest()
 
     if cache_key in AUDIO_CACHE:
-        return Response(content=AUDIO_CACHE[cache_key], media_type="audio/mpeg")
+        return Response(
+            content=AUDIO_CACHE[cache_key],
+            media_type="audio/mpeg",
+            headers={"X-TTS-Engine": "cache", "X-TTS-Voice": target_voice},
+        )
 
+    # 1. Primary Engine: Microsoft Neural Edge-TTS (Natural Human Cadence)
+    if HAS_EDGE_TTS:
+        try:
+            communicate = edge_tts.Communicate(
+                text=clean_text,
+                voice=target_voice,
+                rate=target_rate,
+            )
+            fp = io.BytesIO()
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    fp.write(chunk["data"])
+            audio_bytes = fp.getvalue()
+            if len(audio_bytes) > 0:
+                if len(AUDIO_CACHE) > 500:
+                    AUDIO_CACHE.pop(next(iter(AUDIO_CACHE)))
+                AUDIO_CACHE[cache_key] = audio_bytes
+                return Response(
+                    content=audio_bytes,
+                    media_type="audio/mpeg",
+                    headers={"X-TTS-Engine": "edge-neural", "X-TTS-Voice": target_voice},
+                )
+        except Exception as neural_err:
+            print(f"[Audio Stream] Edge-TTS error, falling back to gTTS: {neural_err}")
+
+    # 2. Fallback Engine: gTTS (Ensures zero interruption)
     try:
         tts = gTTS(text=clean_text, lang=target_lang, slow=False)
         fp = io.BytesIO()
         tts.write_to_fp(fp)
-        fp.seek(0)
-        audio_bytes = fp.read()
+        audio_bytes = fp.getvalue()
 
-        if len(AUDIO_CACHE) > 300:
+        if len(AUDIO_CACHE) > 500:
             AUDIO_CACHE.pop(next(iter(AUDIO_CACHE)))
         AUDIO_CACHE[cache_key] = audio_bytes
 
-        return Response(content=audio_bytes, media_type="audio/mpeg")
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return Response(
+            content=audio_bytes,
+            media_type="audio/mpeg",
+            headers={"X-TTS-Engine": "gtts-fallback", "X-TTS-Voice": target_voice},
+        )
+    except Exception as fallback_err:
+        return JSONResponse(content={"error": str(fallback_err)}, status_code=500)
 
 
 # ==========================================

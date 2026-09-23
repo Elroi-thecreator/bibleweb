@@ -63,6 +63,8 @@ class BibleContinuousAudio {
 
             setTimeout(() => this.play(0), 400);
         }
+
+        this.syncDockVoiceOptions();
     }
 
     play(fromIndex = 0) {
@@ -87,7 +89,8 @@ class BibleContinuousAudio {
         let text = (this.lang === 'ta') ? v.textTa : v.textEn;
         if (!text && this.lang === 'ta') text = v.textEn;
 
-        const audioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}`;
+        const voice = this.getEffectiveVoice();
+        const audioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(this.rate)}`;
         
         this.audio.src = audioUrl;
         this.audio.playbackRate = parseFloat(this.rate);
@@ -98,6 +101,22 @@ class BibleContinuousAudio {
             console.warn("Autoplay block or delay:", err);
             this.setPlayPauseIcon(false);
         });
+    }
+
+    getEffectiveVoice() {
+        if (this.lang === 'ta') {
+            return localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural';
+        }
+        return localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural';
+    }
+
+    setVoice(voiceName) {
+        if (this.lang === 'ta') {
+            localStorage.setItem('bible_audio_voice_ta', voiceName);
+        } else {
+            localStorage.setItem('bible_audio_voice_en', voiceName);
+        }
+        if (this.isPlaying) this.playCurrent();
     }
 
     spotlightVerse(v) {
@@ -177,7 +196,27 @@ class BibleContinuousAudio {
 
     setLanguage(lang) {
         this.lang = lang;
+        this.syncDockVoiceOptions();
         if (this.isPlaying) this.playCurrent();
+    }
+
+    syncDockVoiceOptions() {
+        const voiceSelect = document.getElementById('audio-voice-select');
+        if (!voiceSelect) return;
+        if (this.lang === 'ta') {
+            voiceSelect.innerHTML = `
+                <option value="ta-IN-ValluvarNeural">வள்ளுவர் (Male)</option>
+                <option value="ta-IN-PallaviNeural">பல்லவி (Female)</option>
+            `;
+            voiceSelect.value = localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural';
+        } else {
+            voiceSelect.innerHTML = `
+                <option value="en-US-JennyNeural">Jenny (Female)</option>
+                <option value="en-US-GuyNeural">Guy (Male)</option>
+                <option value="en-IN-NeerjaNeural">Neerja (India)</option>
+            `;
+            voiceSelect.value = localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural';
+        }
     }
 
     setRate(rate) {
