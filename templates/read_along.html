@@ -496,10 +496,11 @@ function playQueueIndex(index) {
     }
 
     // Stream audio via endpoint
+    const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
     const activeVoice = (currentLanguage === 'ta')
         ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
         : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
-    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(text)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
+    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
     audioElement.src = streamUrl;
     audioElement.playbackRate = speeds[currentSpeedIndex];
 

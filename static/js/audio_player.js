@@ -90,6 +90,9 @@ class BibleContinuousAudio {
         let text = (this.lang === 'ta') ? v.textTa : v.textEn;
         if (!text && this.lang === 'ta') text = v.textEn;
 
+        // Strip anything inside [] or {} (verse numbers, editorial brackets)
+        text = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
+
         const voice = this.getEffectiveVoice();
         const audioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(this.rate)}`;
         

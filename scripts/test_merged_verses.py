@@ -52,13 +52,21 @@ async def test_merged_verses():
     assert matching[0]["verse_display"] == "1-3"
     print(f"✓ Search collapsed 1 Cor 1:1-3 into a single hit: {matching[0]['verse_display']}.")
 
-    print("\n=== Test 5: Audio Preprocessing Strips Bracket Numbers ===")
+    print("\n=== Test 5: Audio Preprocessing Strips [] and {} Content ===")
     audio_ta = preprocess_scripture_text("[1-2] தாவீதின் மகனும் ஆபிரகாமின் மகனுமான...")
     assert not audio_ta.startswith("[1-2]") and not audio_ta.startswith("1-2")
     assert audio_ta.startswith("தாவீதின் மகனும்")
+    
     audio_en = preprocess_scripture_text("[1] The book of... [2] Abraham begot...")
     assert "[1]" not in audio_en and "[2]" not in audio_en
-    print("✓ Audio text preprocessor cleanly strips [1-2] bracket numbers for natural speech.")
+    assert audio_en == "The book of... Abraham begot..."
+
+    # Test arbitrary text inside [] and {}
+    note_test = preprocess_scripture_text("In the beginning [1 Kings 21.] was the Word {an editorial note here}.")
+    assert "[1 Kings 21.]" not in note_test and "1 Kings 21." not in note_test
+    assert "{an editorial note here}" not in note_test and "editorial note" not in note_test
+    assert note_test == "In the beginning was the Word."
+    print("✓ Audio text preprocessor completely strips anything inside [] and {} for natural speech.")
 
     print("\n=== Test 6: Reader HTML Template Rendering ===")
     req_r = make_request("/read/40/1", "canon=catholic&mode=bilingual")

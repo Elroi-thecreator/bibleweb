@@ -161,11 +161,16 @@ def preprocess_scripture_text(text: str, lang: str = "ta") -> str:
     clean = text.strip()
     # Strip footnote markers
     clean = re.sub(r"[\*†‡]", "", clean)
-    # Strip leading verse numbers / ranges in brackets like [1-2] or [1] for seamless audio speech
-    clean = re.sub(r"^\[\d+(?:-\d+)?\]\s*", "", clean)
-    clean = re.sub(r"\[\d+\]\s*", "", clean)
-    clean = re.sub(r"\[(.*?)\]", r"\1", clean)
+    # Completely strip anything inside square brackets [] or curly braces {} (e.g. [1-2], [1], [notes], {annotations})
+    clean = re.sub(r"\[[\s\S]*?\]", "", clean)
+    clean = re.sub(r"\{[\s\S]*?\}", "", clean)
     clean = re.sub(r"[—–]", " - ", clean)
+    # Clean up redundant whitespace and spaces before punctuation
+    clean = re.sub(r"\s+", " ", clean).strip()
+    clean = re.sub(r"\s+([.,;:!?])", r"\1", clean)
+    if not clean:
+        # Fallback to stripped raw text without bracket symbols if verse text was entirely enclosed in brackets
+        clean = re.sub(r"[\[\]\{\}]", "", text).strip()
 
     if lang == "ta":
         # Expand common Tamil Bible book abbreviations
