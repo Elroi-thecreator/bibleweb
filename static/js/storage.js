@@ -360,7 +360,7 @@ function isBookmarked(bookId, ch, v) {
 }
 window.isBookmarked = isBookmarked;
 
-async function toggleBookmark(bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa) {
+async function toggleBookmark(bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa, vDisplay = null) {
     let bookmarks = getBookmarks();
     const idx = bookmarks.findIndex(b => b.bookId === bookId && b.ch === ch && b.v === v);
 
@@ -369,7 +369,9 @@ async function toggleBookmark(bookId, bookNameEn, bookNameTa, ch, v, textEn, tex
         showToast("Bookmark removed");
     } else {
         bookmarks.push({
-            bookId, bookNameEn, bookNameTa, ch, v, textEn, textTa,
+            bookId, bookNameEn, bookNameTa, ch, v,
+            vDisplay: vDisplay || String(v),
+            textEn, textTa,
             date: new Date().toLocaleDateString()
         });
         showToast("Verse bookmarked! ★");

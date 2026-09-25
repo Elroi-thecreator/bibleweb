@@ -292,8 +292,74 @@ def _resolve_schema(cursor: sqlite3.Cursor):
     }
 
 
-def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant") -> List[Dict]:
-    """Retrieves all verses for a given book and chapter based on canon (Protestant or Catholic)."""
+def group_merged_verses(verses: List[Dict]) -> List[Dict]:
+    """Groups consecutive verses that share a combined dynamic-equivalence range in Tamil (e.g. [1-2])."""
+    if not verses:
+        return []
+
+    import re
+    grouped = []
+    i = 0
+    n = len(verses)
+
+    while i < n:
+        curr = verses[i]
+        ta_text = curr.get("text_ta", "").strip()
+        m = re.match(r"^\[(\d+)-(\d+)\]", ta_text)
+
+        if m:
+            range_start = int(m.group(1))
+            range_end = int(m.group(2))
+
+            if range_start <= curr["verse"] <= range_end:
+                group_members = [curr]
+                j = i + 1
+                while j < n:
+                    nxt = verses[j]
+                    nxt_ta = nxt.get("text_ta", "").strip()
+                    if nxt_ta == ta_text and nxt["verse"] <= range_end:
+                        group_members.append(nxt)
+                        j += 1
+                    else:
+                        break
+
+                verse_span = f"{range_start}-{range_end}"
+                combined_en_parts = []
+                for g in group_members:
+                    en_part = g.get("text_en", "").strip()
+                    if en_part:
+                        combined_en_parts.append(f"[{g['verse']}] {en_part}")
+                combined_en = " ".join(combined_en_parts) if combined_en_parts else curr.get("text_en", "")
+
+                grouped.append({
+                    "verse": curr["verse"],
+                    "verse_display": verse_span,
+                    "verse_start": range_start,
+                    "verse_end": range_end,
+                    "verse_list": [g["verse"] for g in group_members],
+                    "text_en": combined_en,
+                    "text_ta": curr.get("text_ta", ""),
+                })
+                i = j
+                continue
+
+        # Normal single verse
+        grouped.append({
+            "verse": curr["verse"],
+            "verse_display": str(curr["verse"]),
+            "verse_start": curr["verse"],
+            "verse_end": curr["verse"],
+            "verse_list": [curr["verse"]],
+            "text_en": curr.get("text_en", ""),
+            "text_ta": curr.get("text_ta", ""),
+        })
+        i += 1
+
+    return grouped
+
+
+def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", group_merged: bool = True) -> List[Dict]:
+    """Retrieves all verses for a given book and chapter based on canon (Protestant or Catholic), optionally grouping merged thought units."""
     with get_connection() as conn:
         cursor = conn.cursor()
         schema = _resolve_schema(cursor)
@@ -334,7 +400,7 @@ def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant") ->
             """
             rows = cursor.execute(sql, (book_id, chapter)).fetchall()
 
-        return [
+        raw_verses = [
             {
                 "verse": row["verse"],
                 "text_en": row["text_en"] or "",
@@ -343,9 +409,27 @@ def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant") ->
             for row in rows
         ]
 
+        if group_merged and is_catholic:
+            return group_merged_verses(raw_verses)
+
+        # Standard representation for unmerged / Protestant
+        return [
+            {
+                "verse": v["verse"],
+                "verse_display": str(v["verse"]),
+                "verse_start": v["verse"],
+                "verse_end": v["verse"],
+                "verse_list": [v["verse"]],
+                "text_en": v["text_en"],
+                "text_ta": v["text_ta"],
+            }
+            for v in raw_verses
+        ]
+
 
 def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) -> List[Dict]:
-    """Performs full-text search across active translation corpora."""
+    """Performs full-text search across active translation corpora, collapsing merged verse duplicates."""
+    import re
     with get_connection() as conn:
         cursor = conn.cursor()
         schema = _resolve_schema(cursor)
@@ -399,15 +483,36 @@ def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) ->
             rows = cursor.execute(sql, (pattern, pattern, limit)).fetchall()
 
         results = []
+        seen_ranges = set()
+
         for r in rows:
-            b_info = book_map.get(r["book_id"], {"name_en": f"Book {r['book_id']}", "name_ta": ""})
+            book_id = r["book_id"]
+            chapter = r["chapter"]
+            verse = r["verse"]
+            text_en = r["text_en"] or ""
+            text_ta = r["text_ta"] or ""
+
+            # Check if this hit is part of a merged unit
+            m = re.match(r"^\[(\d+)-(\d+)\]", text_ta.strip())
+            if m and is_catholic:
+                r_start, r_end = int(m.group(1)), int(m.group(2))
+                range_key = (book_id, chapter, r_start, r_end)
+                if range_key in seen_ranges:
+                    continue
+                seen_ranges.add(range_key)
+                verse_display = f"{r_start}-{r_end}"
+            else:
+                verse_display = str(verse)
+
+            b_info = book_map.get(book_id, {"name_en": f"Book {book_id}", "name_ta": ""})
             results.append({
-                "book_id": r["book_id"],
+                "book_id": book_id,
                 "book_name_en": b_info["name_en"],
                 "book_name_ta": b_info["name_ta"],
-                "chapter": r["chapter"],
-                "verse": r["verse"],
-                "text_en": r["text_en"] or "",
-                "text_ta": r["text_ta"] or ""
+                "chapter": chapter,
+                "verse": verse,
+                "verse_display": verse_display,
+                "text_en": text_en,
+                "text_ta": text_ta
             })
         return results

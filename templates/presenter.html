@@ -41,7 +41,7 @@
         <!-- Verse Number Pill -->
         <div class="mb-6">
             <span id="verse-badge" class="font-title text-xl sm:text-2xl font-bold text-amber-500 tracking-widest uppercase px-4 py-1.5 rounded-full border border-amber-500/40 bg-amber-950/30">
-                {{ book.name_en }} {{ chapter }}:1
+                {{ book.name_en }} {{ chapter }}:{{ verses[0].verse_display or verses[0].verse }}
             </span>
         </div>
 
@@ -83,8 +83,8 @@
             const v = verses[currentIdx];
             document.getElementById('present-text-en').innerText = v.text_en;
             document.getElementById('present-text-ta').innerText = v.text_ta;
-            document.getElementById('verse-badge').innerText = `${bookNameEn} ${chapter}:${v.verse}`;
-            document.getElementById('slide-indicator').innerText = `Verse ${v.verse} / ${verses.length}`;
+            document.getElementById('verse-badge').innerText = `${bookNameEn} ${chapter}:${v.verse_display || v.verse}`;
+            document.getElementById('slide-indicator').innerText = `Slide ${currentIdx + 1} / ${verses.length} (${v.verse_display || v.verse})`;
         }
 
         function nextSlide() {

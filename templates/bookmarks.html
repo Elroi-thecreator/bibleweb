@@ -54,7 +54,7 @@ function renderBookmarks() {
         <div class="bg-white dark:bg-stone-900 p-5 rounded-xl border border-stone-200 dark:border-stone-800 shadow-sm space-y-3">
             <div class="flex justify-between items-center">
                 <a href="/read/${b.bookId}/${b.ch}?mode=bilingual#v${b.v}" class="font-cinzel font-bold text-sm text-amber-800 dark:text-amber-500 hover:underline">
-                    ${b.bookNameEn} ${b.ch}:${b.v} • <span class="font-tamil font-normal text-xs text-stone-500">${b.bookNameTa} ${b.ch}:${b.v}</span>
+                    ${b.bookNameEn} ${b.ch}:${b.vDisplay || b.v} • <span class="font-tamil font-normal text-xs text-stone-500">${b.bookNameTa} ${b.ch}:${b.vDisplay || b.v}</span>
                 </a>
                 <div class="flex items-center space-x-3">
                     <span class="text-[11px] text-stone-400">${b.date}</span>

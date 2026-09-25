@@ -33,7 +33,7 @@
             {% for r in results %}
             <div class="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-2xl shadow-xs border border-stone-200 dark:border-stone-800 space-y-2.5 transition hover:border-amber-600/50">
                 <a href="/read/{{ r.book_id }}/{{ r.chapter }}?mode=bilingual#v{{ r.verse }}" class="font-cinzel text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-400 hover:underline block">
-                    {{ r.book_name_en }} {{ r.chapter }}:{{ r.verse }} • <span class="font-tamil font-normal text-stone-500">{{ r.book_name_ta }} {{ r.chapter }}:{{ r.verse }}</span>
+                    {{ r.book_name_en }} {{ r.chapter }}:{{ r.verse_display or r.verse }} • <span class="font-tamil font-normal text-stone-500">{{ r.book_name_ta }} {{ r.chapter }}:{{ r.verse_display or r.verse }}</span>
                 </a>
                 <p class="font-english text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed">{{ r.text_en }}</p>
                 <p class="font-tamil text-xs sm:text-sm text-stone-900 dark:text-stone-100 border-t border-stone-100 dark:border-stone-800 pt-2 leading-relaxed" translate="no">{{ r.text_ta }}</p>

@@ -140,14 +140,14 @@
                          data-book-id="{{ ch.book_id }}"
                          data-chapter="{{ ch.chapter }}"
                          data-verse="{{ v.verse }}"
-                         data-ref-ta="{{ ch.book_name_ta }} {{ ch.chapter }}:{{ v.verse }}"
-                         data-ref-en="{{ ch.book_name_en }} {{ ch.chapter }}:{{ v.verse }}"
+                         data-ref-ta="{{ ch.book_name_ta }} {{ ch.chapter }}:{{ v.verse_display or v.verse }}"
+                         data-ref-en="{{ ch.book_name_en }} {{ ch.chapter }}:{{ v.verse_display or v.verse }}"
                          data-text-ta="{{ v.text_ta }}"
                          data-text-en="{{ v.text_en }}">
                         
                         <div class="flex items-start gap-3">
-                            <span class="text-[12px] font-mono font-semibold text-amber-700/70 dark:text-amber-500/70 pt-1 select-none w-5 text-right flex-shrink-0 group-hover:text-amber-600">
-                                {{ v.verse }}
+                            <span class="text-[12px] font-mono font-semibold text-amber-700/70 dark:text-amber-500/70 pt-1 select-none min-w-[24px] text-right flex-shrink-0 group-hover:text-amber-600">
+                                {{ v.verse_display or v.verse }}
                             </span>
                             
                             <p class="verse-content text-stone-800 dark:text-stone-200 leading-[1.9] tracking-wide transition-all"

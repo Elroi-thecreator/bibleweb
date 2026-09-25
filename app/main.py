@@ -159,8 +159,11 @@ def resolve_voice_name(lang: str, voice_param: str = None) -> str:
 def preprocess_scripture_text(text: str, lang: str = "ta") -> str:
     """Refines scripture text with natural breath pauses and pronunciation cleanups."""
     clean = text.strip()
-    # Strip footnote markers and editorial brackets
+    # Strip footnote markers
     clean = re.sub(r"[\*†‡]", "", clean)
+    # Strip leading verse numbers / ranges in brackets like [1-2] or [1] for seamless audio speech
+    clean = re.sub(r"^\[\d+(?:-\d+)?\]\s*", "", clean)
+    clean = re.sub(r"\[\d+\]\s*", "", clean)
     clean = re.sub(r"\[(.*?)\]", r"\1", clean)
     clean = re.sub(r"[—–]", " - ", clean)
 
@@ -766,6 +769,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
                     verses.append({
                         "verse": v.get("verse") or v.get("verse_num") or v.get("v"),
                         "verse_num": v.get("verse_num") or v.get("verse") or v.get("v"),
+                        "verse_display": v.get("verse_display") or str(v.get("verse") or v.get("verse_num") or ""),
                         "text_ta": v.get("text_ta") or v.get("text", ""),
                         "text_en": v.get("text_en") or v.get("text", ""),
                         "text": v.get("text_ta") or v.get("text_en") or v.get("text", ""),

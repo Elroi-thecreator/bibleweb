@@ -172,11 +172,22 @@
     <!-- Verses Container -->
     <div id="reader-content" class="space-y-2 sm:space-y-3">
         {% for v in verses %}
-        <div id="v{{ v.verse }}" class="verse-item group rounded-xl p-3.5 sm:p-4 hover:bg-white dark:hover:bg-stone-900 border border-transparent hover:border-stone-200 dark:hover:border-stone-800 transition duration-150">
+        <div id="v{{ v.verse }}" class="verse-item group rounded-xl p-3.5 sm:p-4 hover:bg-white dark:hover:bg-stone-900 border border-transparent hover:border-stone-200 dark:hover:border-stone-800 transition duration-150"
+             data-verse="{{ v.verse }}"
+             data-verse-display="{{ v.verse_display or v.verse }}"
+             {% if v.verse_list %}data-verse-list="{{ v.verse_list | join(',') }}"{% endif %}>
             
+            {% if v.verse_list and v.verse_list|length > 1 %}
+                {% for member_v in v.verse_list %}
+                    {% if member_v != v.verse %}
+                    <span id="v{{ member_v }}" class="anchor-alias"></span>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
             <!-- Verse Header Line -->
             <div class="flex items-center justify-between text-xs mb-1.5">
-                <span class="font-cinzel font-bold text-amber-800/80 dark:text-amber-500/80 text-xs tracking-wider">{{ chapter }}:{{ v.verse }}</span>
+                <span class="font-cinzel font-bold text-amber-800/80 dark:text-amber-500/80 text-xs tracking-wider">{{ chapter }}:{{ v.verse_display or v.verse }}</span>
                 
                 <!-- Subdued Touch & Hover Actions -->
                 <div class="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 flex items-center space-x-1.5 sm:space-x-2 text-stone-400 transition-opacity shrink-0">
@@ -479,16 +490,17 @@
     function handleBookmarkClick(btn) {
         const item = btn.closest('.verse-item');
         const v = parseInt(btn.dataset.verse);
+        const vDisplay = item.dataset.verseDisplay || String(v);
         const textEn = item.querySelector('.verse-text-en')?.innerText || '';
         const textTa = item.querySelector('.verse-text-ta')?.innerText || '';
         if (typeof window.toggleBookmark === 'function') {
-            window.toggleBookmark(window.CURRENT_BOOK_ID, window.CURRENT_BOOK_EN, window.CURRENT_BOOK_TA, window.CURRENT_CHAPTER, v, textEn, textTa);
+            window.toggleBookmark(window.CURRENT_BOOK_ID, window.CURRENT_BOOK_EN, window.CURRENT_BOOK_TA, window.CURRENT_CHAPTER, v, textEn, textTa, vDisplay);
         }
     }
 
     function handleCopyClick(btn) {
         const item = btn.closest('.verse-item');
-        const v = item.id.replace('v', '');
+        const v = item.dataset.verseDisplay || item.id.replace('v', '');
         const refEn = `${window.CURRENT_BOOK_EN} ${window.CURRENT_CHAPTER}:${v}`;
         const refTa = `${window.CURRENT_BOOK_TA} ${window.CURRENT_CHAPTER}:${v}`;
         const textEn = item.querySelector('.verse-text-en')?.innerText || '';

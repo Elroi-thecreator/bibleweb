@@ -44,6 +44,7 @@ class BibleContinuousAudio {
         this.verses = Array.from(items).map((el, idx) => ({
             index: idx,
             verse: el.id.replace('v', ''),
+            verseDisplay: el.dataset.verseDisplay || el.id.replace('v', ''),
             element: el,
             textEn: el.querySelector('.verse-text-en')?.innerText.trim() || '',
             textTa: el.querySelector('.verse-text-ta')?.innerText.trim() || ''
@@ -127,7 +128,7 @@ class BibleContinuousAudio {
         v.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         const label = document.getElementById('audio-verse-label');
-        if (label) label.innerText = `Verse ${v.verse}`;
+        if (label) label.innerText = `Verse ${v.verseDisplay || v.verse}`;
     }
 
     pause() {
