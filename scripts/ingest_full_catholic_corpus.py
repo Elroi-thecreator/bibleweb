@@ -48,14 +48,15 @@ DR_TO_BOOK_ID = {
 }
 
 def clean_poc_tamil(text: str) -> str:
-    """Cleans raw Tamil POC database text for natural reading and TTS."""
+    """Cleans raw Tamil POC database text while preserving merged verse tags as [X-Y]."""
     t = text.replace("''", "'").replace("\\'", "'")
     t = re.sub(r'[\u249c-\u24af]', '', t) # Enclosed alphanumeric footnote letters
     t = re.sub(r'\[[a-z0-9]+\]', '', t)    # [a], [b], etc.
     t = t.replace('\u2422', ' ')           # Poetic line break symbol
     t = re.sub(r'[\u207D\u207E\u208D\u208E]', '', t) # Superscript/subscript parentheses
     t = re.sub(r'\*+', '', t)              # Asterisk footnote indicators
-    t = re.sub(r'\u276E.*?\u276F', '', t)  # ❮1-2❯ merged verse prefixes
+    # Convert ❮1-2❯ or ❮10-11❯ to [1-2] or [10-11]
+    t = re.sub(r'\u276E(.*?)\u276F', r'[\1] ', t)
     t = re.sub(r'[\u2983\u2984]', '', t)  # Double brackets
     t = re.sub(r'\s+', ' ', t).strip()
     return t
@@ -92,23 +93,40 @@ def map_vulgate_psalm_to_hebrew(v_ch: int, v_v: int):
 
 def parse_tamil_poc(t_verses_path: str):
     print(f"Loading Tamil Catholic (POC) verses from {t_verses_path}...")
-    ta_verses = {} # (target_book_id, chapter, verse) -> clean_text
+    raw_list = []
     with open(t_verses_path, 'r', encoding='utf-8', errors='ignore') as f:
         for line in f:
             m = re.search(r'\((\d{8}),\s*\'(.*?)\'\)[,;]', line)
             if not m:
                 continue
-            v_id = m.group(1)
-            b_src = int(v_id[:2])
-            if b_src in SQL_TO_BOOK_ID:
-                b_tgt = SQL_TO_BOOK_ID[b_src]
-                c_num = int(v_id[2:5])
-                v_num = int(v_id[5:])
-                raw_text = m.group(2)
-                cleaned = clean_poc_tamil(raw_text)
-                if cleaned:
-                    ta_verses[(b_tgt, c_num, v_num)] = cleaned
-    print(f"Loaded {len(ta_verses)} Tamil POC verses across 73 books.")
+            raw_list.append((int(m.group(1)), m.group(2)))
+
+    # Two-pass resolution: resolve "Same as above" to the head verse of the merged group
+    ta_verses = {}
+    for i, (v_id, raw_text) in enumerate(raw_list):
+        b_src = v_id // 1000000
+        if b_src not in SQL_TO_BOOK_ID:
+            continue
+        b_tgt = SQL_TO_BOOK_ID[b_src]
+        c_num = (v_id // 1000) % 1000
+        v_num = v_id % 1000
+
+        if raw_text.strip().lower() == "same as above":
+            # Look backwards for the parent/head verse in the same chapter
+            head_text = ""
+            for j in range(i - 1, max(-1, i - 15), -1):
+                prev_id, prev_text = raw_list[j]
+                if prev_id // 1000 == v_id // 1000 and prev_text.strip().lower() != "same as above":
+                    head_text = prev_text
+                    break
+            cleaned = clean_poc_tamil(head_text) if head_text else ""
+        else:
+            cleaned = clean_poc_tamil(raw_text)
+
+        if cleaned:
+            ta_verses[(b_tgt, c_num, v_num)] = cleaned
+
+    print(f"Loaded {len(ta_verses)} Tamil POC verses across 73 books (all 'Same as above' resolved to full scripture text).")
     return ta_verses
 
 def parse_douay_rheims(dr_json_path: str):
@@ -201,7 +219,20 @@ def main():
     """, update_batch)
     print(f"Updated {len(update_batch)} existing verses.")
 
-    # 4. Insert any Catholic verses that were not already in the 66-canon Protestant database
+    # 4. Fix any legacy "Same as above" in base text_ta for Deuterocanonical books
+    print("Fixing any legacy 'Same as above' in base text_ta...")
+    fixed_legacy = 0
+    for (b_id, ch, v), resolved_text in ta_poc.items():
+        if b_id >= 67:
+            res = cursor.execute("""
+                UPDATE verses
+                SET text_ta = ?
+                WHERE book_id = ? AND chapter = ? AND verse = ? AND LOWER(text_ta) LIKE '%same as above%'
+            """, (resolved_text, b_id, ch, v))
+            fixed_legacy += res.rowcount
+    print(f"Fixed {fixed_legacy} legacy 'Same as above' in base text_ta.")
+
+    # 5. Insert any Catholic verses that were not already in the 66-canon Protestant database
     all_catholic_keys = set(ta_poc.keys()) | set(en_drb.keys())
     missing_keys = all_catholic_keys - existing_keys
     print(f"Found {len(missing_keys)} verses present in Catholic corpus not in base schema.")
@@ -210,23 +241,30 @@ def main():
     for (b_id, ch, v) in sorted(missing_keys):
         t_poc = ta_poc.get((b_id, ch, v), "")
         t_drb = en_drb.get((b_id, ch, v), "")
-        # Insert with fallback base text populated as well so no query ever returns NULL
         insert_batch.append((b_id, ch, v, t_poc, t_drb, t_poc, t_drb))
 
     if insert_batch:
         cursor.executemany("""
-            INSERT INTO verses (book_id, chapter, verse, text_ta, text_en, text_ta_poc, text_en_drb)
+            INSERT OR REPLACE INTO verses (book_id, chapter, verse, text_ta, text_en, text_ta_poc, text_en_drb)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, insert_batch)
-        print(f"Inserted {len(insert_batch)} additional verses.")
+        print(f"Inserted/Replaced {len(insert_batch)} additional verses.")
 
-    # 5. Create index for fast lookups
+    # 6. Verify ZERO occurrences of "Same as above" across the entire database
+    poc_same_count = cursor.execute("SELECT COUNT(*) FROM verses WHERE LOWER(text_ta_poc) LIKE '%same as above%'").fetchone()[0]
+    ta_same_count = cursor.execute("SELECT COUNT(*) FROM verses WHERE LOWER(text_ta) LIKE '%same as above%'").fetchone()[0]
+    print(f"Verification: text_ta_poc with 'Same as above': {poc_same_count}")
+    print(f"Verification: text_ta with 'Same as above': {ta_same_count}")
+    assert poc_same_count == 0, f"Expected 0 'Same as above' in text_ta_poc, found {poc_same_count}"
+    assert ta_same_count == 0, f"Expected 0 'Same as above' in text_ta, found {ta_same_count}"
+
+    # 7. Create index for fast lookups
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_verses_lookup ON verses(book_id, chapter, verse);")
 
     conn.commit()
     conn.close()
 
-    print("[SUCCESS] Catholic dual-corpus data ingested successfully!")
+    print("[SUCCESS] All merged verses properly resolved! Zero 'Same as above' remain.")
 
 if __name__ == "__main__":
     main()
