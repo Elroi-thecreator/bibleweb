@@ -26,7 +26,7 @@ def get_connection():
     return conn
 
 
-# 66 Canon Books Metadata (ID, English Name, Tamil Name, Chapter Count)
+# 66 Canon Books Metadata (ID, English Name, Protestant BSI Tamil Name, Chapter Count)
 BIBLE_BOOKS = [
     (1, "Genesis", "ஆதியாகமம்", 50),
     (2, "Exodus", "யாத்திராகமம்", 40),
@@ -102,14 +102,101 @@ DEUTEROCANONICAL_BOOKS = [
     (68, "Judith", "யூதித்து", 16),
     (69, "Wisdom of Solomon", "சாலமோனின் ஞானம்", 19),
     (70, "Sirach", "சீராக் (சீராக்கின் ஞானம்)", 51),
-    (71, "Baruch", "பாரூக்", 6),
+    (71, "Baruch", "பாரூக்கு", 6),
     (72, "1 Maccabees", "1 மக்கபேயர்", 16),
     (73, "2 Maccabees", "2 மக்கபேயர்", 15),
 ]
 
-CATHOLIC_BOOKS = BIBLE_BOOKS + DEUTEROCANONICAL_BOOKS
+# All 73 Catholic Books with Authentic Catholic POC (திருவிவிலியம்) Tamil Names
+CATHOLIC_BOOKS = [
+    (1, "Genesis", "தொடக்க நூல்", 50),
+    (2, "Exodus", "விடுதலைப் பயணம்", 40),
+    (3, "Leviticus", "லேவியர்", 27),
+    (4, "Numbers", "எண்ணிக்கை", 36),
+    (5, "Deuteronomy", "இணைச் சட்டம்", 34),
+    (6, "Joshua", "யோசுவா", 24),
+    (7, "Judges", "நீதித் தலைவர்கள்", 21),
+    (8, "Ruth", "ரூத்து", 4),
+    (9, "1 Samuel", "1 சாமுவேல்", 31),
+    (10, "2 Samuel", "2 சாமுவேல்", 24),
+    (11, "1 Kings", "1 அரசர்கள்", 22),
+    (12, "2 Kings", "2 அரசர்கள்", 25),
+    (13, "1 Chronicles", "1 குறிப்பேடு", 29),
+    (14, "2 Chronicles", "2 குறிப்பேடு", 36),
+    (15, "Ezra", "எஸ்ரா", 10),
+    (16, "Nehemiah", "நெகேமியா", 13),
+    (17, "Esther", "எஸ்தர்", 10),
+    (18, "Job", "யோபு", 42),
+    (19, "Psalms", "திருப்பாடல்கள்", 150),
+    (20, "Proverbs", "நீதிமொழிகள்", 31),
+    (21, "Ecclesiastes", "சபை உரையாளர்", 12),
+    (22, "Song of Solomon", "இனிமைமிகு பாடல்", 8),
+    (23, "Isaiah", "எசாயா", 66),
+    (24, "Jeremiah", "எரேமியா", 52),
+    (25, "Lamentations", "புலம்பல்", 5),
+    (26, "Ezekiel", "எசேக்கியேல்", 48),
+    (27, "Daniel", "தானியேல்", 12),
+    (28, "Hosea", "ஒசேயா", 14),
+    (29, "Joel", "யோவேல்", 3),
+    (30, "Amos", "ஆமோஸ்", 9),
+    (31, "Obadiah", "ஒபதியா", 1),
+    (32, "Jonah", "யோனா", 4),
+    (33, "Micah", "மீக்கா", 7),
+    (34, "Nahum", "நாகூம்", 3),
+    (35, "Habakkuk", "அபக்கூக்கு", 3),
+    (36, "Zephaniah", "செப்பனியா", 3),
+    (37, "Haggai", "ஆகாய்", 2),
+    (38, "Zechariah", "செக்கரியா", 14),
+    (39, "Malachi", "மலாக்கி", 4),
+    (40, "Matthew", "மத்தேயு", 28),
+    (41, "Mark", "மாற்கு", 16),
+    (42, "Luke", "லூக்கா", 24),
+    (43, "John", "யோவான்", 21),
+    (44, "Acts", "திருத்தூதர் பணிகள்", 28),
+    (45, "Romans", "உரோமையர்", 16),
+    (46, "1 Corinthians", "1 கொரிந்தியர்", 16),
+    (47, "2 Corinthians", "2 கொரிந்தியர்", 13),
+    (48, "Galatians", "கலாத்தியர்", 6),
+    (49, "Ephesians", "எபேசியர்", 6),
+    (50, "Philippians", "பிலிப்பியர்", 4),
+    (51, "Colossians", "கொலோசையர்", 4),
+    (52, "1 Thessalonians", "1 தெசலோனிக்கர்", 5),
+    (53, "2 Thessalonians", "2 தெசலோனிக்கர்", 3),
+    (54, "1 Timothy", "1 திமொத்தேயு", 6),
+    (55, "2 Timothy", "2 திமொத்தேயு", 4),
+    (56, "Titus", "தீத்து", 3),
+    (57, "Philemon", "பிலமோன்", 1),
+    (58, "Hebrews", "எபிரேயர்", 13),
+    (59, "James", "யாக்கோபு", 5),
+    (60, "1 Peter", "1 பேதுரு", 5),
+    (61, "2 Peter", "2 பேதுரு", 3),
+    (62, "1 John", "1 யோவான்", 5),
+    (63, "2 John", "2 யோவான்", 1),
+    (64, "3 John", "3 யோவான்", 1),
+    (65, "Jude", "யூதா", 1),
+    (66, "Revelation", "திருவெளிப்பாடு", 22),
+    (67, "Tobit", "தோபித்து", 14),
+    (68, "Judith", "யூதித்து", 16),
+    (69, "Wisdom of Solomon", "சாலமோனின் ஞானம்", 19),
+    (70, "Sirach", "சீராக் (சீராக்கின் ஞானம்)", 51),
+    (71, "Baruch", "பாரூக்கு", 6),
+    (72, "1 Maccabees", "1 மக்கபேயர்", 16),
+    (73, "2 Maccabees", "2 மக்கபேயர்", 15),
+]
 
+# Standard Protestant Book Map (with Deuterocanon fallback)
 BOOK_MAP = {
+    b[0]: {
+        "id": b[0],
+        "name_en": b[1],
+        "name_ta": b[2],
+        "total_chapters": b[3]
+    }
+    for b in (BIBLE_BOOKS + DEUTEROCANONICAL_BOOKS)
+}
+
+# Authentic Catholic Book Map (POC திருவிவிலியம்)
+CATHOLIC_BOOK_MAP = {
     b[0]: {
         "id": b[0],
         "name_en": b[1],
@@ -120,12 +207,26 @@ BOOK_MAP = {
 }
 
 
-def get_books(canon: str = "protestant"):
+def get_books(canon: str = "protestant") -> List:
     """Returns list of books based on canon preference."""
-    if canon and canon.lower() == "catholic":
+    if canon and str(canon).lower() == "catholic":
         return CATHOLIC_BOOKS
     return BIBLE_BOOKS
 
+
+def get_book_map(canon: str = "protestant") -> Dict:
+    """Returns book map based on canon preference."""
+    if canon and str(canon).lower() == "catholic":
+        return CATHOLIC_BOOK_MAP
+    return BOOK_MAP
+
+
+def get_book_info(book_id: int, canon: str = "protestant") -> Dict:
+    """Returns metadata dictionary for a book according to active canon."""
+    bmap = get_book_map(canon)
+    if book_id in bmap:
+        return bmap[book_id]
+    return BOOK_MAP.get(book_id, {"id": book_id, "name_en": f"Book {book_id}", "name_ta": "", "total_chapters": 1})
 
 
 def _resolve_schema(cursor: sqlite3.Cursor):
@@ -152,6 +253,9 @@ def _resolve_schema(cursor: sqlite3.Cursor):
         ta_col_match = next((c for c in ["text_ta", "tamil", "verse_ta", "word_ta", "tamil_text", "ta"] if c in cols_l), None)
         en_col_match = next((c for c in ["text_en", "english", "verse_en", "word_en", "kjv", "web", "en"] if c in cols_l), None)
 
+        has_poc = "text_ta_poc" in cols_l
+        has_drb = "text_en_drb" in cols_l
+
         if ta_col_match and en_col_match:
             return {
                 "type": "single",
@@ -160,7 +264,9 @@ def _resolve_schema(cursor: sqlite3.Cursor):
                 "chapter": c_col,
                 "verse": v_col,
                 "text_ta": cols[cols_l.index(ta_col_match)],
-                "text_en": cols[cols_l.index(en_col_match)]
+                "text_en": cols[cols_l.index(en_col_match)],
+                "has_poc": has_poc,
+                "has_drb": has_drb,
             }
 
     ta_table = next((t for t in tables if any(k in t.lower() for k in ["tam", "_ta", "tamil"])), tables[0])
@@ -180,24 +286,38 @@ def _resolve_schema(cursor: sqlite3.Cursor):
         "chapter": ta_cols[ta_cols_l.index(next(c for c in ["chapter", "c"] if c in ta_cols_l))],
         "verse": ta_cols[ta_cols_l.index(next(c for c in ["verse", "v"] if c in ta_cols_l))],
         "text_ta": ta_cols[ta_cols_l.index(next(c for c in ["text", "verse_text", "words"] if c in ta_cols_l))],
-        "text_en": en_cols[en_cols_l.index(next(c for c in ["text", "verse_text", "words"] if c in en_cols_l))]
+        "text_en": en_cols[en_cols_l.index(next(c for c in ["text", "verse_text", "words"] if c in en_cols_l))],
+        "has_poc": False,
+        "has_drb": False,
     }
 
 
-def get_chapter_verses(book_id: int, chapter: int) -> List[Dict]:
+def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant") -> List[Dict]:
+    """Retrieves all verses for a given book and chapter based on canon (Protestant or Catholic)."""
     with get_connection() as conn:
         cursor = conn.cursor()
         schema = _resolve_schema(cursor)
+        is_catholic = (canon and str(canon).lower() == "catholic")
 
         if schema["type"] == "single":
-            sql = f"""
-                SELECT {schema['verse']} AS verse,
-                       {schema['text_en']} AS text_en,
-                       {schema['text_ta']} AS text_ta
-                FROM {schema['table']}
-                WHERE {schema['book']} = ? AND {schema['chapter']} = ?
-                ORDER BY {schema['verse']} ASC
-            """
+            if is_catholic and schema.get("has_poc"):
+                sql = f"""
+                    SELECT {schema['verse']} AS verse,
+                           COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) AS text_en,
+                           COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) AS text_ta
+                    FROM {schema['table']}
+                    WHERE {schema['book']} = ? AND {schema['chapter']} = ?
+                    ORDER BY {schema['verse']} ASC
+                """
+            else:
+                sql = f"""
+                    SELECT {schema['verse']} AS verse,
+                           {schema['text_en']} AS text_en,
+                           {schema['text_ta']} AS text_ta
+                    FROM {schema['table']}
+                    WHERE {schema['book']} = ? AND {schema['chapter']} = ?
+                    ORDER BY {schema['verse']} ASC
+                """
             rows = cursor.execute(sql, (book_id, chapter)).fetchall()
         else:
             sql = f"""
@@ -224,24 +344,41 @@ def get_chapter_verses(book_id: int, chapter: int) -> List[Dict]:
         ]
 
 
-def search_verses(query_str: str, limit: int = 60) -> List[Dict]:
+def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) -> List[Dict]:
+    """Performs full-text search across active translation corpora."""
     with get_connection() as conn:
         cursor = conn.cursor()
         schema = _resolve_schema(cursor)
         pattern = f"%{query_str.strip()}%"
+        is_catholic = (canon and str(canon).lower() == "catholic")
+        book_map = CATHOLIC_BOOK_MAP if is_catholic else BOOK_MAP
 
         if schema["type"] == "single":
-            sql = f"""
-                SELECT {schema['book']} AS book_id,
-                       {schema['chapter']} AS chapter,
-                       {schema['verse']} AS verse,
-                       {schema['text_en']} AS text_en,
-                       {schema['text_ta']} AS text_ta
-                FROM {schema['table']}
-                WHERE {schema['text_en']} LIKE ? OR {schema['text_ta']} LIKE ?
-                ORDER BY {schema['book']}, {schema['chapter']}, {schema['verse']}
-                LIMIT ?
-            """
+            if is_catholic and schema.get("has_poc"):
+                sql = f"""
+                    SELECT {schema['book']} AS book_id,
+                           {schema['chapter']} AS chapter,
+                           {schema['verse']} AS verse,
+                           COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) AS text_en,
+                           COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) AS text_ta
+                    FROM {schema['table']}
+                    WHERE (COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) LIKE ? 
+                           OR COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) LIKE ?)
+                    ORDER BY {schema['book']}, {schema['chapter']}, {schema['verse']}
+                    LIMIT ?
+                """
+            else:
+                sql = f"""
+                    SELECT {schema['book']} AS book_id,
+                           {schema['chapter']} AS chapter,
+                           {schema['verse']} AS verse,
+                           {schema['text_en']} AS text_en,
+                           {schema['text_ta']} AS text_ta
+                    FROM {schema['table']}
+                    WHERE {schema['text_en']} LIKE ? OR {schema['text_ta']} LIKE ?
+                    ORDER BY {schema['book']}, {schema['chapter']}, {schema['verse']}
+                    LIMIT ?
+                """
             rows = cursor.execute(sql, (pattern, pattern, limit)).fetchall()
         else:
             sql = f"""
@@ -263,7 +400,7 @@ def search_verses(query_str: str, limit: int = 60) -> List[Dict]:
 
         results = []
         for r in rows:
-            b_info = BOOK_MAP.get(r["book_id"], {"name_en": f"Book {r['book_id']}", "name_ta": ""})
+            b_info = book_map.get(r["book_id"], {"name_en": f"Book {r['book_id']}", "name_ta": ""})
             results.append({
                 "book_id": r["book_id"],
                 "book_name_en": b_info["name_en"],

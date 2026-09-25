@@ -29,6 +29,9 @@ from app.db import (
     DEUTEROCANONICAL_BOOKS,
     CATHOLIC_BOOKS,
     BOOK_MAP,
+    CATHOLIC_BOOK_MAP,
+    get_book_info,
+    get_book_map,
     get_books,
     get_chapter_verses,
     search_verses,
@@ -44,7 +47,7 @@ templates = Jinja2Templates(directory="templates")
 START_TIME = time.time()
 AUDIO_CACHE = {}
 
-DAILY_VERSE = {
+DAILY_VERSE_PROTESTANT = {
     "ref_en": "John 3:16",
     "ref_ta": "யோவான் 3:16",
     "text_en": (
@@ -55,8 +58,29 @@ DAILY_VERSE = {
         "தேவன், தம்முடைய ஒரேபேறான குமாரனை விசுவாசிக்கிறவன் எவனோ அவன் கெட்டுப்போகாமல் "
         "நித்தியஜீவனை அடையும்படிக்கு, அவரைத் தந்தருளி, இவ்வளவாய் உலகத்தில் அன்புகூர்ந்தார்."
     ),
-    "link": "/read/43/1?mode=bilingual",
+    "link": "/read/43/1?mode=bilingual&canon=protestant",
 }
+
+DAILY_VERSE_CATHOLIC = {
+    "ref_en": "John 3:16",
+    "ref_ta": "யோவான் 3:16",
+    "text_en": (
+        "For God so loved the world, as to give his only begotten Son; "
+        "that whosoever believeth in him, may not perish, but may have life everlasting."
+    ),
+    "text_ta": (
+        "தம் ஒரே மகன் மீது நம்பிக்கை கொள்ளும் எவரும் அழியாமல் நிலைவாழ்வு பெறும் பொருட்டு, "
+        "கடவுள் உலகத்தின் மேல் அந்த அளவுக்கு அன்பு கூர்ந்தார்."
+    ),
+    "link": "/read/43/1?mode=bilingual&canon=catholic",
+}
+
+def get_daily_verse(canon: str = "protestant"):
+    if canon and str(canon).lower() == "catholic":
+        return DAILY_VERSE_CATHOLIC
+    return DAILY_VERSE_PROTESTANT
+
+DAILY_VERSE = DAILY_VERSE_PROTESTANT
 
 
 # ==========================================
@@ -165,6 +189,12 @@ def preprocess_scripture_text(text: str, lang: str = "ta") -> str:
             r"\bசீரா\.": "சீராக்",
             r"\bபாரூ\.": "பாரூக்",
             r"\bமக்க\.": "மக்கபேயர்",
+            r"\bதொ\.நூ\.": "தொடக்க நூல்",
+            r"\bவி\.ப\.": "விடுதலைப் பயணம்",
+            r"\bஇணை\.": "இணைச் சட்டம்",
+            r"\bதி\.பா\.": "திருப்பாடல்கள்",
+            r"\bதி\.பணி\.": "திருத்தூதர் பணிகள்",
+            r"\bதி\.வெளி\.": "திருவெளிப்பாடு",
         }
         for pat, repl in abbrevs.items():
             clean = re.sub(pat, repl, clean)
@@ -389,11 +419,12 @@ def resolve_canon(request: Request, canon: str = None, book_id: int = None) -> s
 
 def get_canon_context(canon: str = "protestant"):
     """Returns standardized book lists and chapter counts for template contexts."""
-    is_catholic = (canon == "catholic")
+    is_catholic = (canon and str(canon).lower() == "catholic")
+    canon_name = "catholic" if is_catholic else "protestant"
     books = CATHOLIC_BOOKS if is_catholic else BIBLE_BOOKS
-    ot_books = [b for b in BIBLE_BOOKS if b[0] <= 39]
-    nt_books = [b for b in BIBLE_BOOKS if b[0] > 39 and b[0] <= 66]
-    dc_books = DEUTEROCANONICAL_BOOKS
+    ot_books = [b for b in books if b[0] <= 39]
+    nt_books = [b for b in books if 40 <= b[0] <= 66]
+    dc_books = [b for b in books if b[0] >= 67] if is_catholic else DEUTEROCANONICAL_BOOKS
     
     total_chapters = 1326 if is_catholic else 1189
     ot_chapters = 1066 if is_catholic else 929
@@ -401,7 +432,7 @@ def get_canon_context(canon: str = "protestant"):
     nt_chapters = 260
 
     return {
-        "canon": canon,
+        "canon": canon_name,
         "is_catholic": is_catholic,
         "books": books,
         "all_books": CATHOLIC_BOOKS,
@@ -424,7 +455,7 @@ async def landing_page(request: Request, canon: str = Query(None)):
         name="landing.html",
         context={
             **canon_ctx,
-            "daily_verse": DAILY_VERSE,
+            "daily_verse": get_daily_verse(active_canon),
         },
     )
 
@@ -438,14 +469,14 @@ async def reader(
     canon: str = Query(None),
 ):
     active_canon = resolve_canon(request, canon, book_id)
-    if book_id not in BOOK_MAP:
+    if book_id not in BOOK_MAP and book_id not in CATHOLIC_BOOK_MAP:
         book_id = 1
-    current_book = BOOK_MAP[book_id]
+    current_book = get_book_info(book_id, canon=active_canon)
     if chapter < 1 or chapter > current_book["total_chapters"]:
         chapter = 1
 
     try:
-        verses = get_chapter_verses(book_id, chapter) or []
+        verses = get_chapter_verses(book_id, chapter, canon=active_canon) or []
     except Exception as e:
         print(f"Error fetching verses: {e}")
         verses = []
@@ -473,13 +504,13 @@ async def reader(
 async def presenter_mode(request: Request, book_id: int, chapter: int, canon: str = Query(None)):
     """Church / TV / Projector presentation mode with extra-large bilingual slides."""
     active_canon = resolve_canon(request, canon, book_id)
-    if book_id not in BOOK_MAP:
+    if book_id not in BOOK_MAP and book_id not in CATHOLIC_BOOK_MAP:
         book_id = 1
-    current_book = BOOK_MAP[book_id]
+    current_book = get_book_info(book_id, canon=active_canon)
     if chapter < 1 or chapter > current_book["total_chapters"]:
         chapter = 1
 
-    verses = get_chapter_verses(book_id, chapter)
+    verses = get_chapter_verses(book_id, chapter, canon=active_canon)
     canon_ctx = get_canon_context(active_canon)
 
     return templates.TemplateResponse(
@@ -524,7 +555,7 @@ async def progress_page(request: Request, canon: str = Query(None)):
 async def search_page(request: Request, q: str = Query("", min_length=1), canon: str = Query(None)):
     active_canon = resolve_canon(request, canon)
     canon_ctx = get_canon_context(active_canon)
-    results = search_verses(q) if q.strip() else []
+    results = search_verses(q, canon=active_canon) if q.strip() else []
     # If Protestant mode, filter out Deuterocanonical results (IDs > 66)
     if not canon_ctx["is_catholic"]:
         results = [r for r in results if r["book_id"] <= 66]
@@ -607,21 +638,30 @@ PLANS_DIR = Path(__file__).resolve().parent.parent / "static" / "plans"
 
 
 def _lookup_book_id(book_str: str):
-    """Maps book name, ID, or slug to integer book_id in BOOK_MAP."""
+    """Maps book name, ID, or slug to integer book_id in BOOK_MAP or CATHOLIC_BOOK_MAP."""
     if not book_str:
         return None
     try:
         val = int(book_str)
-        if val in BOOK_MAP:
+        if val in BOOK_MAP or val in CATHOLIC_BOOK_MAP:
             return val
     except (ValueError, TypeError):
         pass
 
     clean = str(book_str).strip().lower()
+    for bid, binfo in CATHOLIC_BOOK_MAP.items():
+        if (
+            binfo.get("name_en", "").lower() == clean
+            or binfo.get("name_ta", "").strip() == str(book_str).strip()
+            or binfo.get("name_ta", "").strip().lower() == clean
+        ):
+            return bid
+
     for bid, binfo in BOOK_MAP.items():
         if (
             binfo.get("name_en", "").lower() == clean
             or binfo.get("name_ta", "").strip() == str(book_str).strip()
+            or binfo.get("name_ta", "").strip().lower() == clean
             or binfo.get("abbrev", "").lower() == clean
             or binfo.get("slug", "").lower() == clean
         ):
@@ -693,6 +733,8 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
         or []
     )
 
+    active_canon = "catholic" if any(k in plan_type for k in ("catholic", "deuterocanon")) else resolve_canon(request)
+
     chapters_data = []
     for item in portions:
         book_id = None
@@ -713,9 +755,9 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
                 chapter = int(raw_ch)
 
         if book_id and chapter:
-            # Query the database
-            raw_verses = get_chapter_verses(book_id, chapter) or []
-            book_info = BOOK_MAP.get(book_id, {})
+            # Query the database with active_canon
+            raw_verses = get_chapter_verses(book_id, chapter, canon=active_canon) or []
+            book_info = get_book_info(book_id, canon=active_canon)
 
             # Normalize verse fields to support whatever keys your template/audio uses
             verses = []
