@@ -238,6 +238,7 @@
                     <option value="deuterocanon">Deuterocanonical Books (137 Chapters / 2-ஆம் திருமுறை)</option>
                     <option value="all">Entire Protestant Bible (1,189 Chapters / 66 நூல்கள்)</option>
                     <option value="nt">New Testament (260 Chapters / புதிய ஏற்பாடு)</option>
+                    <option value="ot">Old Testament (929 Chapters / பழைய ஏற்பாடு)</option>
                     <option value="gospels">The Four Gospels (89 Chapters / நற்செய்திகள்)</option>
                     <option value="psalms_proverbs">Psalms & Proverbs (181 Chapters / சங்கீதம் & நீதிமொழிகள்)</option>
                     {% else %}
@@ -245,6 +246,7 @@
                     <option value="catholic_all">Entire Catholic Bible (1,326 Chapters / 73 நூல்கள்)</option>
                     <option value="deuterocanon">Deuterocanonical Books (137 Chapters / 2-ஆம் திருமுறை)</option>
                     <option value="nt">New Testament (260 Chapters / புதிய ஏற்பாடு)</option>
+                    <option value="ot">Old Testament (929 Chapters / பழைய ஏற்பாடு)</option>
                     <option value="gospels">The Four Gospels (89 Chapters / நற்செய்திகள்)</option>
                     <option value="psalms_proverbs">Psalms & Proverbs (181 Chapters / சங்கீதம் & நீதிமொழிகள்)</option>
                     {% endif %}
@@ -325,6 +327,7 @@ const PLAN_SCOPES = {
     catholic_all: { name: "Entire Catholic Bible (73 Books)", chapters: 1326, books: Array.from({length: 73}, (_, i) => i + 1) },
     deuterocanon: { name: "Deuterocanonical Books (2-ஆம் திருமுறை)", chapters: 137, books: [67, 68, 69, 70, 71, 72, 73] },
     nt: { name: "New Testament", chapters: 260, books: Array.from({length: 27}, (_, i) => i + 40) },
+    ot: { name: "Old Testament", chapters: 929, books: Array.from({length: 39}, (_, i) => i) },
     gospels: { name: "The Four Gospels", chapters: 89, books: [40, 41, 42, 43] },
     psalms_proverbs: { name: "Psalms & Proverbs", chapters: 181, books: [19, 20] }
 };
