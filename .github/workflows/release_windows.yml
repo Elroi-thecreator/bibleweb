@@ -124,7 +124,9 @@ jobs:
             *(Or test locally using the attached `winget-manifests.zip`)*.
 
       - name: Submit to Windows Package Manager (WinGet)
+        id: winget_releaser
         if: env.WINGET_TOKEN != ''
+        continue-on-error: true
         uses: vedantmgoyal9/winget-releaser@v2
         env:
           WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
@@ -133,7 +135,24 @@ jobs:
           token: ${{ secrets.WINGET_TOKEN }}
           installer-type: 'portable'
 
-      - name: WinGet Submission Notice
+      - name: WinGet Initial Submission Notice
+        if: steps.winget_releaser.outcome == 'failure'
+        shell: pwsh
+        run: |
+          Write-Host "=================================================================="
+          Write-Host " [NOTICE] WinGet Initial Submission Required"
+          Write-Host " winget-releaser requires the package to exist in microsoft/winget-pkgs"
+          Write-Host " for initial submission. Once the initial PR is merged into winget-pkgs,"
+          Write-Host " all future releases will be automatically submitted by this action!"
+          Write-Host ""
+          Write-Host " To submit the initial version to microsoft/winget-pkgs:"
+          Write-Host " 1. Download the 'winget-manifests.zip' attached to this GitHub Release."
+          Write-Host " 2. Fork https://github.com/microsoft/winget-pkgs"
+          Write-Host " 3. Upload the manifests folder and submit a PR."
+          Write-Host " See windows_app/submit_winget.md for details."
+          Write-Host "=================================================================="
+
+      - name: WinGet Token Notice
         if: env.WINGET_TOKEN == ''
         shell: pwsh
         run: |

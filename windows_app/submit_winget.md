@@ -14,32 +14,31 @@ This guide explains how Holy Bible (வேதம்) is published to Microsoft's
 
 ---
 
-## 🚀 How Releases Work
+## ⚠️ Important: First-Time Package Submission (v1.0.0)
 
-### 1. Automated via Git Tag (Recommended)
-When you are ready to publish a new version, simply create and push a git tag:
+> `winget-releaser` is an **updater**. Microsoft requires any brand-new package identifier (like `ElroiTheCreator.HolyBible`) to be added to `microsoft/winget-pkgs` for the first time via a standard pull request.
+> 
+> **Once this initial v1.0.0 PR is merged into `microsoft/winget-pkgs`, `winget-releaser` and your GitHub Action will handle every future release (v1.0.1, v1.1.0, etc.) 100% automatically!**
 
-```cmd
-git tag v1.0.0
-git push origin v1.0.0
-```
+### How to Submit the Initial v1.0.0 Package (Takes 2 minutes):
 
-The GitHub Actions workflow (`.github/workflows/release_windows.yml`) will automatically:
-1. Spin up a clean `windows-latest` virtual machine.
-2. Compile `HolyBible-Portable.exe` using PyInstaller.
-3. Compute the SHA256 checksum.
-4. Generate the official 3-file WinGet manifest package (`.yaml`).
-5. Publish a new GitHub Release with the executable and checksum attached.
-6. Submit a pull request to `microsoft/winget-pkgs` (if `WINGET_TOKEN` is configured).
+Your GitHub Action release automatically created and attached **`winget-manifests.zip`** to the release!
+
+1. Download **`winget-manifests.zip`** from your GitHub release.
+2. Unzip it. You will see:
+   `manifests/e/ElroiTheCreator/HolyBible/1.0.0/`
+   - `ElroiTheCreator.HolyBible.yaml`
+   - `ElroiTheCreator.HolyBible.installer.yaml`
+   - `ElroiTheCreator.HolyBible.locale.en-US.yaml`
+3. Go to **[https://github.com/microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs)** and click **Fork** (top-right).
+4. Navigate into the `manifests/` folder on your fork (or click **Add file** -> **Upload files**).
+5. Upload the folder `e/ElroiTheCreator/HolyBible/1.0.0/` with the 3 YAML files.
+6. Commit to a new branch (e.g. `add-holybible-1.0.0`).
+7. Click **Contribute** -> **Open pull request**.
+   - PR Title: `New package: ElroiTheCreator.HolyBible version 1.0.0`
+8. Microsoft's automated bots (`winget-bot`) will validate the manifests, test-install the executable in a sandbox, and merge the PR.
 
 ---
-
-### 2. Manual Trigger via GitHub Actions UI
-You can also trigger a release manually anytime from GitHub:
-1. Navigate to your repository on GitHub.
-2. Go to the **Actions** tab.
-3. Click on **Release Windows Portable App & WinGet Package** in the left sidebar.
-4. Click **Run workflow**, enter the version tag (e.g. `v1.0.0`), and submit.
 
 ---
 
