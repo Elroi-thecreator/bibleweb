@@ -11,6 +11,7 @@ Runs a local lightweight Uvicorn server in a background thread and presents
 the application inside a native Windows desktop window via Microsoft Edge WebView2.
 """
 
+import io
 import os
 import sys
 import time
@@ -18,8 +19,33 @@ import socket
 import threading
 import urllib.request
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
+# SafeStream ensures sys.stdout and sys.stderr are never None in --noconsole mode
+class SafeStream:
+    def write(self, s):
+        pass
+    def flush(self):
+        pass
+    def isatty(self):
+        return False
+
+if sys.stdout is None:
+    sys.stdout = SafeStream()
+elif hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+if sys.stderr is None:
+    sys.stderr = SafeStream()
+elif hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+if sys.stdin is None:
+    sys.stdin = io.StringIO()
 
 # 1. Ensure the project root is in sys.path
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -77,6 +103,8 @@ class UvicornServerThread(threading.Thread):
             port=port,
             log_level="warning",
             access_log=False,
+            use_colors=False,
+            log_config=None,  # Bypasses ColourizedFormatter in GUI/--noconsole mode
             timeout_keep_alive=30,
         )
         self.server = uvicorn.Server(config=self.config)
