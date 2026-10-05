@@ -89,7 +89,6 @@ PackageVersion: {clean_version}
 InstallerType: portable
 Commands:
   - holybible
-  - HolyBible
 Installers:
   - Architecture: x64
     InstallerUrl: {installer_url}
