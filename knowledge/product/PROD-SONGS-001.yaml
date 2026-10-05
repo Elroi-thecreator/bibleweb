@@ -3,7 +3,7 @@ type: product_standard
 title: Christian Song Lyrics, Hymnal Presentation & Dual-Page Search Standard
 domain: product
 status: approved
-version: 1.3.0
+version: 1.3.1
 authority:
   level: official
   confidence: high
@@ -23,6 +23,7 @@ rule:
 do:
   - "Store all song metadata, volumes, numbers, titles, and bilingual stanza structures in the dedicated local embedded SQLite database (`data/songs.sqlite.db`) within `songs` and `song_books` tables."
   - "Ensure 100% of songs in `data/songs.sqlite.db` possess a valid, appropriate `youtube_url` (direct video watch URL for mapped tracks and official YouTube streaming search URL for others)."
+  - "Actively maintain and update direct video IDs with official verified releases (e.g. replacing inactive/404 legacy video IDs with verified official publisher uploads like `7bBsJE2RsxQ` for Jebathota Jeyageethangal Vol 9 #124)."
   - "Extract and expose `youtube_video_id` (11-character identifier) in `get_song_by_id()` for seamless responsive iframe embedding."
   - "Present a high-precision YouTube Stream Card on song detail pages when an official search stream is linked, providing single-tap playback."
   - "Display a YouTube indicator badge (`▶️ Watch`) on song cards in the `/songs` directory to indicate immediate video/audio playback."
