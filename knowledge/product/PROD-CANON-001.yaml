@@ -22,7 +22,8 @@ do:
   - "Allow users to switch between Catholic and Protestant canon perspectives without losing reading position."
   - "Clearly identify Deuterocanonical books (Tobit, Judith, Wisdom, Sirach, Baruch, 1 & 2 Maccabees) in the book navigation drawer."
   - "Support multi-language translation switching (English, Tamil, etc.) with verse-by-verse alignment."
-  - "Preserve user's last selected canon, translation version, and chapter across sessions using `localStorage` and URL parameters."
+  - "Preserve user's last selected canon, translation version, and chapter across sessions using `localStorage`, cookies, and URL query parameters (`canon=...`)."
+  - "Preserve the active `canon` query parameter across all search inputs and navigation links (including mobile search triggers and desktop search bars) so the user's selected tradition is not dropped."
   - "Provide fast book and chapter search autocomplete in the navigation header."
 
 dont:

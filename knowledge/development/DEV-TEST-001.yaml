@@ -20,6 +20,7 @@ rule:
 
 do:
   - "Verify FastAPI route integrity using `pytest` and `httpx.AsyncClient` or FastAPI `TestClient`."
+  - "Verify that empty query string navigations on user-facing routes (such as `/search`) return 200 HTML responses instead of 422 JSON validation errors."
   - "Verify SQLite queries for verse counts across both Catholic (73 books) and Protestant (66 books) canons."
   - "Validate that `windows_app/app.py` boots in headless/smoke mode without throwing unhandled exceptions."
   - "Verify that WinGet manifest generator (`windows_app/generate_winget_manifest.py`) outputs valid schema v1.6.0 YAML matching the compiled executable's SHA256."

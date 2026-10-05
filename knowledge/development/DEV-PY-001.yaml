@@ -22,11 +22,13 @@ do:
   - "Mount static files at `/static` using `app.mount('/static', StaticFiles(directory=get_static_dir()), name='static')`."
   - "Configure `Jinja2Templates` pointing to `get_templates_dir()` so templates render properly both in source mode and frozen executable mode."
   - "Implement clean canonical URL structures (`/`, `/{canon}/{version}/{book}/{chapter}`, `/quiz`, `/search`)."
+  - "Ensure query parameters on HTML page endpoints (e.g., `/search`, `/plans`) do not impose mandatory `min_length` constraints that cause 422 JSON validation responses; empty query states must render the appropriate HTML landing template."
   - "Return clear JSON error structures with HTTP status codes for API endpoints (`/api/verses`, `/api/quiz`)."
   - "Sanitize and escape user input before rendering in Jinja2 templates to prevent Cross-Site Scripting (XSS)."
 
 dont:
   - "Do not hardcode relative filesystem paths like `'./templates'` or `'./static'` directly; always resolve through path helper utilities."
+  - "Do not enforce `min_length` or strict validation constraints on optional HTML route query parameters that would cause FastAPI to abort and return a 422 JSON payload."
   - "Do not perform synchronous blocking I/O directly in high-throughput route handlers."
   - "Do not render untrusted HTML without autoescaping."
 
