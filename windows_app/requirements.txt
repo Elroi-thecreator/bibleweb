@@ -1,0 +1,4 @@
+# Windows Desktop Application & Packaging Dependencies
+pywebview>=5.0
+pyinstaller>=6.5
+pillow>=10.0

@@ -4,3 +4,10 @@ __pycache__/
 venv/
 !data/bible.sqlite.db
 data/raw_catholic/
+windows_app/build/
+windows_app/dist/
+build/
+dist/
+*.spec
+!windows_app/holybible.spec
+

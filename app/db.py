@@ -1,9 +1,14 @@
 import os
 import sqlite3
+import sys
 from typing import Dict, List
 
-# Absolute cross-platform path resolution
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Absolute cross-platform path resolution (supports source & frozen PyInstaller exe)
+if getattr(sys, "frozen", False):
+    BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "data", "bible.sqlite.db")
 DB_PATH = os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
 

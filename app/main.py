@@ -38,11 +38,22 @@ from app.db import (
 )
 from app.plans_data import READING_PLANS
 from app.quiz_data import QUIZ_CATEGORIES, QUIZ_QUESTIONS
+import sys
+
+# Absolute cross-platform path resolution (supports source & frozen PyInstaller exe)
+if getattr(sys, "frozen", False):
+    BASE_DIR = Path(getattr(sys, "_MEIPASS", sys.executable)).resolve()
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
+PLANS_DIR = STATIC_DIR / "plans"
 
 app = FastAPI(title="Holy Bible - வேதம்")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 START_TIME = time.time()
 AUDIO_CACHE = {}
@@ -642,8 +653,6 @@ async def legacy_redirect(book_id: int, chapter: int):
 # 6. 100-Day Read-Along Plan Routes
 # ==========================================
 
-PLANS_DIR = Path(__file__).resolve().parent.parent / "static" / "plans"
-
 
 def _lookup_book_id(book_str: str):
     """Maps book name, ID, or slug to integer book_id in BOOK_MAP or CATHOLIC_BOOK_MAP."""
@@ -699,7 +708,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
     filename, default_title = plan_files[plan_type]
     file_path = PLANS_DIR / filename
     if not file_path.exists():
-        file_path = Path("static/plans") / filename
+        file_path = STATIC_DIR / "plans" / filename
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=f"File {filename} not found")
