@@ -95,15 +95,41 @@ def parse_comments(comment_str):
     for line in comment_str.strip().split("\n"):
         if "=" in line:
             k, v = line.split("=", 1)
-            k = k.strip()
+            k = k.strip().lower()
             v = v.strip()
-            if k == "i18nTitle":
+            if k == "i18ntitle":
                 meta["title_ta"] = v
             elif k == "album":
                 meta["album"] = v
-            elif k == "mediaUrl":
+            elif "media" in k and "url" in k:
                 meta["youtube_url"] = v
+
+    # Fallback to regex for URLs if not found in key-value format
+    if not meta["youtube_url"]:
+        urls = re.findall(r'(https?://[^\s\r\n"\'<>]+)', comment_str, re.IGNORECASE)
+        if urls:
+            meta["youtube_url"] = urls[0].strip().rstrip(".,;)")
+
     return meta
+
+
+def generate_appropriate_youtube_url(songbook_code: str, title_ta: str, title_en: str, author: str, volume: int = 0) -> str:
+    import urllib.parse
+    if songbook_code == "jebathota":
+        vol_str = f" Vol {volume}" if volume else ""
+        query = f"Jebathota Jeyageethangal{vol_str} {title_ta} {title_en} Fr SJ Berchmans"
+    elif songbook_code == "keerthanai":
+        query = f"Tamil Christian Keerthanai {title_ta} {title_en}"
+    elif songbook_code == "seyalveerar":
+        query = f"Seyalveerar Tamil Christian Song {title_ta} {title_en}"
+    elif songbook_code == "tac":
+        query = f"Tamil Apostolic Church {title_ta} {title_en}"
+    else:
+        author_str = f" {author}" if author else ""
+        query = f"{title_ta} {title_en}{author_str} Tamil Christian Song"
+
+    clean_query = re.sub(r'\s+', ' ', query).strip()
+    return f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(clean_query)}"
 
 
 def ingest():
@@ -269,6 +295,9 @@ def ingest():
             count_jebathota += 1
         else:
             count_other += 1
+
+        if not youtube_url:
+            youtube_url = generate_appropriate_youtube_url(sb_code, title_ta, title_en, author, vol_num)
 
         tgt_cur.execute("""
             INSERT INTO songs (

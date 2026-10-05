@@ -175,7 +175,9 @@
                         {% endif %}
                     </div>
                     {% if s.youtube_url %}
-                    <span class="text-red-600 text-xs" title="Video available">▶️</span>
+                    <span class="inline-flex items-center gap-1 text-red-600 text-xs font-semibold px-1.5 py-0.5 rounded-md bg-red-50 dark:bg-red-950/40" title="Watch on YouTube">
+                        <span class="text-[10px]">▶️</span> <span class="text-[10px] hidden sm:inline">Watch</span>
+                    </span>
                     {% endif %}
                 </div>
 

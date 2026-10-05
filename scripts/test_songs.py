@@ -61,7 +61,17 @@ async def run_tests():
     assert song["title_ta"], "Song should have Tamil title"
     assert song["title_en"], "Song should have English title"
     assert len(song["stanzas"]) > 0, "Song should have parsed stanzas"
-    print(f"[PASS] Song #{song['song_number']} ('{song['title_en']}') has {len(song['stanzas'])} stanzas.")
+    assert song.get("youtube_url"), "Song must have an appropriate YouTube URL"
+    assert song.get("youtube_video_id") is not None, "Song #1 should have direct YouTube video ID"
+    print(f"[PASS] Song #{song['song_number']} ('{song['title_en']}') has {len(song['stanzas'])} stanzas and YouTube video: {song['youtube_url']}")
+
+    # Verify that 100% of songs have an appropriate YouTube link in the database
+    from app.db import get_songs_connection
+    with get_songs_connection() as conn:
+        missing_yt = conn.execute("SELECT count(*) FROM songs WHERE youtube_url IS NULL OR length(trim(youtube_url)) = 0").fetchone()[0]
+        total_songs = conn.execute("SELECT count(*) FROM songs").fetchone()[0]
+        assert missing_yt == 0, f"Found {missing_yt} songs without YouTube link! All songs must be linked."
+        print(f"[PASS] 100% of songs ({total_songs}/{total_songs}) have appropriate YouTube video/streaming links.")
 
     print("\n=== 2. Testing /songs Route (Directory Page) ===")
     status, headers, body = await call_asgi("/songs")

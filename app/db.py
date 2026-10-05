@@ -655,6 +655,23 @@ def get_song_by_id(song_id: int) -> Dict:
         except Exception:
             song["stanzas"] = []
 
+        # Extract YouTube 11-char video ID if a direct video link is present
+        import re
+        import urllib.parse
+        yt_url = (song.get("youtube_url") or "").strip()
+        video_id = None
+        if yt_url:
+            m = re.search(r'(?:v=|youtu\.be/|embed/)([a-zA-Z0-9_-]{11})', yt_url, re.IGNORECASE)
+            if m:
+                video_id = m.group(1)
+        else:
+            # Fallback dynamic search link
+            q = f"{song.get('title_ta', '')} {song.get('title_en', '')} {song.get('author', '')} Tamil Christian Song".strip()
+            yt_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(q)}"
+            song["youtube_url"] = yt_url
+
+        song["youtube_video_id"] = video_id
+
         # Find previous and next songs within the same volume or songbook
         prev_song = None
         next_song = None

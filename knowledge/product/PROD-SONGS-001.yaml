@@ -3,7 +3,7 @@ type: product_standard
 title: Christian Song Lyrics, Hymnal Presentation & Dual-Page Search Standard
 domain: product
 status: approved
-version: 1.2.0
+version: 1.3.0
 authority:
   level: official
   confidence: high
@@ -18,28 +18,31 @@ applies_to:
   - search
 
 rule:
-  "The application must host, organize, and present Christian song lyrics headlined by Jebathota Jeyageethangal across all 40 volumes by Fr. S.J. Berchmans (~440 songs) and classic Tamil Christian hymns with bilingual Tamil script, Romanised transliteration, volume-by-volume navigation, YouTube video integration, flowing liturgical hymnal presentation with chorus highlighting, and dedicated multi-scope song search options on both the landing directory and individual song details pages."
+  "The application must host, organize, and present Christian song lyrics headlined by Jebathota Jeyageethangal across all 40 volumes by Fr. S.J. Berchmans (~440 songs) and classic Tamil Christian hymns with bilingual Tamil script, Romanised transliteration, volume-by-volume navigation, 100% YouTube video/audio coverage across all songs (with direct video embedding for known IDs and high-precision official streaming links as fallback), flowing liturgical hymnal presentation with chorus highlighting, and dedicated multi-scope song search options on both the landing directory and individual song details pages."
 
 do:
   - "Store all song metadata, volumes, numbers, titles, and bilingual stanza structures in the dedicated local embedded SQLite database (`data/songs.sqlite.db`) within `songs` and `song_books` tables."
+  - "Ensure 100% of songs in `data/songs.sqlite.db` possess a valid, appropriate `youtube_url` (direct video watch URL for mapped tracks and official YouTube streaming search URL for others)."
+  - "Extract and expose `youtube_video_id` (11-character identifier) in `get_song_by_id()` for seamless responsive iframe embedding."
+  - "Present a high-precision YouTube Stream Card on song detail pages when an official search stream is linked, providing single-tap playback."
+  - "Display a YouTube indicator badge (`▶️ Watch`) on song cards in the `/songs` directory to indicate immediate video/audio playback."
   - "Present song lyrics in a flowing sacred hymnal layout where the Chorus (பல்லவி) is prominently highlighted with warm amber accent borders, repeat indicators, and soft background glow, avoiding disjointed boxed cards per stanza."
   - "Provide dedicated in-page song search directly on the song details page (`/songs/{id}`) with scope toggles (In Current Volume vs All 40 Volumes), live autocomplete suggestions, and keyboard shortcut `/`."
   - "Provide dedicated multi-scope search options on the songs landing page (`/songs`) allowing users to filter across All Volumes, Current Volume Only, or All Hymnals with live typeahead suggestions."
   - "Provide a quick in-volume song selector dropdown on the song details page enabling worship leaders to jump between songs in the same volume without leaving the reader view."
   - "Support one-click script toggles between Tamil script only (`தமிழ்`), Romanised English transliteration (`English`), and bilingual stacked display (`இருமொழியும்`)."
   - "Include one-click clipboard copying of song lyrics and a distraction-free worship presentation mode (Focus Mode)."
-  - "Embed or link official YouTube video recordings where available for worship and singing along."
   - "Support sequential song navigation (`← Prev Song` and `Next Song →`) with Left/Right arrow keyboard shortcuts."
 
 dont:
+  - "Do not leave `youtube_url` null or empty; always map known video IDs or provide appropriate high-precision YouTube search links."
   - "Do not present lyrics as rigid form boxes that fragment musical flow; maintain a continuous, publication-grade hymnal sheet layout."
   - "Do not force users to leave the song reader view just to search for another song or change tracks within the same volume."
   - "Do not merge song data into `bible.sqlite.db` or create cross-database foreign key constraints that prevent standalone song corpus updates."
   - "Do not drop Romanised transliterations; preserve them for non-Tamil readers and diaspora congregations."
-  - "Do not block song lyrics access with paywalls or mandatory authentication."
 
 reason:
-  "Praise, worship, and hymn singing require intuitive usability during church services, choir practice, and personal devotions. Unified hymnal styling with distinct chorus prominence allows vocalists to follow along seamlessly. Dedicated search on both the directory and reader pages ensures singers can instantly pull up any song without disrupting their worship experience."
+  "Praise, worship, and hymn singing require intuitive usability during church services, choir practice, and personal devotions. Unified hymnal styling with distinct chorus prominence allows vocalists to follow along seamlessly. Ensuring every single song links directly to its appropriate YouTube video or recording gives believers immediate musical accompaniment for singing along."
 
 related_items:
   - ARCH-SYS-001

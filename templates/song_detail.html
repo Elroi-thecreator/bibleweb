@@ -127,7 +127,7 @@
                 {% if song.youtube_url %}
                 <button onclick="toggleSongVideo()" 
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-semibold border border-red-200 dark:border-red-900/60 transition cursor-pointer shadow-2xs">
-                    <span>▶️</span> <span>Watch Video</span>
+                    <span>▶️</span> <span>{% if song.youtube_video_id %}Watch Video{% else %}Play on YouTube{% endif %}</span>
                 </button>
                 {% endif %}
 
@@ -155,26 +155,50 @@
             </div>
         </div>
 
-        <!-- Collapsible YouTube Video Player -->
+        <!-- Collapsible YouTube Video Player & Stream Card -->
         {% if song.youtube_url %}
-        <div id="song-video-player" class="hidden pt-2 border-t border-stone-100 dark:border-stone-800 animate-in fade-in duration-200">
-            {% set yt_match = song.youtube_url.split('v=') %}
-            {% if yt_match|length > 1 %}
-            {% set yt_id = yt_match[1].split('&')[0] %}
-            <div class="relative w-full aspect-video rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 bg-black shadow-lg">
-                <iframe class="w-full h-full" 
-                        src="https://www.youtube.com/embed/{{ yt_id }}" 
-                        title="{{ song.title_en }}" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen>
-                </iframe>
+        <div id="song-video-player" class="hidden pt-3 border-t border-stone-100 dark:border-stone-800 animate-in fade-in duration-200">
+            {% if song.youtube_video_id %}
+            <div class="space-y-2">
+                <div class="relative w-full aspect-video rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 bg-black shadow-lg">
+                    <iframe class="w-full h-full" 
+                            src="https://www.youtube.com/embed/{{ song.youtube_video_id }}" 
+                            title="{{ song.title_en }}" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-stone-400 px-1">
+                    <span>Official Video Recording</span>
+                    <a href="{{ song.youtube_url }}" target="_blank" rel="noopener noreferrer" 
+                       class="text-red-600 hover:text-red-700 dark:text-red-400 font-medium hover:underline flex items-center gap-1">
+                        Open in YouTube App / Website ↗
+                    </a>
+                </div>
             </div>
             {% else %}
-            <a href="{{ song.youtube_url }}" target="_blank" rel="noopener noreferrer" 
-               class="text-xs text-red-600 hover:underline flex items-center gap-1 font-medium">
-                Open in YouTube: {{ song.youtube_url }} ↗
-            </a>
+            <!-- Dynamic High-Precision Stream Card -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-950/30 dark:to-stone-900 border border-red-200/80 dark:border-red-900/50 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center text-lg shrink-0 shadow-xs">
+                        ▶
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                            <span>Listen & Watch on YouTube</span>
+                            <span class="px-1.5 py-0.2 rounded bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-300 text-[10px] font-mono">HD Audio</span>
+                        </h4>
+                        <p class="text-xs text-stone-600 dark:text-stone-400 mt-0.5">
+                            Stream official recording of <strong class="font-tamil" translate="no">{{ song.title_ta }}</strong> ({{ song.title_en }})
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ song.youtube_url }}" target="_blank" rel="noopener noreferrer" 
+                   class="w-full sm:w-auto px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer">
+                    <span>Play on YouTube</span> <span>↗</span>
+                </a>
+            </div>
             {% endif %}
         </div>
         {% endif %}
