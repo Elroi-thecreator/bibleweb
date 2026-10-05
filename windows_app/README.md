@@ -71,13 +71,35 @@ windows_app/dist/HolyBible-Portable.exe
 
 ```
 windows_app/
-├── app.py             # Desktop GUI launcher (WebView2 + Background Uvicorn)
-├── build_exe.py       # Automated PyInstaller compilation script
-├── holybible.spec     # PyInstaller spec configuration
-├── requirements.txt   # Desktop dependencies (pywebview, pyinstaller, pillow)
+├── app.py                     # Desktop GUI launcher (WebView2 + Background Uvicorn)
+├── build_exe.py               # Automated PyInstaller compilation script
+├── generate_winget_manifest.py# Official WinGet YAML manifest generator
+├── holybible.spec             # PyInstaller spec configuration
+├── requirements.txt           # Desktop dependencies (pywebview, pyinstaller, pillow)
 ├── assets/
-│   ├── app.ico        # Multi-size Windows app icon
-│   └── icon-192.png   # Source icon
-├── dist/              # Output directory for compiled HolyBible-Portable.exe
-└── README.md          # This documentation
+│   ├── app.ico                # Multi-size Windows app icon
+│   └── icon-192.png           # Source icon
+├── dist/                      # Output directory for compiled HolyBible-Portable.exe
+├── submit_winget.md           # Step-by-step WinGet distribution & token setup guide
+└── README.md                  # This documentation
 ```
+
+---
+
+## 🌐 Automated GitHub Releases & WinGet CI/CD
+
+The workflow in `.github/workflows/release_windows.yml` automatically compiles and publishes new releases:
+
+1. **Push a Git tag**:
+   ```cmd
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+2. GitHub Actions will:
+   - Compile `HolyBible-Portable.exe` on a clean Windows runner.
+   - Calculate cryptographic SHA256 checksums.
+   - Generate official WinGet manifest files.
+   - Create a GitHub Release attaching the executable, checksums, and manifest package.
+   - Automatically submit a pull request to `microsoft/winget-pkgs` (when `WINGET_TOKEN` secret is configured).
+
+See [`submit_winget.md`](submit_winget.md) for full setup instructions.

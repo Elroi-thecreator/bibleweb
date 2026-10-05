@@ -1,0 +1,147 @@
+name: Release Windows Portable App & WinGet Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g. v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+      is_prerelease:
+        description: 'Mark as pre-release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Windows Exe & Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Resolve Version and Tag
+        id: vars
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.inputs.tag_name }}"
+          if (-not $tag) { $tag = "${{ github.ref_name }}" }
+          if (-not $tag -or $tag -eq "main") { $tag = "v1.0.0" }
+          $version = $tag.TrimStart("v")
+          echo "TAG=$tag" >> $env:GITHUB_ENV
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          Write-Host "Releasing Version: $version with Tag: $tag"
+
+      - name: Install Application & Desktop Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -r windows_app/requirements.txt
+
+      - name: Compile Portable Executable
+        run: |
+          python windows_app/build_exe.py
+
+      - name: Compute SHA256 & Generate WinGet Manifests
+        id: checksum
+        shell: pwsh
+        run: |
+          $exe = "windows_app/dist/HolyBible-Portable.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Error "Executable not found at $exe"
+            exit 1
+          }
+          $hash = (Get-FileHash -Algorithm SHA256 $exe).Hash.ToUpper()
+          $size = "{0:N2} MB" -f ((Get-Item $exe).Length / 1MB)
+          
+          # Write checksum files
+          "$hash  HolyBible-Portable.exe" | Out-File -Encoding utf8 checksums.txt
+          $hash | Out-File -Encoding utf8 "$exe.sha256"
+          
+          echo "SHA256=$hash" >> $env:GITHUB_ENV
+          echo "SIZE_MB=$size" >> $env:GITHUB_ENV
+
+          # Generate 3-file WinGet manifests and zip
+          python windows_app/generate_winget_manifest.py --version "$env:VERSION" --file "$exe"
+
+      - name: Create GitHub Release & Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Holy Bible (வேதம்) Desktop ${{ env.TAG }}
+          draft: false
+          prerelease: ${{ github.event.inputs.is_prerelease || false }}
+          files: |
+            windows_app/dist/HolyBible-Portable.exe
+            windows_app/dist/HolyBible-Portable.exe.sha256
+            checksums.txt
+            windows_app/dist/winget_manifests/winget-manifests.zip
+          body: |
+            ## Holy Bible (வேதம்) Desktop - Portable Windows Release ${{ env.TAG }}
+
+            ### 🚀 Highlights & Features
+            - **Single Portable Executable (`.exe`)**: No installation or Python runtime required.
+            - **Dual-Corpus Support**:
+              - Protestant: BSI Tamil + King James Version (KJV) - 66 Books
+              - Catholic: POC Tamil (திருவிவிலியம்) + Douay-Rheims - 73 Books (including Deuterocanon)
+            - **100-Day Read-Along Audio Bible**: High-fidelity Microsoft Neural TTS audio streaming.
+            - **Church Presenter Mode**: Fullscreen projection slides with responsive typography.
+            - **Interactive Scripture Quiz**: 100 bilingual trivia questions across 5 categories.
+            - **Reading Plans & Bookmarks**: Custom tracks with offline progress checkoffs.
+
+            ---
+
+            ### 📦 File Verification
+            | Artifact | Size | SHA256 Checksum |
+            | :--- | :--- | :--- |
+            | `HolyBible-Portable.exe` | ${{ env.SIZE_MB }} | `${{ env.SHA256 }}` |
+
+            ---
+
+            ### 💻 Quick Installation
+            #### Option 1: Direct Download
+            Download `HolyBible-Portable.exe` below, place it anywhere (e.g. Desktop or USB drive), and double-click to launch!
+
+            #### Option 2: Windows Package Manager (WinGet)
+            ```cmd
+            winget install ElroiTheCreator.HolyBible
+            ```
+            *(Or test locally using the attached `winget-manifests.zip`)*.
+
+      - name: Submit to Windows Package Manager (WinGet)
+        if: env.WINGET_TOKEN != ''
+        uses: vedantmgoyal9/winget-releaser@v2
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        with:
+          identifier: 'ElroiTheCreator.HolyBible'
+          token: ${{ secrets.WINGET_TOKEN }}
+          installer-type: 'portable'
+
+      - name: WinGet Submission Notice
+        if: env.WINGET_TOKEN == ''
+        shell: pwsh
+        run: |
+          Write-Host "=================================================================="
+          Write-Host " [NOTICE] WinGet Automatic Release Skipped"
+          Write-Host " To enable automatic PR submission to microsoft/winget-pkgs:"
+          Write-Host " 1. Create a GitHub Personal Access Token (classic) with 'public_repo' scope."
+          Write-Host " 2. In your repo settings (Settings -> Secrets and variables -> Actions),"
+          Write-Host "    add a secret named WINGET_TOKEN with that PAT."
+          Write-Host " 3. The attached 'winget-manifests.zip' contains the ready-to-submit YAMLs."
+          Write-Host "=================================================================="
