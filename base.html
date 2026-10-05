@@ -107,6 +107,9 @@
 
             <!-- Desktop Search Bar -->
             <form action="/search" method="get" class="hidden md:flex flex-1 max-w-xs mx-3">
+                {% if canon %}
+                <input type="hidden" name="canon" value="{{ canon }}">
+                {% endif %}
                 <div class="relative w-full">
                     <input type="text" name="q" placeholder="Search / தேடுக..."
                            class="w-full text-xs bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-full pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-700">

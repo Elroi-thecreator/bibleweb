@@ -97,6 +97,14 @@ async def run_tests():
     assert "தொடக்க நூல்" in body_s_c
     print("✓ Catholic search returns POC matches.")
 
+    # Test empty query / mobile navigation to /search
+    req_s_empty = make_request("/search", query="")
+    resp_s_empty = await search_page(req_s_empty, q="", canon="protestant")
+    body_s_empty = resp_s_empty.body.decode("utf-8")
+    assert resp_s_empty.status_code == 200
+    assert "Search the Holy Bible" in body_s_empty
+    print("✓ Empty query / mobile search navigation renders HTML landing view.")
+
     print("\n=== 7. Testing Audio Stream with Catholic Text ===")
     resp_audio = await stream_audio(text="தொடக்கத்தில் கடவுள் விண்ணுலகையும் மண்ணுலகையும் படைத்தார்.", lang="ta")
     assert resp_audio.status_code == 200

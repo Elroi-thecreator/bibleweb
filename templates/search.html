@@ -1,14 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Search results for "{{ query }}" | வேதாகமத் தேடல்{% endblock %}
+{% block title %}{% if query %}Search results for "{{ query }}" | வேதாகமத் தேடல்{% else %}Bible Search | வேதாகமத் தேடல்{% endif %}{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-6">
     <!-- Search Bar on Search Page for Instant Mobile & Desktop Queries -->
     <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs">
         <form action="/search" method="get" class="flex gap-2">
+            {% if canon %}
+            <input type="hidden" name="canon" value="{{ canon }}">
+            {% endif %}
             <div class="relative flex-1">
-                <input type="text" name="q" value="{{ query }}" placeholder="Search English or Tamil verses (e.g., love, யோவான், light)..."
+                <input type="text" name="q" value="{{ query }}" placeholder="Search English or Tamil verses (e.g., love, யோவான், light)..." autofocus
                        class="w-full text-xs sm:text-sm bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-amber-700 text-stone-900 dark:text-stone-100">
                 <span class="absolute left-3 top-3 text-stone-400 text-xs sm:text-sm">🔍</span>
             </div>
@@ -18,33 +21,69 @@
         </form>
     </div>
 
-    <!-- Results Header -->
-    <div class="flex items-center justify-between">
-        <h1 class="text-lg sm:text-xl font-cinzel font-bold text-stone-900 dark:text-stone-100">
-            Results for: <span class="text-amber-800 dark:text-amber-400 font-serif">"{{ query }}"</span>
-        </h1>
-        {% if results %}
-        <span class="text-xs text-stone-500 font-mono">{{ results|length }} found</span>
-        {% endif %}
-    </div>
-
-    {% if results %}
-        <div class="space-y-3 sm:space-y-4">
-            {% for r in results %}
-            <div class="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-2xl shadow-xs border border-stone-200 dark:border-stone-800 space-y-2.5 transition hover:border-amber-600/50">
-                <a href="/read/{{ r.book_id }}/{{ r.chapter }}?mode=bilingual#v{{ r.verse }}" class="font-cinzel text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-400 hover:underline block">
-                    {{ r.book_name_en }} {{ r.chapter }}:{{ r.verse_display or r.verse }} • <span class="font-tamil font-normal text-stone-500">{{ r.book_name_ta }} {{ r.chapter }}:{{ r.verse_display or r.verse }}</span>
-                </a>
-                <p class="font-english text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed">{{ r.text_en }}</p>
-                <p class="font-tamil text-xs sm:text-sm text-stone-900 dark:text-stone-100 border-t border-stone-100 dark:border-stone-800 pt-2 leading-relaxed" translate="no">{{ r.text_ta }}</p>
-            </div>
-            {% endfor %}
+    {% if query %}
+        <!-- Results Header -->
+        <div class="flex items-center justify-between">
+            <h1 class="text-lg sm:text-xl font-cinzel font-bold text-stone-900 dark:text-stone-100">
+                Results for: <span class="text-amber-800 dark:text-amber-400 font-serif">"{{ query }}"</span>
+            </h1>
+            {% if results %}
+            <span class="text-xs text-stone-500 font-mono">{{ results|length }} found</span>
+            {% endif %}
         </div>
+
+        {% if results %}
+            <div class="space-y-3 sm:space-y-4">
+                {% for r in results %}
+                <div class="bg-white dark:bg-stone-900 p-4 sm:p-5 rounded-2xl shadow-xs border border-stone-200 dark:border-stone-800 space-y-2.5 transition hover:border-amber-600/50">
+                    <a href="/read/{{ r.book_id }}/{{ r.chapter }}?mode=bilingual#v{{ r.verse }}" class="font-cinzel text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-400 hover:underline block">
+                        {{ r.book_name_en }} {{ r.chapter }}:{{ r.verse_display or r.verse }} • <span class="font-tamil font-normal text-stone-500">{{ r.book_name_ta }} {{ r.chapter }}:{{ r.verse_display or r.verse }}</span>
+                    </a>
+                    <p class="font-english text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed">{{ r.text_en }}</p>
+                    <p class="font-tamil text-xs sm:text-sm text-stone-900 dark:text-stone-100 border-t border-stone-100 dark:border-stone-800 pt-2 leading-relaxed" translate="no">{{ r.text_ta }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white dark:bg-stone-900 p-8 sm:p-12 text-center rounded-2xl border border-stone-200 dark:border-stone-800 space-y-2">
+                <span class="text-3xl block">🔍</span>
+                <p class="font-cinzel text-sm sm:text-base font-bold text-stone-800 dark:text-stone-200">No verses found matching "{{ query }}"</p>
+                <p class="font-tamil text-xs text-stone-500">மற்றொரு வார்த்தையை உள்ளிட்டு தேடிப் பார்க்கவும்.</p>
+            </div>
+        {% endif %}
     {% else %}
-        <div class="bg-white dark:bg-stone-900 p-8 sm:p-12 text-center rounded-2xl border border-stone-200 dark:border-stone-800 space-y-2">
-            <span class="text-3xl block">🔍</span>
-            <p class="font-cinzel text-sm sm:text-base font-bold text-stone-800 dark:text-stone-200">No verses found matching "{{ query }}"</p>
-            <p class="font-tamil text-xs text-stone-500">மற்றொரு வார்த்தையை உள்ளிட்டு தேடிப் பார்க்கவும்.</p>
+        <!-- Initial Welcome State (Navigating from Mobile Search Button or Empty Search) -->
+        <div class="bg-white dark:bg-stone-900 p-6 sm:p-10 text-center rounded-2xl border border-stone-200 dark:border-stone-800 space-y-4">
+            <span class="text-3xl sm:text-4xl block">🔍</span>
+            <div class="space-y-1">
+                <h2 class="font-cinzel text-base sm:text-lg font-bold text-stone-900 dark:text-stone-100">Search the Holy Bible</h2>
+                <p class="font-tamil text-xs sm:text-sm text-amber-800 dark:text-amber-400 notranslate" translate="no">வேதாகம வசனங்களைத் தேடுங்கள்</p>
+            </div>
+            <p class="text-xs sm:text-sm text-stone-500 max-w-md mx-auto">
+                Search across {% if is_catholic %}73 Catholic{% else %}66 Protestant{% endif %} books in both English and Tamil. Enter words, names, or scripture references.
+            </p>
+            <div class="pt-3 border-t border-stone-100 dark:border-stone-800">
+                <span class="text-[11px] font-semibold tracking-wider uppercase text-stone-400 block mb-2">Suggested Topics / பரிந்துரைக்கப்பட்ட தலைப்புகள்</span>
+                <div class="flex flex-wrap justify-center gap-1.5 sm:gap-2">
+                    {% set suggestions = [
+                        ('Love', 'அன்பு'),
+                        ('Faith', 'விசுவாசம்'),
+                        ('Peace', 'சமாதானம்'),
+                        ('Hope', 'நம்பிக்கை'),
+                        ('Grace', 'கிருபை'),
+                        ('Prayer', 'ஜெபம்'),
+                        ('Light', 'வெளிச்சம்'),
+                        ('Truth', 'சத்தியம்')
+                    ] %}
+                    {% for en_term, ta_term in suggestions %}
+                    <a href="/search?q={{ en_term }}{% if canon %}&canon={{ canon }}{% endif %}" 
+                       class="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-stone-700 dark:text-stone-300 text-xs font-medium transition flex items-center gap-1">
+                        <span>{{ en_term }}</span>
+                        <span class="text-stone-400 font-tamil">/ {{ ta_term }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     {% endif %}
 </div>

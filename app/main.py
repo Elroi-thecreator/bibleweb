@@ -571,10 +571,11 @@ async def progress_page(request: Request, canon: str = Query(None)):
 
 
 @app.get("/search", response_class=HTMLResponse)
-async def search_page(request: Request, q: str = Query("", min_length=1), canon: str = Query(None)):
+async def search_page(request: Request, q: str = Query("", description="Search query"), canon: str = Query(None)):
     active_canon = resolve_canon(request, canon)
     canon_ctx = get_canon_context(active_canon)
-    results = search_verses(q, canon=active_canon) if q.strip() else []
+    clean_q = q.strip() if q else ""
+    results = search_verses(clean_q, canon=active_canon) if clean_q else []
     # If Protestant mode, filter out Deuterocanonical results (IDs > 66)
     if not canon_ctx["is_catholic"]:
         results = [r for r in results if r["book_id"] <= 66]
@@ -584,7 +585,7 @@ async def search_page(request: Request, q: str = Query("", min_length=1), canon:
         name="search.html",
         context={
             **canon_ctx,
-            "query": q,
+            "query": clean_q,
             "results": results,
         },
     )
