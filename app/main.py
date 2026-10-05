@@ -715,12 +715,22 @@ async def song_detail_page(
     if not song:
         raise HTTPException(status_code=404, detail="Song not found")
         
+    volume_songs = []
+    if song.get("volume") and song["volume"] > 0:
+        vol_data = get_songs_list(
+            songbook_code=song.get("songbook_code") or "jebathota",
+            volume=song["volume"],
+            limit=100
+        )
+        volume_songs = vol_data.get("songs", [])
+
     return templates.TemplateResponse(
         request=request,
         name="song_detail.html",
         context={
             **canon_ctx,
             "song": song,
+            "volume_songs": volume_songs,
             "mode": mode,
         },
     )
@@ -735,8 +745,9 @@ async def api_songs_search(
 ):
     """Returns filtered songs for client-side search autocomplete."""
     clean_q = q.strip() if q else ""
+    book_code = None if (not book or book == "all") else book
     res = get_songs_list(
-        songbook_code=book,
+        songbook_code=book_code,
         volume=vol,
         query=clean_q,
         limit=limit,

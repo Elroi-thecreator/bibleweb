@@ -57,31 +57,82 @@
     </div>
     {% endif %}
 
-    <!-- Live Search Bar -->
-    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-3 sm:p-4 shadow-xs">
-        <form action="/songs" method="get" class="flex gap-2">
-            <input type="hidden" name="book" value="{{ active_book }}">
-            {% if active_vol %}
-            <input type="hidden" name="vol" value="{{ active_vol }}">
-            {% endif %}
+    <!-- Dedicated Song Search Section with Scopes & Live Suggestions -->
+    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+        <form id="song-search-form" action="/songs" method="get" class="space-y-3">
             {% if canon %}
             <input type="hidden" name="canon" value="{{ canon }}">
             {% endif %}
-            <div class="relative flex-1">
-                <input type="text" name="q" value="{{ query }}" 
-                       placeholder="Search song title (e.g. Visuvaasathinaal, விசுவாசத்தினால்), lyrics, or #number..."
-                       class="w-full text-xs sm:text-sm bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-amber-700 text-stone-900 dark:text-stone-100">
-                <span class="absolute left-3 top-3 text-stone-400 text-xs sm:text-sm">🔍</span>
+
+            <!-- Top Search Input Bar -->
+            <div class="flex flex-col sm:flex-row gap-2 relative">
+                <div class="relative flex-1">
+                    <input type="text" id="song-search-input" name="q" value="{{ query }}" 
+                           placeholder="Search song title, lyrics, or #number (e.g. விசுவாசத்தினால், Visuvaasathinaal, #14)..."
+                           autocomplete="off"
+                           class="w-full text-xs sm:text-sm bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl pl-9 pr-8 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-700 text-stone-900 dark:text-stone-100">
+                    <span class="absolute left-3 top-3 text-stone-400 text-xs sm:text-sm">🔍</span>
+                    {% if query %}
+                    <button type="button" onclick="clearSongSearch()" class="absolute right-2.5 top-2.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-sm">✕</button>
+                    {% endif %}
+
+                    <!-- Live Autocomplete Suggestions Box -->
+                    <div id="song-search-suggestions" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto divide-y divide-stone-100 dark:divide-stone-800 animate-in fade-in duration-100">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="submit" class="w-full sm:w-auto px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs">
+                        <span>🔍</span> <span>Search</span>
+                    </button>
+                    {% if query or active_vol or (active_book and active_book != 'jebathota') %}
+                    <a href="/songs?book=jebathota{% if canon %}&canon={{ canon }}{% endif %}" 
+                       class="px-3 py-2.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 rounded-xl text-xs sm:text-sm font-medium transition shrink-0"
+                       title="Reset search and filters">
+                        Reset
+                    </a>
+                    {% endif %}
+                </div>
             </div>
-            <button type="submit" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0">
-                Search
-            </button>
-            {% if query %}
-            <a href="/songs?book={{ active_book }}{% if active_vol %}&vol={{ active_vol }}{% endif %}{% if canon %}&canon={{ canon }}{% endif %}" 
-               class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-600 dark:text-stone-300 rounded-xl text-xs sm:text-sm font-medium transition flex items-center">
-                Clear
-            </a>
-            {% endif %}
+
+            <!-- Search Options & Scope Toggles -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-stone-100 dark:border-stone-800 text-xs">
+                
+                <!-- Scope Options: All Volumes vs Active Volume vs All Songbooks -->
+                <div class="flex flex-wrap items-center gap-1 text-[11px] sm:text-xs">
+                    <span class="text-stone-400 font-medium mr-1">Scope / எல்லை:</span>
+                    
+                    <label class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border cursor-pointer transition {% if not active_vol and active_book != 'all' %}bg-amber-50 dark:bg-amber-950/40 border-amber-600 text-amber-800 dark:text-amber-300 font-semibold{% else %}border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800{% endif %}">
+                        <input type="radio" name="scope_option" value="all_vols" onchange="applySearchScope('all_vols')" class="hidden" {% if not active_vol and active_book != 'all' %}checked{% endif %}>
+                        <span>All Volumes (1–40)</span>
+                    </label>
+
+                    {% if active_vol %}
+                    <label class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border cursor-pointer transition bg-amber-50 dark:bg-amber-950/40 border-amber-600 text-amber-800 dark:text-amber-300 font-semibold">
+                        <input type="radio" name="scope_option" value="curr_vol" onchange="applySearchScope('curr_vol')" class="hidden" checked>
+                        <span>Vol {{ active_vol }} Only</span>
+                    </label>
+                    {% endif %}
+
+                    <label class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border cursor-pointer transition {% if active_book == 'all' %}bg-amber-50 dark:bg-amber-950/40 border-amber-600 text-amber-800 dark:text-amber-300 font-semibold{% else %}border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800{% endif %}">
+                        <input type="radio" name="scope_option" value="all_books" onchange="applySearchScope('all_books')" class="hidden" {% if active_book == 'all' %}checked{% endif %}>
+                        <span>All Hymnals / அனைத்து பாடல்கள்</span>
+                    </label>
+
+                    <input type="hidden" id="form-book-val" name="book" value="{{ active_book }}">
+                    <input type="hidden" id="form-vol-val" name="vol" value="{{ active_vol or '' }}">
+                </div>
+
+                <!-- Quick Query Helper Suggestions -->
+                <div class="hidden md:flex items-center gap-1 text-[11px] text-stone-400">
+                    <span>Try:</span>
+                    <button type="button" onclick="quickFillSearch('#1')" class="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 hover:text-amber-700 font-mono">#1</button>
+                    <button type="button" onclick="quickFillSearch('விசுவாசம்')" class="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 hover:text-amber-700 font-tamil" translate="no">விசுவாசம்</button>
+                    <button type="button" onclick="quickFillSearch('இயேசு')" class="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 hover:text-amber-700 font-tamil" translate="no">இயேசு</button>
+                    <button type="button" onclick="quickFillSearch('நன்றி')" class="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 hover:text-amber-700 font-tamil" translate="no">நன்றி</button>
+                </div>
+            </div>
         </form>
     </div>
 
@@ -189,4 +240,122 @@
     {% endif %}
 
 </div>
+
+<script>
+    // Search Scope Controller
+    function applySearchScope(scope) {
+        const bookInput = document.getElementById('form-book-val');
+        const volInput = document.getElementById('form-vol-val');
+        
+        if (scope === 'all_vols') {
+            bookInput.value = 'jebathota';
+            volInput.value = '';
+        } else if (scope === 'curr_vol') {
+            bookInput.value = '{{ active_book or "jebathota" }}';
+            volInput.value = '{{ active_vol or "" }}';
+        } else if (scope === 'all_books') {
+            bookInput.value = 'all';
+            volInput.value = '';
+        }
+    }
+
+    function clearSongSearch() {
+        const input = document.getElementById('song-search-input');
+        if (input) input.value = '';
+        const form = document.getElementById('song-search-form');
+        if (form) form.submit();
+    }
+
+    function quickFillSearch(term) {
+        const input = document.getElementById('song-search-input');
+        if (input) {
+            input.value = term;
+            const form = document.getElementById('song-search-form');
+            if (form) form.submit();
+        }
+    }
+
+    // Live Autocomplete Suggestions
+    let searchDebounceTimer = null;
+    const searchInput = document.getElementById('song-search-input');
+    const suggestionsBox = document.getElementById('song-search-suggestions');
+
+    if (searchInput && suggestionsBox) {
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchDebounceTimer);
+            const val = e.target.value.trim();
+            if (val.length < 2) {
+                suggestionsBox.classList.add('hidden');
+                suggestionsBox.innerHTML = '';
+                return;
+            }
+
+            searchDebounceTimer = setTimeout(async () => {
+                const bookVal = document.getElementById('form-book-val')?.value || 'jebathota';
+                const volVal = document.getElementById('form-vol-val')?.value || '';
+                let apiUrl = `/api/songs?q=${encodeURIComponent(val)}&book=${encodeURIComponent(bookVal)}&limit=8`;
+                if (volVal) {
+                    apiUrl += `&vol=${encodeURIComponent(volVal)}`;
+                }
+
+                try {
+                    const res = await fetch(apiUrl);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    renderSuggestions(data.songs || []);
+                } catch (err) {
+                    console.error("Autocomplete fetch error:", err);
+                }
+            }, 250);
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.classList.add('hidden');
+            }
+        });
+    }
+
+    function renderSuggestions(songs) {
+        if (!songs || songs.length === 0) {
+            suggestionsBox.innerHTML = `
+                <div class="p-3 text-xs text-stone-500 text-center font-tamil">
+                    பாடல் எதுவும் கிடைக்கவில்லை (No matches found)
+                </div>
+            `;
+            suggestionsBox.classList.remove('hidden');
+            return;
+        }
+
+        let html = '';
+        songs.forEach(s => {
+            const volBadge = s.volume ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 text-[10px] font-bold">Vol ${s.volume}</span>` : '';
+            const numBadge = s.song_number ? `<span class="px-1 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 text-[10px] font-mono">#${s.song_number}</span>` : '';
+            
+            html += `
+                <a href="/songs/${s.id}{% if canon %}?canon={{ canon }}{% endif %}" 
+                   class="block p-2.5 sm:p-3 hover:bg-amber-50/80 dark:hover:bg-stone-800 transition">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <span class="font-tamil font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 block truncate" translate="no">
+                                ${s.title_ta}
+                            </span>
+                            <span class="font-sans text-[11px] text-stone-500 block truncate">
+                                ${s.title_en}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            ${volBadge}
+                            ${numBadge}
+                        </div>
+                    </div>
+                </a>
+            `;
+        });
+
+        suggestionsBox.innerHTML = html;
+        suggestionsBox.classList.remove('hidden');
+    }
+</script>
 {% endblock %}

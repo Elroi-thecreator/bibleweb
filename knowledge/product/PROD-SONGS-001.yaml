@@ -1,9 +1,9 @@
 id: PROD-SONGS-001
 type: product_standard
-title: Christian Song Lyrics & Jebathota Jeyageethangal (All Volumes) Integration Standard
+title: Christian Song Lyrics, Hymnal Presentation & Dual-Page Search Standard
 domain: product
 status: approved
-version: 1.1.0
+version: 1.2.0
 authority:
   level: official
   confidence: high
@@ -15,28 +15,31 @@ applies_to:
   - frontend
   - database
   - songs
+  - search
 
 rule:
-  "The application must host, organize, and present Christian song lyrics headlined by Jebathota Jeyageethangal across all 40 volumes by Fr. S.J. Berchmans (~440 songs) and classic Tamil Christian hymns with bilingual Tamil script, Romanised transliteration, volume-by-volume navigation, and YouTube video integration, persisted in a dedicated modular database (`data/songs.sqlite.db`)."
+  "The application must host, organize, and present Christian song lyrics headlined by Jebathota Jeyageethangal across all 40 volumes by Fr. S.J. Berchmans (~440 songs) and classic Tamil Christian hymns with bilingual Tamil script, Romanised transliteration, volume-by-volume navigation, YouTube video integration, flowing liturgical hymnal presentation with chorus highlighting, and dedicated multi-scope song search options on both the landing directory and individual song details pages."
 
 do:
   - "Store all song metadata, volumes, numbers, titles, and bilingual stanza structures in the dedicated local embedded SQLite database (`data/songs.sqlite.db`) within `songs` and `song_books` tables."
+  - "Present song lyrics in a flowing sacred hymnal layout where the Chorus (பல்லவி) is prominently highlighted with warm amber accent borders, repeat indicators, and soft background glow, avoiding disjointed boxed cards per stanza."
+  - "Provide dedicated in-page song search directly on the song details page (`/songs/{id}`) with scope toggles (In Current Volume vs All 40 Volumes), live autocomplete suggestions, and keyboard shortcut `/`."
+  - "Provide dedicated multi-scope search options on the songs landing page (`/songs`) allowing users to filter across All Volumes, Current Volume Only, or All Hymnals with live typeahead suggestions."
+  - "Provide a quick in-volume song selector dropdown on the song details page enabling worship leaders to jump between songs in the same volume without leaving the reader view."
   - "Support one-click script toggles between Tamil script only (`தமிழ்`), Romanised English transliteration (`English`), and bilingual stacked display (`இருமொழியும்`)."
-  - "Provide direct volume filtering (Volumes 1 through 40) on the `/songs` directory page."
-  - "Include one-click clipboard copying of song lyrics with formatted titles and stanzas."
+  - "Include one-click clipboard copying of song lyrics and a distraction-free worship presentation mode (Focus Mode)."
   - "Embed or link official YouTube video recordings where available for worship and singing along."
-  - "Support sequential song navigation (`← Prev Song` and `Next Song →`) within volumes and songbooks."
-  - "Allow fast search across Tamil titles, Romanised titles, song numbers, and lyrics."
-  - "Provide dedicated songs connection pooling (`get_songs_connection()`) decoupled from scripture text queries."
+  - "Support sequential song navigation (`← Prev Song` and `Next Song →`) with Left/Right arrow keyboard shortcuts."
 
 dont:
+  - "Do not present lyrics as rigid form boxes that fragment musical flow; maintain a continuous, publication-grade hymnal sheet layout."
+  - "Do not force users to leave the song reader view just to search for another song or change tracks within the same volume."
   - "Do not merge song data into `bible.sqlite.db` or create cross-database foreign key constraints that prevent standalone song corpus updates."
   - "Do not drop Romanised transliterations; preserve them for non-Tamil readers and diaspora congregations."
   - "Do not block song lyrics access with paywalls or mandatory authentication."
-  - "Do not store lyrics in unstructured single blobs when stanza classifications (Chorus vs Verse) are available."
 
 reason:
-  "Praise, worship, and hymn singing are central to devotional life alongside Scripture reading. Integrating Jebathota Jeyageethangal all volumes and Tamil Christian hymns within the Bible app provides a unified, offline-capable worship companion. Isolating song data in `songs.sqlite.db` ensures modular corpus updates and keeps repository file sizes below GitHub limits."
+  "Praise, worship, and hymn singing require intuitive usability during church services, choir practice, and personal devotions. Unified hymnal styling with distinct chorus prominence allows vocalists to follow along seamlessly. Dedicated search on both the directory and reader pages ensures singers can instantly pull up any song without disrupting their worship experience."
 
 related_items:
   - ARCH-SYS-001

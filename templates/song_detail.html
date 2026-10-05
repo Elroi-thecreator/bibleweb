@@ -1,71 +1,158 @@
 {% extends "base.html" %}
 
-{% block title %}{{ song.title_ta }} - {{ song.title_en }} | Jebathota Jeyageethangal Song Lyrics{% endblock %}
+{% block title %}{{ song.title_ta }} ({{ song.title_en }}) | Jebathota Jeyageethangal Song Lyrics{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-6">
+<div id="song-detail-root" class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-6 transition-all duration-200">
     
-    <!-- Top Breadcrumb & Next/Prev Controls -->
-    <div class="flex items-center justify-between text-xs text-stone-500">
-        <a href="/songs?book={{ song.songbook_code }}{% if song.volume %}&vol={{ song.volume }}{% endif %}{% if canon %}&canon={{ canon }}{% endif %}" 
-           class="inline-flex items-center gap-1 hover:text-amber-700 dark:hover:text-amber-400 font-medium transition">
-            <span>←</span> <span>Back to {{ song.songbook_name_en }}</span>
-            {% if song.volume %}<span>(Vol {{ song.volume }})</span>{% endif %}
-        </a>
+    <!-- Top Utility Bar: Breadcrumbs, Quick Volume Jump, Search & Prev/Next -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-stone-500 pb-2 border-b border-stone-200/70 dark:border-stone-800">
+        
+        <!-- Breadcrumbs & In-Volume Song Selector -->
+        <div class="flex items-center gap-2 flex-wrap">
+            <a href="/songs?book={{ song.songbook_code }}{% if song.volume %}&vol={{ song.volume }}{% endif %}{% if canon %}&canon={{ canon }}{% endif %}" 
+               class="inline-flex items-center gap-1.5 hover:text-amber-700 dark:hover:text-amber-400 font-medium transition py-1">
+                <span>←</span> <span>{{ song.songbook_name_en }}</span>
+                {% if song.volume %}<span>(Vol {{ song.volume }})</span>{% endif %}
+            </a>
 
-        <div class="flex items-center gap-2">
+            {% if volume_songs and volume_songs|length > 1 %}
+            <span class="text-stone-300 dark:text-stone-700">|</span>
+            <!-- Quick Volume Songs Dropdown Selector -->
+            <div class="relative inline-block">
+                <select id="quick-song-jump" onchange="if(this.value) window.location.href=this.value;" 
+                        class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 rounded-lg px-2 py-1 text-[11px] font-tamil font-medium focus:outline-none focus:ring-1 focus:ring-amber-700 cursor-pointer">
+                    <option value="" disabled>Jump to song in Vol {{ song.volume }}...</option>
+                    {% for vs in volume_songs %}
+                    <option value="/songs/{{ vs.id }}{% if canon %}?canon={{ canon }}{% endif %}" {% if vs.id == song.id %}selected{% endif %}>
+                        #{{ vs.song_number }} - {{ vs.title_ta }} ({{ vs.title_en }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Side: Dedicated Search Trigger & Prev/Next Controls -->
+        <div class="flex items-center gap-1.5 self-end sm:self-auto">
+            <!-- Search Trigger Button -->
+            <button onclick="toggleDetailSearchModal(true)" 
+                    class="px-2.5 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400 transition cursor-pointer flex items-center gap-1.5"
+                    title="Search any song (Press /)">
+                <span>🔍</span>
+                <span class="font-medium">Search Songs</span>
+                <kbd class="hidden sm:inline-block px-1.5 py-0.2 bg-stone-100 dark:bg-stone-700 text-stone-400 dark:text-stone-300 rounded text-[10px] font-mono">/</kbd>
+            </button>
+
+            <!-- Prev / Next Navigation -->
             {% if song.prev_song %}
             <a href="/songs/{{ song.prev_song.id }}{% if canon %}?canon={{ canon }}{% endif %}" 
-               class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-600 transition" 
-               title="Previous: {{ song.prev_song.title_en }}">
-                <span>← Prev</span>
+               class="px-2.5 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition flex items-center gap-1" 
+               title="Previous: #{{ song.prev_song.song_number }} {{ song.prev_song.title_en }} (Press Left Arrow)">
+                <span>←</span> <span class="hidden md:inline">#{{ song.prev_song.song_number }}</span>
             </a>
             {% endif %}
             {% if song.next_song %}
             <a href="/songs/{{ song.next_song.id }}{% if canon %}?canon={{ canon }}{% endif %}" 
-               class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-600 transition" 
-               title="Next: {{ song.next_song.title_en }}">
-                <span>Next →</span>
+               class="px-2.5 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition flex items-center gap-1" 
+               title="Next: #{{ song.next_song.song_number }} {{ song.next_song.title_en }} (Press Right Arrow)">
+                <span class="hidden md:inline">#{{ song.next_song.song_number }}</span> <span>→</span>
             </a>
             {% endif %}
         </div>
     </div>
 
-    <!-- Song Header Card -->
-    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-5 sm:p-8 shadow-xs space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2 text-xs">
+    <!-- In-Page Dedicated Song Search Bar & Live Dropdown -->
+    <div id="detail-search-container" class="bg-gradient-to-r from-amber-50/60 to-stone-50 dark:from-stone-900 dark:to-stone-900/60 border border-stone-200 dark:border-stone-800 rounded-2xl p-3 sm:p-4 shadow-xs space-y-2">
+        <div class="flex items-center justify-between text-xs text-stone-600 dark:text-stone-400 px-1 font-medium">
+            <span class="flex items-center gap-1">
+                <span>🎵</span> <span>Quick Song Search / பாடல் தேடல்</span>
+            </span>
+            <div class="flex items-center gap-2 text-[11px]">
+                <label class="inline-flex items-center gap-1 cursor-pointer">
+                    <input type="radio" name="detail_search_scope" value="volume" class="accent-amber-700" {% if song.volume %}checked{% endif %}>
+                    <span>{% if song.volume %}In Vol {{ song.volume }} Only{% else %}Current Book{% endif %}</span>
+                </label>
+                <label class="inline-flex items-center gap-1 cursor-pointer">
+                    <input type="radio" name="detail_search_scope" value="all" class="accent-amber-700" {% if not song.volume %}checked{% endif %}>
+                    <span>All 40 Volumes</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="relative">
+            <input type="text" id="detail-search-input" 
+                   placeholder="Type song title, lyric words, or #number (e.g. Visuvaasathinaal, விசுவாசம், #14)..." 
+                   autocomplete="off"
+                   class="w-full text-xs sm:text-sm bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl pl-9 pr-8 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-700 text-stone-900 dark:text-stone-100">
+            <span class="absolute left-3 top-3 text-stone-400 text-xs sm:text-sm">🔍</span>
+            <button id="detail-search-clear-btn" type="button" onclick="clearDetailSearch()" class="hidden absolute right-2.5 top-2.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-sm">✕</button>
+
+            <!-- Autocomplete Results Dropdown -->
+            <div id="detail-search-results" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl shadow-2xl z-50 max-h-80 overflow-y-auto divide-y divide-stone-100 dark:divide-stone-800 animate-in fade-in duration-100">
+                <!-- Dynamically filled -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Liturgical Song Hero Header Card -->
+    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-5 sm:p-8 shadow-xs space-y-5 relative overflow-hidden">
+        
+        <!-- Ambient Decorative Top Accent Glow -->
+        <div class="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Metadata Pills Header -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
                 {% if song.volume and song.volume > 0 %}
-                <span class="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-bold">
-                    Vol {{ song.volume }}
+                <span class="px-3 py-1 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800/60 shadow-2xs">
+                    Volume {{ song.volume }} • பாகம் {{ song.volume }}
                 </span>
                 {% endif %}
                 {% if song.song_number and song.song_number > 0 %}
-                <span class="px-2 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-mono font-semibold">
-                    Song #{{ song.song_number }}
+                <span class="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-mono font-semibold border border-stone-200 dark:border-stone-700">
+                    பாடல் #{{ song.song_number }}
                 </span>
                 {% endif %}
-                <span class="text-stone-400 font-tamil" translate="no">{{ song.songbook_name_ta }}</span>
+                {% if song.stanzas %}
+                <span class="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 font-medium">
+                    📜 {{ song.stanzas|length }} Stanzas
+                </span>
+                {% endif %}
+                <span class="text-stone-400 font-tamil text-[11px]" translate="no">{{ song.songbook_name_ta }}</span>
             </div>
 
-            {% if song.youtube_url %}
-            <button onclick="toggleSongVideo()" 
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 text-xs font-semibold border border-red-200 dark:border-red-900/60 transition cursor-pointer">
-                <span>▶️</span> <span>Listen / Watch Video</span>
-            </button>
-            {% endif %}
+            <!-- Quick Action Buttons: YouTube & Fullscreen -->
+            <div class="flex items-center gap-2">
+                {% if song.youtube_url %}
+                <button onclick="toggleSongVideo()" 
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-semibold border border-red-200 dark:border-red-900/60 transition cursor-pointer shadow-2xs">
+                    <span>▶️</span> <span>Watch Video</span>
+                </button>
+                {% endif %}
+
+                <button onclick="toggleWorshipFocusMode()" id="focus-mode-btn"
+                        class="px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 text-xs font-medium border border-stone-200 dark:border-stone-700 transition cursor-pointer"
+                        title="Toggle distraction-free worship presentation mode">
+                    <span>🔲</span> <span class="hidden sm:inline">Focus</span>
+                </button>
+            </div>
         </div>
 
-        <div>
-            <h1 class="font-tamil text-2xl sm:text-4xl font-bold text-stone-900 dark:text-stone-100 leading-tight" translate="no">
+        <!-- Song Titles (Lyrical Typography) -->
+        <div class="space-y-1">
+            <h1 class="font-tamil text-2xl sm:text-4xl lg:text-5xl font-bold text-stone-900 dark:text-stone-100 leading-tight tracking-tight" translate="no">
                 {{ song.title_ta }}
             </h1>
-            <h2 class="font-sans text-sm sm:text-base text-stone-500 font-medium mt-1">
+            <h2 class="font-sans text-sm sm:text-lg text-stone-500 dark:text-stone-400 font-medium">
                 {{ song.title_en }}
             </h2>
-            <p class="text-xs text-amber-800 dark:text-amber-400 mt-2 font-medium">
-                Composed & Sung by {{ song.author or "Fr. S.J. Berchmans" }}
-            </p>
+            <div class="flex items-center gap-2 pt-2 text-xs text-amber-800 dark:text-amber-400 font-medium">
+                <span>✍️ Composed & Sung by {{ song.author or "Fr. S.J. Berchmans" }}</span>
+                {% if song.alternate_title %}
+                <span class="text-stone-400 font-normal">({{ song.alternate_title }})</span>
+                {% endif %}
+            </div>
         </div>
 
         <!-- Collapsible YouTube Video Player -->
@@ -74,7 +161,7 @@
             {% set yt_match = song.youtube_url.split('v=') %}
             {% if yt_match|length > 1 %}
             {% set yt_id = yt_match[1].split('&')[0] %}
-            <div class="relative w-full aspect-video rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 bg-black">
+            <div class="relative w-full aspect-video rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 bg-black shadow-lg">
                 <iframe class="w-full h-full" 
                         src="https://www.youtube.com/embed/{{ yt_id }}" 
                         title="{{ song.title_en }}" 
@@ -85,7 +172,7 @@
             </div>
             {% else %}
             <a href="{{ song.youtube_url }}" target="_blank" rel="noopener noreferrer" 
-               class="text-xs text-red-600 hover:underline flex items-center gap-1">
+               class="text-xs text-red-600 hover:underline flex items-center gap-1 font-medium">
                 Open in YouTube: {{ song.youtube_url }} ↗
             </a>
             {% endif %}
@@ -93,60 +180,69 @@
         {% endif %}
     </div>
 
-    <!-- Lyrics Toolbar (Script Switcher, Font Size, Copy) -->
-    <div class="sticky top-14 z-30 bg-stone-50/90 dark:bg-stone-950/90 backdrop-blur-md py-2 border-y border-stone-200 dark:border-stone-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+    <!-- Sticky Lyrics Toolbar: Script Mode, Font Scaling & Copy -->
+    <div id="lyrics-toolbar" class="sticky top-14 z-30 bg-stone-50/95 dark:bg-stone-950/95 backdrop-blur-md py-2.5 border-y border-stone-200 dark:border-stone-800 flex flex-wrap items-center justify-between gap-2 text-xs transition-all">
         
-        <!-- Script Toggle: Tamil | English | Bilingual -->
+        <!-- Script Toggle: தமிழ் (Tamil) | English (Transliteration) | இருமொழியும் (Bilingual) -->
         <div class="inline-flex bg-white dark:bg-stone-800 p-1 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xs">
             <button onclick="setSongScriptMode('ta')" id="mode-btn-ta" 
-                    class="px-2.5 py-1 rounded-lg font-medium transition cursor-pointer font-tamil">
+                    class="px-3 py-1 rounded-lg font-medium transition cursor-pointer font-tamil text-stone-600 dark:text-stone-300">
                 தமிழ்
             </button>
             <button onclick="setSongScriptMode('en')" id="mode-btn-en" 
-                    class="px-2.5 py-1 rounded-lg font-medium transition cursor-pointer">
+                    class="px-3 py-1 rounded-lg font-medium transition cursor-pointer text-stone-600 dark:text-stone-300">
                 English
             </button>
             <button onclick="setSongScriptMode('bilingual')" id="mode-btn-bilingual" 
-                    class="px-2.5 py-1 rounded-lg font-semibold bg-amber-700 text-white shadow-xs transition cursor-pointer">
+                    class="px-3 py-1 rounded-lg font-semibold bg-amber-700 text-white shadow-xs transition cursor-pointer">
                 இருமொழியும்
             </button>
         </div>
 
-        <!-- Actions: Font Scaling & Copy -->
+        <!-- Font Scaling & Copy Actions -->
         <div class="flex items-center gap-1.5">
             <div class="flex items-center bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 p-0.5">
-                <button onclick="changeLyricsFontSize(-1)" class="px-2 py-1 text-xs hover:text-amber-700 font-bold transition cursor-pointer" title="Decrease font size">A-</button>
-                <button onclick="changeLyricsFontSize(1)" class="px-2 py-1 text-xs hover:text-amber-700 font-bold transition cursor-pointer border-l border-stone-200 dark:border-stone-700" title="Increase font size">A+</button>
+                <button onclick="changeLyricsFontSize(-1)" class="px-2.5 py-1 text-xs hover:text-amber-700 font-bold transition cursor-pointer" title="Decrease font size">A-</button>
+                <span id="font-size-indicator" class="text-[10px] text-stone-400 font-mono px-1">17</span>
+                <button onclick="changeLyricsFontSize(1)" class="px-2.5 py-1 text-xs hover:text-amber-700 font-bold transition cursor-pointer border-l border-stone-200 dark:border-stone-700" title="Increase font size">A+</button>
             </div>
 
-            <button onclick="copySongLyrics()" class="px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-600 rounded-xl font-medium transition flex items-center gap-1 cursor-pointer">
-                <span>📋</span> <span class="hidden sm:inline">Copy Lyrics</span>
+            <button onclick="copySongLyrics()" class="px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-600 rounded-xl font-medium transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                <span>📋</span> <span id="copy-btn-text">Copy</span>
             </button>
         </div>
     </div>
 
-    <!-- Song Lyrics Container -->
-    <div id="lyrics-container" class="space-y-4 text-base transition-all duration-150">
+    <!-- Sacred Hymn Sheet Lyrics Presentation (Flowing Stanzas with Chorus Accents) -->
+    <div id="lyrics-container" class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-5 sm:p-10 shadow-xs space-y-6 text-base transition-all">
         {% if song.stanzas %}
             {% for st in song.stanzas %}
-            <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-5 sm:p-6 shadow-xs space-y-2">
-                <!-- Stanza Badge -->
-                <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wider uppercase {% if 'Chorus' in st.label or 'பல்லவி' in st.label %}bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300{% else %}bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400{% endif %}">
-                    {{ st.label }}
-                </span>
+            {% set is_chorus = ('Chorus' in st.label or 'பல்லவி' in st.label or 'Pre-Chorus' in st.label) %}
+            
+            <div class="stanza-block transition-all duration-150 {% if is_chorus %}bg-amber-50/70 dark:bg-amber-950/25 border-l-4 border-amber-600 dark:border-amber-500 rounded-r-2xl p-4 sm:p-6 shadow-2xs{% else %}p-3 sm:p-4 rounded-2xl hover:bg-stone-50/80 dark:hover:bg-stone-800/40{% endif %}">
+                
+                <!-- Stanza Badge Header -->
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wider uppercase {% if is_chorus %}bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-bold{% else %}bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400{% endif %}">
+                        {% if is_chorus %}✨ {{ st.label }}{% else %}{{ st.label }}{% endif %}
+                    </span>
+                    {% if is_chorus %}
+                    <span class="text-[10px] text-amber-800/70 dark:text-amber-400/70 font-serif italic hidden sm:inline">(Repeat / திரும்பவும்)</span>
+                    {% endif %}
+                </div>
 
-                <!-- Lines -->
-                <div class="space-y-3 pt-1">
+                <!-- Lyrical Lines -->
+                <div class="space-y-3.5">
                     {% set max_lines = st.lines_ta|length if st.lines_ta|length > st.lines_en|length else st.lines_en|length %}
                     {% for i in range(max_lines) %}
                     <div class="lyrics-pair space-y-0.5">
                         {% if i < st.lines_ta|length %}
-                        <p class="lyrics-line-ta font-tamil text-stone-900 dark:text-stone-100 font-medium leading-relaxed" translate="no">
+                        <p class="lyrics-line-ta font-tamil text-stone-900 dark:text-stone-100 font-semibold leading-relaxed tracking-normal" translate="no">
                             {{ st.lines_ta[i] }}
                         </p>
                         {% endif %}
                         {% if i < st.lines_en|length %}
-                        <p class="lyrics-line-en font-sans text-xs sm:text-sm text-stone-500 font-normal leading-relaxed">
+                        <p class="lyrics-line-en font-sans text-xs sm:text-sm text-stone-500 dark:text-stone-400 font-normal leading-relaxed">
                             {{ st.lines_en[i] }}
                         </p>
                         {% endif %}
@@ -157,35 +253,37 @@
             {% endfor %}
         {% else %}
             <!-- Fallback if structured stanzas were unavailable -->
-            <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 sm:p-8 shadow-xs">
-                <pre class="font-tamil whitespace-pre-wrap leading-relaxed text-stone-900 dark:text-stone-100" translate="no">{{ song.lyrics_ta or song.lyrics_en }}</pre>
+            <div class="p-6">
+                <pre class="font-tamil whitespace-pre-wrap leading-relaxed text-stone-900 dark:text-stone-100 font-medium" translate="no">{{ song.lyrics_ta or song.lyrics_en }}</pre>
             </div>
         {% endif %}
     </div>
 
-    <!-- Bottom Navigation Footer -->
-    <div class="pt-6 border-t border-stone-200 dark:border-stone-800 flex items-center justify-between gap-3 text-xs">
+    <!-- Bottom Navigation Footer: Previous & Next Song Cards -->
+    <div class="pt-4 flex flex-col sm:flex-row items-stretch justify-between gap-3 text-xs">
         {% if song.prev_song %}
         <a href="/songs/{{ song.prev_song.id }}{% if canon %}?canon={{ canon }}{% endif %}" 
-           class="p-3 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-amber-600 transition flex items-center gap-2 max-w-[48%]">
-            <span class="text-base">←</span>
+           class="group flex-1 p-4 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-amber-600 transition flex items-center gap-3 shadow-xs">
+            <span class="text-xl text-stone-400 group-hover:text-amber-700 transition">←</span>
             <div class="overflow-hidden">
-                <span class="text-[10px] text-stone-400 block font-mono">#{{ song.prev_song.song_number }}</span>
-                <span class="font-tamil font-bold truncate block text-stone-800 dark:text-stone-200">{{ song.prev_song.title_ta }}</span>
+                <span class="text-[10px] text-stone-400 block font-mono">PREVIOUS SONG #{{ song.prev_song.song_number }}</span>
+                <span class="font-tamil font-bold truncate block text-stone-800 dark:text-stone-200 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition" translate="no">{{ song.prev_song.title_ta }}</span>
+                <span class="font-sans text-[11px] text-stone-500 truncate block">{{ song.prev_song.title_en }}</span>
             </div>
         </a>
         {% else %}
-        <div></div>
+        <div class="flex-1"></div>
         {% endif %}
 
         {% if song.next_song %}
         <a href="/songs/{{ song.next_song.id }}{% if canon %}?canon={{ canon }}{% endif %}" 
-           class="p-3 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-amber-600 transition flex items-center justify-end gap-2 text-right max-w-[48%] ml-auto">
-            <div class="overflow-hidden">
-                <span class="text-[10px] text-stone-400 block font-mono">#{{ song.next_song.song_number }}</span>
-                <span class="font-tamil font-bold truncate block text-stone-800 dark:text-stone-200">{{ song.next_song.title_ta }}</span>
+           class="group flex-1 p-4 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-amber-600 transition flex items-center justify-between gap-3 text-right shadow-xs">
+            <div class="overflow-hidden flex-1">
+                <span class="text-[10px] text-stone-400 block font-mono">NEXT SONG #{{ song.next_song.song_number }}</span>
+                <span class="font-tamil font-bold truncate block text-stone-800 dark:text-stone-200 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition" translate="no">{{ song.next_song.title_ta }}</span>
+                <span class="font-sans text-[11px] text-stone-500 truncate block">{{ song.next_song.title_en }}</span>
             </div>
-            <span class="text-base">→</span>
+            <span class="text-xl text-stone-400 group-hover:text-amber-700 transition">→</span>
         </a>
         {% endif %}
     </div>
@@ -204,7 +302,7 @@ Composed by {{ song.author or "Fr. S.J. Berchmans" }}
 </div>
 
 <script>
-    // Toggle Video Player
+    // 1. Video Player Toggle
     function toggleSongVideo() {
         const player = document.getElementById('song-video-player');
         if (player) {
@@ -212,7 +310,32 @@ Composed by {{ song.author or "Fr. S.J. Berchmans" }}
         }
     }
 
-    // Script Mode Controller (Tamil, English, Bilingual)
+    // 2. Worship Focus / Fullscreen Mode
+    let isWorshipFocus = false;
+    function toggleWorshipFocusMode() {
+        isWorshipFocus = !isWorshipFocus;
+        const siteHeader = document.getElementById('site-header');
+        const mobileNav = document.getElementById('mobile-bottom-nav');
+        const focusBtn = document.getElementById('focus-mode-btn');
+
+        if (isWorshipFocus) {
+            if (siteHeader) siteHeader.classList.add('hidden');
+            if (mobileNav) mobileNav.classList.add('hidden');
+            if (focusBtn) {
+                focusBtn.classList.add('bg-amber-700', 'text-white');
+                focusBtn.innerHTML = '<span>✕</span> <span class="hidden sm:inline">Exit Focus</span>';
+            }
+        } else {
+            if (siteHeader) siteHeader.classList.remove('hidden');
+            if (mobileNav) mobileNav.classList.remove('hidden');
+            if (focusBtn) {
+                focusBtn.classList.remove('bg-amber-700', 'text-white');
+                focusBtn.innerHTML = '<span>🔲</span> <span class="hidden sm:inline">Focus</span>';
+            }
+        }
+    }
+
+    // 3. Script Mode Controller (Tamil, English, Bilingual)
     let currentScriptMode = localStorage.getItem('song_script_mode') || 'bilingual';
 
     function setSongScriptMode(mode) {
@@ -257,8 +380,8 @@ Composed by {{ song.author or "Fr. S.J. Berchmans" }}
         }
     }
 
-    // Font Size Scaling
-    let currentLyricsFontSize = parseInt(localStorage.getItem('song_font_size') || '16', 10);
+    // 4. Font Size Scaling
+    let currentLyricsFontSize = parseInt(localStorage.getItem('song_font_size') || '17', 10);
     function changeLyricsFontSize(delta) {
         currentLyricsFontSize = Math.min(28, Math.max(13, currentLyricsFontSize + delta));
         localStorage.setItem('song_font_size', currentLyricsFontSize);
@@ -268,22 +391,160 @@ Composed by {{ song.author or "Fr. S.J. Berchmans" }}
     function applyLyricsFontSize() {
         const taLines = document.querySelectorAll('.lyrics-line-ta');
         const enLines = document.querySelectorAll('.lyrics-line-en');
+        const indicator = document.getElementById('font-size-indicator');
+        
         taLines.forEach(l => l.style.fontSize = currentLyricsFontSize + 'px');
         enLines.forEach(l => l.style.fontSize = Math.max(12, currentLyricsFontSize - 3) + 'px');
+        if (indicator) indicator.textContent = currentLyricsFontSize;
     }
 
-    // Copy to Clipboard
+    // 5. Copy to Clipboard with Active Script Mode
     function copySongLyrics() {
+        const copyBtn = document.getElementById('copy-btn-text');
         const text = document.getElementById('raw-lyrics-copy-content').innerText.trim();
+        
         navigator.clipboard.writeText(text).then(() => {
+            if (copyBtn) copyBtn.textContent = 'Copied! ✓';
+            setTimeout(() => { if (copyBtn) copyBtn.textContent = 'Copy'; }, 2000);
             if (typeof showToast === 'function') {
                 showToast("Song lyrics copied to clipboard! 📋");
-            } else {
-                alert("Song lyrics copied to clipboard! 📋");
             }
         }).catch(err => {
             console.error("Clipboard copy failed:", err);
         });
+    }
+
+    // 6. Dedicated In-Page Song Search & Autocomplete
+    let detailSearchDebounce = null;
+    const detailSearchInput = document.getElementById('detail-search-input');
+    const detailResultsBox = document.getElementById('detail-search-results');
+    const detailClearBtn = document.getElementById('detail-search-clear-btn');
+
+    function toggleDetailSearchModal(focus = false) {
+        const container = document.getElementById('detail-search-container');
+        if (container) {
+            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (focus && detailSearchInput) {
+                detailSearchInput.focus();
+                detailSearchInput.select();
+            }
+        }
+    }
+
+    function clearDetailSearch() {
+        if (detailSearchInput) {
+            detailSearchInput.value = '';
+            detailResultsBox.classList.add('hidden');
+            detailResultsBox.innerHTML = '';
+            if (detailClearBtn) detailClearBtn.classList.add('hidden');
+        }
+    }
+
+    if (detailSearchInput && detailResultsBox) {
+        detailSearchInput.addEventListener('input', (e) => {
+            clearTimeout(detailSearchDebounce);
+            const val = e.target.value.trim();
+
+            if (detailClearBtn) {
+                if (val.length > 0) detailClearBtn.classList.remove('hidden');
+                else detailClearBtn.classList.add('hidden');
+            }
+
+            if (val.length < 2) {
+                detailResultsBox.classList.add('hidden');
+                detailResultsBox.innerHTML = '';
+                return;
+            }
+
+            detailSearchDebounce = setTimeout(async () => {
+                const scopeRadio = document.querySelector('input[name="detail_search_scope"]:checked');
+                const isVolumeOnly = scopeRadio && scopeRadio.value === 'volume';
+                const songVol = "{{ song.volume or '' }}";
+                const songBook = "{{ song.songbook_code or 'jebathota' }}";
+
+                let apiUrl = `/api/songs?q=${encodeURIComponent(val)}&limit=10`;
+                if (isVolumeOnly && songVol) {
+                    apiUrl += `&book=${encodeURIComponent(songBook)}&vol=${encodeURIComponent(songVol)}`;
+                } else {
+                    apiUrl += `&book=${encodeURIComponent(songBook)}`;
+                }
+
+                try {
+                    const res = await fetch(apiUrl);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    renderDetailSearchResults(data.songs || []);
+                } catch (err) {
+                    console.error("Detail search error:", err);
+                }
+            }, 250);
+        });
+
+        // Hide results dropdown on outside click
+        document.addEventListener('click', (e) => {
+            if (!detailSearchInput.contains(e.target) && !detailResultsBox.contains(e.target)) {
+                detailResultsBox.classList.add('hidden');
+            }
+        });
+
+        // Keyboard Shortcut: press '/' to focus search
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '/' && document.activeElement !== detailSearchInput && document.activeElement.tagName !== 'INPUT') {
+                e.preventDefault();
+                toggleDetailSearchModal(true);
+            }
+            // Left/Right Arrow navigation for songs
+            if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
+                if (e.key === 'ArrowLeft') {
+                    const prevLink = document.querySelector('a[title*="Previous:"]');
+                    if (prevLink) prevLink.click();
+                } else if (e.key === 'ArrowRight') {
+                    const nextLink = document.querySelector('a[title*="Next:"]');
+                    if (nextLink) nextLink.click();
+                }
+            }
+        });
+    }
+
+    function renderDetailSearchResults(songs) {
+        if (!songs || songs.length === 0) {
+            detailResultsBox.innerHTML = `
+                <div class="p-4 text-xs text-stone-500 text-center font-tamil">
+                    பாடல் எதுவும் கிடைக்கவில்லை (No songs found)
+                </div>
+            `;
+            detailResultsBox.classList.remove('hidden');
+            return;
+        }
+
+        let html = '';
+        songs.forEach(s => {
+            const volBadge = s.volume ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 text-[10px] font-bold">Vol ${s.volume}</span>` : '';
+            const numBadge = s.song_number ? `<span class="px-1 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 text-[10px] font-mono">#${s.song_number}</span>` : '';
+            
+            html += `
+                <a href="/songs/${s.id}{% if canon %}?canon={{ canon }}{% endif %}" 
+                   class="block p-3 hover:bg-amber-50/80 dark:hover:bg-stone-800 transition">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <span class="font-tamil font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 block truncate" translate="no">
+                                ${s.title_ta}
+                            </span>
+                            <span class="font-sans text-[11px] text-stone-500 block truncate">
+                                ${s.title_en}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            ${volBadge}
+                            ${numBadge}
+                        </div>
+                    </div>
+                </a>
+            `;
+        });
+
+        detailResultsBox.innerHTML = html;
+        detailResultsBox.classList.remove('hidden');
     }
 
     // Initialize on page load

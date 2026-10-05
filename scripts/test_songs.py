@@ -69,7 +69,9 @@ async def run_tests():
     assert "text/html" in headers.get("content-type", "")
     assert "Jebathota Jeyageethangal" in body
     assert "Vol 40" in body
-    print("[PASS] /songs rendered 200 HTML with all volume pills.")
+    assert "song-search-suggestions" in body, "Should have live search suggestions container"
+    assert "scope_option" in body, "Should have search scope options"
+    print("[PASS] /songs rendered 200 HTML with all volume pills, search scopes, and live autocomplete container.")
 
     print("\n=== 3. Testing /songs with Volume Filter ===")
     status, headers, body = await call_asgi("/songs", b"book=jebathota&vol=14")
@@ -85,14 +87,22 @@ async def run_tests():
     assert song["title_en"] in body
     assert "copySongLyrics" in body
     assert "setSongScriptMode" in body
-    print(f"[PASS] /songs/{song_id} rendered 200 HTML reader view.")
+    assert "detail-search-input" in body, "Should have dedicated in-page song search bar"
+    assert "detail_search_scope" in body, "Should have in-page search scope selector"
+    assert "quick-song-jump" in body, "Should have in-volume quick song picker"
+    assert "stanza-block" in body, "Should have liturgical hymnal stanzas"
+    print(f"[PASS] /songs/{song_id} rendered 200 HTML with dedicated search, in-volume jump, and liturgical hymnal UI.")
 
     print("\n=== 5. Testing /api/songs Search API ===")
-    status, headers, body = await call_asgi("/api/songs", b"q=love")
+    status, headers, body = await call_asgi("/api/songs", b"q=love&book=all")
     assert status == 200
     assert "application/json" in headers.get("content-type", "")
     assert "total_count" in body
-    print("[PASS] /api/songs?q=love returned valid JSON response.")
+    
+    status, headers, body = await call_asgi("/api/songs", b"q=1&vol=1")
+    assert status == 200
+    assert "songs" in body
+    print("[PASS] /api/songs returned valid JSON responses across global and volume-filtered queries.")
 
     print("\n=======================================================")
     print("ALL 5 SONG LYRICS TEST SUITES PASSED (100% OPERATIONAL)!")
