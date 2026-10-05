@@ -1,0 +1,31 @@
+id: ADR-001
+type: decision_record
+title: PyWebView with Microsoft Edge WebView2 and Uvicorn Daemon over Electron
+domain: decisions
+status: accepted
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+context:
+  "The project required a native Windows desktop executable that renders the existing FastAPI HTML/JS interface without duplicating frontend and backend code, while keeping executable size and RAM overhead low."
+
+decision:
+  "We selected `pywebview` utilizing the native Windows Microsoft Edge WebView2 runtime to wrap a background `uvicorn` daemon thread running the shared `app.main:app` instance, rather than packaging an Electron application."
+
+consequences:
+  positive:
+    - "Standalone executable size is ~27 MB compared to 120+ MB for an Electron bundle."
+    - "Memory footprint is significantly lower (~50-80 MB vs 300+ MB in Chromium/Electron)."
+    - "100% shared Python code: zero need to rewrite or port FastAPI routes to Node.js."
+    - "Native Windows integration using the OS-provided Evergreen WebView2 runtime."
+  negative:
+    - "Requires handling stdout/stderr redirection and `SafeStream` to prevent uvicorn logging crashes in `--noconsole` mode."
+    - "Requires probing ephemeral localhost ports on startup."
+
+related_items:
+  - ARCH-SYS-001
+  - DEV-BUILD-001

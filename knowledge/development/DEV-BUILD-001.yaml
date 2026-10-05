@@ -1,0 +1,40 @@
+id: DEV-BUILD-001
+type: development_standard
+title: Frozen Path Resolution (sys._MEIPASS) & PyInstaller Packaging Standard
+domain: development
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: devops_team
+
+applies_to:
+  - windows_app
+  - build_system
+
+rule:
+  "All file resource resolution (database, templates, static files, and icons) must dynamically inspect `getattr(sys, 'frozen', False)` and query `sys._MEIPASS` when running in bundled PyInstaller mode, falling back to parent project directory traversal in source mode."
+
+do:
+  - "Implement canonical path resolvers: `get_base_dir()` returns `Path(sys._MEIPASS)` if frozen, else project root."
+  - "Ensure `get_db_path()` points to `base_dir / 'bible_verses.db'`."
+  - "Ensure `get_templates_dir()` points to `base_dir / 'templates'`."
+  - "Ensure `get_static_dir()` points to `base_dir / 'static'`."
+  - "Maintain `windows_app/holybible.spec` with all bundled data directories clearly declared in `datas=[...]`."
+  - "Run build script `py -3 windows_app/build_exe.py` to trigger PyInstaller compilation."
+  - "Verify that the generated executable size stays within the ~25 MB to ~35 MB envelope."
+
+dont:
+  - "Do not assume `__file__` is located in the original repository structure when packaged by PyInstaller."
+  - "Do not omit `datas` entries in `holybible.spec`; missing templates or static files will cause runtime 500 errors inside WebView2."
+  - "Do not commit `windows_app/dist/` or `windows_app/build/` to version control."
+
+reason:
+  "PyInstaller unpacks one-file executable assets into a temporary directory assigned to `sys._MEIPASS`. Robust path resolution guarantees flawless startup without asset lookup crashes."
+
+related_items:
+  - ARCH-SYS-001
+  - ARCH-DIST-001
+  - DEV-PY-001

@@ -1,0 +1,30 @@
+id: ADR-003
+type: decision_record
+title: Microsoft WinGet Package Repository for Automated Desktop Distribution
+domain: decisions
+status: accepted
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: devops_team
+
+context:
+  "Distributing Windows software typically requires custom installer setups, code signing certificates, or Microsoft Store developer accounts, creating friction for users installing and updating the Holy Bible application."
+
+decision:
+  "We selected the official Microsoft WinGet Community Repository (`microsoft/winget-pkgs`) with package identifier `ElroiTheCreator.HolyBible` and `portable` installer architecture, automated via GitHub Actions (`vedantmgoyal9/winget-releaser`)."
+
+consequences:
+  positive:
+    - "Users install and update the app with a single terminal command: `winget install ElroiTheCreator.HolyBible`."
+    - "Zero install wizard or registry clutter: portable binary symlinked directly to the user's path."
+    - "Free automated malware and URL validation by Microsoft Azure pipelines."
+  negative:
+    - "Initial package submission requires manual pull request review by community moderators before automated releases activate."
+    - "Manifest schema requires strict adherence to single-command limitations for portable installers."
+
+related_items:
+  - ARCH-DIST-001
+  - DEV-BUILD-001

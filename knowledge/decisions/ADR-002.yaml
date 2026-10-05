@@ -1,0 +1,29 @@
+id: ADR-002
+type: decision_record
+title: Local-First Embedded SQLite Database over External Cloud Database
+domain: decisions
+status: accepted
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+context:
+  "Scripture reading and study applications require instantaneous chapter transitions, offline reliability without Internet connectivity, and zero server maintenance costs for personal desktop users."
+
+decision:
+  "We selected an embedded SQLite database (`bible_verses.db`) bundled directly into the distribution and accessed with standard library `sqlite3` and composite indexing."
+
+consequences:
+  positive:
+    - "100% offline functionality for both web hosting and portable desktop app."
+    - "Zero cloud database bills or external network roundtrip latency."
+    - "Trivial backup and deployment: the entire Bible database is a single ~12 MB file."
+  negative:
+    - "Schema migrations or text updates require database file redistribution."
+
+related_items:
+  - ARCH-DATA-001
+  - DEV-PY-001

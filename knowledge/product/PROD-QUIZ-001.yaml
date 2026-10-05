@@ -1,0 +1,39 @@
+id: PROD-QUIZ-001
+type: product_standard
+title: Daily Bible Quiz Generation, Difficulty Scaling & Scoring Standard
+domain: product
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: product_team
+
+applies_to:
+  - backend
+  - frontend
+  - quiz
+
+rule:
+  "The Bible Quiz module must generate dynamic, categorized, and multi-difficulty questions (easy, medium, hard) covering Old Testament, New Testament, and Deuterocanonical books, calculating scores with instant feedback and explanatory scripture citations."
+
+do:
+  - "Categorize quiz questions by difficulty level and biblical period (Gospels, Epistles, Prophets, Pentateuch, Wisdom, Deuterocanon)."
+  - "Present 4 multiple-choice options with randomized choice ordering to prevent positional guessing."
+  - "Provide instant explanatory feedback citing the exact book, chapter, and verse reference upon answering each question."
+  - "Display a summary score breakdown at the end of the quiz with percentage score, completion badge, and review options."
+  - "Support both Daily Challenge mode and customizable Practice mode."
+
+dont:
+  - "Do not expose correct answers directly in the unhashed client-side HTML source prior to user submission."
+  - "Do not penalize users for Deuterocanonical questions if they are specifically studying the Protestant canon view."
+  - "Do not display ambiguous or poorly translated question stems."
+
+reason:
+  "Gamified scripture quizzes foster engagement, reinforce biblical literacy, and encourage deeper study of sacred texts across diverse reader demographics."
+
+related_items:
+  - ARCH-DATA-001
+  - PROD-CANON-001
+  - DEV-PY-001

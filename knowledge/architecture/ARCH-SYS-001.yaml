@@ -1,0 +1,41 @@
+id: ARCH-SYS-001
+type: architecture_standard
+title: Unified FastAPI Web Server & PyWebView Desktop Hybrid Architecture
+domain: architecture
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+applies_to:
+  - backend
+  - windows_app
+  - templates
+  - static
+
+rule:
+  "The Holy Bible system uses a single unified codebase where core business logic, database queries, Jinja2 templates, and static frontend assets in `app/`, `templates/`, and `static/` serve both the public web server and the native Windows desktop executable without duplication."
+
+do:
+  - "Run the web server directly via `uvicorn app.main:app` for standard multi-user web serving."
+  - "In the Windows desktop environment (`windows_app/app.py`), start a background Uvicorn daemon on `127.0.0.1` on an ephemeral/free port and launch a native desktop window using `pywebview` with the Microsoft Edge WebView2 runtime."
+  - "Use `sys.frozen` and `sys._MEIPASS` path normalization inside `app/db.py` and `app/main.py` so asset and database resolution behave identically in development source mode, standalone web mode, and inside frozen PyInstaller binaries."
+  - "Ensure all changes made to templates, audio logic, quiz generators, and API endpoints immediately reflect in both Web and Desktop applications."
+
+dont:
+  - "Do not maintain duplicate copies of templates, static scripts, or SQLite query logic inside `windows_app/`."
+  - "Do not hardcode localhost ports; always probe for an available local port dynamically before launching WebView2."
+  - "Do not couple desktop UI controls to platform-specific code that breaks when rendered in standard web browsers."
+
+reason:
+  "A single unified architecture ensures 100% feature parity, eliminates maintenance drift between web and desktop targets, and keeps the Windows executable compact (~27 MB)."
+
+related_items:
+  - ARCH-DATA-001
+  - ARCH-DIST-001
+  - DEV-BUILD-001
+  - DEV-PY-001
+  - ADR-001

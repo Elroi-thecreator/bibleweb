@@ -1,0 +1,38 @@
+id: PROD-AUDIO-001
+type: product_standard
+title: Audio Bible Text-to-Speech Engine & Catholic Study Bracket Omission Standard
+domain: product
+status: approved
+version: 1.1.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: product_team
+
+applies_to:
+  - frontend
+  - static
+  - audio_player
+
+rule:
+  "The Audio Bible Text-to-Speech (TTS) synthesizer must read Scripture verses naturally, sequentially, and continuously, while strictly omitting editorial brackets (`[...]`), curly braces (`{...}`), footnotes, and cross-reference annotations present in Catholic study versions."
+
+do:
+  - "Use browser-native Web Speech API (`window.speechSynthesis`) with configurable speech rates (0.75x, 1.0x, 1.25x, 1.5x) and voice selection."
+  - "Before dispatching verse text to `SpeechSynthesisUtterance`, strip out all text enclosed in square brackets `\\[.*?\\]` and curly braces `\\{.*?\\}` using regex pre-processing."
+  - "Highlight the currently active verse on the screen synchronously with the audio speech synthesizer so readers can follow along visually."
+  - "Provide intuitive Play, Pause, Resume, Stop, and Next/Previous verse controls with keyboard shortcuts (Spacebar for Play/Pause)."
+  - "Maintain continuous playback by automatically advancing to the next verse until the chapter completes."
+
+dont:
+  - "Do not read translator notes, editorial insertions, or manuscript variant markers enclosed in `[]` or `{}` aloud."
+  - "Do not block UI scrolling or responsiveness during speech synthesis."
+  - "Do not lose the user's current reading position when toggling audio playback."
+
+reason:
+  "Catholic English versions and critical editions frequently use square brackets `[...]` to indicate editorial additions or textual footnotes. Reading these annotations breaks the natural flow of spoken Scripture during devotional and liturgical listening."
+
+related_items:
+  - ARCH-SYS-001
+  - PROD-CANON-001

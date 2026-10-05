@@ -1,0 +1,39 @@
+id: PROD-CANON-001
+type: product_standard
+title: Multi-Canon (Catholic 73 Books & Protestant 66 Books) Navigation Standard
+domain: product
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: product_team
+
+applies_to:
+  - backend
+  - frontend
+  - navigation
+
+rule:
+  "The application must seamlessly support both Catholic (73 books including Deuterocanonical books) and Protestant (66 books) canons, providing clear book selectors, chapter pickers, and parallel verse alignment across English and local language versions."
+
+do:
+  - "Allow users to switch between Catholic and Protestant canon perspectives without losing reading position."
+  - "Clearly identify Deuterocanonical books (Tobit, Judith, Wisdom, Sirach, Baruch, 1 & 2 Maccabees) in the book navigation drawer."
+  - "Support multi-language translation switching (English, Tamil, etc.) with verse-by-verse alignment."
+  - "Preserve user's last selected canon, translation version, and chapter across sessions using `localStorage` and URL parameters."
+  - "Provide fast book and chapter search autocomplete in the navigation header."
+
+dont:
+  - "Do not hide or truncate Deuterocanonical books when Catholic canon mode is active."
+  - "Do not break URL deep linking when sharing specific chapter or verse locations."
+  - "Do not reload the full page when switching between complementary translations."
+
+reason:
+  "Respecting the theological and canonical differences between Catholic and Protestant traditions ensures inclusivity and broad adoption across different Christian communities."
+
+related_items:
+  - ARCH-DATA-001
+  - PROD-AUDIO-001
+  - DEV-PY-001

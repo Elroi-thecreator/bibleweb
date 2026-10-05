@@ -1,0 +1,50 @@
+# Holy Bible Master Knowledge Graph & Index
+system_name: HolyBible
+repository_root: "E:/anti-prjects/bibleweb"
+knowledge_units_count: 12
+last_updated: "2026-10-05"
+
+knowledge_units:
+  architecture:
+    - id: ARCH-SYS-001
+      file: "knowledge/architecture/ARCH-SYS-001.yaml"
+      title: "Unified FastAPI Web Server & PyWebView Desktop Hybrid Architecture"
+    - id: ARCH-DATA-001
+      file: "knowledge/architecture/ARCH-DATA-001.yaml"
+      title: "Embedded SQLite Multi-Canon Bible Database, Query & Indexing Schema"
+    - id: ARCH-DIST-001
+      file: "knowledge/architecture/ARCH-DIST-001.yaml"
+      title: "PyInstaller Standalone Windows Executable & WinGet Distribution Pipeline"
+
+  development:
+    - id: DEV-PY-001
+      file: "knowledge/development/DEV-PY-001.yaml"
+      title: "FastAPI Backend Route Conventions, Async Patterns & Jinja2 Templates"
+    - id: DEV-BUILD-001
+      file: "knowledge/development/DEV-BUILD-001.yaml"
+      title: "Frozen Path Resolution (sys._MEIPASS) & PyInstaller Packaging Standard"
+    - id: DEV-TEST-001
+      file: "knowledge/development/DEV-TEST-001.yaml"
+      title: "Automated Verification, Route Integrity & Standalone Executable Smoke Testing"
+
+  product:
+    - id: PROD-AUDIO-001
+      file: "knowledge/product/PROD-AUDIO-001.yaml"
+      title: "Audio Bible Text-to-Speech Engine & Catholic Study Bracket Omission Standard"
+    - id: PROD-QUIZ-001
+      file: "knowledge/product/PROD-QUIZ-001.yaml"
+      title: "Daily Bible Quiz Generation, Difficulty Scaling & Scoring Standard"
+    - id: PROD-CANON-001
+      file: "knowledge/product/PROD-CANON-001.yaml"
+      title: "Multi-Canon (Catholic 73 Books & Protestant 66 Books) Navigation Standard"
+
+  decisions:
+    - id: ADR-001
+      file: "knowledge/decisions/ADR-001.yaml"
+      title: "PyWebView with Microsoft Edge WebView2 and Uvicorn Daemon over Electron"
+    - id: ADR-002
+      file: "knowledge/decisions/ADR-002.yaml"
+      title: "Local-First Embedded SQLite Database over External Cloud Database"
+    - id: ADR-003
+      file: "knowledge/decisions/ADR-003.yaml"
+      title: "Microsoft WinGet Package Repository for Automated Desktop Distribution"

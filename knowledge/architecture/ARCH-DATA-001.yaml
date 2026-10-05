@@ -1,0 +1,39 @@
+id: ARCH-DATA-001
+type: architecture_standard
+title: Embedded SQLite Multi-Canon Bible Database, Query & Indexing Schema
+domain: architecture
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+applies_to:
+  - backend
+  - database
+
+rule:
+  "Scripture text, book metadata, canon classifications (Catholic 73 books and Protestant 66 books), multiple language versions, and quiz banks must be persisted in an embedded local SQLite database (`bible_verses.db`) with read-only connection pooling and indexed verse lookup."
+
+do:
+  - "Store all verses with composite index on `(version, book, chapter, verse)` for sub-millisecond query latency."
+  - "Support Catholic Deuterocanonical books (Tobit, Judith, 1 & 2 Maccabees, Wisdom, Sirach, Baruch, and additions to Daniel and Esther) with proper canonical flag partitioning."
+  - "Resolve the absolute path to `bible_verses.db` using the frozen-aware helper `get_db_path()` in `app/db.py` to prevent missing database errors in packaged executables."
+  - "Use parameterized SQL queries (`?`) for all verse lookups and keyword searches to eliminate SQL injection vulnerabilities."
+  - "Open database connections with `sqlite3.Row` row factories for dict-like field access."
+
+dont:
+  - "Do not execute unparameterized string formatting or SQL concatenation."
+  - "Do not lock the SQLite database with long-running write transactions during user reading sessions."
+  - "Do not require an external SQL server (PostgreSQL/MySQL) daemon for standard application startup."
+
+reason:
+  "SQLite provides complete offline availability, zero configuration, zero latency overhead, instant installation, and portability across local and hosted server environments."
+
+related_items:
+  - ARCH-SYS-001
+  - DEV-PY-001
+  - PROD-CANON-001
+  - ADR-002
