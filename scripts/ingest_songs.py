@@ -17,7 +17,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TARGET_DB = os.path.join(BASE_DIR, "data", "bible.sqlite.db")
+TARGET_DB = os.path.join(BASE_DIR, "data", "songs.sqlite.db")
 SOURCE_DB = r"C:\Users\GOD\.gemini\antigravity\brain\bfefba25-d6e6-4a68-9bad-2e177047aac6\scratch\temp_songs.sqlite"
 
 
@@ -109,8 +109,7 @@ def parse_comments(comment_str):
 def ingest():
     if not os.path.exists(SOURCE_DB):
         raise FileNotFoundError(f"Source database not found at {SOURCE_DB}")
-    if not os.path.exists(TARGET_DB):
-        raise FileNotFoundError(f"Target database not found at {TARGET_DB}")
+    os.makedirs(os.path.dirname(TARGET_DB), exist_ok=True)
 
     src_conn = sqlite3.connect(SOURCE_DB)
     src_conn.row_factory = sqlite3.Row

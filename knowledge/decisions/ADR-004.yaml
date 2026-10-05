@@ -1,0 +1,33 @@
+id: ADR-004
+type: decision_record
+title: Decoupled Dedicated Song Lyrics Database (songs.sqlite.db) from Scripture Database (bible.sqlite.db)
+domain: decisions
+status: accepted
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+context:
+  "The addition of over 1,500 bilingual Christian songs (including 439 Jebathota Jeyageethangal songs across all 40 volumes with stanzas and transliterations) increased the primary SQLite database (`bible.sqlite.db`) to 51.70 MB. On git push, GitHub emitted a warning advising that files over 50.00 MB exceed recommended repository size thresholds. Additionally, song lyrics and Scripture represent distinct domain models with differing update cadences and schemas."
+
+decision:
+  "We decoupled the song lyrics dataset from `data/bible.sqlite.db` into a dedicated SQLite database, `data/songs.sqlite.db`. The application accesses each database via specialized connection resolvers (`get_connection()` for Scripture and `get_songs_connection()` for Songs), and bundles both databases via PyInstaller into standalone distributions."
+
+consequences:
+  positive:
+    - "Reduced `bible.sqlite.db` from 51.70 MB to 44.23 MB, fully clearing GitHub's 50.00 MB warning."
+    - "Created a clean, modular `data/songs.sqlite.db` of ~7.45 MB that can be updated, versioned, or expanded independently of Scripture data."
+    - "Eliminated coupling between Bible reader queries and song queries, allowing isolated vacuuming and indexing."
+    - "Maintained full offline capability and PyInstaller single-binary desktop support without external dependencies."
+  negative:
+    - "Requires maintaining two SQLite connection lifecycles in `app/db.py` instead of one."
+    - "PyInstaller spec file must explicitly bundle both database files in `datas`."
+
+related_items:
+  - ARCH-DATA-001
+  - DEV-BUILD-001
+  - PROD-SONGS-001
+  - ADR-002

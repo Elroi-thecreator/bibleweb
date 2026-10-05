@@ -12,6 +12,9 @@ else:
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "data", "bible.sqlite.db")
 DB_PATH = os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
 
+DEFAULT_SONGS_DB_PATH = os.path.join(BASE_DIR, "data", "songs.sqlite.db")
+SONGS_DB_PATH = os.getenv("SONGS_DATABASE_PATH", DEFAULT_SONGS_DB_PATH)
+
 
 def get_connection():
     """Returns a connection, raising a clear diagnostic error if the DB file was omitted."""
@@ -25,6 +28,22 @@ def get_connection():
             f"Files in root: {files_in_root}\n"
             f"Files in data/: {files_in_data}"
         )
+
+    conn = sqlite3.connect(abs_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def get_songs_connection():
+    """Returns a connection to the dedicated songs database."""
+    abs_path = os.path.abspath(SONGS_DB_PATH)
+    if not os.path.exists(abs_path):
+        # Fallback to bible db if separate songs db is missing
+        abs_bible = os.path.abspath(DB_PATH)
+        if os.path.exists(abs_bible):
+            abs_path = abs_bible
+        else:
+            raise FileNotFoundError(f"Songs DB file not found at: '{abs_path}'")
 
     conn = sqlite3.connect(abs_path)
     conn.row_factory = sqlite3.Row
@@ -529,7 +548,7 @@ def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) ->
 
 def get_song_books() -> List[Dict]:
     """Returns all available songbooks with total song counts."""
-    with get_connection() as conn:
+    with get_songs_connection() as conn:
         cursor = conn.cursor()
         rows = cursor.execute("""
             SELECT sb.code, sb.name_ta, sb.name_en, count(s.id) as song_count
@@ -543,7 +562,7 @@ def get_song_books() -> List[Dict]:
 
 def get_song_volumes(songbook_code: str = "jebathota") -> List[Dict]:
     """Returns available volume numbers with song counts for a songbook."""
-    with get_connection() as conn:
+    with get_songs_connection() as conn:
         cursor = conn.cursor()
         rows = cursor.execute("""
             SELECT volume, count(*) as count
@@ -563,7 +582,7 @@ def get_songs_list(
     offset: int = 0
 ) -> Dict:
     """Fetches paginated/filtered songs by songbook, volume, or search keywords."""
-    with get_connection() as conn:
+    with get_songs_connection() as conn:
         cursor = conn.cursor()
         params = []
         conditions = []
@@ -624,7 +643,7 @@ def get_songs_list(
 def get_song_by_id(song_id: int) -> Dict:
     """Fetches a single song with parsed bilingual stanzas and prev/next links."""
     import json
-    with get_connection() as conn:
+    with get_songs_connection() as conn:
         cursor = conn.cursor()
         row = cursor.execute("SELECT * FROM songs WHERE id = ?", (song_id,)).fetchone()
         if not row:

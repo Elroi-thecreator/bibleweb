@@ -14,6 +14,7 @@ ROOT_DIR = os.path.abspath(os.path.join(SPECPATH, ".."))
 
 datas = [
     (os.path.join(ROOT_DIR, "data", "bible.sqlite.db"), "data"),
+    (os.path.join(ROOT_DIR, "data", "songs.sqlite.db"), "data"),
     (os.path.join(ROOT_DIR, "templates"), "templates"),
     (os.path.join(ROOT_DIR, "static"), "static"),
     (os.path.join(ROOT_DIR, "windows_app", "assets", "app.ico"), "assets"),

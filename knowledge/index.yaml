@@ -1,7 +1,7 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/anti-prjects/bibleweb"
-knowledge_units_count: 13
+knowledge_units_count: 14
 last_updated: "2026-10-05"
 
 knowledge_units:
@@ -11,7 +11,7 @@ knowledge_units:
       title: "Unified FastAPI Web Server & PyWebView Desktop Hybrid Architecture"
     - id: ARCH-DATA-001
       file: "knowledge/architecture/ARCH-DATA-001.yaml"
-      title: "Embedded SQLite Multi-Canon Bible Database, Query & Indexing Schema"
+      title: "Embedded Dual-SQLite Architecture (Scripture & Song Lyrics Databases)"
     - id: ARCH-DIST-001
       file: "knowledge/architecture/ARCH-DIST-001.yaml"
       title: "PyInstaller Standalone Windows Executable & WinGet Distribution Pipeline"
@@ -51,3 +51,6 @@ knowledge_units:
     - id: ADR-003
       file: "knowledge/decisions/ADR-003.yaml"
       title: "Microsoft WinGet Package Repository for Automated Desktop Distribution"
+    - id: ADR-004
+      file: "knowledge/decisions/ADR-004.yaml"
+      title: "Decoupled Dedicated Song Lyrics Database (songs.sqlite.db) from Scripture Database (bible.sqlite.db)"

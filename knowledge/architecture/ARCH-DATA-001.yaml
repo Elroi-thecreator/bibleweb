@@ -1,9 +1,9 @@
 id: ARCH-DATA-001
 type: architecture_standard
-title: Embedded SQLite Multi-Canon Bible Database, Query & Indexing Schema
+title: Embedded Dual-SQLite Architecture (Scripture & Song Lyrics Databases)
 domain: architecture
 status: approved
-version: 1.0.0
+version: 1.1.0
 authority:
   level: official
   confidence: high
@@ -13,27 +13,36 @@ owner:
 applies_to:
   - backend
   - database
+  - songs
+  - packaging
 
 rule:
-  "Scripture text, book metadata, canon classifications (Catholic 73 books and Protestant 66 books), multiple language versions, and quiz banks must be persisted in an embedded local SQLite database (`bible_verses.db`) with read-only connection pooling and indexed verse lookup."
+  "Scripture text and song lyrics are separated into two dedicated, embedded SQLite databases (`data/bible.sqlite.db` for multi-canon scripture, and `data/songs.sqlite.db` for Christian songbooks/lyrics). Both utilize read-only connection pooling, dedicated connection resolvers (`get_connection()` and `get_songs_connection()`), and strict file size budgets under 50 MB to comply with Git repository standards."
 
 do:
-  - "Store all verses with composite index on `(version, book, chapter, verse)` for sub-millisecond query latency."
+  - "Store all verses in `data/bible.sqlite.db` with composite indexes on `(version, book, chapter, verse)` for sub-millisecond query latency."
+  - "Store all songbooks and lyrics in `data/songs.sqlite.db` with structured columns for `volume`, `song_number`, `lyrics_bilingual` JSON stanzas, and text search indexes."
+  - "Maintain a modular database architecture: database connection methods (`get_connection()` for Bible and `get_songs_connection()` for Songs) handle independent paths and frozen resolution via `sys._MEIPASS`."
+  - "Keep individual SQLite database sizes under 50 MB (`bible.sqlite.db` at ~44 MB, `songs.sqlite.db` at ~7.5 MB) to avoid Git LFS overhead and GitHub file size threshold warnings."
+  - "Bundle both databases in PyInstaller specifications (`windows_app/holybible.spec`) under the `datas` array."
   - "Support Catholic Deuterocanonical books (Tobit, Judith, 1 & 2 Maccabees, Wisdom, Sirach, Baruch, and additions to Daniel and Esther) with proper canonical flag partitioning."
-  - "Resolve the absolute path to `bible_verses.db` using the frozen-aware helper `get_db_path()` in `app/db.py` to prevent missing database errors in packaged executables."
-  - "Use parameterized SQL queries (`?`) for all verse lookups and keyword searches to eliminate SQL injection vulnerabilities."
+  - "Use parameterized SQL queries (`?`) for all verse lookups and song keyword searches to eliminate SQL injection vulnerabilities."
   - "Open database connections with `sqlite3.Row` row factories for dict-like field access."
 
 dont:
+  - "Do not combine song lyrics into `bible.sqlite.db` to prevent database bloat exceeding Git/GitHub recommended thresholds (50 MB)."
   - "Do not execute unparameterized string formatting or SQL concatenation."
   - "Do not lock the SQLite database with long-running write transactions during user reading sessions."
   - "Do not require an external SQL server (PostgreSQL/MySQL) daemon for standard application startup."
 
 reason:
-  "SQLite provides complete offline availability, zero configuration, zero latency overhead, instant installation, and portability across local and hosted server environments."
+  "SQLite provides complete offline availability, zero configuration, zero latency overhead, instant installation, and portability across local and hosted server environments. Decoupling scripture and hymnody preserves modular corpus maintenance and keeps individual files well beneath Git hosting warning limits."
 
 related_items:
   - ARCH-SYS-001
   - DEV-PY-001
+  - DEV-BUILD-001
   - PROD-CANON-001
+  - PROD-SONGS-001
   - ADR-002
+  - ADR-004
