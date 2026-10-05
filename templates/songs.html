@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Jebathota Jeyageethangal Song Lyrics | ஜெபத்தோட்ட ஜெயகீதங்கள் பாடல் வரிகள்{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-6">
+    
+    <!-- Hero / Header Section -->
+    <div class="bg-gradient-to-br from-amber-50 to-stone-50 dark:from-stone-900 dark:to-stone-950 border border-stone-200 dark:border-stone-800 rounded-3xl p-5 sm:p-8 text-center space-y-3 relative overflow-hidden shadow-xs">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-xs font-semibold">
+            <span>🎵</span> <span>Christian Song Book • பாடல் வரிகள்</span>
+        </div>
+        <h1 class="font-cinzel text-2xl sm:text-4xl font-bold text-stone-900 dark:text-stone-100">
+            Jebathota Jeyageethangal
+        </h1>
+        <h2 class="font-tamil text-lg sm:text-2xl text-amber-800 dark:text-amber-400 font-semibold" translate="no">
+            ஜெபத்தோட்ட ஜெயகீதங்கள்
+        </h2>
+        <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-400 max-w-xl mx-auto">
+            All 40 Volumes composed & sung by Fr. S.J. Berchmans with bilingual Tamil script and Romanised English lyrics.
+        </p>
+
+        <!-- Songbook Category Switcher -->
+        <div class="pt-2 flex flex-wrap justify-center gap-1.5 sm:gap-2">
+            {% for sb in songbooks %}
+            <a href="/songs?book={{ sb.code }}{% if canon %}&canon={{ canon }}{% endif %}" 
+               class="px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer {% if active_book == sb.code %}bg-amber-700 text-white font-semibold shadow-xs{% else %}bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-amber-600{% endif %}">
+                <span class="font-tamil" translate="no">{{ sb.name_ta }}</span>
+                <span class="text-[10px] opacity-75">({{ sb.song_count }})</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Volume Pills Carousel (For Jebathota Jeyageethangal) -->
+    {% if active_book == 'jebathota' and volumes %}
+    <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold text-stone-500 uppercase tracking-wider px-1">
+            <span>Filter by Volume / பாகங்கள் (1–40)</span>
+            {% if active_vol %}
+            <a href="/songs?book=jebathota{% if query %}&q={{ query }}{% endif %}{% if canon %}&canon={{ canon }}{% endif %}" 
+               class="text-amber-700 dark:text-amber-400 hover:underline">Clear Filter (Show All)</a>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none text-xs">
+            <a href="/songs?book=jebathota{% if query %}&q={{ query }}{% endif %}{% if canon %}&canon={{ canon }}{% endif %}"
+               class="px-3.5 py-1.5 rounded-xl shrink-0 transition font-medium {% if not active_vol %}bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 font-bold{% else %}bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-amber-600{% endif %}">
+                All Volumes
+            </a>
+            {% for v in volumes %}
+            <a href="/songs?book=jebathota&vol={{ v.volume }}{% if query %}&q={{ query }}{% endif %}{% if canon %}&canon={{ canon }}{% endif %}"
+               class="px-3 py-1.5 rounded-xl shrink-0 transition font-medium {% if active_vol == v.volume %}bg-amber-700 text-white font-bold shadow-xs{% else %}bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-amber-600{% endif %}">
+                Vol {{ v.volume }} <span class="text-[10px] opacity-75">({{ v.count }})</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Live Search Bar -->
+    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-3 sm:p-4 shadow-xs">
+        <form action="/songs" method="get" class="flex gap-2">
+            <input type="hidden" name="book" value="{{ active_book }}">
+            {% if active_vol %}
+            <input type="hidden" name="vol" value="{{ active_vol }}">
+            {% endif %}
+            {% if canon %}
+            <input type="hidden" name="canon" value="{{ canon }}">
+            {% endif %}
+            <div class="relative flex-1">
+                <input type="text" name="q" value="{{ query }}" 
+                       placeholder="Search song title (e.g. Visuvaasathinaal, விசுவாசத்தினால்), lyrics, or #number..."
+                       class="w-full text-xs sm:text-sm bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-amber-700 text-stone-900 dark:text-stone-100">
+                <span class="absolute left-3 top-3 text-stone-400 text-xs sm:text-sm">🔍</span>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0">
+                Search
+            </button>
+            {% if query %}
+            <a href="/songs?book={{ active_book }}{% if active_vol %}&vol={{ active_vol }}{% endif %}{% if canon %}&canon={{ canon }}{% endif %}" 
+               class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-600 dark:text-stone-300 rounded-xl text-xs sm:text-sm font-medium transition flex items-center">
+                Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Results Status Bar -->
+    <div class="flex items-center justify-between text-xs text-stone-500 px-1">
+        <div>
+            {% if query %}
+            <span>Searching for <strong class="text-stone-800 dark:text-stone-200 font-serif">"{{ query }}"</strong> • </span>
+            {% endif %}
+            {% if active_vol %}
+            <span>Showing <strong class="text-amber-700 dark:text-amber-400 font-bold">Volume {{ active_vol }}</strong> • </span>
+            {% endif %}
+            <span><strong>{{ total_count }}</strong> songs found</span>
+        </div>
+        {% if total_pages > 1 %}
+        <span>Page {{ page }} of {{ total_pages }}</span>
+        {% endif %}
+    </div>
+
+    <!-- Songs Cards Grid -->
+    {% if songs %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {% for s in songs %}
+        <a href="/songs/{{ s.id }}{% if canon %}?canon={{ canon }}{% endif %}" 
+           class="group bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-amber-600/70 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between space-y-3">
+            
+            <div class="space-y-2">
+                <!-- Badges -->
+                <div class="flex items-center justify-between text-[11px]">
+                    <div class="flex items-center gap-1.5">
+                        {% if s.volume and s.volume > 0 %}
+                        <span class="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-bold">
+                            Vol {{ s.volume }}
+                        </span>
+                        {% endif %}
+                        {% if s.song_number and s.song_number > 0 %}
+                        <span class="px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-mono">
+                            #{{ s.song_number }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% if s.youtube_url %}
+                    <span class="text-red-600 text-xs" title="Video available">▶️</span>
+                    {% endif %}
+                </div>
+
+                <!-- Titles -->
+                <div>
+                    <h3 class="font-tamil font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition leading-snug" translate="no">
+                        {{ s.title_ta }}
+                    </h3>
+                    <p class="font-sans text-xs text-stone-500 font-medium mt-0.5">
+                        {{ s.title_en }}
+                    </p>
+                </div>
+
+                <!-- Lyrics Snippet -->
+                {% if s.snippet_ta %}
+                <p class="font-tamil text-xs text-stone-600 dark:text-stone-400 line-clamp-2 leading-relaxed opacity-90" translate="no">
+                    {{ s.snippet_ta }}...
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-[11px] text-stone-400 group-hover:text-amber-700 transition">
+                <span>{{ s.author or "Fr. S.J. Berchmans" }}</span>
+                <span>View Lyrics →</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if total_pages > 1 %}
+    <div class="flex justify-center items-center gap-2 pt-4">
+        {% if page > 1 %}
+        <a href="/songs?book={{ active_book }}{% if active_vol %}&vol={{ active_vol }}{% endif %}{% if query %}&q={{ query }}{% endif %}&page={{ page - 1 }}{% if canon %}&canon={{ canon }}{% endif %}" 
+           class="px-4 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-semibold hover:border-amber-600 transition">
+            ← Previous
+        </a>
+        {% endif %}
+
+        <span class="text-xs text-stone-500 font-mono px-2">Page {{ page }} of {{ total_pages }}</span>
+
+        {% if page < total_pages %}
+        <a href="/songs?book={{ active_book }}{% if active_vol %}&vol={{ active_vol }}{% endif %}{% if query %}&q={{ query }}{% endif %}&page={{ page + 1 }}{% if canon %}&canon={{ canon }}{% endif %}" 
+           class="px-4 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-semibold hover:border-amber-600 transition">
+            Next →
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-8 sm:p-12 text-center space-y-3">
+        <span class="text-4xl block">🎵</span>
+        <h3 class="font-cinzel text-base sm:text-lg font-bold text-stone-800 dark:text-stone-200">No songs found matching your search</h3>
+        <p class="font-tamil text-xs text-stone-500">மற்றொரு தலைப்பு அல்லது பாடல் எண்ணை உள்ளிட்டு தேடிப் பார்க்கவும்.</p>
+        <a href="/songs?book={{ active_book }}{% if canon %}&canon={{ canon }}{% endif %}" 
+           class="inline-block mt-2 px-4 py-2 rounded-xl bg-amber-700 text-white text-xs font-semibold hover:bg-amber-800 transition">
+            Reset Filters
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

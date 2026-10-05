@@ -521,3 +521,162 @@ def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) ->
                 "text_ta": text_ta
             })
         return results
+
+
+# =========================================================================
+# Christian Song Lyrics & Jebathota Jeyageethangal Database Operations
+# =========================================================================
+
+def get_song_books() -> List[Dict]:
+    """Returns all available songbooks with total song counts."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        rows = cursor.execute("""
+            SELECT sb.code, sb.name_ta, sb.name_en, count(s.id) as song_count
+            FROM song_books sb
+            LEFT JOIN songs s ON sb.code = s.songbook_code
+            GROUP BY sb.code
+            ORDER BY sb.display_order ASC
+        """).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_song_volumes(songbook_code: str = "jebathota") -> List[Dict]:
+    """Returns available volume numbers with song counts for a songbook."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        rows = cursor.execute("""
+            SELECT volume, count(*) as count
+            FROM songs
+            WHERE songbook_code = ? AND volume > 0
+            GROUP BY volume
+            ORDER BY volume ASC
+        """, (songbook_code,)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_songs_list(
+    songbook_code: str = "jebathota",
+    volume: int = None,
+    query: str = None,
+    limit: int = 60,
+    offset: int = 0
+) -> Dict:
+    """Fetches paginated/filtered songs by songbook, volume, or search keywords."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        params = []
+        conditions = []
+
+        if songbook_code and songbook_code != "all":
+            conditions.append("songbook_code = ?")
+            params.append(songbook_code)
+
+        if volume is not None and volume > 0:
+            conditions.append("volume = ?")
+            params.append(volume)
+
+        if query and query.strip():
+            clean_q = query.strip()
+            # If query is numeric (e.g. searching song #14)
+            if clean_q.isdigit():
+                conditions.append("(song_number = ? OR volume = ?)")
+                params.extend([int(clean_q), int(clean_q)])
+            else:
+                pattern = f"%{clean_q}%"
+                conditions.append("""(
+                    title_ta LIKE ? OR 
+                    title_en LIKE ? OR 
+                    alternate_title LIKE ? OR 
+                    lyrics_ta LIKE ? OR 
+                    lyrics_en LIKE ?
+                )""")
+                params.extend([pattern, pattern, pattern, pattern, pattern])
+
+        where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+
+        # Count total matches
+        count_sql = f"SELECT count(*) FROM songs{where_clause}"
+        total_count = cursor.execute(count_sql, params).fetchone()[0]
+
+        # Fetch songs
+        fetch_sql = f"""
+            SELECT id, songbook_code, songbook_name_ta, songbook_name_en,
+                   volume, volume_name, song_number,
+                   title_ta, title_en, alternate_title,
+                   author, youtube_url,
+                   substr(lyrics_ta, 1, 120) as snippet_ta,
+                   substr(lyrics_en, 1, 120) as snippet_en
+            FROM songs
+            {where_clause}
+            ORDER BY volume ASC, song_number ASC, title_en ASC
+            LIMIT ? OFFSET ?
+        """
+        params_with_paging = list(params) + [limit, offset]
+        rows = cursor.execute(fetch_sql, params_with_paging).fetchall()
+
+        return {
+            "total_count": total_count,
+            "songs": [dict(r) for r in rows]
+        }
+
+
+def get_song_by_id(song_id: int) -> Dict:
+    """Fetches a single song with parsed bilingual stanzas and prev/next links."""
+    import json
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        row = cursor.execute("SELECT * FROM songs WHERE id = ?", (song_id,)).fetchone()
+        if not row:
+            return None
+
+        song = dict(row)
+        try:
+            song["stanzas"] = json.loads(song.get("lyrics_bilingual") or "[]")
+        except Exception:
+            song["stanzas"] = []
+
+        # Find previous and next songs within the same volume or songbook
+        prev_song = None
+        next_song = None
+
+        if song.get("volume") and song["volume"] > 0:
+            prev_row = cursor.execute("""
+                SELECT id, title_ta, title_en, song_number
+                FROM songs
+                WHERE songbook_code = ? AND volume = ? AND song_number < ?
+                ORDER BY song_number DESC LIMIT 1
+            """, (song["songbook_code"], song["volume"], song["song_number"])).fetchone()
+            if prev_row:
+                prev_song = dict(prev_row)
+
+            next_row = cursor.execute("""
+                SELECT id, title_ta, title_en, song_number
+                FROM songs
+                WHERE songbook_code = ? AND volume = ? AND song_number > ?
+                ORDER BY song_number ASC LIMIT 1
+            """, (song["songbook_code"], song["volume"], song["song_number"])).fetchone()
+            if next_row:
+                next_song = dict(next_row)
+        else:
+            prev_row = cursor.execute("""
+                SELECT id, title_ta, title_en, song_number
+                FROM songs
+                WHERE songbook_code = ? AND id < ?
+                ORDER BY id DESC LIMIT 1
+            """, (song["songbook_code"], song["id"])).fetchone()
+            if prev_row:
+                prev_song = dict(prev_row)
+
+            next_row = cursor.execute("""
+                SELECT id, title_ta, title_en, song_number
+                FROM songs
+                WHERE songbook_code = ? AND id > ?
+                ORDER BY id ASC LIMIT 1
+            """, (song["songbook_code"], song["id"])).fetchone()
+            if next_row:
+                next_song = dict(next_row)
+
+        song["prev_song"] = prev_song
+        song["next_song"] = next_song
+        return song

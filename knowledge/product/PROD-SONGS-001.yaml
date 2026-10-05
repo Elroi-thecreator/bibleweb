@@ -1,0 +1,43 @@
+id: PROD-SONGS-001
+type: product_standard
+title: Christian Song Lyrics & Jebathota Jeyageethangal (All Volumes) Integration Standard
+domain: product
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: product_team
+
+applies_to:
+  - backend
+  - frontend
+  - database
+  - songs
+
+rule:
+  "The application must host, organize, and present Christian song lyrics headlined by Jebathota Jeyageethangal across all 40 volumes by Fr. S.J. Berchmans (~440 songs) and classic Tamil Christian hymns with bilingual Tamil script, Romanised transliteration, volume-by-volume navigation, and YouTube video integration."
+
+do:
+  - "Store all song metadata, volumes, numbers, titles, and bilingual stanza structures in the local embedded SQLite database (`songs` and `song_books` tables)."
+  - "Support one-click script toggles between Tamil script only (`தமிழ்`), Romanised English transliteration (`English`), and bilingual stacked display (`இருமொழியும்`)."
+  - "Provide direct volume filtering (Volumes 1 through 40) on the `/songs` directory page."
+  - "Include one-click clipboard copying of song lyrics with formatted titles and stanzas."
+  - "Embed or link official YouTube video recordings where available for worship and singing along."
+  - "Support sequential song navigation (`← Prev Song` and `Next Song →`) within volumes and songbooks."
+  - "Allow fast search across Tamil titles, Romanised titles, song numbers, and lyrics."
+
+dont:
+  - "Do not drop Romanised transliterations; preserve them for non-Tamil readers and diaspora congregations."
+  - "Do not block song lyrics access with paywalls or mandatory authentication."
+  - "Do not store lyrics in unstructured single blobs when stanza classifications (Chorus vs Verse) are available."
+
+reason:
+  "Praise, worship, and hymn singing are central to devotional life alongside Scripture reading. Integrating Jebathota Jeyageethangal all volumes and Tamil Christian hymns within the Bible app provides a unified, offline-capable worship companion."
+
+related_items:
+  - ARCH-SYS-001
+  - ARCH-DATA-001
+  - DEV-PY-001
+  - PROD-CANON-001

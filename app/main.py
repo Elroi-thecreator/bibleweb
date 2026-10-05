@@ -35,6 +35,10 @@ from app.db import (
     get_books,
     get_chapter_verses,
     search_verses,
+    get_song_books,
+    get_song_volumes,
+    get_songs_list,
+    get_song_by_id,
 )
 from app.plans_data import READING_PLANS
 from app.quiz_data import QUIZ_CATEGORIES, QUIZ_QUESTIONS
@@ -644,6 +648,101 @@ async def get_quiz_questions(
             "questions": results[:limit],
         }
     )
+
+
+# ==========================================
+# Christian Song Lyrics & Jebathota Jeyageethangal
+# ==========================================
+
+@app.get("/songs", response_class=HTMLResponse)
+async def songs_directory_page(
+    request: Request,
+    book: str = Query("jebathota"),
+    vol: int = Query(None),
+    q: str = Query(""),
+    page: int = Query(1, ge=1),
+    canon: str = Query(None)
+):
+    """Song lyrics directory with volume tabs and search."""
+    active_canon = resolve_canon(request, canon)
+    canon_ctx = get_canon_context(active_canon)
+    
+    songbooks = get_song_books()
+    volumes = get_song_volumes(book)
+    clean_q = q.strip() if q else ""
+    page_size = 40
+    offset = (page - 1) * page_size
+    
+    songs_data = get_songs_list(
+        songbook_code=book,
+        volume=vol,
+        query=clean_q,
+        limit=page_size,
+        offset=offset
+    )
+    total_count = songs_data["total_count"]
+    total_pages = max(1, (total_count + page_size - 1) // page_size)
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="songs.html",
+        context={
+            **canon_ctx,
+            "songbooks": songbooks,
+            "volumes": volumes,
+            "active_book": book,
+            "active_vol": vol,
+            "query": clean_q,
+            "songs": songs_data["songs"],
+            "total_count": total_count,
+            "page": page,
+            "total_pages": total_pages,
+        },
+    )
+
+
+@app.get("/songs/{song_id}", response_class=HTMLResponse)
+async def song_detail_page(
+    request: Request,
+    song_id: int,
+    mode: str = Query("bilingual"),
+    canon: str = Query(None)
+):
+    """Dedicated song reader view with bilingual stanzas and YouTube player."""
+    active_canon = resolve_canon(request, canon)
+    canon_ctx = get_canon_context(active_canon)
+    song = get_song_by_id(song_id)
+    if not song:
+        raise HTTPException(status_code=404, detail="Song not found")
+        
+    return templates.TemplateResponse(
+        request=request,
+        name="song_detail.html",
+        context={
+            **canon_ctx,
+            "song": song,
+            "mode": mode,
+        },
+    )
+
+
+@app.get("/api/songs")
+async def api_songs_search(
+    q: str = Query(""),
+    book: str = Query("jebathota"),
+    vol: int = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Returns filtered songs for client-side search autocomplete."""
+    clean_q = q.strip() if q else ""
+    res = get_songs_list(
+        songbook_code=book,
+        volume=vol,
+        query=clean_q,
+        limit=limit,
+        offset=0
+    )
+    return JSONResponse(content=res)
 
 
 @app.get("/book/{book_id}/chapter/{chapter}")

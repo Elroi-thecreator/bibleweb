@@ -132,6 +132,10 @@
                     <span>★</span> <span class="hidden md:inline">Saved</span>
                 </a>
 
+                <a href="/songs{% if canon %}?canon={{ canon }}{% endif %}" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-800 text-amber-800 dark:text-amber-400 flex items-center gap-1 font-semibold" title="Song Lyrics / பாடல் வரிகள்">
+                    <span>🎵</span> <span class="hidden md:inline">Songs</span>
+                </a>
+
                 <a href="/quiz" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-800 text-amber-800 dark:text-amber-400 flex items-center gap-1 font-semibold" title="Bible Quiz & Trivia">
                     <span>✨</span> <span class="hidden md:inline">Quiz</span>
                 </a>
@@ -146,8 +150,11 @@
                 </button>
             </div>
 
-            <!-- Mobile Quick Header Actions (Search + Settings) -->
-            <div class="flex sm:hidden items-center space-x-1 text-xs shrink-0">
+            <!-- Mobile Quick Header Actions (Songs + Search + Settings) -->
+            <div class="flex sm:hidden items-center space-x-0.5 text-xs shrink-0">
+                <a href="/songs{% if canon %}?canon={{ canon }}{% endif %}" class="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition" title="Song Lyrics / பாடல் வரிகள்">
+                    <span class="text-sm">🎵</span>
+                </a>
                 <a href="/search{% if canon %}?canon={{ canon }}{% endif %}" class="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition" title="Search Bible">
                     <span class="text-sm">🔍</span>
                 </a>

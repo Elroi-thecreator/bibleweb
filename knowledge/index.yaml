@@ -1,7 +1,7 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/anti-prjects/bibleweb"
-knowledge_units_count: 12
+knowledge_units_count: 13
 last_updated: "2026-10-05"
 
 knowledge_units:
@@ -37,6 +37,9 @@ knowledge_units:
     - id: PROD-CANON-001
       file: "knowledge/product/PROD-CANON-001.yaml"
       title: "Multi-Canon (Catholic 73 Books & Protestant 66 Books) Navigation Standard"
+    - id: PROD-SONGS-001
+      file: "knowledge/product/PROD-SONGS-001.yaml"
+      title: "Christian Song Lyrics & Jebathota Jeyageethangal (All Volumes) Integration Standard"
 
   decisions:
     - id: ADR-001
