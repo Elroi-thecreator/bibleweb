@@ -3,7 +3,7 @@ type: product_standard
 title: Christian Song Lyrics, Hymnal Presentation & Dual-Page Search Standard
 domain: product
 status: approved
-version: 1.4.3
+version: 1.5.0
 authority:
   level: official
   confidence: high
@@ -18,11 +18,13 @@ applies_to:
   - search
 
 rule:
-  "The application must host, organize, and present Christian song lyrics headlined by Jebathota Jeyageethangal across all 40 volumes by Fr. S.J. Berchmans (~440 songs) and classic Tamil Christian hymns with bilingual Tamil script, Romanised transliteration, volume-by-volume navigation, 100% YouTube video/audio coverage across all songs (with direct video embedding for known IDs and high-precision official streaming links as fallback), flowing liturgical hymnal presentation with chorus highlighting, and dedicated multi-scope song search options on both the landing directory and individual song details pages."
+  "The application must host, organize, and present Christian song lyrics headlined by Jebathota Jeyageethangal across all 40 volumes by Fr. S.J. Berchmans (~440 songs), classic Tamil Christian hymns, and dedicated contemporary worship collections by Dr. Joseph Aldrin and Pastor Benny Joshua with bilingual Tamil script, Romanised transliteration, volume/author navigation, 100% YouTube video/audio coverage across all songs (with direct video embedding for known IDs and high-precision official streaming links as fallback), flowing liturgical hymnal presentation with chorus highlighting, and dedicated multi-scope song search options on both the landing directory and individual song details pages."
 
 do:
   - "Store all song metadata, volumes, numbers, titles, and bilingual stanza structures in the dedicated local embedded SQLite database (`data/songs.sqlite.db`) within `songs` and `song_books` tables."
+  - "Provide dedicated songbook categories for classic and contemporary worship leaders, including Jebathota Jeyageethangal (`jebathota`), Keerthanai (`keerthanai`), Seyalveerar Paadalgal (`seyalveerar`), TAC (`tac`), Aikkiya Geethangal (`aikkiya`), Dr. Joseph Aldrin (`aldrin`), and Pastor Benny Joshua (`benny`)."
   - "Ensure 100% of songs in `data/songs.sqlite.db` possess a valid, appropriate `youtube_url` (direct video watch URL for mapped tracks and official YouTube streaming search URL for others)."
+  - "Maintain 100% direct verified YouTube video coverage across all tracks in Dr. Joseph Aldrin and Pastor Benny Joshua songbooks with verified 200 OK oEmbed watch URLs."
   - "Maintain 100% direct embedded YouTube video coverage across all 1,170 Jebathota Jeyageethangal songs (`https://www.youtube.com/watch?v=...`) covering Volumes 1 through 40 and all uncataloged volume-0 choruses."
   - "Actively audit all video links against YouTube's live oEmbed verification endpoints (200 OK) to automatically detect and heal 404s, private/restricted, or deleted videos using high-confidence replacement searches."
   - "Actively maintain and update direct video IDs with official verified releases (e.g. replacing inactive/404 legacy video IDs with verified official publisher uploads like `7bBsJE2RsxQ` for Jebathota Jeyageethangal Vol 9 #124)."
@@ -47,7 +49,7 @@ dont:
   - "Do not drop Romanised transliterations; preserve them for non-Tamil readers and diaspora congregations."
 
 reason:
-  "Praise, worship, and hymn singing require intuitive usability during church services, choir practice, and personal devotions. Unified hymnal styling with distinct chorus prominence allows vocalists to follow along seamlessly. Ensuring every single song links directly to its appropriate YouTube video or recording gives believers immediate musical accompaniment for singing along."
+  "Praise, worship, and hymn singing require intuitive usability during church services, choir practice, and personal devotions. Modern Tamil worship collections from leaders like Dr. Joseph Aldrin and Pastor Benny Joshua are integral to congregational life alongside traditional hymns and Jebathota Jeyageethangal. Unified hymnal styling with distinct chorus prominence allows vocalists to follow along seamlessly. Ensuring every single song links directly to its appropriate YouTube video or recording gives believers immediate musical accompaniment for singing along."
 
 related_items:
   - ARCH-SYS-001

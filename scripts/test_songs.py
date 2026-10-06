@@ -89,6 +89,21 @@ async def run_tests():
     assert "Volume 14" in body
     print("[PASS] /songs?book=jebathota&vol=14 rendered 200 HTML with Volume 14 songs.")
 
+    print("\n=== 3b. Testing Contemporary Worship Books (Aldrin & Benny) ===")
+    status, headers, body = await call_asgi("/songs", b"book=aldrin")
+    assert status == 200
+    assert "Dr. Joseph Aldrin" in body or "ஜோசப் அல்ட்ரின்" in body
+    aldrin_res = get_songs_list(songbook_code="aldrin")
+    assert aldrin_res["total_count"] >= 11, f"Expected >= 11 songs for aldrin, got {aldrin_res['total_count']}"
+    print(f"[PASS] /songs?book=aldrin rendered 200 HTML with {aldrin_res['total_count']} songs.")
+
+    status, headers, body = await call_asgi("/songs", b"book=benny")
+    assert status == 200
+    assert "Pastor Benny Joshua" in body or "பென்னி ஜோசுவா" in body
+    benny_res = get_songs_list(songbook_code="benny")
+    assert benny_res["total_count"] >= 12, f"Expected >= 12 songs for benny, got {benny_res['total_count']}"
+    print(f"[PASS] /songs?book=benny rendered 200 HTML with {benny_res['total_count']} songs.")
+
     print("\n=== 4. Testing /songs/{id} Reader Page ===")
     song_id = song["id"]
     status, headers, body = await call_asgi(f"/songs/{song_id}")
