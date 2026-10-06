@@ -3,7 +3,7 @@ type: product_standard
 title: Christian Song Lyrics, Hymnal Presentation & Dual-Page Search Standard
 domain: product
 status: approved
-version: 1.4.2
+version: 1.4.3
 authority:
   level: official
   confidence: high
@@ -27,7 +27,7 @@ do:
   - "Actively audit all video links against YouTube's live oEmbed verification endpoints (200 OK) to automatically detect and heal 404s, private/restricted, or deleted videos using high-confidence replacement searches."
   - "Actively maintain and update direct video IDs with official verified releases (e.g. replacing inactive/404 legacy video IDs with verified official publisher uploads like `7bBsJE2RsxQ` for Jebathota Jeyageethangal Vol 9 #124)."
   - "Extract and expose `youtube_video_id` (11-character identifier) in `get_song_by_id()` for seamless responsive iframe embedding."
-  - "Provide an interactive Player Engine selector on song detail pages allowing testing between Privacy-Enhanced Mode (`youtube-nocookie.com` with `rel=0&modestbranding=1`), 100% Ad-Free Invidious (`yewtu.be`), and standard YouTube embeds."
+  - "Embed videos exclusively via YouTube Privacy-Enhanced Mode (`https://www.youtube-nocookie.com/embed/{id}?rel=0&modestbranding=1&iv_load_policy=3`) to disable advertising cookies, suppress third-party tracking beacons, prevent external recommendations, and reduce ad intrusions."
   - "Present a high-precision YouTube Stream Card on song detail pages when an official search stream is linked, providing single-tap playback."
   - "Display a YouTube indicator badge (`▶️ Watch`) on song cards in the `/songs` directory to indicate immediate video/audio playback."
   - "Present song lyrics in a flowing sacred hymnal layout where the Chorus (பல்லவி) is prominently highlighted with warm amber accent borders, repeat indicators, and soft background glow, avoiding disjointed boxed cards per stanza."
@@ -39,6 +39,7 @@ do:
   - "Support sequential song navigation (`← Prev Song` and `Next Song →`) with Left/Right arrow keyboard shortcuts."
 
 dont:
+  - "Do not embed third-party scraper frontends (such as Invidious/yewtu.be or Piped) that trigger anti-bot Cloudflare/CAPTCHA challenge loops inside cross-origin iframes."
   - "Do not leave `youtube_url` null or empty; always map known video IDs or provide appropriate high-precision YouTube search links."
   - "Do not present lyrics as rigid form boxes that fragment musical flow; maintain a continuous, publication-grade hymnal sheet layout."
   - "Do not force users to leave the song reader view just to search for another song or change tracks within the same volume."
