@@ -19,14 +19,49 @@ import socket
 import threading
 import urllib.request
 
+def _get_log_file():
+    try:
+        log_dir = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "HolyBible")
+        os.makedirs(log_dir, exist_ok=True)
+        return os.path.join(log_dir, "desktop.log")
+    except Exception:
+        return None
+
 # SafeStream ensures sys.stdout and sys.stderr are never None in --noconsole mode
 class SafeStream:
+    def __init__(self, is_stderr=False):
+        self.is_stderr = is_stderr
+
     def write(self, s):
-        pass
+        if self.is_stderr and s and s.strip():
+            log_path = _get_log_file()
+            if log_path:
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(s)
+                except Exception:
+                    pass
+
     def flush(self):
         pass
+
     def isatty(self):
         return False
+
+def _handle_unhandled_exception(exc_type, exc_value, exc_traceback):
+    import traceback
+    err_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    log_path = _get_log_file()
+    if log_path:
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] FATAL UNHANDLED EXCEPTION:\n{err_msg}\n")
+        except Exception:
+            pass
+    if sys.__excepthook__:
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+
+sys.excepthook = _handle_unhandled_exception
 
 if sys.stdout is None:
     sys.stdout = SafeStream()
@@ -37,7 +72,7 @@ elif hasattr(sys.stdout, "reconfigure"):
         pass
 
 if sys.stderr is None:
-    sys.stderr = SafeStream()
+    sys.stderr = SafeStream(is_stderr=True)
 elif hasattr(sys.stderr, "reconfigure"):
     try:
         sys.stderr.reconfigure(encoding="utf-8")

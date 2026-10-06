@@ -63,6 +63,10 @@ def run_desktop_host_tests():
         ("/plans", "Reading Plans Lobby"),
         ("/api/quiz/questions", "Quiz API (JSON)"),
         ("/read-along/plan/whole-bible-100/day/1", "100-Day Read-Along Plan"),
+        ("/songs", "Christian Hymnals Directory"),
+        ("/songs?book=aldrin", "Dr. Joseph Aldrin Hymnal"),
+        ("/songs?book=benny", "Pastor Benny Joshua Hymnal"),
+        ("/songs/2560", "Song Lyrics Reader (Pradhana Aasariyarae)"),
         ("/static/manifest.json", "Static File Mount"),
     ]
 
