@@ -651,9 +651,45 @@ def get_song_by_id(song_id: int) -> Dict:
 
         song = dict(row)
         try:
-            song["stanzas"] = json.loads(song.get("lyrics_bilingual") or "[]")
+            stanzas = json.loads(song.get("lyrics_bilingual") or "[]")
+            for st in stanzas:
+                if "lines_ta" not in st or not isinstance(st.get("lines_ta"), list):
+                    if "ta" in st and isinstance(st["ta"], str):
+                        st["lines_ta"] = [line.strip() for line in st["ta"].split("\n") if line.strip()]
+                    else:
+                        st["lines_ta"] = []
+                if "lines_en" not in st or not isinstance(st.get("lines_en"), list):
+                    if "en" in st and isinstance(st["en"], str):
+                        st["lines_en"] = [line.strip() for line in st["en"].split("\n") if line.strip()]
+                    else:
+                        st["lines_en"] = []
+            song["stanzas"] = stanzas
         except Exception:
             song["stanzas"] = []
+
+        # Fallback: if no stanzas were parsed from JSON, generate them from raw lyrics
+        if not song["stanzas"] and (song.get("lyrics_ta") or song.get("lyrics_en")):
+            ta_raw = (song.get("lyrics_ta") or "").strip()
+            en_raw = (song.get("lyrics_en") or "").strip()
+            ta_blocks = [b.strip() for b in ta_raw.split("\n\n") if b.strip()]
+            en_blocks = [b.strip() for b in en_raw.split("\n\n") if b.strip()]
+            max_b = max(len(ta_blocks), len(en_blocks), 1)
+            generated_stanzas = []
+            for bi in range(max_b):
+                b_ta = ta_blocks[bi] if bi < len(ta_blocks) else ""
+                b_en = en_blocks[bi] if bi < len(en_blocks) else ""
+                lines_ta = [l.strip() for l in b_ta.split("\n") if l.strip()]
+                lines_en = [l.strip() for l in b_en.split("\n") if l.strip()]
+                label = f"சரணம் {bi+1} / Verse {bi+1}"
+                if bi == 0 and ("பல்லவி" in b_ta or "pallavi" in b_en.lower() or "chorus" in b_en.lower()):
+                    label = "பல்லவி / Chorus"
+                generated_stanzas.append({
+                    "type": "c" if ("Chorus" in label or "பல்லவி" in label) else "v",
+                    "label": label,
+                    "lines_ta": lines_ta,
+                    "lines_en": lines_en,
+                })
+            song["stanzas"] = generated_stanzas
 
         # Extract YouTube 11-char video ID if a direct video link is present
         import re

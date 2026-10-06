@@ -118,6 +118,21 @@ async def run_tests():
     assert "stanza-block" in body, "Should have liturgical hymnal stanzas"
     print(f"[PASS] /songs/{song_id} rendered 200 HTML with dedicated search, in-volume jump, and liturgical hymnal UI.")
 
+    # Test Aldrin & Benny song reader page renders lines
+    for aid in [2458, 2560]:
+        status, headers, body = await call_asgi(f"/songs/{aid}")
+        assert status == 200
+        assert "lyrics-line-ta" in body, f"Aldrin song {aid} must have rendered Tamil lyric lines"
+        assert "lyrics-line-en" in body, f"Aldrin song {aid} must have rendered English lyric lines"
+    print("[PASS] Dr. Joseph Aldrin song pages (including #2560 Pradhana Aasariyarae) rendered full bilingual lyrics lines successfully.")
+
+    for bid in [1986, 2570]:
+        status, headers, body = await call_asgi(f"/songs/{bid}")
+        assert status == 200
+        assert "lyrics-line-ta" in body, f"Benny song {bid} must have rendered Tamil lyric lines"
+        assert "lyrics-line-en" in body, f"Benny song {bid} must have rendered English lyric lines"
+    print("[PASS] Pastor Benny Joshua song pages (including #2570 Appa Pithavae) rendered full bilingual lyrics lines successfully.")
+
     print("\n=== 5. Testing /api/songs Search API ===")
     status, headers, body = await call_asgi("/api/songs", b"q=love&book=all")
     assert status == 200
