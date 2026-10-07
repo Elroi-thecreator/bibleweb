@@ -3,7 +3,7 @@ type: architecture_standard
 title: PyInstaller Standalone Windows Executable & WinGet Distribution Pipeline
 domain: architecture
 status: approved
-version: 1.0.0
+version: 1.1.0
 authority:
   level: official
   confidence: high
@@ -19,10 +19,10 @@ rule:
   "The Windows desktop application is packaged as a single portable self-contained executable (`HolyBible-Portable.exe`) via PyInstaller and distributed automatically to GitHub Releases and Microsoft WinGet Package Manager (`ElroiTheCreator.HolyBible`)."
 
 do:
-  - "Bundle `bible_verses.db`, `templates/`, and `static/` directories as internal datas via `windows_app/holybible.spec`."
+  - "Bundle `data/bible.sqlite.db`, `data/songs.sqlite.db`, `templates/`, and `static/` directories as internal datas via `windows_app/holybible.spec`."
   - "Include `pywebview`, `uvicorn`, `fastapi`, and all third-party dependencies inside the one-file binary bundle."
   - "Handle `--noconsole` mode safely by wrapping `sys.stdout` and `sys.stderr` with a dummy `SafeStream` and setting `log_config=None` in `uvicorn.Config` to prevent `AttributeError: 'NoneType' object has no attribute 'isatty'`."
-  - "Automate compilation, SHA256 checksum generation, GitHub release creation, and WinGet manifest updates via `.github/workflows/release_windows.yml` on `v*` tag pushes."
+  - "Automate compilation, SHA256 checksum generation, GitHub release creation, and WinGet manifest updates via `.github/workflows/release_windows.yml` on `v*` tag pushes utilizing native Komac CLI automation."
   - "Conform to Microsoft WinGet portable installer schema constraints (single command alias `- holybible`)."
 
 dont:

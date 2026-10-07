@@ -16,9 +16,9 @@ This guide explains how Holy Bible (வேதம்) is published to Microsoft's
 
 ## ⚠️ Important: First-Time Package Submission (v1.0.0)
 
-> `winget-releaser` is an **updater**. Microsoft requires any brand-new package identifier (like `ElroiTheCreator.HolyBible`) to be added to `microsoft/winget-pkgs` for the first time via a standard pull request.
+> Automated CI/CD tools (like `Komac`) are **package updaters**. Microsoft requires any brand-new package identifier (like `ElroiTheCreator.HolyBible`) to be added to `microsoft/winget-pkgs` for the first time via a standard pull request.
 > 
-> **Once this initial v1.0.0 PR is merged into `microsoft/winget-pkgs`, `winget-releaser` and your GitHub Action will handle every future release (v1.0.1, v1.1.0, etc.) 100% automatically!**
+> **Once this initial v1.0.0 PR is merged into `microsoft/winget-pkgs`, your GitHub Actions workflow will handle every future release (v1.0.1, v1.1.0, etc.) 100% automatically via Komac!**
 
 ### How to Submit the Initial v1.0.0 Package (Takes 2 minutes):
 

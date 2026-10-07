@@ -22,6 +22,8 @@ jobs:
   build-and-release:
     name: Build Windows Exe & Publish Release
     runs-on: windows-latest
+    env:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
 
     steps:
       - name: Checkout Source Code
@@ -127,13 +129,19 @@ jobs:
         id: winget_releaser
         if: env.WINGET_TOKEN != ''
         continue-on-error: true
-        uses: vedantmgoyal9/winget-releaser@v2
+        shell: pwsh
         env:
           WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
-        with:
-          identifier: 'ElroiTheCreator.HolyBible'
-          token: ${{ secrets.WINGET_TOKEN }}
-          installer-type: 'portable'
+        run: |
+          Write-Host "==> Downloading Komac CLI for WinGet submission..."
+          $komacUrl = "https://github.com/russellbanks/Komac/releases/download/v2.16.0/komac-2.16.0-x86_64-pc-windows-msvc.exe"
+          $komacExe = "$env:TEMP\komac.exe"
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+          Invoke-WebRequest -Uri $komacUrl -OutFile $komacExe -UseBasicParsing
+
+          Write-Host "==> Attempting WinGet package update via Komac..."
+          $exeUrl = "https://github.com/${{ github.repository }}/releases/download/$env:TAG/HolyBible-Portable.exe"
+          & $komacExe update ElroiTheCreator.HolyBible --version "$env:VERSION" --urls "$exeUrl" --token "$env:WINGET_TOKEN"
 
       - name: WinGet Initial Submission Notice
         if: steps.winget_releaser.outcome == 'failure'
