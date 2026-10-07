@@ -66,7 +66,9 @@ def run_desktop_host_tests():
         ("/songs", "Christian Hymnals Directory"),
         ("/songs?book=aldrin", "Dr. Joseph Aldrin Hymnal"),
         ("/songs?book=benny", "Pastor Benny Joshua Hymnal"),
+        ("/songs?book=johnjebaraj", "Pastor John Jebaraj Hymnal"),
         ("/songs/2560", "Song Lyrics Reader (Pradhana Aasariyarae)"),
+        ("/songs/2607", "Song Lyrics Reader (Ejamaananae Um Saevaikkaai)"),
         ("/static/manifest.json", "Static File Mount"),
     ]
 

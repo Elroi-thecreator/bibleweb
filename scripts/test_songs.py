@@ -89,20 +89,27 @@ async def run_tests():
     assert "Volume 14" in body
     print("[PASS] /songs?book=jebathota&vol=14 rendered 200 HTML with Volume 14 songs.")
 
-    print("\n=== 3b. Testing Contemporary Worship Books (Aldrin & Benny) ===")
+    print("\n=== 3b. Testing Contemporary Worship Books (Aldrin, Benny, John Jebaraj) ===")
     status, headers, body = await call_asgi("/songs", b"book=aldrin")
     assert status == 200
     assert "Dr. Joseph Aldrin" in body or "ஜோசப் அல்ட்ரின்" in body
     aldrin_res = get_songs_list(songbook_code="aldrin")
-    assert aldrin_res["total_count"] >= 11, f"Expected >= 11 songs for aldrin, got {aldrin_res['total_count']}"
+    assert aldrin_res["total_count"] >= 25, f"Expected >= 25 songs for aldrin, got {aldrin_res['total_count']}"
     print(f"[PASS] /songs?book=aldrin rendered 200 HTML with {aldrin_res['total_count']} songs.")
 
     status, headers, body = await call_asgi("/songs", b"book=benny")
     assert status == 200
     assert "Pastor Benny Joshua" in body or "பென்னி ஜோசுவா" in body
     benny_res = get_songs_list(songbook_code="benny")
-    assert benny_res["total_count"] >= 12, f"Expected >= 12 songs for benny, got {benny_res['total_count']}"
+    assert benny_res["total_count"] >= 25, f"Expected >= 25 songs for benny, got {benny_res['total_count']}"
     print(f"[PASS] /songs?book=benny rendered 200 HTML with {benny_res['total_count']} songs.")
+
+    status, headers, body = await call_asgi("/songs", b"book=johnjebaraj")
+    assert status == 200
+    assert "Pastor John Jebaraj" in body or "ஜான் ஜெபராஜ்" in body
+    jj_res = get_songs_list(songbook_code="johnjebaraj")
+    assert jj_res["total_count"] >= 25, f"Expected >= 25 songs for johnjebaraj, got {jj_res['total_count']}"
+    print(f"[PASS] /songs?book=johnjebaraj rendered 200 HTML with {jj_res['total_count']} songs.")
 
     print("\n=== 4. Testing /songs/{id} Reader Page ===")
     song_id = song["id"]
@@ -118,20 +125,27 @@ async def run_tests():
     assert "stanza-block" in body, "Should have liturgical hymnal stanzas"
     print(f"[PASS] /songs/{song_id} rendered 200 HTML with dedicated search, in-volume jump, and liturgical hymnal UI.")
 
-    # Test Aldrin & Benny song reader page renders lines
-    for aid in [2458, 2560]:
+    # Test Aldrin, Benny & John Jebaraj song reader page renders lines
+    for aid in [2458, 2560, 2580]:
         status, headers, body = await call_asgi(f"/songs/{aid}")
         assert status == 200
         assert "lyrics-line-ta" in body, f"Aldrin song {aid} must have rendered Tamil lyric lines"
         assert "lyrics-line-en" in body, f"Aldrin song {aid} must have rendered English lyric lines"
-    print("[PASS] Dr. Joseph Aldrin song pages (including #2560 Pradhana Aasariyarae) rendered full bilingual lyrics lines successfully.")
+    print("[PASS] Dr. Joseph Aldrin song pages (including #2560 Pradhana Aasariyarae, #2580 En Hakkore) rendered full bilingual lyrics lines successfully.")
 
-    for bid in [1986, 2570]:
+    for bid in [1986, 2570, 2594]:
         status, headers, body = await call_asgi(f"/songs/{bid}")
         assert status == 200
         assert "lyrics-line-ta" in body, f"Benny song {bid} must have rendered Tamil lyric lines"
         assert "lyrics-line-en" in body, f"Benny song {bid} must have rendered English lyric lines"
-    print("[PASS] Pastor Benny Joshua song pages (including #2570 Appa Pithavae) rendered full bilingual lyrics lines successfully.")
+    print("[PASS] Pastor Benny Joshua song pages (including #2570 Appa Pithavae, #2594 Seerpaduthuvaar) rendered full bilingual lyrics lines successfully.")
+
+    for jid in [2607, 2618]:
+        status, headers, body = await call_asgi(f"/songs/{jid}")
+        assert status == 200
+        assert "lyrics-line-ta" in body, f"John Jebaraj song {jid} must have rendered Tamil lyric lines"
+        assert "lyrics-line-en" in body, f"John Jebaraj song {jid} must have rendered English lyric lines"
+    print("[PASS] Pastor John Jebaraj song pages (including #2607 Ejamaananae, #2618 Isravelin Thuthigalil) rendered full bilingual lyrics lines successfully.")
 
     print("\n=== 5. Testing /api/songs Search API ===")
     status, headers, body = await call_asgi("/api/songs", b"q=love&book=all")
