@@ -102,43 +102,75 @@ JOHN_JEBARAJ_EXTRA_SONGS = [
         ]
     },
     {
-        "title_ta": "உயர் மலையோ தாழ் பள்ளத்தாக்கோ",
-        "title_en": "Uyar Malaiyo Thaazh Pallathaakko",
+        "title_ta": "உயர் மலையோ சமவெளியோ",
+        "title_en": "Uyar Malaiyo Samaveliyo",
+        "alternate_title": "Uyarmalaiyo Samavelio",
         "author": "Pastor John Jebaraj {பாஸ்டர் ஜான் ஜெபராஜ்}",
-        "youtube_url": "https://www.youtube.com/watch?v=W61PkSzUw2g",
+        "youtube_url": "https://www.youtube.com/watch?v=3h_2tJfz19s",
         "stanzas": [
-            make_stanza("chorus", "பல்லவி (Chorus)", [
-                "உயர் மலையோ தாழ் பள்ளத்தாக்கோ",
-                "உந்தன் கிருபை எனைத் தாங்கும்",
-                "புயல் காற்றோ பெரு வெள்ளமோ",
-                "உந்தன் சமூகம் எனைத் தேற்றும்"
+            make_stanza("stanza", "அனுபல்லவி (Intro)", [
+                "எந்தப்பக்கம் வந்தாலும் நீங்க என் கூடாரம்",
+                "தீங்கு என்னை அணுகாது",
+                "துர்ச்சனப்பிரவாகம் சூழ்ந்திட நின்றாலும்",
+                "துளியும் என்னை நெருங்காது",
+                "சிறு வெள்ளாட்டு கிடை போல் கிடந்தேன்",
+                "உம் நிழலில் என் தஞ்சம் கொண்டேன்"
             ], [
-                "Uyar malaiyo thaazh pallathaakko",
-                "Undhan kirubai enaith thaangum",
-                "Puyal kaatro peru vellamo",
-                "Undhan samoogam enaith thaetrum"
+                "Endhappakkam vandhaalum neenga en koodaaram",
+                "Theengu ennai anugaadhu",
+                "Thurchanappiravaagam soozhndhida nindraalum",
+                "Thuliyum ennai nerungaadhu",
+                "Siru vellaattu kidai pol kidandhaen",
+                "Um nizhalil en thanjam kondaen"
+            ]),
+            make_stanza("chorus", "பல்லவி (Chorus)", [
+                "உயர் மலையோ சமவெளியோ",
+                "இரண்டிலும் நீரே என் தேவன்",
+                "எந்த நிலையிலும் ஆராதித்திடுவேன்",
+                "என் இயேசுவை முழு மனதோடு ஆராதித்திடுவேன்"
+            ], [
+                "Uyar malaiyo samaveliyo",
+                "Irandilum Neerae en Dhevan",
+                "Endha nilaiyilum aaraadhithiduvaen",
+                "En Yesuvai muzhu manadhodu aaraadhithiduvaen"
             ]),
             make_stanza("stanza", "சரணம் 1 (Verse 1)", [
-                "காரிருள் சூழ்ந்திடும் வேளையிலும்",
-                "நீரே என் வெளிச்சமும் இரட்சிப்புமானீர்",
-                "யாருக்கு அஞ்சுவேன் என் வாழ்விலே",
-                "என் ஜீவனின் பெலன் நீர்தானே"
+                "ஏற்றமாய் தோன்றும் பாதைகளிலெல்லாம்",
+                "பின்னிலே தாங்கிடும் உள்ளங்கை அழகு",
+                "சருக்கலாய் தோன்றும் பாதைகளிலெல்லாம்",
+                "பின்னலாய் தாங்கிடும் உம் விரல்கள் அழகு",
+                "நான் எந்த நிலை என்றாலும்",
+                "என்னை விட்டு போகாமல்",
+                "நிற்பதல்லோ உம் அழகு",
+                "விட்டு கொடுக்காத பேரழகு"
             ], [
-                "Kaarirul soozhndhidum vaelaiyilum",
-                "Neerae en velichamum iratchippumaaneer",
-                "Yaarukku anjuvaen en vaazhvilae",
-                "En jeevanin belan Neerdhaanae"
+                "Eattramaai thondrum paadhaigalilellaam",
+                "Pinnilae thaangidum ullangai azhagu",
+                "Sarukkalaai thondrum paadhaigalilellaam",
+                "Pinnalaai thaangidum um viralgai azhagu",
+                "Naan endha nilai endraalum",
+                "Ennai vittu pogaamal",
+                "Nirpadhallo um azhagu",
+                "Vittu kodukkaadha paerazhagu"
             ]),
             make_stanza("stanza", "சரணம் 2 (Verse 2)", [
-                "மரண இருளின் பள்ளத்தாக்கில் நடந்தாலும்",
-                "பொல்லாப்புக்கு நான் பயப்படேனே",
-                "உம் கோலும் உம் தடியும் தேற்றிடுதே",
-                "என்னை பத்திரமாய் காத்திடுதே"
+                "உலகத்தின் கண்ணில் பெரும்பான்மை என்றால்",
+                "அதிகம்பேர் நிற்பதே அவர் சொல்லும் கணக்கு",
+                "அப்பா உம் கண்ணில் தனிமனிதனாயினும்",
+                "நீர் துணை நிற்பதால் பெரும்பான்மை எனக்கு",
+                "அட ஊர் என்ன சொன்னாலும்",
+                "பார் எதிர் நின்னாலும்",
+                "பிள்ளையல்லோ நான் உமக்கு",
+                "நிகர் இல்லாத தகப்பனுக்கு"
             ], [
-                "Marana irulin pallathaakkil nadandhaalum",
-                "Pollaappukku naan bayappadaenae",
-                "Um kolum um thadiyum thaetridudhae",
-                "Ennai paththiramaai kaathidudhae"
+                "Ulagaththin kannil perumbaanmai endraal",
+                "Adhigambaer nirpadhae avar sollum kanakku",
+                "Appa um kannil thanimanidhanaayinum",
+                "Neer thunai nirpadhaal perumbaanmai enakku",
+                "Ada oor enna sonnaalum",
+                "Paar edhir ninnaalum",
+                "Pillaiyallo naan umakku",
+                "Nigar illaadha thagappanukku"
             ])
         ]
     },

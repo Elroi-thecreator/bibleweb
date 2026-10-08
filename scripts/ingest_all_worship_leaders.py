@@ -204,7 +204,7 @@ def run_ingestion():
         """, (
             cur_max_id, "johnjebaraj", "பாஸ்டர் ஜான் ஜெபராஜ்", "Pastor John Jebaraj",
             1, "Levi Volumes & Worship", jj_song_num, s["title_ta"], s["title_en"],
-            "", lyrics_ta, lyrics_en, bilingual_json,
+            s.get("alternate_title", ""), lyrics_ta, lyrics_en, bilingual_json,
             s["author"], s["youtube_url"]
         ))
         print(f"  [ADDED #{jj_song_num}] ID {cur_max_id}: {s['title_en']} | {s['title_ta']} | YT: {s['youtube_url']}")
