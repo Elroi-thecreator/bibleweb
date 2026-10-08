@@ -310,7 +310,7 @@ JOHN_JEBARAJ_EXTRA_SONGS = [
         "title_ta": "நீர் சொன்னால் போதும்",
         "title_en": "Neer Sonnal Podhum",
         "author": "Pastor John Jebaraj {பாஸ்டர் ஜான் ஜெபராஜ்}",
-        "youtube_url": "https://www.youtube.com/watch?v=C5cTyd5vLh8",
+        "youtube_url": "https://www.youtube.com/watch?v=iwuzWtZAXsE",
         "stanzas": [
             make_stanza("chorus", "பல்லவி (Chorus)", [
                 "நீர் சொன்னால் போதும் செய்வேன்",
@@ -348,84 +348,84 @@ JOHN_JEBARAJ_EXTRA_SONGS = [
         ]
     },
     {
-        "title_ta": "அப்பா உங்க மடியில",
-        "title_en": "Appa Unga Madiyila",
+        "title_ta": "ஓசே பாலா (அதிசயம் செய்பவரே)",
+        "title_en": "Oseh Pele",
         "author": "Pastor John Jebaraj {பாஸ்டர் ஜான் ஜெபராஜ்}",
-        "youtube_url": "https://www.youtube.com/watch?v=s15RNPprj8A",
+        "youtube_url": "https://www.youtube.com/watch?v=sYv_lpuQKQk",
         "stanzas": [
             make_stanza("chorus", "பல்லவி (Chorus)", [
-                "அப்பா உங்க மடியில நான் படுத்துக் கொள்ள வேண்டும்",
-                "அன்போடு என்னை தாலாட்ட வேண்டும்",
-                "உலக கவலைகள் மறந்து போக வேண்டும்",
-                "உம் மார்பின் அணைப்பில் வாழ்ந்திட வேண்டும்"
+                "ஓசே பாலா ஓசே பாலா",
+                "அதிசயம் செய்கின்றவரே",
+                "வார்த்தையினால் நீர் சொன்னதெல்லாம்",
+                "செய்து முடிப்பவரே"
             ], [
-                "Appa unga madiyila naan paduthuk kolla vaendum",
-                "Anbodu ennai thaalaatta vaendum",
-                "Ulaga kavalaigal marandhu poga vaendum",
-                "Um maarbin anaippil vaazhndhida vaendum"
+                "Oseh pele Oseh pele",
+                "Adhisayam seigindravarae",
+                "Vaarthaiyinaal neer sonnadhellaam",
+                "Seidhu mudippavarae"
             ]),
             make_stanza("stanza", "சரணம் 1 (Verse 1)", [
-                "தாயைப் போல தேற்றிடும் அன்பானவரே",
-                "தந்தையைப் போல தோளில் சுமப்பவரே",
-                "என் உள்ளத்தின் பாரத்தை நீக்கி விட்டீர்",
-                "ஆறுதலின் தைலமாய் அபிஷேகித்தீர்"
+                "பார்க்கின்ற கண்கள் வியந்திடவே",
+                "ஆச்சரியங்கள் செய்திடுவீர்",
+                "நம்பின மனிதர் திகைத்திடவே",
+                "நன்மைகளை நீர் தந்திடுவீர்"
             ], [
-                "Thaayaip pola thaetridum anbaanavarae",
-                "Thandhaiyaip pola tholil sumappavarae",
-                "En ullaththin baarathai neekki vitteer",
-                "Aarudhalin thailamaai abhishegitheer"
+                "Paarkkindra kangal viyandhidavae",
+                "Aachariyangal seithiduveer",
+                "Nambina manidhar thigaithidavae",
+                "Nanmaigalai neer thandhiduveer"
             ]),
             make_stanza("stanza", "சரணம் 2 (Verse 2)", [
-                "பிள்ளையாய் என்னை ஏற்றுக்கொண்டீரே",
-                "அப்பா பிதாவே என்று அழைக்கச் செய்தீரே",
-                "உம் அன்பை விவரிக்க வார்த்தையில்லையே",
-                "என்றென்றும் உம் தோழில் சாய்ந்திருப்பேன்"
+                "வழிகள் இல்லாத வனாந்தரத்திலே",
+                "புது வழிகளை திறப்பவரே",
+                "வறண்ட நிலத்தில் ஆறுகளை",
+                "உண்டாக்கும் வல்லவரே"
             ], [
-                "Pillaiyaai ennai aettrukkondeerae",
-                "Appa Pithaavae endru azhaikkach cheidheerae",
-                "Um anbai vivarikka vaarthaiyillaiyae",
-                "Endrendrum um thozhil saayndhiruppaen"
+                "Vazhigal illaadha vanaandharathilae",
+                "Pudhu vazhigalai thirappavarae",
+                "Varanda nilathil aarugalai",
+                "Undaakkum vallavarae"
             ])
         ]
     },
     {
-        "title_ta": "நீர் மாத்திரம் போதும் எனக்கு",
-        "title_en": "Neer Mathram Podhum",
+        "title_ta": "ஒருவனாய் இருக்கையில் அழைத்தீரையா",
+        "title_en": "Oruvanaai Irukkayil",
         "author": "Pastor John Jebaraj {பாஸ்டர் ஜான் ஜெபராஜ்}",
-        "youtube_url": "https://www.youtube.com/watch?v=hI20lS4Xi_E",
+        "youtube_url": "https://www.youtube.com/watch?v=v8ABFQvB4CU",
         "stanzas": [
             make_stanza("chorus", "பல்லவி (Chorus)", [
-                "நீர் மாத்திரம் போதும் எனக்கு இயேசுவே",
-                "வேறெதுவும் வேண்டாம் இவ்வுலகினில்",
-                "நீரே என் செல்வம் நீரே என் ஆஸ்தி",
-                "நீரே என் நித்திய பங்கானவரே"
+                "ஒருவனாய் இருக்கையில் அழைத்தீரையா",
+                "திரளான கூட்டமாய் மாற்றினீரே",
+                "என் இயேசையா என் தகப்பனே",
+                "உம் கிருபை என்னை உயர்த்தியதே"
             ], [
-                "Neer maaththiram podhum enakku Yesuvae",
-                "Vaeredhuvum vaendaam ivvulaginil",
-                "Neerae en selvam Neerae en aasthi",
-                "Neerae en nithiya pangaanaavarae"
+                "Oruvanaai irukkayil azhaitheeraiyaa",
+                "Thiralaana koottamaai maatrineerae",
+                "En Yesaiyaa en thagappanae",
+                "Um kirubai ennai uyarthiyadhae"
             ]),
             make_stanza("stanza", "சரணம் 1 (Verse 1)", [
-                "பொன்னும் வெள்ளியும் மறைந்து போகும்",
-                "மண்ணின் வாழ்வும் அழிந்து போகும்",
-                "மாறாத உம் பிரசன்னம் ஒன்றே போதும்",
-                "என் காலமெல்லாம் வழிநடத்தும்"
+                "ஒன்றுமில்லா என்னை கண்டீரையா",
+                "உயிரூட்டி என்னை நிறுத்தினீரே",
+                "தனிமையில் கண்ணீர் வடித்தபோது",
+                "தோளோடு அணைத்த என் நேசரே"
             ], [
-                "Ponnum velliyum maraindhu pogum",
-                "Mannin vaazhvum azhindhu pogum",
-                "Maaraadha um prasannam ondrae podhum",
-                "En kaalamellaam vazhinadathum"
+                "Ondrumillaa ennai kandeeraiyaa",
+                "Uyirootti ennai niruthineerae",
+                "Thanimaiyil kanneer vadithapodhu",
+                "Tholodu anaitha en Naesarae"
             ]),
             make_stanza("stanza", "சரணம் 2 (Verse 2)", [
-                "பரிசுத்தரே பரம பிதாவே",
-                "உம்மோடு நடப்பதே என் பாக்கியமே",
-                "உம் அன்பின் மார்பில் சாய்ந்து கொள்வேன்",
-                "ஆயுள் முடியும் வரை ஆராதிப்பேன்"
+                "ஆபிரகாமை ஆசீர்வதித்தது போல",
+                "ஆயிரம் மடங்காய் பெருக்கினீரே",
+                "உம் வாக்குத்தத்தம் உண்மை உள்ளது",
+                "உம் மாறா கிருபை பெரியது"
             ], [
-                "Parisuththarae parama Pithaavae",
-                "Ummodu nadappadhae en baakkiyamae",
-                "Um anbin maarbil saayndhu kolvaen",
-                "Aayul mudiyum varai aaraadhippaen"
+                "Aabiragaamai aaseervadhithadhu pola",
+                "Aayiram madangaai perukkineerae",
+                "Um vaakkuthatham unmai ulladhu",
+                "Um maaraa kirubai periyadhu"
             ])
         ]
     },
@@ -512,84 +512,84 @@ JOHN_JEBARAJ_EXTRA_SONGS = [
         ]
     },
     {
-        "title_ta": "என்னை வல்லடிக்கு நீங்கலாக்கி",
-        "title_en": "Ennai Valladikku",
+        "title_ta": "அழகே என் இயேசுவே",
+        "title_en": "Azhagae",
         "author": "Pastor John Jebaraj {பாஸ்டர் ஜான் ஜெபராஜ்}",
-        "youtube_url": "https://www.youtube.com/watch?v=3fb3srjzrFs",
+        "youtube_url": "https://www.youtube.com/watch?v=1Uh2qBiiObA",
         "stanzas": [
             make_stanza("chorus", "பல்லவி (Chorus)", [
-                "என்னை வல்லடிக்கு நீங்கலாக்கி",
-                "மீட்டுக் கொண்ட என் இயேசையா",
-                "பொல்லாத சத்துருவின் வலைக்கு தப்புவித்து",
-                "உயர்ந்த அடைக்கலத்தில் வைத்தீரையா"
+                "அழகே என் இயேசுவே",
+                "அளவில்லா அன்பே",
+                "உம்மைப் போல அழகு இவ்வுலகில் இல்லையே",
+                "உம்மைப் போல அன்பு எங்குமே காணோமே"
             ], [
-                "Ennai valladikku neengalaakki",
-                "Meettuk konda en Yesaiyaa",
-                "Pollaadha sathuruvin valaikku thappuvithu",
-                "Uyarndha adaikkalathil vaiththeeraiyaa"
+                "Azhagae en Yesuvae",
+                "Alavillaa anbae",
+                "Ummai pola azhagu ivvulagil illaiyae",
+                "Ummai pola anbu engumae kaanomae"
             ]),
             make_stanza("stanza", "சரணம் 1 (Verse 1)", [
-                "வேடனின் கண்ணிக்கும் பாழாக்கும் கொள்ளைநோய்க்கும்",
-                "தப்புவித்து என்னை மீட்டெடுத்தீர்",
-                "உமது சிறகுகளால் என்னை மூடி",
-                "உமது சத்தியத்தினால் கேடகமானீர்"
+                "பதினாயிரங்களில் சிறந்தவரே",
+                "சாரோனின் ரோஜா நீர்தானையா",
+                "பள்ளத்தாக்கின் லீலி புஷ்பமே",
+                "என் நேசரே உம்மைப் பாடுவேன்"
             ], [
-                "Vaedanin kannikkum paazhaakkum kollainoikkum",
-                "Thappuvithu ennai meetteduththeer",
-                "Umadhu siragugalaal ennai moodi",
-                "Umadhu sathiyathinaal kaedagamaaneer"
+                "Padhinaayirangalil sirandhavarae",
+                "Saaronin roja Neerdhaanaiyaa",
+                "Pallathaakkin leeli pushpamae",
+                "En Naesarae ummaip paaduvaen"
             ]),
             make_stanza("stanza", "சரணம் 2 (Verse 2)", [
-                "ஆயிரம் பேர் என் பக்கத்தில் விழுந்தாலும்",
-                "பதினாயிரம் பேர் என் வலப்பக்கம் வீழ்ந்தாலும்",
-                "என்னை அணுகாமல் காத்தீரையா",
-                "உம் அன்பின் கிருபையை பாடிடுவேன்"
+                "கல்வாரி மேட்டினில் என் அழகே",
+                "காயங்கள் எனக்காய் சுமந்தீரே",
+                "அழகற்றுப் போனீர் என் அழகுக்காய்",
+                "உம்மை என்றென்றும் துதித்திடுவேன்"
             ], [
-                "Aayiram paer en pakkathil vizhundhaalum",
-                "Padhinaayiram paer en valappakkam veezhndhaalum",
-                "Ennai anugaamal kaaththeeraiyaa",
-                "Um anbin kirubaiyai paadiduvaen"
+                "Kalvaari maettinil en azhagae",
+                "Kaayangal enakkaai sumandheerae",
+                "Azhagattrup poneer en azhagukkaai",
+                "Ummai endrendrum thudhithiduvaen"
             ])
         ]
     },
     {
-        "title_ta": "நன்றி என்று சொல்வேன் நாதா",
-        "title_en": "Nandri Endru Solvaen",
+        "title_ta": "துதி உமக்கே கனம் உமக்கே",
+        "title_en": "Thuthi Umakkae",
         "author": "Pastor John Jebaraj {பாஸ்டர் ஜான் ஜெபராஜ்}",
-        "youtube_url": "https://www.youtube.com/watch?v=s8PAeG_1Bg4",
+        "youtube_url": "https://www.youtube.com/watch?v=eHDoAzvrtwU",
         "stanzas": [
             make_stanza("chorus", "பல்லவி (Chorus)", [
-                "நன்றி என்று சொல்வேன் நாதா",
-                "கோடி நன்றி சொல்வேன் ஐயா",
-                "நீர் செய்த நன்மைகள் எண்ணிப் பார்த்து",
-                "ஓயாமல் துதித்துப் பாடுவேன்"
+                "துதி உமக்கே கனம் உமக்கே",
+                "புகழ்ச்சி உமக்கே என் ராஜாவே",
+                "ஆராதனை உமக்கே அல்லேலூயா",
+                "என்றென்றும் உமக்கே ஆராதனை"
             ], [
-                "Nandri endru solvaen Naadhaa",
-                "Kodi nandri solvaen aiyaa",
-                "Neer seidha nanmaigal ennip paarthu",
-                "Oyaamal thudhithup paaduvaen"
+                "Thuthi Umakkae ganam Umakkae",
+                "Pugazhchi Umakkae en Raajaavae",
+                "Aaraadhanai Umakkae Hallelujah",
+                "Endrendrum Umakkae aaraadhanai"
             ]),
             make_stanza("stanza", "சரணம் 1 (Verse 1)", [
-                "கடந்த கால புயல்களில் என்னை",
-                "கண்மணி போல் பாதுகாத்தீரே",
-                "வருங்கால பயங்களை நீக்கி விட்டு",
-                "சமாதான தேவனாய் கூட நின்றீர்"
+                "ஜீவனுள்ள தேவன் நீரே",
+                "ஜீவன் தந்து மீட்டீரே",
+                "மரணத்தை ஜெயித்த ஜெயவேந்தரே",
+                "மகிமையின் ராஜா நீர்தானே"
             ], [
-                "Kadandha kaala puyalgalil ennai",
-                "Kanmani pol paadhukaaththeerae",
-                "Varungaala bayangalai neekki vittu",
-                "Samaadhaana Dhevanaai kooda nindreer"
+                "Jeevanulla Dhevan Neerae",
+                "Jeevan thandhu meetteerae",
+                "Maranathai jeyitha jeyavaendharae",
+                "Magimaiyin Raajaa Neerdhaanae"
             ]),
             make_stanza("stanza", "சரணம் 2 (Verse 2)", [
-                "என்னைத் தாங்கும் தகப்பனே நீரே",
-                "என்னைத் தேற்றும் தாயும் நீரே",
-                "எல்லா துதியும் உமக்கே செலுத்துகின்றேன்",
-                "இயேசு ராஜா உம்மை உயர்த்துகின்றேன்"
+                "இரவும் பகலும் ஓயாமல்",
+                "தூதர்கள் போற்றும் தூயவரே",
+                "பூமியின் எல்லைகள் யாவும் உம்மை",
+                "பணிந்து போற்றி வணங்கிடுதே"
             ], [
-                "Ennaith thaangum thagappanae Neerae",
-                "Ennaith thaetrum thaayum Neerae",
-                "Ellaa thudhiyum Umakkae seluthugindroam",
-                "Yesu Raajaa Ummai uyarthugindroam"
+                "Iravum pagalum oyaamal",
+                "Thoodhargal potrum thooyavarae",
+                "Boomiyin ellaigal yaavum Ummai",
+                "Panindhu potri vanangidudhae"
             ])
         ]
     }

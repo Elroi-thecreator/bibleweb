@@ -140,12 +140,12 @@ async def run_tests():
         assert "lyrics-line-en" in body, f"Benny song {bid} must have rendered English lyric lines"
     print("[PASS] Pastor Benny Joshua song pages (including #2570 Appa Pithavae, #2594 Seerpaduthuvaar) rendered full bilingual lyrics lines successfully.")
 
-    for jid in [2607, 2618]:
+    for jid in [2607, 2618, 2626, 2627, 2630, 2631]:
         status, headers, body = await call_asgi(f"/songs/{jid}")
         assert status == 200
         assert "lyrics-line-ta" in body, f"John Jebaraj song {jid} must have rendered Tamil lyric lines"
         assert "lyrics-line-en" in body, f"John Jebaraj song {jid} must have rendered English lyric lines"
-    print("[PASS] Pastor John Jebaraj song pages (including #2607 Ejamaananae, #2618 Isravelin Thuthigalil) rendered full bilingual lyrics lines successfully.")
+    print("[PASS] Pastor John Jebaraj song pages (including #2607 Ejamaananae, #2618 Isravelin, #2626 Oseh Pele, #2627 Oruvanaai Irukkayil, #2630 Azhagae, #2631 Thuthi Umakkae) rendered full bilingual lyrics lines successfully.")
 
     print("\n=== 5. Testing /api/songs Search API ===")
     status, headers, body = await call_asgi("/api/songs", b"q=love&book=all")

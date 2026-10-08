@@ -136,26 +136,25 @@ def run_ingestion():
 
     yt_map = {
         "Ejamaananae Um Saevaikkaai": "https://www.youtube.com/watch?v=qNorNSyVkhs",
-        "Ithuvarai Nadathi": "https://www.youtube.com/watch?v=YsLRZkbgjrk",
+        "Ithuvarai Nadathi": "https://www.youtube.com/watch?v=XZgU7F2xuUI",
         "Kartharai Dheivamaaga Kondoar": "https://www.youtube.com/watch?v=c3eFQs7L_9w",
-        "Nallavarae En Yaesuvae": "https://www.youtube.com/watch?v=ZFzr_FBbFYQ",
-        "Nandri Solli Ummai Paada Vanthoam": "https://www.youtube.com/watch?v=rOQO1OQgl7U",
-        "Oruvarum Saeraa Oliyinil": "https://www.youtube.com/watch?v=da1wuPrWoTE",
+        "Nallavarae En Yaesuvae": "https://www.youtube.com/watch?v=TVsG1cJFBcI",
+        "Nandri Solli Ummai Paada Vanthoam": "https://www.youtube.com/watch?v=SsOEH7zVtpE",
+        "Oruvarum Saeraa Oliyinil": "https://www.youtube.com/watch?v=o399XkCRaL0",
         "Parisutharae Enggal Yaesuthaevaa": "https://www.youtube.com/watch?v=8gBC3wA0-ig",
         "Penthekosthae Anupavam Thaarumae": "https://www.youtube.com/watch?v=ZxqjPxbPEBI",
         "Puthu Vaazhvu Thanthavarae": "https://www.youtube.com/watch?v=JEm8psN08y4",
         "Thaevanae Ennai Tharukiraen": "https://www.youtube.com/watch?v=JcJh4AaL2ik",
-        "Yaehoavaa Yeerae Neer En Thaevanaam": "https://www.youtube.com/watch?v=EQXCg_A2IF0",
+        "Yaehoavaa Yeerae Neer En Thaevanaam": "https://www.youtube.com/watch?v=D_IewcoGeEA",
     }
+
+    # Reset John Jebaraj collection to guarantee 100% clean, verified tracks
+    c.execute("DELETE FROM songs WHERE songbook_code = 'johnjebaraj'")
+    conn.commit()
+    cur_max_id = c.execute("SELECT max(id) FROM songs").fetchone()[0] or 2606
 
     jj_song_num = 1
     for s in jj_base_songs:
-        exists = c.execute("SELECT id FROM songs WHERE songbook_code = 'johnjebaraj' AND title_en = ?", (s["title_en"],)).fetchone()
-        if exists:
-            print(f"  [SKIPPED] JJ song '{s['title_en']}' already exists (ID {exists[0]})")
-            jj_song_num += 1
-            continue
-
         cur_max_id += 1
         stanzas = s["stanzas"]
         for st in stanzas:
@@ -168,7 +167,7 @@ def run_ingestion():
         lyrics_ta = "\n\n".join(st["ta"] for st in stanzas)
         lyrics_en = "\n\n".join(st["en"] for st in stanzas)
         bilingual_json = json.dumps(stanzas, ensure_ascii=False)
-        yt_url = yt_map.get(s["title_en"]) or s.get("youtube_url") or "https://www.youtube.com/watch?v=da1wuPrWoTE"
+        yt_url = yt_map.get(s["title_en"]) or s.get("youtube_url") or "https://www.youtube.com/watch?v=qNorNSyVkhs"
 
         c.execute("""
             INSERT INTO songs (
@@ -190,12 +189,6 @@ def run_ingestion():
 
     # Part B: The 14 extra contemporary Levi worship hits
     for s in JOHN_JEBARAJ_EXTRA_SONGS:
-        exists = c.execute("SELECT id FROM songs WHERE songbook_code = 'johnjebaraj' AND title_en = ?", (s["title_en"],)).fetchone()
-        if exists:
-            print(f"  [SKIPPED] JJ song '{s['title_en']}' already exists (ID {exists[0]})")
-            jj_song_num += 1
-            continue
-
         cur_max_id += 1
         lyrics_ta = "\n\n".join(st["ta"] for st in s["stanzas"])
         lyrics_en = "\n\n".join(st["en"] for st in s["stanzas"])
