@@ -138,8 +138,13 @@ jobs:
           $branchName = "add-ElroiTheCreator.HolyBible-$env:VERSION"
           $forkDir = "$env:TEMP\winget-pkgs-fork"
           if (Test-Path $forkDir) { Remove-Item -Recurse -Force $forkDir }
-          git clone --depth 1 --branch $branchName "https://x-access-token:$($env:WINGET_TOKEN)@github.com/Elroi-thecreator/winget-pkgs.git" $forkDir
+          git clone --filter=blob:none --no-checkout --depth 1 --branch $branchName "https://x-access-token:$($env:WINGET_TOKEN)@github.com/Elroi-thecreator/winget-pkgs.git" $forkDir
           if ($LASTEXITCODE -eq 0 -and (Test-Path $forkDir)) {
+            Push-Location $forkDir
+            git sparse-checkout init --cone
+            git sparse-checkout set "manifests/e/ElroiTheCreator/HolyBible/$env:VERSION"
+            git checkout $branchName
+            Pop-Location
             $destDir = Join-Path $forkDir "manifests\e\ElroiTheCreator\HolyBible\$env:VERSION"
             New-Item -ItemType Directory -Force -Path $destDir | Out-Null
             Copy-Item -Force "windows_app/dist/winget_manifests/manifests/e/ElroiTheCreator/HolyBible/$env:VERSION/*.yaml" $destDir
