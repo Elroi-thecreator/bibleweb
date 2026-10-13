@@ -69,6 +69,7 @@ def run_desktop_host_tests():
         ("/songs?book=johnjebaraj", "Pastor John Jebaraj Hymnal"),
         ("/songs/2560", "Song Lyrics Reader (Pradhana Aasariyarae)"),
         ("/songs/2607", "Song Lyrics Reader (Ejamaananae Um Saevaikkaai)"),
+        ("/privacy", "Privacy Policy & Scripture Licenses Page"),
         ("/static/manifest.json", "Static File Mount"),
     ]
 

@@ -640,6 +640,28 @@ async function handleSignOut() {
 }
 window.handleSignOut = handleSignOut;
 
+async function deleteCloudAccountData() {
+    if (!window.sbClient || !currentAuthUser) {
+        showToast("No active cloud account signed in.");
+        return;
+    }
+    if (!confirm("Permanently delete all your cloud-synced Bible data (bookmarks, reading history, highlights, custom plans, and push reminders) from Supabase and sign out?")) {
+        return;
+    }
+    try {
+        await window.sbClient.from('user_bible_sync').delete().eq('user_id', currentAuthUser.id);
+        await window.sbClient.from('user_push_subscriptions').delete().eq('user_id', currentAuthUser.id);
+        await window.sbClient.auth.signOut();
+        currentAuthUser = null;
+        updateSupabaseAuthUI();
+        showToast("Cloud data deleted & signed out ✓");
+    } catch (err) {
+        console.error("Error deleting cloud data:", err);
+        alert("Failed to delete cloud data: " + err.message);
+    }
+}
+window.deleteCloudAccountData = deleteCloudAccountData;
+
 function mergeSyncData(local, remote) {
     const mergedChapters = { ...(remote.read_chapters || {}), ...(local.read_chapters || {}) };
 

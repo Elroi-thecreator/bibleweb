@@ -203,6 +203,11 @@
     <footer class="border-t border-stone-200 dark:border-stone-800 py-6 pb-20 sm:pb-6 bg-stone-100 dark:bg-stone-950 text-center text-[11px] text-stone-500">
         <p class="font-cinzel tracking-widest text-stone-700 dark:text-stone-400">SOLI DEO GLORIA</p>
         <p class="mt-0.5 font-tamil notranslate" translate="no">பரிசுத்த வேதாகமம் • Bilingual Scripture</p>
+        <p class="mt-1.5 space-x-2">
+            <a href="/privacy" class="text-amber-800 dark:text-amber-400 hover:underline font-medium">Privacy Policy &amp; Scripture Licenses</a>
+            <span>•</span>
+            <span>Tamil Old Version (1871 PD) • Tamil IRV (CC BY-SA 4.0) • KJV &amp; Douay-Rheims (PD)</span>
+        </p>
     </footer>
 
     <!-- Settings Popup Modal -->
@@ -235,10 +240,13 @@
                         <button onclick="syncWithSupabase()" class="flex-1 py-1.5 bg-white dark:bg-stone-700 rounded-lg text-xs font-semibold border border-stone-300 dark:border-stone-600 hover:border-amber-600 cursor-pointer">
                             Sync Now 🔄
                         </button>
-                        <button onclick="handleSignOut()" class="py-1.5 px-3 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 rounded-lg text-xs font-semibold hover:bg-rose-100 cursor-pointer">
+                        <button onclick="handleSignOut()" class="py-1.5 px-3 bg-stone-200 text-stone-700 dark:bg-stone-700 dark:text-stone-200 rounded-lg text-xs font-semibold hover:bg-stone-300 cursor-pointer">
                             Sign Out
                         </button>
                     </div>
+                    <button onclick="deleteCloudAccountData()" class="w-full py-1.5 px-3 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 rounded-lg text-[11px] font-semibold hover:bg-rose-100 cursor-pointer">
+                        🗑️ Delete Cloud Synced Data
+                    </button>
                 </div>
 
                 <div id="settings-logged-out-view" class="pt-1">
@@ -281,14 +289,14 @@
                             data-canon-val="protestant">
                         <span class="text-base mb-1">📖</span>
                         <span class="font-bold text-xs">Protestant</span>
-                        <span class="text-[10px] text-stone-400">66 Books • BSI</span>
+                        <span class="text-[10px] text-stone-400">66 Books • 1871 / KJV</span>
                     </button>
                     <button type="button" onclick="setBibleCanon('catholic')" 
                             class="canon-opt-btn flex flex-col items-center justify-center p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-amber-600 text-stone-800 dark:text-stone-200 transition cursor-pointer text-xs" 
                             data-canon-val="catholic">
                         <span class="text-base mb-1">✝️</span>
                         <span class="font-bold text-xs">Catholic</span>
-                        <span class="text-[10px] text-stone-400">73 Books • POC</span>
+                        <span class="text-[10px] text-stone-400">73 Books • IRV / DRB</span>
                     </button>
                 </div>
             </div>

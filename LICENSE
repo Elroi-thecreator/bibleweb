@@ -1,4 +1,4 @@
-MIT License
+MIT License (Application Source Code)
 
 Copyright (c) 2026 Elroi-thecreator
 
@@ -19,3 +19,53 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+================================================================================
+BUNDLED SCRIPTURE CORPORA — LICENSES & REQUIRED ATTRIBUTION NOTICES
+================================================================================
+
+All scripture texts bundled in `data/bible.sqlite.db` are either in the
+worldwide Public Domain or licensed under Creative Commons Attribution-ShareAlike
+4.0 International (CC BY-SA 4.0), which explicitly permits redistribution in
+any format:
+
+1. Tamil Indian Revised Version (IRV) — தமிழ் (Books 1–66, `verses.text_ta_poc`)
+   - Title: இண்டியன் ரிவைஸ்டு வெர்ஸன் (IRV) - தமிழ்
+     (The Indian Revised Version Holy Bible in the Tamil language of India)
+   - Copyright: Copyright © 2017, 2019 Bridge Connectivity Solutions Pvt. Ltd.
+     (https://bridgeconn.com/)
+   - Source: https://ebible.org/Scriptures/tam2017_vpl.zip (and https://vachanonline.com/)
+   - License: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+     (https://creativecommons.org/licenses/by-sa/4.0/)
+   - Attribution & Redistribution Notice:
+     This translation is made available under the terms of the Creative Commons
+     Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0). You have
+     permission to share and redistribute this Bible translation in any format.
+     The original work by Bridge Connectivity Solutions Pvt. Ltd. is available at
+     https://ebible.org/tam2017/ and https://bridgeconn.com/. No endorsement by
+     the original licensor is implied. Any redistribution of this corpus remains
+     governed by CC BY-SA 4.0.
+
+2. Tamil Old Version (1871 Rev. Henry Bower Translation) (`verses.text_ta`)
+   - Title: பரிசுத்த வேதாகமம் (Tamil Old Version, 1871)
+   - Translator / Publisher: Translated by Rev. Henry Bower (d. 1885) and committee
+     for the Madras Auxiliary Bible Society (published 1871).
+   - License: Public Domain worldwide (published 1871; author died 1885; copyright
+     term expired globally including under Section 52 of the Indian Copyright Act
+     and US 17 U.S.C.).
+
+3. King James Version (KJV, 1611 / 1769 Blayney Revision) (`verses.text_en`)
+   - Title: Authorized King James Version of the Holy Bible (1769 Oxford Standard Text)
+   - Source: https://ebible.org/Scriptures/eng-kjv2006_vpl.zip
+   - License: Public Domain worldwide outside UK Crown Letters Patent (digital
+     redistribution dedicated to the Public Domain).
+
+4. Douay-Rheims Bible (1582–1609 / 1752 Challoner Revision — 73 Books) (`verses.text_en_drb`)
+   - Title: The Holy Bible, Translated from the Latin Vulgate (Douay-Rheims,
+     revised by Bishop Richard Challoner, 1749–1752)
+   - Coverage: All 73 Catholic Canon Books, including the 7 Deuterocanonical
+     books (Tobit, Judith, Wisdom of Solomon, Sirach/Ecclesiasticus, Baruch,
+     1 Maccabees, and 2 Maccabees).
+   - Source: https://ebible.org/Scriptures/engDRA_vpl.zip
+   - License: Public Domain worldwide (published 1752; Bishop Richard Challoner
+     died 1781).

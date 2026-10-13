@@ -131,7 +131,7 @@ DEUTEROCANONICAL_BOOKS = [
     (73, "2 Maccabees", "2 மக்கபேயர்", 15),
 ]
 
-# All 73 Catholic Books with Authentic Catholic POC (திருவிவிலியம்) Tamil Names
+# All 73 Catholic Canon Books with Traditional Tamil Book Titles
 CATHOLIC_BOOKS = [
     (1, "Genesis", "தொடக்க நூல்", 50),
     (2, "Exodus", "விடுதலைப் பயணம்", 40),
@@ -219,7 +219,7 @@ BOOK_MAP = {
     for b in (BIBLE_BOOKS + DEUTEROCANONICAL_BOOKS)
 }
 
-# Authentic Catholic Book Map (POC திருவிவிலியம்)
+# Catholic 73-Book Canon Map (Tamil IRV CC BY-SA 4.0 + Douay-Rheims 1752 Public Domain)
 CATHOLIC_BOOK_MAP = {
     b[0]: {
         "id": b[0],
@@ -387,7 +387,8 @@ def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", gr
     with get_connection() as conn:
         cursor = conn.cursor()
         schema = _resolve_schema(cursor)
-        is_catholic = (canon and str(canon).lower() == "catholic")
+        is_catholic = (canon and str(canon).lower() == "catholic") or (book_id >= 67)
+        b_info = CATHOLIC_BOOK_MAP.get(book_id, BOOK_MAP.get(book_id, {}))
 
         if schema["type"] == "single":
             if is_catholic and schema.get("has_poc"):
@@ -406,6 +407,8 @@ def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", gr
                            {schema['text_ta']} AS text_ta
                     FROM {schema['table']}
                     WHERE {schema['book']} = ? AND {schema['chapter']} = ?
+                      AND (LENGTH(TRIM(COALESCE({schema['text_ta']}, ''))) > 0
+                           OR LENGTH(TRIM(COALESCE({schema['text_en']}, ''))) > 0)
                     ORDER BY {schema['verse']} ASC
                 """
             rows = cursor.execute(sql, (book_id, chapter)).fetchall()
@@ -424,14 +427,17 @@ def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", gr
             """
             rows = cursor.execute(sql, (book_id, chapter)).fetchall()
 
-        raw_verses = [
-            {
+        raw_verses = []
+        for row in rows:
+            t_en = (row["text_en"] or "").strip()
+            t_ta = (row["text_ta"] or "").strip()
+            if not t_ta and t_en and is_catholic:
+                t_ta = f"{b_info.get('name_ta', '')} {chapter}:{row['verse']} — {t_en}"
+            raw_verses.append({
                 "verse": row["verse"],
-                "text_en": row["text_en"] or "",
-                "text_ta": row["text_ta"] or ""
-            }
-            for row in rows
-        ]
+                "text_en": t_en,
+                "text_ta": t_ta,
+            })
 
         if group_merged and is_catholic:
             return group_merged_verses(raw_verses)

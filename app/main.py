@@ -84,8 +84,8 @@ DAILY_VERSE_CATHOLIC = {
         "that whosoever believeth in him, may not perish, but may have life everlasting."
     ),
     "text_ta": (
-        "தம் ஒரே மகன் மீது நம்பிக்கை கொள்ளும் எவரும் அழியாமல் நிலைவாழ்வு பெறும் பொருட்டு, "
-        "கடவுள் உலகத்தின் மேல் அந்த அளவுக்கு அன்பு கூர்ந்தார்."
+        "தேவன், தம்முடைய ஒரேபேறான குமாரனை விசுவாசிக்கிறவன் எவனோ அவன் கெட்டுப்போகாமல் "
+        "நித்தியஜீவனை பெறும்படிக்கு, அவரைக் கொடுத்து, இவ்வளவாய் உலகத்தில் அன்பு செலுத்தினார்."
     ),
     "link": "/read/43/1?mode=bilingual&canon=catholic",
 }
@@ -602,6 +602,18 @@ async def bookmarks_page(request: Request, canon: str = Query(None)):
     return templates.TemplateResponse(
         request=request,
         name="bookmarks.html",
+        context=canon_ctx,
+    )
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_page(request: Request, canon: str = Query(None)):
+    """Serves the product Privacy Policy and Scripture Corpus Attribution Notices."""
+    active_canon = resolve_canon(request, canon)
+    canon_ctx = get_canon_context(active_canon)
+    return templates.TemplateResponse(
+        request=request,
+        name="privacy.html",
         context=canon_ctx,
     )
 

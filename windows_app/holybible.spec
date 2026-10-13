@@ -18,6 +18,9 @@ datas = [
     (os.path.join(ROOT_DIR, "templates"), "templates"),
     (os.path.join(ROOT_DIR, "static"), "static"),
     (os.path.join(ROOT_DIR, "windows_app", "assets", "app.ico"), "assets"),
+    (os.path.join(ROOT_DIR, "LICENSE"), "."),
+    (os.path.join(ROOT_DIR, "NOTICE.md"), "."),
+    (os.path.join(ROOT_DIR, "PRIVACY.md"), "."),
 ]
 
 hidden_imports = [

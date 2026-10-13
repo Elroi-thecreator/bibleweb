@@ -98,13 +98,14 @@ jobs:
 
             ### 🚀 Highlights & Features
             - **Single Portable Executable (`.exe`)**: No installation or Python runtime required.
-            - **Dual-Corpus Support**:
-              - Protestant: BSI Tamil + King James Version (KJV) - 66 Books
-              - Catholic: POC Tamil (திருவிவிலியம்) + Douay-Rheims - 73 Books (including Deuterocanon)
+            - **Open-Licensed & Public Domain Dual-Corpus Support**:
+              - **Protestant (66 Books)**: 1871 Tamil Old Version (Public Domain) + 1769 King James Version (Public Domain)
+              - **Catholic (73 Books)**: Tamil Indian Revised Version (IRV, CC BY-SA 4.0 by Bridge Connectivity Solutions) + 1752 Douay-Rheims Bible (Public Domain, including all 7 Deuterocanonical books)
             - **100-Day Read-Along Audio Bible**: High-fidelity Microsoft Neural TTS audio streaming.
             - **Church Presenter Mode**: Fullscreen projection slides with responsive typography.
             - **Interactive Scripture Quiz**: 100 bilingual trivia questions across 5 categories.
-            - **Reading Plans & Bookmarks**: Custom tracks with offline progress checkoffs.
+            - **Reading Plans & Bookmarks**: Custom tracks with offline progress checkoffs and self-service cloud sync/deletion controls.
+            - **Privacy Policy & Licensing**: [PRIVACY.md](https://github.com/Elroi-thecreator/bibleweb/blob/main/PRIVACY.md) • [NOTICE.md](https://github.com/Elroi-thecreator/bibleweb/blob/main/NOTICE.md) • [LICENSE](https://github.com/Elroi-thecreator/bibleweb/blob/main/LICENSE)
 
             ---
 
@@ -133,32 +134,32 @@ jobs:
         env:
           WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
         run: |
-          Write-Host "==> Downloading Komac CLI for WinGet submission..."
-          $komacUrl = "https://github.com/russellbanks/Komac/releases/download/v2.16.0/komac-2.16.0-x86_64-pc-windows-msvc.exe"
-          $komacExe = "$env:TEMP\komac.exe"
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
-          Invoke-WebRequest -Uri $komacUrl -OutFile $komacExe -UseBasicParsing
-
-          Write-Host "==> Attempting WinGet package update via Komac..."
-          $exeUrl = "https://github.com/${{ github.repository }}/releases/download/$env:TAG/HolyBible-Portable.exe"
-          & $komacExe update ElroiTheCreator.HolyBible --version "$env:VERSION" --urls "$exeUrl" --token "$env:WINGET_TOKEN"
-
-      - name: WinGet Initial Submission Notice
-        if: steps.winget_releaser.outcome == 'failure'
-        shell: pwsh
-        run: |
-          Write-Host "=================================================================="
-          Write-Host " [NOTICE] WinGet Initial Submission Required"
-          Write-Host " winget-releaser requires the package to exist in microsoft/winget-pkgs"
-          Write-Host " for initial submission. Once the initial PR is merged into winget-pkgs,"
-          Write-Host " all future releases will be automatically submitted by this action!"
-          Write-Host ""
-          Write-Host " To submit the initial version to microsoft/winget-pkgs:"
-          Write-Host " 1. Download the 'winget-manifests.zip' attached to this GitHub Release."
-          Write-Host " 2. Fork https://github.com/microsoft/winget-pkgs"
-          Write-Host " 3. Upload the manifests folder and submit a PR."
-          Write-Host " See windows_app/submit_winget.md for details."
-          Write-Host "=================================================================="
+          Write-Host "==> Updating existing WinGet PR branch on Elroi-thecreator/winget-pkgs..."
+          $branchName = "add-ElroiTheCreator.HolyBible-$env:VERSION"
+          $forkDir = "$env:TEMP\winget-pkgs-fork"
+          if (Test-Path $forkDir) { Remove-Item -Recurse -Force $forkDir }
+          git clone --depth 1 --branch $branchName "https://x-access-token:$($env:WINGET_TOKEN)@github.com/Elroi-thecreator/winget-pkgs.git" $forkDir
+          if ($LASTEXITCODE -eq 0 -and (Test-Path $forkDir)) {
+            $destDir = Join-Path $forkDir "manifests\e\ElroiTheCreator\HolyBible\$env:VERSION"
+            New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+            Copy-Item -Force "windows_app/dist/winget_manifests/manifests/e/ElroiTheCreator/HolyBible/$env:VERSION/*.yaml" $destDir
+            Push-Location $forkDir
+            git config user.name "Elroi-thecreator"
+            git config user.email "elroi-thecreator@users.noreply.github.com"
+            git add "manifests/e/ElroiTheCreator/HolyBible/$env:VERSION"
+            git commit -m "Update ElroiTheCreator.HolyBible version $env:VERSION (SHA256, PrivacyUrl, Open-Licensed Corpus Notices)"
+            git push origin $branchName
+            Pop-Location
+            Write-Host "[OK] Updated PR branch $branchName on Elroi-thecreator/winget-pkgs!"
+          } else {
+            Write-Host "==> Downloading Komac CLI for WinGet submission..."
+            $komacUrl = "https://github.com/russellbanks/Komac/releases/download/v2.16.0/komac-2.16.0-x86_64-pc-windows-msvc.exe"
+            $komacExe = "$env:TEMP\komac.exe"
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+            Invoke-WebRequest -Uri $komacUrl -OutFile $komacExe -UseBasicParsing
+            $exeUrl = "https://github.com/${{ github.repository }}/releases/download/$env:TAG/HolyBible-Portable.exe"
+            & $komacExe update ElroiTheCreator.HolyBible --version "$env:VERSION" --urls "$exeUrl" --token "$env:WINGET_TOKEN"
+          }
 
       - name: WinGet Token Notice
         if: env.WINGET_TOKEN == ''

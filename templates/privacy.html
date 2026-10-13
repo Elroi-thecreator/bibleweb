@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy & Licenses | Holy Bible - வேதம்{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-8">
+    <div class="border-b border-stone-200 dark:border-stone-800 pb-5">
+        <p class="font-cinzel text-xs uppercase tracking-widest text-amber-700 dark:text-amber-400 font-bold">Transparency & Licensing</p>
+        <h1 class="font-cinzel text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 mt-1">Privacy Policy &amp; Scripture Notices</h1>
+        <p class="text-xs text-stone-500 mt-1">Last Updated: October 13, 2026 • Package ID: <code class="font-mono">ElroiTheCreator.HolyBible</code></p>
+    </div>
+
+    <!-- Section 1: Privacy Policy -->
+    <section class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 space-y-4 shadow-xs">
+        <h2 class="font-cinzel font-bold text-lg text-amber-800 dark:text-amber-400">1. Product Privacy Policy (WinGet Policy 1.5.1)</h2>
+        <p class="text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
+            <strong>Holy Bible (வேதம்)</strong> is an offline-first bilingual desktop and web application. You can read all bundled scripture canons, search verses, use Presenter mode, take interactive quizzes, and follow reading plans without creating an account or providing personal information.
+        </p>
+
+        <div class="space-y-3 text-xs sm:text-sm text-stone-700 dark:text-stone-300">
+            <h3 class="font-bold text-stone-900 dark:text-stone-100">A. Data Processed &amp; Purposes</h3>
+            <ul class="list-disc pl-5 space-y-1.5">
+                <li><strong>Local Device Storage (Default):</strong> Reading progress (<code class="font-mono">bible_read_chapters</code>), bookmarks (<code class="font-mono">bilingual_bible_bookmarks</code>), verse highlights (<code class="font-mono">bilingual_bible_highlights</code>), custom reading plans (<code class="font-mono">bible_custom_reading_plans</code>), and display/voice preferences are stored locally on your device.</li>
+                <li><strong>Optional Email Authentication &amp; Cloud Sync (Supabase):</strong> If you choose to sign in via <em>Settings → Sign In with Email</em>, your <strong>email address</strong> is used for passwordless magic-link authentication and to synchronize your reading history, bookmarks, highlights, custom reading plans, preferences (<code class="font-mono">user_bible_sync</code>), and optional daily reminder Web Push subscriptions (<code class="font-mono">user_push_subscriptions</code>) through <strong>Supabase, Inc.</strong> (<a href="https://supabase.com/privacy" target="_blank" rel="noopener" class="text-amber-700 underline">Supabase Privacy Policy</a>).</li>
+                <li><strong>Text-to-Speech (TTS) Audio Synthesis:</strong> When you stream chapter audio or voice samples (<code class="font-mono">/api/audio/stream</code>), only the selected scripture verse text, language code (<code class="font-mono">ta</code>/<code class="font-mono">en</code>), voice name, and playback rate are sent to <strong>Microsoft Edge Neural TTS</strong> (<code class="font-mono">edge-tts</code>, <a href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener" class="text-amber-700 underline">Microsoft Privacy Statement</a>) with <strong>Google Text-to-Speech</strong> (<code class="font-mono">gTTS</code>, <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-amber-700 underline">Google Privacy Policy</a>) as fallback. No personal identifiers or email addresses are transmitted with TTS requests.</li>
+            </ul>
+
+            <h3 class="font-bold text-stone-900 dark:text-stone-100 pt-2">B. Data Retention, Deletion &amp; Self-Service Account Removal</h3>
+            <ul class="list-disc pl-5 space-y-1.5">
+                <li>Local data remains on your device until cleared or uninstalled. You can export a portable JSON copy at any time via <strong>Export Backup</strong>.</li>
+                <li>Cloud-synced records in Supabase (<code class="font-mono">user_bible_sync</code> and <code class="font-mono">user_push_subscriptions</code>) are retained only while you keep cloud sync active.</li>
+                <li><strong>Instant Self-Service Cloud Deletion:</strong> Signed-in users can permanently delete all cloud-synced records and push subscriptions at any time using the <strong>Delete Cloud Data</strong> button in <em>Settings (⚙️) → Cloud Sync</em> or below, or by opening a deletion request at <a href="https://github.com/Elroi-thecreator/bibleweb/issues" target="_blank" rel="noopener" class="text-amber-700 underline">GitHub Issues</a>.</li>
+            </ul>
+        </div>
+
+        <!-- Interactive Privacy Controls -->
+        <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex flex-wrap gap-2.5">
+            <button type="button" onclick="exportAllUserData()" class="px-3.5 py-2 bg-stone-100 dark:bg-stone-800 hover:border-amber-600 border border-stone-300 dark:border-stone-700 rounded-xl text-xs font-semibold cursor-pointer">
+                💾 Export Local Backup (.json)
+            </button>
+            <button type="button" onclick="deleteCloudAccountData()" class="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold cursor-pointer">
+                🗑️ Delete Cloud Synced Data
+            </button>
+        </div>
+    </section>
+
+    <!-- Section 2: Scripture Corpus Licenses & Attributions -->
+    <section class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 space-y-4 shadow-xs">
+        <h2 class="font-cinzel font-bold text-lg text-amber-800 dark:text-amber-400">2. Bundled Scripture Corpora &amp; Attribution Notices (WinGet Policy 2.2)</h2>
+        <p class="text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
+            Every scripture corpus bundled in <code class="font-mono">data/bible.sqlite.db</code> is either in the worldwide <strong>Public Domain</strong> or openly licensed under <strong>Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)</strong>:
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 space-y-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">CC BY-SA 4.0 • Open License</span>
+                <h3 class="font-bold text-sm text-stone-900 dark:text-stone-100">Tamil Indian Revised Version (IRV 2019)</h3>
+                <p class="font-tamil text-stone-700 dark:text-stone-300" translate="no">இண்டியன் ரிவைஸ்டு வெர்ஸன் (IRV) - தமிழ்</p>
+                <p class="text-stone-600 dark:text-stone-400">
+                    Copyright © 2017, 2019 <a href="https://bridgeconn.com/" target="_blank" rel="noopener" class="underline">Bridge Connectivity Solutions Pvt. Ltd.</a> Sourced from <a href="https://ebible.org/tam2017/" target="_blank" rel="noopener" class="underline">eBible.org</a>. Distributed under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" class="underline">CC BY-SA 4.0</a>.
+                </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 space-y-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Public Domain • 1871</span>
+                <h3 class="font-bold text-sm text-stone-900 dark:text-stone-100">Tamil Old Version (1871 Bower Translation)</h3>
+                <p class="font-tamil text-stone-700 dark:text-stone-300" translate="no">பரிசுத்த வேதாகமம் (1871)</p>
+                <p class="text-stone-600 dark:text-stone-400">
+                    Translated by Rev. Henry Bower (d. 1885) and committee for the Madras Auxiliary Bible Society (published 1871). In the worldwide Public Domain.
+                </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 space-y-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Public Domain • 1769</span>
+                <h3 class="font-bold text-sm text-stone-900 dark:text-stone-100">King James Version (KJV)</h3>
+                <p class="text-stone-600 dark:text-stone-400">
+                    1769 Oxford Blayney Standard Text of the Authorized King James Version (<a href="https://ebible.org/Scriptures/" target="_blank" rel="noopener" class="underline">eBible.org</a>). In the worldwide Public Domain.
+                </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 space-y-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Public Domain • 1752 (73 Books)</span>
+                <h3 class="font-bold text-sm text-stone-900 dark:text-stone-100">Douay-Rheims Bible (Challoner Revision)</h3>
+                <p class="text-stone-600 dark:text-stone-400">
+                    Translated from the Latin Vulgate and revised by Bishop Richard Challoner (1749–1752, d. 1781), covering all 73 Catholic books including the 7 Deuterocanonical books (<a href="https://ebible.org/engDRA/" target="_blank" rel="noopener" class="underline">eBible.org</a>). In the worldwide Public Domain.
+                </p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -3,7 +3,7 @@ type: product_standard
 title: Multi-Canon (Catholic 73 Books & Protestant 66 Books) Navigation Standard
 domain: product
 status: approved
-version: 1.0.0
+version: 1.1.0
 authority:
   level: official
   confidence: high
@@ -16,23 +16,23 @@ applies_to:
   - navigation
 
 rule:
-  "The application must seamlessly support both Catholic (73 books including Deuterocanonical books) and Protestant (66 books) canons, providing clear book selectors, chapter pickers, and parallel verse alignment across English and local language versions."
+  "The application must seamlessly support both Catholic (73 books including Deuterocanonical books using Public Domain 1752 Douay-Rheims and CC BY-SA 4.0 Tamil Indian Revised Version) and Protestant (66 books using Public Domain 1871 Tamil Old Version and 1769 KJV) canons, providing clear book selectors, chapter pickers, and parallel verse alignment across English and Tamil."
 
 do:
   - "Allow users to switch between Catholic and Protestant canon perspectives without losing reading position."
   - "Clearly identify Deuterocanonical books (Tobit, Judith, Wisdom, Sirach, Baruch, 1 & 2 Maccabees) in the book navigation drawer."
-  - "Support multi-language translation switching (English, Tamil, etc.) with verse-by-verse alignment."
+  - "Bundle only verifiably open-licensed (CC BY-SA 4.0 Tamil IRV by Bridge Connectivity Solutions) and Public Domain (1871 Tamil Old Version, 1769 KJV, 1752 Douay-Rheims) scripture corpora with full attribution notices in `LICENSE`, `NOTICE.md`, and `/privacy`."
   - "Preserve user's last selected canon, translation version, and chapter across sessions using `localStorage`, cookies, and URL query parameters (`canon=...`)."
   - "Preserve the active `canon` query parameter across all search inputs and navigation links (including mobile search triggers and desktop search bars) so the user's selected tradition is not dropped."
   - "Provide fast book and chapter search autocomplete in the navigation header."
 
 dont:
   - "Do not hide or truncate Deuterocanonical books when Catholic canon mode is active."
+  - "Do not bundle copyrighted third-party scripture translations (such as the 2012 Tamil Ecumenical / POC text) without explicit written redistribution authorization."
   - "Do not break URL deep linking when sharing specific chapter or verse locations."
-  - "Do not reload the full page when switching between complementary translations."
 
 reason:
-  "Respecting the theological and canonical differences between Catholic and Protestant traditions ensures inclusivity and broad adoption across different Christian communities."
+  "Respecting the theological and canonical differences between Catholic and Protestant traditions while strictly adhering to open-licensing and Public Domain standards ensures legal redistributability and broad adoption."
 
 related_items:
   - ARCH-DATA-001

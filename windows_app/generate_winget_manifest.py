@@ -106,16 +106,18 @@ PackageLocale: en-US
 Publisher: {PUBLISHER}
 PublisherUrl: https://github.com/{PUBLISHER}
 PublisherSupportUrl: https://github.com/{repo}/issues
+PrivacyUrl: https://github.com/{repo}/blob/main/PRIVACY.md
 PackageName: {PACKAGE_NAME}
 PackageUrl: https://github.com/{repo}
-License: MIT
+License: MIT AND CC-BY-SA-4.0
 LicenseUrl: https://github.com/{repo}/blob/main/LICENSE
 Copyright: Copyright (c) {PUBLISHER}
+CopyrightUrl: https://github.com/{repo}/blob/main/NOTICE.md
 ShortDescription: Bilingual Tamil & English Holy Bible desktop reader, presenter, and study app.
 Description: |-
   Holy Bible (வேதம்) is a comprehensive bilingual Tamil and English Holy Bible desktop application.
   Features:
-  - Protestant (BSI Tamil + KJV) and Catholic (POC திருவிவிலியம் + Douay-Rheims) dual-corpus support
+  - Protestant (1871 Tamil Old Version Public Domain + 1769 KJV Public Domain) and Catholic 73-Book (Tamil IRV CC BY-SA 4.0 + 1752 Douay-Rheims Public Domain) dual-corpus support
   - 100-Day Read-Along Audio Bible with Microsoft Neural TTS
   - Church projector and presenter mode with fullscreen slides
   - 100 bilingual interactive scripture trivia and quiz questions
