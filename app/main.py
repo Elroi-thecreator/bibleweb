@@ -127,8 +127,13 @@ VOICE_CONFIG = {
         "default": "ta-IN-ValluvarNeural",
         "male": "ta-IN-ValluvarNeural",
         "valluvar": "ta-IN-ValluvarNeural",
+        "anbu": "ta-SG-AnbuNeural",
+        "surya": "ta-MY-SuryaNeural",
+        "kumar": "ta-LK-KumarNeural",
         "female": "ta-IN-PallaviNeural",
         "pallavi": "ta-IN-PallaviNeural",
+        "venba": "ta-SG-VenbaNeural",
+        "kani": "ta-MY-KaniNeural",
     },
     "en": {
         "default": "en-US-JennyNeural",
@@ -138,6 +143,16 @@ VOICE_CONFIG = {
         "guy": "en-US-GuyNeural",
         "neerja": "en-IN-NeerjaNeural",
     },
+}
+
+MALE_VOICE_FALLBACKS = {
+    "ta": ["ta-IN-ValluvarNeural", "ta-SG-AnbuNeural", "ta-MY-SuryaNeural", "ta-LK-KumarNeural"],
+    "en": ["en-US-GuyNeural", "en-US-ChristopherNeural"],
+}
+
+FEMALE_VOICE_FALLBACKS = {
+    "ta": ["ta-IN-PallaviNeural", "ta-SG-VenbaNeural", "ta-MY-KaniNeural", "ta-LK-SaranyaNeural"],
+    "en": ["en-US-JennyNeural", "en-IN-NeerjaNeural", "en-US-AriaNeural"],
 }
 
 
@@ -249,28 +264,39 @@ async def stream_audio(
 
     # 1. Primary Engine: Microsoft Neural Edge-TTS (Natural Human Cadence)
     if HAS_EDGE_TTS:
-        try:
-            communicate = edge_tts.Communicate(
-                text=clean_text,
-                voice=target_voice,
-                rate=target_rate,
-            )
-            fp = io.BytesIO()
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    fp.write(chunk["data"])
-            audio_bytes = fp.getvalue()
-            if len(audio_bytes) > 0:
-                if len(AUDIO_CACHE) > 500:
-                    AUDIO_CACHE.pop(next(iter(AUDIO_CACHE)))
-                AUDIO_CACHE[cache_key] = audio_bytes
-                return Response(
-                    content=audio_bytes,
-                    media_type="audio/mpeg",
-                    headers={"X-TTS-Engine": "edge-neural", "X-TTS-Voice": target_voice},
+        candidate_voices = [target_voice]
+        if target_voice in MALE_VOICE_FALLBACKS.get(target_lang, []):
+            for alt_v in MALE_VOICE_FALLBACKS[target_lang]:
+                if alt_v not in candidate_voices:
+                    candidate_voices.append(alt_v)
+        elif target_voice in FEMALE_VOICE_FALLBACKS.get(target_lang, []):
+            for alt_v in FEMALE_VOICE_FALLBACKS[target_lang]:
+                if alt_v not in candidate_voices:
+                    candidate_voices.append(alt_v)
+
+        for v_name in candidate_voices:
+            try:
+                communicate = edge_tts.Communicate(
+                    text=clean_text,
+                    voice=v_name,
+                    rate=target_rate,
                 )
-        except Exception as neural_err:
-            print(f"[Audio Stream] Edge-TTS error, falling back to gTTS: {neural_err}")
+                fp = io.BytesIO()
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        fp.write(chunk["data"])
+                audio_bytes = fp.getvalue()
+                if len(audio_bytes) > 0:
+                    if len(AUDIO_CACHE) > 500:
+                        AUDIO_CACHE.pop(next(iter(AUDIO_CACHE)))
+                    AUDIO_CACHE[cache_key] = audio_bytes
+                    return Response(
+                        content=audio_bytes,
+                        media_type="audio/mpeg",
+                        headers={"X-TTS-Engine": "edge-neural", "X-TTS-Voice": v_name},
+                    )
+            except Exception as neural_err:
+                print(f"[Audio Stream] Edge-TTS error for voice {v_name}: {neural_err}")
 
     # 2. Fallback Engine: gTTS (Ensures zero interruption)
     try:

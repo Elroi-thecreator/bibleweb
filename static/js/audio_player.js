@@ -209,8 +209,10 @@ class BibleContinuousAudio {
         if (!voiceSelect) return;
         if (this.lang === 'ta') {
             voiceSelect.innerHTML = `
-                <option value="ta-IN-ValluvarNeural">வள்ளுவர் (Male)</option>
-                <option value="ta-IN-PallaviNeural">பல்லவி (Female)</option>
+                <option value="ta-IN-ValluvarNeural">வள்ளுவர் (Male - IN)</option>
+                <option value="ta-SG-AnbuNeural">அன்பு (Male - SG)</option>
+                <option value="ta-MY-SuryaNeural">சூர்யா (Male - MY)</option>
+                <option value="ta-IN-PallaviNeural">பல்லவி (Female - IN)</option>
             `;
             voiceSelect.value = localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural';
         } else {
