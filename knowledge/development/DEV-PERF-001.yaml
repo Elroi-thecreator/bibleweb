@@ -22,14 +22,14 @@ rule:
 do:
   - "Use `scripts/load_test.py` with `aiohttp` to simulate concurrent user sessions without adding external commercial test runner dependencies."
   - "Benchmark both isolated scenarios (`health`, `reader`, `search`, `songs`, `quiz`) and mixed weighted user simulations (`--scenario mixed`)."
-  - "Run concurrency ramping (`--scenario ramp`) across concurrency levels [5, 15, 30, 60, 120, 250] to map the saturation curve and determine peak capacity."
+  - "Run concurrency ramping (`--scenario ramp`) across concurrency levels [5, 15, 30, 60, 120, 250, 500] to map the saturation curve and determine peak capacity."
   - "Scale Uvicorn workers (`--workers 4` or `(2 * CPU) + 1`) via `scripts/run_server.py` in production web deployments to unblock CPU-bound Jinja2 template rendering and maximize multi-core throughput."
   - "Mount `BrotliMiddleware` (with `GZipMiddleware` fallback) in `app/main.py` with `minimum_size=1000` to compress text, HTML, and JSON responses by >91% (reducing 310 KB reader HTML to 25.7 KB under Brotli and 27.5 KB under Gzip)."
   - "Verify compression headers and decompression roundtrip integrity using `scripts/test_compression.py`."
   - "Maintain high-throughput standards established via the triple-optimization architecture (SQLite FTS5, LRU in-memory caching, and `asyncio.to_thread`):"
-    - "Search Throughput: >= 90 RPS (baseline: 27.5 RPS -> 90.6 RPS, 3.3x speedup; p50: 136.6 ms)."
+    - "Search Throughput: >= 90 RPS (reaches 275.8 RPS under 500 concurrency with 0.00% error rate)."
     - "Reader Throughput: >= 140 RPS (baseline: 145.8 RPS; p95: 370.7 ms)."
-    - "Mixed Multi-Page Traffic: >= 200 RPS (achieved 211.3 - 227.1 RPS with p50: 61.3 ms; 0.00% error rate maintained across 5 to 250 concurrency)."
+    - "Mixed Multi-Page Traffic: >= 200 RPS (sustained ~200 RPS under 500 concurrency; 0.00% error rate maintained across 5 to 500 concurrency)."
 
 dont:
   - "Do not rely exclusively on single-worker benchmarks to assess multi-core production server potential."

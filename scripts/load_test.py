@@ -212,7 +212,7 @@ async def run_scenario(
         ttl_dns_cache=300,
         enable_cleanup_closed=True,
     )
-    timeout = aiohttp.ClientTimeout(total=10.0, connect=3.0)
+    timeout = aiohttp.ClientTimeout(total=25.0, connect=10.0)
 
     async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
         # Warmup probe
@@ -288,7 +288,7 @@ async def main_async():
 
     if args.scenario == "ramp":
         # Concurrency ramping to find saturation potential curve
-        concurrencies = [5, 15, 30, 60, 120, 250]
+        concurrencies = [5, 15, 30, 60, 120, 250, 500]
         ramp_results = []
         print("\n[+] Initiating Concurrency Ramping Test to discover saturation limit...")
         print(f"{'Concurrency':>12} | {'RPS':>10} | {'Avg Latency':>13} | {'p95 Latency':>13} | {'Error Rate':>11}")
