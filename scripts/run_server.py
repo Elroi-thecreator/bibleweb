@@ -9,6 +9,13 @@ import multiprocessing
 import os
 import sys
 
+# Ensure repository root is in sys.path and environment for worker processes
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if "PYTHONPATH" not in os.environ or PROJECT_ROOT not in os.environ["PYTHONPATH"]:
+    os.environ["PYTHONPATH"] = PROJECT_ROOT + (os.pathsep + os.environ["PYTHONPATH"] if "PYTHONPATH" in os.environ else "")
+
 def get_recommended_workers() -> int:
     """Calculates ideal worker processes: min(8, max(2, cpu_count))."""
     env_workers = os.getenv("WEB_CONCURRENCY")

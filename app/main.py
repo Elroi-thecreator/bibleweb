@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import io
 import json
@@ -539,7 +540,7 @@ async def reader(
         chapter = 1
 
     try:
-        verses = get_chapter_verses(book_id, chapter, canon=active_canon) or []
+        verses = (await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)) or []
     except Exception as e:
         print(f"Error fetching verses: {e}")
         verses = []
@@ -573,7 +574,7 @@ async def presenter_mode(request: Request, book_id: int, chapter: int, canon: st
     if chapter < 1 or chapter > current_book["total_chapters"]:
         chapter = 1
 
-    verses = get_chapter_verses(book_id, chapter, canon=active_canon)
+    verses = await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)
     canon_ctx = get_canon_context(active_canon)
 
     return templates.TemplateResponse(
@@ -619,7 +620,7 @@ async def search_page(request: Request, q: str = Query("", description="Search q
     active_canon = resolve_canon(request, canon)
     canon_ctx = get_canon_context(active_canon)
     clean_q = q.strip() if q else ""
-    results = search_verses(clean_q, canon=active_canon) if clean_q else []
+    results = (await asyncio.to_thread(search_verses, clean_q, active_canon)) if clean_q else []
     # If Protestant mode, filter out Deuterocanonical results (IDs > 66)
     if not canon_ctx["is_catholic"]:
         results = [r for r in results if r["book_id"] <= 66]
@@ -719,18 +720,19 @@ async def songs_directory_page(
     active_canon = resolve_canon(request, canon)
     canon_ctx = get_canon_context(active_canon)
     
-    songbooks = get_song_books()
-    volumes = get_song_volumes(book)
+    songbooks = await asyncio.to_thread(get_song_books)
+    volumes = await asyncio.to_thread(get_song_volumes, book)
     clean_q = q.strip() if q else ""
     page_size = 40
     offset = (page - 1) * page_size
     
-    songs_data = get_songs_list(
-        songbook_code=book,
-        volume=vol,
-        query=clean_q,
-        limit=page_size,
-        offset=offset
+    songs_data = await asyncio.to_thread(
+        get_songs_list,
+        book,
+        vol,
+        clean_q,
+        page_size,
+        offset
     )
     total_count = songs_data["total_count"]
     total_pages = max(1, (total_count + page_size - 1) // page_size)
@@ -763,16 +765,19 @@ async def song_detail_page(
     """Dedicated song reader view with bilingual stanzas and YouTube player."""
     active_canon = resolve_canon(request, canon)
     canon_ctx = get_canon_context(active_canon)
-    song = get_song_by_id(song_id)
+    song = await asyncio.to_thread(get_song_by_id, song_id)
     if not song:
         raise HTTPException(status_code=404, detail="Song not found")
         
     volume_songs = []
     if song.get("volume") and song["volume"] > 0:
-        vol_data = get_songs_list(
-            songbook_code=song.get("songbook_code") or "jebathota",
-            volume=song["volume"],
-            limit=100
+        vol_data = await asyncio.to_thread(
+            get_songs_list,
+            song.get("songbook_code") or "jebathota",
+            song["volume"],
+            "",
+            100,
+            0
         )
         volume_songs = vol_data.get("songs", [])
 
@@ -798,12 +803,13 @@ async def api_songs_search(
     """Returns filtered songs for client-side search autocomplete."""
     clean_q = q.strip() if q else ""
     book_code = None if (not book or book == "all") else book
-    res = get_songs_list(
-        songbook_code=book_code,
-        volume=vol,
-        query=clean_q,
-        limit=limit,
-        offset=0
+    res = await asyncio.to_thread(
+        get_songs_list,
+        book_code,
+        vol,
+        clean_q,
+        limit,
+        0
     )
     return JSONResponse(content=res)
 
@@ -936,7 +942,7 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
 
         if book_id and chapter:
             # Query the database with active_canon
-            raw_verses = get_chapter_verses(book_id, chapter, canon=active_canon) or []
+            raw_verses = (await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)) or []
             book_info = get_book_info(book_id, canon=active_canon)
 
             # Normalize verse fields to support whatever keys your template/audio uses

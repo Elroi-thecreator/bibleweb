@@ -1,7 +1,8 @@
+import functools
 import os
 import sqlite3
 import sys
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 # Absolute cross-platform path resolution (supports source & frozen PyInstaller exe)
 if getattr(sys, "frozen", False):
@@ -388,8 +389,9 @@ def group_merged_verses(verses: List[Dict]) -> List[Dict]:
     return grouped
 
 
-def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", group_merged: bool = True) -> List[Dict]:
-    """Retrieves all verses for a given book and chapter based on canon (Protestant or Catholic), optionally grouping merged thought units."""
+@functools.lru_cache(maxsize=2048)
+def _fetch_chapter_verses_cached(book_id: int, chapter: int, canon: str = "protestant", group_merged: bool = True) -> tuple:
+    """Internal cached retriever returning immutable tuple of verse dictionaries."""
     with get_connection() as conn:
         cursor = conn.cursor()
         schema = _resolve_schema(cursor)
@@ -446,10 +448,10 @@ def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", gr
             })
 
         if group_merged and is_catholic:
-            return group_merged_verses(raw_verses)
+            return tuple(group_merged_verses(raw_verses))
 
         # Standard representation for unmerged / Protestant
-        return [
+        res = [
             {
                 "verse": v["verse"],
                 "verse_display": str(v["verse"]),
@@ -461,10 +463,19 @@ def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", gr
             }
             for v in raw_verses
         ]
+        return tuple(res)
 
 
-def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) -> List[Dict]:
-    """Performs full-text search across active translation corpora, collapsing merged verse duplicates."""
+def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", group_merged: bool = True) -> List[Dict]:
+    """Retrieves all verses for a given book and chapter based on canon (Protestant or Catholic), cached in memory."""
+    canon_key = str(canon).lower() if canon else "protestant"
+    cached = _fetch_chapter_verses_cached(book_id, chapter, canon_key, group_merged)
+    return [dict(v) for v in cached]
+
+
+@functools.lru_cache(maxsize=512)
+def _search_verses_cached(query_str: str, canon: str = "protestant", limit: int = 60) -> tuple:
+    """Internal cached verse search utilizing SQLite FTS5 index with fallback to LIKE scan."""
     import re
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -473,50 +484,97 @@ def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) ->
         is_catholic = (canon and str(canon).lower() == "catholic")
         book_map = CATHOLIC_BOOK_MAP if is_catholic else BOOK_MAP
 
-        if schema["type"] == "single":
-            if is_catholic and schema.get("has_poc"):
-                sql = f"""
-                    SELECT {schema['book']} AS book_id,
-                           {schema['chapter']} AS chapter,
-                           {schema['verse']} AS verse,
-                           COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) AS text_en,
-                           COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) AS text_ta
-                    FROM {schema['table']}
-                    WHERE (COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) LIKE ? 
-                           OR COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) LIKE ?)
-                    ORDER BY {schema['book']}, {schema['chapter']}, {schema['verse']}
-                    LIMIT ?
-                """
+        # 1. Fast Path: SQLite FTS5 Indexed Query
+        has_fts = False
+        try:
+            fts_check = cursor.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='verses_fts'").fetchone()
+            has_fts = bool(fts_check)
+        except Exception:
+            has_fts = False
+
+        rows = None
+        if has_fts and query_str.strip():
+            clean_q = query_str.strip().replace('"', '')
+            fts_expr = f'"{clean_q}"'
+
+            try:
+                if schema["type"] == "single":
+                    if is_catholic and schema.get("has_poc"):
+                        sql = f"""
+                            SELECT v.{schema['book']} AS book_id,
+                                   v.{schema['chapter']} AS chapter,
+                                   v.{schema['verse']} AS verse,
+                                   COALESCE(NULLIF(v.text_en_drb, ''), v.{schema['text_en']}) AS text_en,
+                                   COALESCE(NULLIF(v.text_ta_poc, ''), v.{schema['text_ta']}) AS text_ta
+                            FROM verses_fts f
+                            JOIN {schema['table']} v ON f.rowid = v.id
+                            WHERE verses_fts MATCH ?
+                            ORDER BY v.{schema['book']}, v.{schema['chapter']}, v.{schema['verse']}
+                            LIMIT ?
+                        """
+                    else:
+                        sql = f"""
+                            SELECT v.{schema['book']} AS book_id,
+                                   v.{schema['chapter']} AS chapter,
+                                   v.{schema['verse']} AS verse,
+                                   v.{schema['text_en']} AS text_en,
+                                   v.{schema['text_ta']} AS text_ta
+                            FROM verses_fts f
+                            JOIN {schema['table']} v ON f.rowid = v.id
+                            WHERE verses_fts MATCH ?
+                            ORDER BY v.{schema['book']}, v.{schema['chapter']}, v.{schema['verse']}
+                            LIMIT ?
+                        """
+                    rows = cursor.execute(sql, (fts_expr, limit)).fetchall()
+            except Exception:
+                rows = None
+
+        # 2. Fallback Path: Sequential LIKE Table Scan
+        if rows is None:
+            if schema["type"] == "single":
+                if is_catholic and schema.get("has_poc"):
+                    sql = f"""
+                        SELECT {schema['book']} AS book_id,
+                               {schema['chapter']} AS chapter,
+                               {schema['verse']} AS verse,
+                               COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) AS text_en,
+                               COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) AS text_ta
+                        FROM {schema['table']}
+                        WHERE (COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) LIKE ? 
+                               OR COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) LIKE ?)
+                        ORDER BY {schema['book']}, {schema['chapter']}, {schema['verse']}
+                        LIMIT ?
+                    """
+                else:
+                    sql = f"""
+                        SELECT {schema['book']} AS book_id,
+                               {schema['chapter']} AS chapter,
+                               {schema['verse']} AS verse,
+                               {schema['text_en']} AS text_en,
+                               {schema['text_ta']} AS text_ta
+                        FROM {schema['table']}
+                        WHERE {schema['text_en']} LIKE ? OR {schema['text_ta']} LIKE ?
+                        ORDER BY {schema['book']}, {schema['chapter']}, {schema['verse']}
+                        LIMIT ?
+                    """
+                rows = cursor.execute(sql, (pattern, pattern, limit)).fetchall()
             else:
                 sql = f"""
-                    SELECT {schema['book']} AS book_id,
-                           {schema['chapter']} AS chapter,
-                           {schema['verse']} AS verse,
-                           {schema['text_en']} AS text_en,
-                           {schema['text_ta']} AS text_ta
-                    FROM {schema['table']}
-                    WHERE {schema['text_en']} LIKE ? OR {schema['text_ta']} LIKE ?
-                    ORDER BY {schema['book']}, {schema['chapter']}, {schema['verse']}
+                    SELECT e.{schema['book']} AS book_id,
+                           e.{schema['chapter']} AS chapter,
+                           e.{schema['verse']} AS verse,
+                           e.{schema['text_en']} AS text_en,
+                           t.{schema['text_ta']} AS text_ta
+                    FROM {schema['table_en']} e
+                    JOIN {schema['table_ta']} t 
+                      ON e.{schema['book']} = t.{schema['book']}
+                     AND e.{schema['chapter']} = t.{schema['chapter']}
+                     AND e.{schema['verse']} = t.{schema['verse']}
+                    WHERE e.{schema['text_en']} LIKE ? OR t.{schema['text_ta']} LIKE ?
+                    ORDER BY e.{schema['book']}, e.{schema['chapter']}, e.{schema['verse']}
                     LIMIT ?
                 """
-            rows = cursor.execute(sql, (pattern, pattern, limit)).fetchall()
-        else:
-            sql = f"""
-                SELECT e.{schema['book']} AS book_id,
-                       e.{schema['chapter']} AS chapter,
-                       e.{schema['verse']} AS verse,
-                       e.{schema['text_en']} AS text_en,
-                       t.{schema['text_ta']} AS text_ta
-                FROM {schema['table_en']} e
-                JOIN {schema['table_ta']} t 
-                  ON e.{schema['book']} = t.{schema['book']}
-                 AND e.{schema['chapter']} = t.{schema['chapter']}
-                 AND e.{schema['verse']} = t.{schema['verse']}
-                WHERE e.{schema['text_en']} LIKE ? OR t.{schema['text_ta']} LIKE ?
-                ORDER BY e.{schema['book']}, e.{schema['chapter']}, e.{schema['verse']}
-                LIMIT ?
-            """
-            rows = cursor.execute(sql, (pattern, pattern, limit)).fetchall()
+                rows = cursor.execute(sql, (pattern, pattern, limit)).fetchall()
 
         results = []
         seen_ranges = set()
@@ -551,7 +609,17 @@ def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) ->
                 "text_en": text_en,
                 "text_ta": text_ta
             })
-        return results
+        return tuple(results)
+
+
+def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) -> List[Dict]:
+    """Performs full-text search across active translation corpora, collapsing merged verse duplicates."""
+    clean_q = query_str.strip() if query_str else ""
+    if not clean_q:
+        return []
+    canon_key = str(canon).lower() if canon else "protestant"
+    cached = _search_verses_cached(clean_q, canon_key, limit)
+    return [dict(r) for r in cached]
 
 
 # =========================================================================
