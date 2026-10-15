@@ -29,7 +29,10 @@ def get_connection():
             f"Files in data/: {files_in_data}"
         )
 
-    conn = sqlite3.connect(abs_path)
+    try:
+        conn = sqlite3.connect(f"file:{abs_path}?mode=ro", uri=True)
+    except Exception:
+        conn = sqlite3.connect(abs_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -45,7 +48,10 @@ def get_songs_connection():
         else:
             raise FileNotFoundError(f"Songs DB file not found at: '{abs_path}'")
 
-    conn = sqlite3.connect(abs_path)
+    try:
+        conn = sqlite3.connect(f"file:{abs_path}?mode=ro", uri=True)
+    except Exception:
+        conn = sqlite3.connect(abs_path)
     conn.row_factory = sqlite3.Row
     return conn
 

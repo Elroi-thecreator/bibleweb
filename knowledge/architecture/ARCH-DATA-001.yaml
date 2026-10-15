@@ -27,7 +27,7 @@ do:
   - "Bundle both databases in PyInstaller specifications (`windows_app/holybible.spec`) under the `datas` array."
   - "Support Catholic Deuterocanonical books (Tobit, Judith, 1 & 2 Maccabees, Wisdom, Sirach, Baruch, and additions to Daniel and Esther) with proper canonical flag partitioning."
   - "Use parameterized SQL queries (`?`) for all verse lookups and song keyword searches to eliminate SQL injection vulnerabilities."
-  - "Open database connections with `sqlite3.Row` row factories for dict-like field access."
+  - "Open database connections with read-only URI mode (`file:{path}?mode=ro`, `uri=True`) and `sqlite3.Row` row factories to prevent lock contention across multi-worker processes and avoid generating transient `.db-journal` or `.db-wal` files."
 
 dont:
   - "Do not combine song lyrics into `bible.sqlite.db` to prevent database bloat exceeding Git/GitHub recommended thresholds (50 MB)."
