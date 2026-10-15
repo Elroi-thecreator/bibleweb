@@ -73,9 +73,32 @@ async def lifespan(app: FastAPI):
     """Lifecycle manager warming up thread-local SQLite connections and releasing resources upon exit."""
     # Fast startup verification (pings read-only databases)
     await asyncio.to_thread(check_database_health)
+
+    # Windows Process Registry & Telemetry Registration
+    try:
+        import psutil
+        proc = psutil.Process()
+        loop = asyncio.get_running_loop()
+        loop_name = loop.__class__.__name__
+        handles = proc.num_handles() if hasattr(proc, "num_handles") else 0
+        threads = proc.num_threads()
+        mem_mb = round(proc.memory_info().rss / (1024 * 1024), 2)
+        print(f"[Process Registry] Worker Started | PID={proc.pid} | Loop={loop_name} | Handles={handles} | Threads={threads} | RSS={mem_mb}MB", flush=True)
+    except Exception as e:
+        print(f"[Process Registry] Telemetry warning: {e}", flush=True)
+
     yield
+
     # Graceful shutdown: close cached thread-local connections
     await asyncio.to_thread(close_thread_connections)
+    try:
+        import psutil
+        proc = psutil.Process()
+        handles = proc.num_handles() if hasattr(proc, "num_handles") else 0
+        mem_mb = round(proc.memory_info().rss / (1024 * 1024), 2)
+        print(f"[Process Registry] Worker Terminating | PID={proc.pid} | Final Handles={handles} | Final RSS={mem_mb}MB", flush=True)
+    except Exception:
+        pass
 
 
 app = FastAPI(title="Holy Bible - வேதம்", lifespan=lifespan)
@@ -419,6 +442,72 @@ async def api_health(deep: bool = Query(False, description="Run database connect
         all_ok = all(db_health.values())
         payload["status"] = "ok" if all_ok else "degraded"
         return JSONResponse(content=payload, status_code=200 if all_ok else 503)
+    return JSONResponse(content=payload, status_code=200)
+
+
+@app.get("/api/system/process-registry")
+async def api_process_registry():
+    """Returns real-time Windows process registry, OS handles, event loop type, and memory metrics."""
+    loop = asyncio.get_running_loop()
+    loop_class = loop.__class__.__name__
+
+    try:
+        import psutil
+        curr_proc = psutil.Process()
+
+        # Query current process and any sibling worker processes under the supervisor
+        workers_info = []
+        try:
+            parent = curr_proc.parent()
+            candidates = parent.children(recursive=False) if parent else [curr_proc]
+        except Exception:
+            candidates = [curr_proc]
+
+        total_handles = 0
+        total_rss_bytes = 0
+
+        for p in candidates:
+            try:
+                with p.oneshot():
+                    p_mem = p.memory_info()
+                    p_handles = p.num_handles() if hasattr(p, "num_handles") else 0
+                    p_threads = p.num_threads()
+                    p_cpu = p.cpu_percent(interval=None)
+
+                    total_handles += p_handles
+                    total_rss_bytes += p_mem.rss
+
+                    workers_info.append({
+                        "pid": p.pid,
+                        "is_current": (p.pid == curr_proc.pid),
+                        "handles": p_handles,
+                        "threads": p_threads,
+                        "cpu_percent": p_cpu,
+                        "rss_mb": round(p_mem.rss / (1024 * 1024), 2),
+                        "vms_mb": round(p_mem.vms / (1024 * 1024), 2),
+                    })
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+
+        payload = {
+            "status": "ok",
+            "platform": sys.platform,
+            "event_loop": loop_class,
+            "is_iocp_proactor": (loop_class == "ProactorEventLoop"),
+            "worker_count": len(workers_info),
+            "total_handles": total_handles,
+            "total_rss_mb": round(total_rss_bytes / (1024 * 1024), 2),
+            "workers": workers_info,
+            "timestamp": time.time(),
+        }
+    except Exception as e:
+        payload = {
+            "status": "degraded",
+            "platform": sys.platform,
+            "event_loop": loop_class,
+            "error": str(e),
+            "timestamp": time.time(),
+        }
     return JSONResponse(content=payload, status_code=200)
 
 

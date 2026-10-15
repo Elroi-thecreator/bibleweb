@@ -43,21 +43,34 @@ def main():
     )
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload (development only)")
     parser.add_argument("--log-level", default="info", choices=["critical", "error", "warning", "info", "debug"])
+    parser.add_argument(
+        "--loop",
+        default="auto",
+        help="Event loop implementation (default: auto)",
+    )
     args = parser.parse_args()
 
     import uvicorn
+    import psutil
 
+    proc = psutil.Process()
     cpus = multiprocessing.cpu_count() if hasattr(multiprocessing, "cpu_count") else "Unknown"
+    handles = proc.num_handles() if hasattr(proc, "num_handles") else 0
+    threads = proc.num_threads()
 
-    print("=" * 68)
+    loop_desc = "SelectorEventLoop (Multi-Process Windows)" if (sys.platform == "win32" and args.workers > 1) else args.loop
+
+    print("=" * 72)
     print(" Holy Bible Web Application - Multi-Worker Server")
-    print("=" * 68)
+    print("=" * 72)
     print(f" Host:             http://{args.host}:{args.port}")
     print(f" CPU Cores:        {cpus}")
     print(f" Active Workers:   {args.workers}")
+    print(f" Event Loop:       {loop_desc}")
+    print(f" Supervisor PID:   {proc.pid} (Initial Handles: {handles}, Threads: {threads})")
     print(f" Auto-Reload:      {args.reload}")
     print(f" Log Level:        {args.log_level}")
-    print("=" * 68)
+    print("=" * 72)
 
     # In reload mode, uvicorn requires workers=1
     workers = 1 if args.reload else args.workers
@@ -69,6 +82,7 @@ def main():
         workers=workers,
         reload=args.reload,
         log_level=args.log_level,
+        loop=args.loop,
         access_log=True,
     )
 

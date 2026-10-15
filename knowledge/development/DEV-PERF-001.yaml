@@ -3,7 +3,7 @@ type: development_standard
 title: Asynchronous Load Testing, Concurrency Saturation & Capacity Benchmarking Standard
 domain: development
 status: approved
-version: 1.2.0
+version: 1.3.0
 authority:
   level: official
   confidence: high
@@ -26,13 +26,17 @@ do:
   - "Scale Uvicorn workers (`--workers 4` or `(2 * CPU) + 1`) via `scripts/run_server.py` in production web deployments to unblock CPU-bound Jinja2 template rendering and maximize multi-core throughput."
   - "Mount `BrotliMiddleware` (with `GZipMiddleware` fallback) in `app/main.py` with `minimum_size=1000` to compress text, HTML, and JSON responses by >91% (reducing 310 KB reader HTML to 25.7 KB under Brotli and 27.5 KB under Gzip)."
   - "Verify compression headers and decompression roundtrip integrity using `scripts/test_compression.py`."
+  - "Expose real-time Windows Process Registry telemetry via `/api/system/process-registry` tracking worker PIDs, active OS handles, thread counts, RSS memory, and event loop implementations."
   - "Maintain high-throughput standards established via the triple-optimization architecture (SQLite FTS5, LRU in-memory caching, and `asyncio.to_thread`):"
     - "Search Throughput: >= 90 RPS (reaches 275.8 RPS under 500 concurrency with 0.00% error rate)."
     - "Reader Throughput: >= 140 RPS (baseline: 145.8 RPS; p95: 370.7 ms)."
     - "Mixed Multi-Page Traffic: >= 200 RPS (sustained ~200 RPS under 500 concurrency; 0.00% error rate maintained across 5 to 500 concurrency)."
   - "Maintain awareness of single-host failure thresholds identified via `scripts/stress_breakpoint_test.py`:"
-    - "Capacity Limit (100% Stability): Up to 1,250 concurrent connections with connection warmup ramp (121.4 RPS, 0.00% error rate, p50: 4.8s, p95: 7.1s). Cold-start unramped limit is 1,000 concurrency."
-    - "Complete Failure Threshold: 1,500 - 1,750 concurrent connections (67.61% error rate at 1,500 and 96.61% at 1,750 concurrency due to OS socket buffer exhaustion, ClientConnectorError dropped handshakes, and client timeouts)."
+    - "Capacity Limit (100% Stability): Up to 1,250 concurrent connections with connection warmup ramp (113-121 RPS, 0.00% error rate, p50: ~5.1s, p95: ~7.4s, ~1,200 total OS handles across 4 workers). Cold-start unramped limit is 1,000 concurrency."
+    - "Complete Failure Threshold: 1,500 - 1,750 concurrent connections (57-67% error rate at 1,500 and >83% at 1,750 concurrency)."
+    - "Root Cause on Windows: Winsock `select.select()` has a hard C-runtime limit of `FD_SETSIZE = 512` descriptors per worker under `_WindowsSelectorEventLoop`. At 1,500 connections across 4 workers, individual workers exceed 512 descriptors and crash with `ValueError: too many file descriptors in select()`."
+    - "Windows Multi-Process IOCP Constraint: Multi-worker Uvicorn cannot use `ProactorEventLoop` across child processes because Windows IOCP raises `WinError 87` when multiple processes attempt to register the same parent listening socket with different completion ports."
+    - "Production Scaling: In Linux/Docker environments, Uvicorn utilizes `uvloop` (Linux `epoll` with `SO_REUSEPORT`), completely bypassing the 512 descriptor limit to scale to 50,000+ concurrent connections."
     - "System Resilience: SQLite databases and thread-local connection pools remain 100% uncorrupted during and after total load failure; deep health verification returns ok in <1 second once traffic clears."
 
 dont:

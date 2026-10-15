@@ -132,17 +132,42 @@ async def run_stress_step(concurrency: int, duration: float = 6.0, warmup: float
     }
 
 
+async def fetch_process_registry(base_url: str = "http://127.0.0.1:8000"):
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.get(f"{base_url}/api/system/process-registry", timeout=aiohttp.ClientTimeout(total=2.0)) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+    except Exception:
+        pass
+    return None
+
+
 async def main():
-    print("=" * 80)
-    print(" WARMED-UP STRESS BREAKPOINT TEST (4.0s Warmup Ramp + 6.0s Measurement)")
-    print("=" * 80)
+    print("=" * 86)
+    print(" WARMED-UP STRESS BREAKPOINT TEST WITH WINDOWS PROCESS REGISTRY TELEMETRY")
+    print("=" * 86)
+
+    # Initial Process Registry Probe
+    reg = await fetch_process_registry()
+    if reg:
+        loop_engine = reg.get("event_loop", "Unknown")
+        iocp_flag = " [Windows IOCP Engine - No 512 FD limit]" if reg.get("is_iocp_proactor") else " [WARNING: SelectorEventLoop - 512 FD limit]"
+        print(f" Event Loop:      {loop_engine}{iocp_flag}")
+        print(f" Active Workers:  {reg.get('worker_count')} processes")
+        print(f" Total Handles:   {reg.get('total_handles')} Windows OS handles")
+        print(f" Total Memory:    {reg.get('total_rss_mb')} MB RSS")
+        for w in reg.get("workers", []):
+            curr_mark = " (Current)" if w.get("is_current") else ""
+            print(f"   └── Worker PID {w['pid']}{curr_mark}: {w['handles']} handles, {w['threads']} threads, {w['rss_mb']} MB RSS")
+    print("=" * 86)
     print(f"{'Concurrency':>12} | {'RPS':>9} | {'p50 (ms)':>10} | {'p95 (ms)':>10} | {'Errors':>10} | {'Status'}")
-    print("-" * 80)
+    print("-" * 86)
 
     test_concurrencies = [300, 500, 750, 1000, 1250, 1500, 1750, 2000]
 
     for c in test_concurrencies:
-        print(f"[*] Testing concurrency={c} (warmup 4.0s + measure 6.0s)...", flush=True)
+        print(f"\n[*] Testing concurrency={c} (warmup 4.0s + measure 6.0s)...", flush=True)
         res = await run_stress_step(c, duration=6.0, warmup=4.0)
         status_desc = "HEALTHY"
         if res["err_rate"] > 50.0:
@@ -157,6 +182,11 @@ async def main():
         )
         if res.get("error_types"):
             print(f"             └── Errors: {res['error_types']}")
+
+        # Windows Process Registry post-step probe
+        post_reg = await fetch_process_registry()
+        if post_reg:
+            print(f"             └── [Process Registry] Handles: {post_reg.get('total_handles')} | Memory: {post_reg.get('total_rss_mb')} MB | Workers Alive: {post_reg.get('worker_count')}")
 
         if res["err_rate"] >= 80.0:
             print("\n[!] Total System Failure Threshold reached.")
