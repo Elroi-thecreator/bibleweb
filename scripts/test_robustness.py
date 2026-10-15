@@ -108,8 +108,42 @@ async def test_robustness():
     assert h_json["databases"]["songs_db"] is True
     print(f"✓ 7. Deep database health verification verified ({h_json['databases']})")
 
+    # 7. Test Pre-Compressed Brotli & Gzip In-Memory Page Cache
+    # Initial read populated the cache (or populate now)
+    status_br, headers_br, body_br = await asgi_request(
+        "/read/43/1",
+        headers=[("Accept-Encoding", "gzip, deflate, br")]
+    )
+    assert status_br == 200
+    assert headers_br.get("x-page-cache") == "HIT", f"Expected cache HIT, got {headers_br.get('x-page-cache')}"
+    assert headers_br.get("content-encoding") == "br", f"Expected br encoding, got {headers_br.get('content-encoding')}"
+    assert len(body_br) > 0 and len(body_br) < 50000
+
+    status_gz, headers_gz, body_gz = await asgi_request(
+        "/read/43/1",
+        headers=[("Accept-Encoding", "gzip")]
+    )
+    assert status_gz == 200
+    assert headers_gz.get("x-page-cache") == "HIT"
+    assert headers_gz.get("content-encoding") == "gzip", f"Expected gzip encoding, got {headers_gz.get('content-encoding')}"
+    print(f"✓ 8. Pre-compressed Brotli ({len(body_br)} bytes) and Gzip ({len(body_gz)} bytes) zero-CPU cache verified")
+
+    # 8. Test Presenter Mode & Plans Route Caching
+    status_p1, _, _ = await asgi_request("/present/43/1")
+    assert status_p1 == 200
+    status_p2, headers_p2, _ = await asgi_request("/present/43/1", headers=[("Accept-Encoding", "br")])
+    assert status_p2 == 200
+    assert headers_p2.get("x-page-cache") == "HIT"
+
+    status_pl1, _, _ = await asgi_request("/plans")
+    assert status_pl1 == 200
+    status_pl2, headers_pl2, _ = await asgi_request("/plans", headers=[("Accept-Encoding", "br")])
+    assert status_pl2 == 200
+    assert headers_pl2.get("x-page-cache") == "HIT"
+    print("✓ 9. Presenter Mode (/present) and Plans (/plans) page caching verified")
+
     print("=" * 65)
-    print(" ALL 7 ROBUSTNESS & SECURITY VERIFICATIONS PASSED 100%!")
+    print(" ALL 9 ROBUSTNESS, CACHING & SECURITY VERIFICATIONS PASSED 100%!")
     print("=" * 65)
 
 if __name__ == "__main__":

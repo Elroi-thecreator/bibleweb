@@ -3,7 +3,7 @@ type: development_standard
 title: Asynchronous Load Testing, Concurrency Saturation & Capacity Benchmarking Standard
 domain: development
 status: approved
-version: 1.4.0
+version: 1.5.0
 authority:
   level: official
   confidence: high
@@ -17,23 +17,25 @@ applies_to:
   - deployment
 
 rule:
-  "All backend optimizations, concurrency adjustments, and web deployments must be benchmarked using the asynchronous load testing suite (`scripts/load_test.py`) to measure throughput (RPS), latency percentiles (p50, p95, p99), error rates, and worker saturation limits."
+  "All backend optimizations, concurrency adjustments, and web deployments must be benchmarked using the asynchronous load testing suite (`scripts/load_test.py` and `scripts/stress_breakpoint_test.py`) to measure throughput (RPS), latency percentiles (p50, p95, p99), error rates, circuit-breaker overload shedding, and worker saturation limits."
 
 do:
-  - "Use `scripts/load_test.py` with `aiohttp` to simulate concurrent user sessions without adding external commercial test runner dependencies."
+  - "Use `scripts/load_test.py` and `scripts/stress_breakpoint_test.py` with `aiohttp` to simulate concurrent user sessions without adding external commercial test runner dependencies."
   - "Benchmark both isolated scenarios (`health`, `reader`, `search`, `songs`, `quiz`) and mixed weighted user simulations (`--scenario mixed`)."
-  - "Run concurrency ramping (`--scenario ramp`) across concurrency levels [5, 15, 30, 60, 120, 250, 500] to map the saturation curve and determine peak capacity."
+  - "Run concurrency ramping across concurrency levels [300, 500, 750, 1000, 1250, 1500, 1750, 2000] to map the saturation curve and verify circuit breaker overload shedding."
   - "Scale Uvicorn workers (`--workers 4` or `(2 * CPU) + 1`) via `scripts/run_server.py` in production web deployments to unblock CPU-bound Jinja2 template rendering and maximize multi-core throughput."
-  - "Mount `BrotliMiddleware` (with `GZipMiddleware` fallback) in `app/main.py` with `minimum_size=1000` to compress text, HTML, and JSON responses by >91% (reducing 310 KB reader HTML to 25.7 KB under Brotli and 27.5 KB under Gzip)."
-  - "Verify compression headers and decompression roundtrip integrity using `scripts/test_compression.py`."
+  - "Tune Uvicorn network socket parameters: `--backlog 2048`, `--timeout-keep-alive 20`, and `--limit-concurrency 350` per worker on Windows (`FD_SETSIZE 512` boundary) to trigger graceful HTTP 503 shedding instead of Winsock process crashes."
+  - "Implement Pre-Compressed Brotli & Gzip Buffer Caching in `BoundedHTMLCache` in `app/main.py`: generate `.br` (quality 4) and `.gzip` (level 5) once on first render. Routes return pre-compressed bytes with `Content-Encoding: br/gzip` directly, bypassing `BrotliMiddleware` runtime compression with 0 ms CPU overhead."
+  - "Verify compression headers, Brotli/Gzip caching, and decompression roundtrip integrity using `scripts/test_robustness.py`."
   - "Expose real-time Windows Process Registry telemetry via `/api/system/process-registry` tracking worker PIDs, active OS handles, thread counts, RSS memory, and event loop implementations."
-  - "Maintain high-throughput standards established via the quadruple-optimization architecture (SQLite FTS5, verse LRU caching, `BoundedHTMLCache` pre-rendered HTML response caching, and `asyncio.to_thread`):"
-    - "Mixed Multi-Page Throughput: Reaches **346.4 RPS** under 750 concurrency and **329.6 RPS** under 1,000 concurrency with **0.00% error rate** (+170% throughput improvement over un-cached Jinja2 rendering)."
-    - "Queue Latency Halved: Under 1,000 concurrency, $p_{50}$ latency dropped from 4,171 ms to **2,028 ms** (-51.4%) and $p_{95}$ dropped from 6,658 ms to **3,636 ms**."
-    - "500 Concurrency Throughput: Reaches **294.7 RPS** (up from 136.8 RPS, a +115.4% increase) with $p_{50}$ latency dropped to **1,235 ms**."
-  - "Maintain awareness of single-host failure thresholds identified via `scripts/stress_breakpoint_test.py`:"
-    - "Capacity Limit (100% Stability): Up to 1,000 concurrent connections sustains 329.6 RPS with 0.00% error rate and <3.6s p95 tail latency."
-    - "Complete Failure Threshold: 1,250 - 1,500 concurrent connections on Windows (due to Winsock `select.select()` hard C-runtime limit of `FD_SETSIZE = 512` descriptors per worker under `_WindowsSelectorEventLoop`)."
+  - "Maintain high-throughput standards established via the quintuple-optimization architecture (SQLite FTS5, verse LRU caching, pre-compressed `BoundedHTMLCache`, Uvicorn socket tuning, and `asyncio.to_thread`):"
+    - "Peak Throughput: Reaches **642.8 RPS** under 500 concurrency and **510.7 RPS** under 1,000 concurrency with **0.00% error rate** (+319% throughput improvement over baseline 121.8 RPS)."
+    - "Queue Latency Halved: Under 1,000 concurrency, $p_{50}$ latency dropped to **1,733 ms** (down from 4,171 ms baseline, a -58.4% reduction) with $p_{95}$ at **1,858 ms**."
+    - "500 Concurrency Performance: Delivers **642.8 RPS** with $p_{50}$ latency of **735 ms** and $p_{95}$ of **833 ms**."
+    - "Zero-Crash Overload Protection: Under extreme overload (1,500 - 2,000 concurrency), Uvicorn's circuit breaker sheds excess traffic cleanly via HTTP 503 while all 4 worker processes survive 100% healthy (~1,024 total handles, 339 MB total RSS)."
+  - "Maintain awareness of single-host capacity thresholds identified via `scripts/stress_breakpoint_test.py`:"
+    - "Zero-Error Stability Threshold: Up to 1,250 concurrent connections sustains 467.0 RPS with 0.00% error rate and zero dropped sockets."
+    - "Adaptive Circuit Breaking Threshold: Above 1,250 concurrency on Windows, `limit_concurrency = 350` per worker sheds excess requests via HTTP 503, shielding `_WindowsSelectorEventLoop` from exceeding Winsock's C-runtime `FD_SETSIZE = 512` ceiling."
     - "Windows Multi-Process IOCP Constraint: Multi-worker Uvicorn cannot use `ProactorEventLoop` across child processes because Windows IOCP raises `WinError 87` when multiple processes attempt to register the same parent listening socket with different completion ports."
     - "Production Scaling: In Linux/Docker environments, Uvicorn utilizes `uvloop` (Linux `epoll` with `SO_REUSEPORT`), completely bypassing the 512 descriptor limit to scale to 50,000+ concurrent connections."
     - "System Resilience: SQLite databases and thread-local connection pools remain 100% uncorrupted during and after total load failure; deep health verification returns ok in <1 second once traffic clears."

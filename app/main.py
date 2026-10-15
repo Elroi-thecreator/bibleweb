@@ -1,6 +1,7 @@
 import asyncio
 from collections import OrderedDict
 from contextlib import asynccontextmanager
+import gzip
 import hashlib
 import io
 import json
@@ -11,6 +12,11 @@ import re
 import sys
 import threading
 import time
+try:
+    import brotli
+    HAS_BROTLI_LIB = True
+except ImportError:
+    HAS_BROTLI_LIB = False
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import (
     FileResponse,
@@ -70,9 +76,32 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 PLANS_DIR = STATIC_DIR / "plans"
 
 
+class CachedPage:
+    """Pre-rendered HTML payload with pre-compressed Brotli and Gzip buffers."""
+    __slots__ = ("raw", "br", "gzip")
+
+    def __init__(self, raw: bytes):
+        self.raw = raw
+        if HAS_BROTLI_LIB and len(raw) >= 1000:
+            try:
+                self.br = brotli.compress(raw, quality=4)
+            except Exception:
+                self.br = None
+        else:
+            self.br = None
+
+        if len(raw) >= 1000:
+            try:
+                self.gzip = gzip.compress(raw, compresslevel=5)
+            except Exception:
+                self.gzip = None
+        else:
+            self.gzip = None
+
+
 class BoundedHTMLCache:
-    """Bounded thread-safe LRU cache for pre-rendered HTML responses.
-    Completely eliminates CPU-bound Jinja2 template rendering for immutable scripture and songs.
+    """Bounded thread-safe LRU cache for pre-rendered and pre-compressed HTML responses.
+    Completely eliminates CPU-bound Jinja2 template rendering AND Brotli recompression.
     """
     def __init__(self, maxsize: int = 512):
         self.maxsize = maxsize
@@ -81,20 +110,40 @@ class BoundedHTMLCache:
         self.hits = 0
         self.misses = 0
 
-    def get(self, key: str) -> bytes | None:
+    def get_response(self, key: str, request: Request, headers: dict | None = None) -> Response | None:
         with self._lock:
-            if key in self._cache:
+            cached = self._cache.get(key)
+            if cached is not None:
                 self._cache.move_to_end(key)
                 self.hits += 1
-                return self._cache[key]
-            self.misses += 1
-            return None
+            else:
+                self.misses += 1
+                return None
+
+        accept_enc = request.headers.get("accept-encoding", "").lower()
+        resp_headers = dict(headers or {})
+        resp_headers["Vary"] = "Accept-Encoding"
+        resp_headers["X-Page-Cache"] = "HIT"
+
+        # Serve pre-compressed Brotli payload directly (0 CPU work in BrotliMiddleware)
+        if cached.br and "br" in accept_enc:
+            resp_headers["Content-Encoding"] = "br"
+            return Response(content=cached.br, media_type="text/html; charset=utf-8", headers=resp_headers)
+
+        # Serve pre-compressed Gzip payload directly
+        if cached.gzip and "gzip" in accept_enc:
+            resp_headers["Content-Encoding"] = "gzip"
+            return Response(content=cached.gzip, media_type="text/html; charset=utf-8", headers=resp_headers)
+
+        # Fallback to uncompressed raw HTML
+        return Response(content=cached.raw, media_type="text/html; charset=utf-8", headers=resp_headers)
 
     def set(self, key: str, value: bytes) -> None:
+        cached_page = CachedPage(value)
         with self._lock:
             if key in self._cache:
                 self._cache.move_to_end(key)
-            self._cache[key] = value
+            self._cache[key] = cached_page
             if len(self._cache) > self.maxsize:
                 self._cache.popitem(last=False)
 
@@ -730,12 +779,13 @@ def get_canon_context(canon: str = "protestant"):
 async def landing_page(request: Request, canon: str = Query(None)):
     active_canon = resolve_canon(request, canon)
     cache_key = f"landing:{active_canon}"
-    cached_html = HTML_PAGE_CACHE.get(cache_key)
-    if cached_html is not None:
-        resp = HTMLResponse(content=cached_html)
-        resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
-        resp.headers["X-Page-Cache"] = "HIT"
-        return resp
+    cached_resp = HTML_PAGE_CACHE.get_response(
+        cache_key,
+        request,
+        headers={"Cache-Control": "public, max-age=3600, stale-while-revalidate=86400"}
+    )
+    if cached_resp is not None:
+        return cached_resp
 
     canon_ctx = get_canon_context(active_canon)
     resp = templates.TemplateResponse(
@@ -776,15 +826,15 @@ async def reader(
             headers={"ETag": etag, "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
         )
 
-    # In-Memory Pre-Rendered HTML Cache lookup (Bypasses Jinja2 CPU overhead completely)
+    # In-Memory Pre-Rendered & Pre-Compressed Cache lookup (0 CPU Brotli overhead)
     cache_key = f"read:{book_id}:{chapter}:{active_canon}:{mode}"
-    cached_html = HTML_PAGE_CACHE.get(cache_key)
-    if cached_html is not None:
-        resp = HTMLResponse(content=cached_html)
-        resp.headers["ETag"] = etag
-        resp.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
-        resp.headers["X-Page-Cache"] = "HIT"
-        return resp
+    cached_resp = HTML_PAGE_CACHE.get_response(
+        cache_key,
+        request,
+        headers={"ETag": etag, "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    )
+    if cached_resp is not None:
+        return cached_resp
 
     try:
         verses = (await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)) or []
@@ -827,10 +877,19 @@ async def presenter_mode(request: Request, book_id: int, chapter: int, canon: st
     if chapter < 1 or chapter > current_book["total_chapters"]:
         chapter = 1
 
+    cache_key = f"present:{book_id}:{chapter}:{active_canon}"
+    cached_resp = HTML_PAGE_CACHE.get_response(
+        cache_key,
+        request,
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    )
+    if cached_resp is not None:
+        return cached_resp
+
     verses = await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)
     canon_ctx = get_canon_context(active_canon)
 
-    return templates.TemplateResponse(
+    resp = templates.TemplateResponse(
         request=request,
         name="presenter.html",
         context={
@@ -840,14 +899,28 @@ async def presenter_mode(request: Request, book_id: int, chapter: int, canon: st
             "verses": verses,
         },
     )
+    if resp.body:
+        HTML_PAGE_CACHE.set(cache_key, resp.body)
+    resp.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+    resp.headers["X-Page-Cache"] = "MISS"
+    return resp
 
 
 @app.get("/plans", response_class=HTMLResponse)
 async def plans_page(request: Request, canon: str = Query(None)):
     """Daily habit reading tracks with day-by-day progress checkoffs."""
     active_canon = resolve_canon(request, canon)
+    cache_key = f"plans:{active_canon}"
+    cached_resp = HTML_PAGE_CACHE.get_response(
+        cache_key,
+        request,
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    )
+    if cached_resp is not None:
+        return cached_resp
+
     canon_ctx = get_canon_context(active_canon)
-    return templates.TemplateResponse(
+    resp = templates.TemplateResponse(
         request=request,
         name="plans.html",
         context={
@@ -855,6 +928,11 @@ async def plans_page(request: Request, canon: str = Query(None)):
             "plans": READING_PLANS,
         },
     )
+    if resp.body:
+        HTML_PAGE_CACHE.set(cache_key, resp.body)
+    resp.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+    resp.headers["X-Page-Cache"] = "MISS"
+    return resp
 
 
 @app.get("/progress", response_class=HTMLResponse)
@@ -873,12 +951,13 @@ async def search_page(request: Request, q: str = Query("", description="Search q
     active_canon = resolve_canon(request, canon)
     clean_q = q.strip() if q else ""
     cache_key = f"search:{active_canon}:{clean_q}"
-    cached_html = HTML_PAGE_CACHE.get(cache_key)
-    if cached_html is not None:
-        resp = HTMLResponse(content=cached_html)
-        resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
-        resp.headers["X-Page-Cache"] = "HIT"
-        return resp
+    cached_resp = HTML_PAGE_CACHE.get_response(
+        cache_key,
+        request,
+        headers={"Cache-Control": "public, max-age=3600, stale-while-revalidate=86400"}
+    )
+    if cached_resp is not None:
+        return cached_resp
 
     canon_ctx = get_canon_context(active_canon)
     results = (await asyncio.to_thread(search_verses, clean_q, active_canon)) if clean_q else []
@@ -986,12 +1065,13 @@ async def songs_directory_page(
     active_canon = resolve_canon(request, canon)
     clean_q = q.strip() if q else ""
     cache_key = f"songs:{book}:{vol}:{clean_q}:{page}:{active_canon}"
-    cached_html = HTML_PAGE_CACHE.get(cache_key)
-    if cached_html is not None:
-        resp = HTMLResponse(content=cached_html)
-        resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
-        resp.headers["X-Page-Cache"] = "HIT"
-        return resp
+    cached_resp = HTML_PAGE_CACHE.get_response(
+        cache_key,
+        request,
+        headers={"Cache-Control": "public, max-age=3600, stale-while-revalidate=86400"}
+    )
+    if cached_resp is not None:
+        return cached_resp
 
     canon_ctx = get_canon_context(active_canon)
     
@@ -1044,6 +1124,24 @@ async def song_detail_page(
     """Dedicated song reader view with bilingual stanzas and YouTube player."""
     active_canon = resolve_canon(request, canon)
     canon_ctx = get_canon_context(active_canon)
+
+    # Deterministic ETag for hymnody
+    etag = f'"song-{song_id}-v1"'
+    if request.headers.get("if-none-match") == etag:
+        return Response(
+            status_code=304,
+            headers={"ETag": etag, "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+        )
+
+    cache_key = f"song_detail:{song_id}:{mode}:{active_canon}"
+    cached_resp = HTML_PAGE_CACHE.get_response(
+        cache_key,
+        request,
+        headers={"ETag": etag, "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    )
+    if cached_resp is not None:
+        return cached_resp
+
     song = await asyncio.to_thread(get_song_by_id, song_id)
     if not song:
         raise HTTPException(status_code=404, detail="Song not found")
@@ -1060,14 +1158,6 @@ async def song_detail_page(
         )
         volume_songs = vol_data.get("songs", [])
 
-    # Deterministic ETag for hymnody
-    etag = f'"song-{song_id}-v1"'
-    if request.headers.get("if-none-match") == etag:
-        return Response(
-            status_code=304,
-            headers={"ETag": etag, "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
-        )
-
     resp = templates.TemplateResponse(
         request=request,
         name="song_detail.html",
@@ -1078,8 +1168,11 @@ async def song_detail_page(
             "mode": mode,
         },
     )
+    if resp.body:
+        HTML_PAGE_CACHE.set(cache_key, resp.body)
     resp.headers["ETag"] = etag
     resp.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+    resp.headers["X-Page-Cache"] = "MISS"
     return resp
 
 

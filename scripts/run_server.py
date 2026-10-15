@@ -48,6 +48,25 @@ def main():
         default="auto",
         help="Event loop implementation (default: auto)",
     )
+    parser.add_argument(
+        "--backlog",
+        type=int,
+        default=int(os.getenv("UVICORN_BACKLOG", "2048")),
+        help="Maximum number of pending connections in the socket listen queue (default: 2048)",
+    )
+    parser.add_argument(
+        "--timeout-keep-alive",
+        type=int,
+        default=int(os.getenv("TIMEOUT_KEEP_ALIVE", "20")),
+        help="Close Keep-Alive connections if no new data is received within this timeout (default: 20s)",
+    )
+    default_concurrency = 350 if (sys.platform == "win32") else None
+    parser.add_argument(
+        "--limit-concurrency",
+        type=int,
+        default=int(os.getenv("LIMIT_CONCURRENCY", default_concurrency if default_concurrency else 0)) or None,
+        help=f"Maximum concurrent connections per worker before returning 503 (default: {default_concurrency} on Windows to stay within FD_SETSIZE 512, None on Linux)",
+    )
     args = parser.parse_args()
 
     import uvicorn
@@ -63,28 +82,37 @@ def main():
     print("=" * 72)
     print(" Holy Bible Web Application - Multi-Worker Server")
     print("=" * 72)
-    print(f" Host:             http://{args.host}:{args.port}")
-    print(f" CPU Cores:        {cpus}")
-    print(f" Active Workers:   {args.workers}")
-    print(f" Event Loop:       {loop_desc}")
-    print(f" Supervisor PID:   {proc.pid} (Initial Handles: {handles}, Threads: {threads})")
-    print(f" Auto-Reload:      {args.reload}")
-    print(f" Log Level:        {args.log_level}")
+    print(f" Host:              http://{args.host}:{args.port}")
+    print(f" CPU Cores:         {cpus}")
+    print(f" Active Workers:    {args.workers}")
+    print(f" Event Loop:        {loop_desc}")
+    print(f" Concurrency Limit: {args.limit_concurrency} per worker (Overload Protection)")
+    print(f" Socket Backlog:    {args.backlog}")
+    print(f" Keep-Alive Timeout:{args.timeout_keep_alive}s")
+    print(f" Supervisor PID:    {proc.pid} (Initial Handles: {handles}, Threads: {threads})")
+    print(f" Auto-Reload:       {args.reload}")
+    print(f" Log Level:         {args.log_level}")
     print("=" * 72)
 
     # In reload mode, uvicorn requires workers=1
     workers = 1 if args.reload else args.workers
 
-    uvicorn.run(
-        "app.main:app",
-        host=args.host,
-        port=args.port,
-        workers=workers,
-        reload=args.reload,
-        log_level=args.log_level,
-        loop=args.loop,
-        access_log=True,
-    )
+    uv_kwargs = {
+        "app": "app.main:app",
+        "host": args.host,
+        "port": args.port,
+        "workers": workers,
+        "reload": args.reload,
+        "log_level": args.log_level,
+        "loop": args.loop,
+        "backlog": args.backlog,
+        "timeout_keep_alive": args.timeout_keep_alive,
+        "access_log": True,
+    }
+    if args.limit_concurrency:
+        uv_kwargs["limit_concurrency"] = args.limit_concurrency
+
+    uvicorn.run(**uv_kwargs)
 
 if __name__ == "__main__":
     main()
