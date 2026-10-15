@@ -3,7 +3,7 @@ type: development_standard
 title: Automated Verification, Route Integrity & Standalone Executable Smoke Testing
 domain: development
 status: approved
-version: 1.0.0
+version: 1.1.0
 authority:
   level: official
   confidence: high
@@ -16,12 +16,14 @@ applies_to:
   - ci_cd
 
 rule:
-  "Every change to backend routes, database schema, audio logic, or desktop packaging must pass automated validation and smoke tests before committing or publishing release tags."
+  "Every change to backend routes, database schema, audio logic, or desktop packaging must pass automated validation, robustness verification, and smoke tests before committing or publishing release tags."
 
 do:
   - "Verify FastAPI route integrity using `pytest` and `httpx.AsyncClient` or FastAPI `TestClient`."
+  - "Execute `scripts/test_robustness.py` to verify OWASP security headers, static/reader caching, 304 Not Modified status, custom branded 404/500 error pages, and deep database health checks."
+  - "Execute `scripts/test_compression.py` to verify Brotli and Gzip wire compression ratios (>91% savings) and 100% decompression roundtrip integrity."
   - "Verify that empty query string navigations on user-facing routes (such as `/search`) return 200 HTML responses instead of 422 JSON validation errors."
-  - "Verify SQLite queries for verse counts across both Catholic (73 books) and Protestant (66 books) canons."
+  - "Verify SQLite queries for verse counts across both Catholic (73 books) and Protestant (66 books) canons via `scripts/test_dual_corpus.py`."
   - "Validate that `windows_app/app.py` boots in headless/smoke mode without throwing unhandled exceptions."
   - "Verify that WinGet manifest generator (`windows_app/generate_winget_manifest.py`) outputs valid schema v1.6.0 YAML matching the compiled executable's SHA256."
   - "Ensure `git status` remains clean of temporary PyInstaller artifacts or SQLite journal files (`.db-journal`, `.db-wal`)."

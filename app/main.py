@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 import hashlib
 import io
 import json
@@ -6,6 +7,7 @@ from pathlib import Path
 import platform
 import random
 import re
+import sys
 import time
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import (
@@ -18,6 +20,7 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from gtts import gTTS
 try:
     import edge_tts
@@ -48,10 +51,11 @@ from app.db import (
     get_song_volumes,
     get_songs_list,
     get_song_by_id,
+    check_database_health,
+    close_thread_connections,
 )
 from app.plans_data import READING_PLANS
 from app.quiz_data import QUIZ_CATEGORIES, QUIZ_QUESTIONS
-import sys
 
 # Absolute cross-platform path resolution (supports source & frozen PyInstaller exe)
 if getattr(sys, "frozen", False):
@@ -63,16 +67,80 @@ STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 PLANS_DIR = STATIC_DIR / "plans"
 
-app = FastAPI(title="Holy Bible - வேதம்")
 
-# HTTP Compression Middleware (Brotli with automatic Gzip fallback, minimum payload 1000 bytes)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle manager warming up thread-local SQLite connections and releasing resources upon exit."""
+    # Fast startup verification (pings read-only databases)
+    await asyncio.to_thread(check_database_health)
+    yield
+    # Graceful shutdown: close cached thread-local connections
+    await asyncio.to_thread(close_thread_connections)
+
+
+app = FastAPI(title="Holy Bible - வேதம்", lifespan=lifespan)
+
+# 1. HTTP Compression Middleware (Brotli with automatic Gzip fallback, minimum payload 1000 bytes)
 if HAS_BROTLI:
     app.add_middleware(BrotliMiddleware, minimum_size=1000)
 else:
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+
+# 2. Security Headers & Static Asset Caching Middleware
+@app.middleware("http")
+async def security_and_cache_middleware(request: Request, call_next):
+    """Enforces essential OWASP security headers and aggressive static asset caching."""
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("X-XSS-Protection", "1; mode=block")
+
+    # Static assets (JS, CSS, icons, images, fonts) cached aggressively for 7 days
+    if request.url.path.startswith("/static/"):
+        response.headers.setdefault("Cache-Control", "public, max-age=604800, immutable")
+
+    return response
+
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+
+# 3. Custom Branded Exception Handlers
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Renders branded Tamil/English error templates for 404/client errors, or JSON for API calls."""
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    
+    active_canon = resolve_canon(request)
+    canon_ctx = get_canon_context(active_canon)
+    template_name = "404.html" if exc.status_code == 404 else "500.html"
+    return templates.TemplateResponse(
+        request=request,
+        name=template_name,
+        context={**canon_ctx, "request": request, "detail": exc.detail},
+        status_code=exc.status_code,
+    )
+
+
+@app.exception_handler(Exception)
+async def custom_unhandled_exception_handler(request: Request, exc: Exception):
+    """Graceful degradation for uncaught 500 errors preventing raw stacktraces from leaking."""
+    print(f"[Unhandled Server Error] {request.method} {request.url.path}: {exc}")
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+    
+    active_canon = resolve_canon(request)
+    canon_ctx = get_canon_context(active_canon)
+    return templates.TemplateResponse(
+        request=request,
+        name="500.html",
+        context={**canon_ctx, "request": request, "error_msg": str(exc)},
+        status_code=500,
+    )
 
 START_TIME = time.time()
 AUDIO_CACHE = {}
@@ -338,16 +406,20 @@ async def stream_audio(
 # ==========================================
 
 @app.get("/api/health")
-async def api_health():
+async def api_health(deep: bool = Query(False, description="Run database connectivity verification")):
     uptime_sec = int(time.time() - START_TIME)
-    return JSONResponse(
-        content={
-            "status": "ok",
-            "uptime_seconds": uptime_sec,
-            "version": "1.0.0",
-        },
-        status_code=200,
-    )
+    payload = {
+        "status": "ok",
+        "uptime_seconds": uptime_sec,
+        "version": "1.1.0",
+    }
+    if deep:
+        db_health = await asyncio.to_thread(check_database_health)
+        payload["databases"] = db_health
+        all_ok = all(db_health.values())
+        payload["status"] = "ok" if all_ok else "degraded"
+        return JSONResponse(content=payload, status_code=200 if all_ok else 503)
+    return JSONResponse(content=payload, status_code=200)
 
 
 @app.get("/status", response_class=HTMLResponse)
@@ -514,7 +586,7 @@ def get_canon_context(canon: str = "protestant"):
 async def landing_page(request: Request, canon: str = Query(None)):
     active_canon = resolve_canon(request, canon)
     canon_ctx = get_canon_context(active_canon)
-    return templates.TemplateResponse(
+    resp = templates.TemplateResponse(
         request=request,
         name="landing.html",
         context={
@@ -522,6 +594,8 @@ async def landing_page(request: Request, canon: str = Query(None)):
             "daily_verse": get_daily_verse(active_canon),
         },
     )
+    resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+    return resp
 
 
 @app.get("/read/{book_id}/{chapter}", response_class=HTMLResponse)
@@ -539,6 +613,14 @@ async def reader(
     if chapter < 1 or chapter > current_book["total_chapters"]:
         chapter = 1
 
+    # Deterministic ETag: scripture text is immutable per version
+    etag = f'"{book_id}-{chapter}-{active_canon}-{mode}-v1"'
+    if request.headers.get("if-none-match") == etag:
+        return Response(
+            status_code=304,
+            headers={"ETag": etag, "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+        )
+
     try:
         verses = (await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)) or []
     except Exception as e:
@@ -549,7 +631,7 @@ async def reader(
     next_ch = chapter + 1 if chapter < current_book["total_chapters"] else None
     canon_ctx = get_canon_context(active_canon)
 
-    return templates.TemplateResponse(
+    resp = templates.TemplateResponse(
         request=request,
         name="reader.html",
         context={
@@ -562,6 +644,9 @@ async def reader(
             "next_ch": next_ch,
         },
     )
+    resp.headers["ETag"] = etag
+    resp.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+    return resp
 
 
 @app.get("/present/{book_id}/{chapter}", response_class=HTMLResponse)
@@ -781,7 +866,15 @@ async def song_detail_page(
         )
         volume_songs = vol_data.get("songs", [])
 
-    return templates.TemplateResponse(
+    # Deterministic ETag for hymnody
+    etag = f'"song-{song_id}-v1"'
+    if request.headers.get("if-none-match") == etag:
+        return Response(
+            status_code=304,
+            headers={"ETag": etag, "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+        )
+
+    resp = templates.TemplateResponse(
         request=request,
         name="song_detail.html",
         context={
@@ -791,6 +884,9 @@ async def song_detail_page(
             "mode": mode,
         },
     )
+    resp.headers["ETag"] = etag
+    resp.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+    return resp
 
 
 @app.get("/api/songs")

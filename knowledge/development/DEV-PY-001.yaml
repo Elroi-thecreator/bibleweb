@@ -3,7 +3,7 @@ type: development_standard
 title: FastAPI Backend Route Conventions, Async Patterns & Jinja2 Templates
 domain: development
 status: approved
-version: 1.1.0
+version: 1.2.0
 authority:
   level: official
   confidence: high
@@ -16,13 +16,17 @@ applies_to:
   - templates
 
 rule:
-  "FastAPI routes in `app/main.py` must use asynchronous request handlers, offload all synchronous database calls to background worker threads using `await asyncio.to_thread(...)`, return cleanly structured Jinja2 templates or JSON payloads, and utilize the centralized database access functions in `app/db.py`."
+  "FastAPI routes in `app/main.py` must use asynchronous request handlers, offload all synchronous database calls to background worker threads using `await asyncio.to_thread(...)`, return cleanly structured Jinja2 templates or JSON payloads, enforce OWASP security headers, provide immutable HTTP caching with conditional ETags, and handle errors via branded bilingual HTML templates."
 
 do:
   - "Mount static files at `/static` using `app.mount('/static', StaticFiles(directory=get_static_dir()), name='static')`."
   - "Configure `Jinja2Templates` pointing to `get_templates_dir()` so templates render properly both in source mode and frozen executable mode."
   - "Implement clean canonical URL structures (`/`, `/{canon}/{version}/{book}/{chapter}`, `/quiz`, `/search`)."
   - "Wrap all blocking SQLite database queries (`get_chapter_verses`, `search_verses`, `get_songs_list`, `get_song_by_id`, `get_song_books`, etc.) in `await asyncio.to_thread(...)` inside async route handlers to keep the asyncio event loop free for concurrent request orchestration."
+  - "Enforce OWASP security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-XSS-Protection: 1; mode=block`) and aggressive static caching (`Cache-Control: public, max-age=604800, immutable`) via HTTP middleware."
+  - "Attach `Cache-Control: public, max-age=86400, stale-while-revalidate=604800` and deterministic `ETag` headers on immutable scripture reading routes (`/read/{book}/{chapter}`) and song lyrics, returning `304 Not Modified` on matching `If-None-Match` requests."
+  - "Implement branded bilingual HTML exception handlers for `StarletteHTTPException` (404) and `Exception` (500) rendering `templates/404.html` and `templates/500.html` with search and navigation shortcuts, while returning structured JSON for `/api/*` endpoints."
+  - "Use FastAPI's `@asynccontextmanager async def lifespan(app: FastAPI)` for startup connection pre-warming and graceful shutdown cleanup."
   - "Ensure query parameters on HTML page endpoints (e.g., `/search`, `/plans`) do not impose mandatory `min_length` constraints that cause 422 JSON validation responses; empty query states must render the appropriate HTML landing template."
   - "Return clear JSON error structures with HTTP status codes for API endpoints (`/api/verses`, `/api/quiz`)."
   - "Mount `BrotliMiddleware` (with `GZipMiddleware` fallback) with a 1,000-byte threshold to compress dynamic HTML and JSON responses."
@@ -30,13 +34,15 @@ do:
 
 dont:
   - "Do not hardcode relative filesystem paths like `'./templates'` or `'./static'` directly; always resolve through path helper utilities."
+  - "Do not return raw unformatted JSON errors or uncaught tracebacks to end users on HTML web routes."
+  - "Do not omit HTTP caching and conditional ETag validation on immutable scripture chapter responses."
   - "Do not invoke synchronous database calls directly on the asyncio event loop without `await asyncio.to_thread(...)` in route handlers."
   - "Do not enforce `min_length` or strict validation constraints on optional HTML route query parameters that would cause FastAPI to abort and return a 422 JSON payload."
   - "Do not perform synchronous blocking I/O directly in high-throughput route handlers."
   - "Do not render untrusted HTML without autoescaping."
 
 reason:
-  "Standardized route definitions ensure consistency, predictability, and maintainability across web and desktop runtimes."
+  "Standardized route definitions, deterministic caching, security headers, and branded fault-tolerant error handlers ensure exceptional reliability, user experience, and predictability across web and desktop runtimes."
 
 related_items:
   - ARCH-SYS-001

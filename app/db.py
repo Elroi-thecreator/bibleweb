@@ -16,9 +16,21 @@ DB_PATH = os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
 DEFAULT_SONGS_DB_PATH = os.path.join(BASE_DIR, "data", "songs.sqlite.db")
 SONGS_DB_PATH = os.getenv("SONGS_DATABASE_PATH", DEFAULT_SONGS_DB_PATH)
 
+import threading
+
+_local_storage = threading.local()
+
 
 def get_connection():
-    """Returns a connection, raising a clear diagnostic error if the DB file was omitted."""
+    """Returns a thread-local cached SQLite connection configured with MMAP and read-only mode."""
+    conn = getattr(_local_storage, "bible_conn", None)
+    if conn is not None:
+        try:
+            conn.execute("SELECT 1;")
+            return conn
+        except Exception:
+            _local_storage.bible_conn = None
+
     abs_path = os.path.abspath(DB_PATH)
     if not os.path.exists(abs_path):
         data_dir = os.path.join(BASE_DIR, "data")
@@ -31,15 +43,30 @@ def get_connection():
         )
 
     try:
-        conn = sqlite3.connect(f"file:{abs_path}?mode=ro", uri=True)
+        conn = sqlite3.connect(f"file:{abs_path}?mode=ro", uri=True, check_same_thread=False)
     except Exception:
-        conn = sqlite3.connect(abs_path)
+        conn = sqlite3.connect(abs_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA query_only = ON;")
+        conn.execute("PRAGMA mmap_size = 67108864;")  # 64 MB memory-mapped I/O
+        conn.execute("PRAGMA cache_size = -8000;")     # 8 MB page cache
+    except Exception:
+        pass
+    _local_storage.bible_conn = conn
     return conn
 
 
 def get_songs_connection():
-    """Returns a connection to the dedicated songs database."""
+    """Returns a thread-local cached SQLite connection for the songs database."""
+    conn = getattr(_local_storage, "songs_conn", None)
+    if conn is not None:
+        try:
+            conn.execute("SELECT 1;")
+            return conn
+        except Exception:
+            _local_storage.songs_conn = None
+
     abs_path = os.path.abspath(SONGS_DB_PATH)
     if not os.path.exists(abs_path):
         # Fallback to bible db if separate songs db is missing
@@ -50,11 +77,53 @@ def get_songs_connection():
             raise FileNotFoundError(f"Songs DB file not found at: '{abs_path}'")
 
     try:
-        conn = sqlite3.connect(f"file:{abs_path}?mode=ro", uri=True)
+        conn = sqlite3.connect(f"file:{abs_path}?mode=ro", uri=True, check_same_thread=False)
     except Exception:
-        conn = sqlite3.connect(abs_path)
+        conn = sqlite3.connect(abs_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA query_only = ON;")
+        conn.execute("PRAGMA mmap_size = 33554432;")  # 32 MB memory-mapped I/O
+        conn.execute("PRAGMA cache_size = -4000;")     # 4 MB page cache
+    except Exception:
+        pass
+    _local_storage.songs_conn = conn
     return conn
+
+
+def close_thread_connections():
+    """Gracefully closes cached thread-local SQLite connections for current thread."""
+    if hasattr(_local_storage, "bible_conn") and _local_storage.bible_conn:
+        try:
+            _local_storage.bible_conn.close()
+        except Exception:
+            pass
+        _local_storage.bible_conn = None
+    if hasattr(_local_storage, "songs_conn") and _local_storage.songs_conn:
+        try:
+            _local_storage.songs_conn.close()
+        except Exception:
+            pass
+        _local_storage.songs_conn = None
+
+
+def check_database_health() -> Dict[str, bool]:
+    """Pings both scripture and songs databases to verify connectivity and readability."""
+    health = {"bible_db": False, "songs_db": False}
+    try:
+        conn = get_connection()
+        conn.execute("SELECT 1 FROM verses LIMIT 1;").fetchone()
+        health["bible_db"] = True
+    except Exception:
+        health["bible_db"] = False
+
+    try:
+        s_conn = get_songs_connection()
+        s_conn.execute("SELECT 1 FROM songs LIMIT 1;").fetchone()
+        health["songs_db"] = True
+    except Exception:
+        health["songs_db"] = False
+    return health
 
 
 # 66 Canon Books Metadata (ID, English Name, Protestant BSI Tamil Name, Chapter Count)

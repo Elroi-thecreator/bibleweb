@@ -3,7 +3,7 @@ type: architecture_standard
 title: Embedded Dual-SQLite Architecture (Scripture & Song Lyrics Databases)
 domain: architecture
 status: approved
-version: 1.2.0
+version: 1.3.0
 authority:
   level: official
   confidence: high
@@ -17,13 +17,15 @@ applies_to:
   - packaging
 
 rule:
-  "Scripture text and song lyrics are separated into two dedicated, embedded SQLite databases (`data/bible.sqlite.db` for multi-canon scripture, and `data/songs.sqlite.db` for Christian songbooks/lyrics). Both utilize read-only connection pooling, dedicated connection resolvers (`get_connection()` and `get_songs_connection()`), in-memory LRU chapter/search caching, SQLite FTS5 full-text indexing, and strict file size budgets under 50 MB to comply with Git repository standards."
+  "Scripture text and song lyrics are separated into two dedicated, embedded SQLite databases (`data/bible.sqlite.db` for multi-canon scripture, and `data/songs.sqlite.db` for Christian songbooks/lyrics). Both utilize thread-local connection pooling with memory-mapped I/O (`PRAGMA mmap_size = 64MB`), dedicated connection resolvers (`get_connection()` and `get_songs_connection()`), in-memory LRU chapter/search caching, SQLite FTS5 full-text indexing, and strict file size budgets under 50 MB to comply with Git repository standards."
 
 do:
   - "Store all verses in `data/bible.sqlite.db` with composite index `idx_verses_lookup(book_id, chapter, verse)` for sub-millisecond query latency."
+  - "Cache read-only SQLite connections in `threading.local()` across worker threads, setting `PRAGMA query_only = ON;`, `PRAGMA mmap_size = 67108864;` (64 MB memory-mapped I/O to address the 47.68 MB database entirely in RAM), and `PRAGMA cache_size = -8000;` to eliminate file open/close syscall overhead."
   - "Maintain a dedicated SQLite FTS5 virtual table (`verses_fts`) using `content='verses'`, `content_rowid='id'`, `columnsize=0`, and `tokenize='unicode61'` indexing bilingual scripture corpora for sub-millisecond keyword and phrase queries."
   - "Implement two-tier in-memory LRU caching (`functools.lru_cache`) in `app/db.py`: `_fetch_chapter_verses_cached` (maxsize=2048 returning immutable tuples) and `_search_verses_cached` (maxsize=512), returning detached dictionary copies to callers to prevent cache mutation."
   - "Maintain database file sizes strictly under 50 MB (`bible.sqlite.db` at ~47.68 MB with full FTS5 index, `songs.sqlite.db` at ~7.5 MB) using `PRAGMA page_size = 8192`, eliminating redundant subset indexes, and executing `VACUUM` to prevent GitHub file size threshold warnings."
+  - "Provide `check_database_health()` and deep verification queries (`SELECT 1 FROM verses LIMIT 1;`) to enable container/orchestration readiness probes."
   - "Store all songbooks and lyrics in `data/songs.sqlite.db` with structured columns for `volume`, `song_number`, `lyrics_bilingual` JSON stanzas, and text search indexes."
   - "Maintain a modular database architecture: database connection methods (`get_connection()` for Bible and `get_songs_connection()` for Songs) handle independent paths and frozen resolution via `sys._MEIPASS`."
   - "Bundle both databases in PyInstaller specifications (`windows_app/holybible.spec`) under the `datas` array."
@@ -34,6 +36,7 @@ do:
 
 dont:
   - "Do not combine song lyrics into `bible.sqlite.db` to prevent database bloat exceeding Git/GitHub recommended thresholds (50 MB)."
+  - "Do not open unpooled standalone connections repeatedly inside thread-pool worker tasks without thread-local caching."
   - "Do not retain redundant partial indexes (e.g., `(book_id, chapter)`) that are strict prefixes of larger composite indexes (e.g., `(book_id, chapter, verse)`)."
   - "Do not mutate cached query objects in memory; always return detached dictionary copies to callers."
   - "Do not execute unparameterized string formatting or SQL concatenation."
@@ -41,7 +44,7 @@ dont:
   - "Do not require an external SQL server (PostgreSQL/MySQL) daemon for standard application startup."
 
 reason:
-  "SQLite provides complete offline availability, zero configuration, zero latency overhead, instant installation, and portability across local and hosted server environments. Combining FTS5 indexing with 8KB page size and in-memory LRU caching provides high-throughput read scalability while keeping file sizes strictly beneath Git hosting warning limits."
+  "SQLite provides complete offline availability, zero configuration, zero latency overhead, instant installation, and portability across local and hosted server environments. Combining thread-local connection caching and 64 MB memory mapping with FTS5 indexing provides exceptional read throughput while keeping file sizes strictly beneath Git hosting warning limits."
 
 related_items:
   - ARCH-SYS-001
