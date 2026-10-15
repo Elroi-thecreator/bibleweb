@@ -30,6 +30,9 @@ do:
     - "Search Throughput: >= 90 RPS (reaches 275.8 RPS under 500 concurrency with 0.00% error rate)."
     - "Reader Throughput: >= 140 RPS (baseline: 145.8 RPS; p95: 370.7 ms)."
     - "Mixed Multi-Page Traffic: >= 200 RPS (sustained ~200 RPS under 500 concurrency; 0.00% error rate maintained across 5 to 500 concurrency)."
+  - "Maintain awareness of single-host failure thresholds identified via `scripts/stress_breakpoint_test.py`:"
+    - "Capacity Limit (100% Stability): Up to 1,000 concurrent connections (0.00% error rate, p50: ~7.7s, queue delay governed by Little's Law L = lambda * W)."
+    - "Complete Failure Threshold: >= 1,500 concurrent connections (95.02% error rate due to OS TCP listen backlog exhaustion, ClientConnectorError socket drops, and client timeouts)."
 
 dont:
   - "Do not rely exclusively on single-worker benchmarks to assess multi-core production server potential."
