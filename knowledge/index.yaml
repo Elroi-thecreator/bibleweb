@@ -1,8 +1,8 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
-repository_root: "E:/anti-prjects/bibleweb"
+repository_root: "E:/bible"
 knowledge_units_count: 14
-last_updated: "2026-10-14"
+last_updated: "2026-10-15"
 
 knowledge_units:
   architecture:
