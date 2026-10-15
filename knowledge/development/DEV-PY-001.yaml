@@ -3,7 +3,7 @@ type: development_standard
 title: FastAPI Backend Route Conventions, Async Patterns & Jinja2 Templates
 domain: development
 status: approved
-version: 1.2.0
+version: 1.3.0
 authority:
   level: official
   confidence: high
@@ -16,13 +16,14 @@ applies_to:
   - templates
 
 rule:
-  "FastAPI routes in `app/main.py` must use asynchronous request handlers, offload all synchronous database calls to background worker threads using `await asyncio.to_thread(...)`, return cleanly structured Jinja2 templates or JSON payloads, enforce OWASP security headers, provide immutable HTTP caching with conditional ETags, and handle errors via branded bilingual HTML templates."
+  "FastAPI routes in `app/main.py` must use asynchronous request handlers, offload all synchronous database calls to background worker threads using `await asyncio.to_thread(...)`, return cleanly structured Jinja2 templates or JSON payloads, enforce OWASP security headers, provide immutable HTTP caching with conditional ETags, cache rendered HTML responses in memory via `BoundedHTMLCache`, and handle errors via branded bilingual HTML templates."
 
 do:
   - "Mount static files at `/static` using `app.mount('/static', StaticFiles(directory=get_static_dir()), name='static')`."
   - "Configure `Jinja2Templates` pointing to `get_templates_dir()` so templates render properly both in source mode and frozen executable mode."
   - "Implement clean canonical URL structures (`/`, `/{canon}/{version}/{book}/{chapter}`, `/quiz`, `/search`)."
   - "Wrap all blocking SQLite database queries (`get_chapter_verses`, `search_verses`, `get_songs_list`, `get_song_by_id`, `get_song_books`, etc.) in `await asyncio.to_thread(...)` inside async route handlers to keep the asyncio event loop free for concurrent request orchestration."
+  - "Cache pre-rendered immutable HTML responses in memory using `BoundedHTMLCache` (thread-safe LRU cache with bounded maxsize=512) across `/read/{book}/{chapter}`, `/`, `/songs`, and `/search` to eliminate CPU-bound Jinja2 template rendering and increase throughput."
   - "Enforce OWASP security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-XSS-Protection: 1; mode=block`) and aggressive static caching (`Cache-Control: public, max-age=604800, immutable`) via HTTP middleware."
   - "Attach `Cache-Control: public, max-age=86400, stale-while-revalidate=604800` and deterministic `ETag` headers on immutable scripture reading routes (`/read/{book}/{chapter}`) and song lyrics, returning `304 Not Modified` on matching `If-None-Match` requests."
   - "Implement branded bilingual HTML exception handlers for `StarletteHTTPException` (404) and `Exception` (500) rendering `templates/404.html` and `templates/500.html` with search and navigation shortcuts, while returning structured JSON for `/api/*` endpoints."

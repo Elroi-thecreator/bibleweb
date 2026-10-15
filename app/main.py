@@ -1,4 +1,5 @@
 import asyncio
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 import hashlib
 import io
@@ -8,6 +9,7 @@ import platform
 import random
 import re
 import sys
+import threading
 import time
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import (
@@ -66,6 +68,58 @@ else:
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 PLANS_DIR = STATIC_DIR / "plans"
+
+
+class BoundedHTMLCache:
+    """Bounded thread-safe LRU cache for pre-rendered HTML responses.
+    Completely eliminates CPU-bound Jinja2 template rendering for immutable scripture and songs.
+    """
+    def __init__(self, maxsize: int = 512):
+        self.maxsize = maxsize
+        self._cache = OrderedDict()
+        self._lock = threading.Lock()
+        self.hits = 0
+        self.misses = 0
+
+    def get(self, key: str) -> bytes | None:
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+                self.hits += 1
+                return self._cache[key]
+            self.misses += 1
+            return None
+
+    def set(self, key: str, value: bytes) -> None:
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+            self._cache[key] = value
+            if len(self._cache) > self.maxsize:
+                self._cache.popitem(last=False)
+
+    def size(self) -> int:
+        with self._lock:
+            return len(self._cache)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._cache.clear()
+
+    def stats(self) -> dict:
+        with self._lock:
+            tot = self.hits + self.misses
+            ratio = (self.hits / tot * 100.0) if tot > 0 else 0.0
+            return {
+                "size": len(self._cache),
+                "maxsize": self.maxsize,
+                "hits": self.hits,
+                "misses": self.misses,
+                "hit_ratio_pct": round(ratio, 2),
+            }
+
+
+HTML_PAGE_CACHE = BoundedHTMLCache(maxsize=512)
 
 
 @asynccontextmanager
@@ -497,6 +551,7 @@ async def api_process_registry():
             "worker_count": len(workers_info),
             "total_handles": total_handles,
             "total_rss_mb": round(total_rss_bytes / (1024 * 1024), 2),
+            "page_cache": HTML_PAGE_CACHE.stats(),
             "workers": workers_info,
             "timestamp": time.time(),
         }
@@ -674,6 +729,14 @@ def get_canon_context(canon: str = "protestant"):
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request, canon: str = Query(None)):
     active_canon = resolve_canon(request, canon)
+    cache_key = f"landing:{active_canon}"
+    cached_html = HTML_PAGE_CACHE.get(cache_key)
+    if cached_html is not None:
+        resp = HTMLResponse(content=cached_html)
+        resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+        resp.headers["X-Page-Cache"] = "HIT"
+        return resp
+
     canon_ctx = get_canon_context(active_canon)
     resp = templates.TemplateResponse(
         request=request,
@@ -683,7 +746,10 @@ async def landing_page(request: Request, canon: str = Query(None)):
             "daily_verse": get_daily_verse(active_canon),
         },
     )
+    if resp.body:
+        HTML_PAGE_CACHE.set(cache_key, resp.body)
     resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+    resp.headers["X-Page-Cache"] = "MISS"
     return resp
 
 
@@ -710,6 +776,16 @@ async def reader(
             headers={"ETag": etag, "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
         )
 
+    # In-Memory Pre-Rendered HTML Cache lookup (Bypasses Jinja2 CPU overhead completely)
+    cache_key = f"read:{book_id}:{chapter}:{active_canon}:{mode}"
+    cached_html = HTML_PAGE_CACHE.get(cache_key)
+    if cached_html is not None:
+        resp = HTMLResponse(content=cached_html)
+        resp.headers["ETag"] = etag
+        resp.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+        resp.headers["X-Page-Cache"] = "HIT"
+        return resp
+
     try:
         verses = (await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)) or []
     except Exception as e:
@@ -733,8 +809,11 @@ async def reader(
             "next_ch": next_ch,
         },
     )
+    if resp.body:
+        HTML_PAGE_CACHE.set(cache_key, resp.body)
     resp.headers["ETag"] = etag
     resp.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+    resp.headers["X-Page-Cache"] = "MISS"
     return resp
 
 
@@ -792,14 +871,22 @@ async def progress_page(request: Request, canon: str = Query(None)):
 @app.get("/search", response_class=HTMLResponse)
 async def search_page(request: Request, q: str = Query("", description="Search query"), canon: str = Query(None)):
     active_canon = resolve_canon(request, canon)
-    canon_ctx = get_canon_context(active_canon)
     clean_q = q.strip() if q else ""
+    cache_key = f"search:{active_canon}:{clean_q}"
+    cached_html = HTML_PAGE_CACHE.get(cache_key)
+    if cached_html is not None:
+        resp = HTMLResponse(content=cached_html)
+        resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+        resp.headers["X-Page-Cache"] = "HIT"
+        return resp
+
+    canon_ctx = get_canon_context(active_canon)
     results = (await asyncio.to_thread(search_verses, clean_q, active_canon)) if clean_q else []
     # If Protestant mode, filter out Deuterocanonical results (IDs > 66)
     if not canon_ctx["is_catholic"]:
         results = [r for r in results if r["book_id"] <= 66]
 
-    return templates.TemplateResponse(
+    resp = templates.TemplateResponse(
         request=request,
         name="search.html",
         context={
@@ -808,6 +895,11 @@ async def search_page(request: Request, q: str = Query("", description="Search q
             "results": results,
         },
     )
+    if resp.body:
+        HTML_PAGE_CACHE.set(cache_key, resp.body)
+    resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+    resp.headers["X-Page-Cache"] = "MISS"
+    return resp
 
 
 @app.get("/bookmarks", response_class=HTMLResponse)
@@ -892,11 +984,19 @@ async def songs_directory_page(
 ):
     """Song lyrics directory with volume tabs and search."""
     active_canon = resolve_canon(request, canon)
+    clean_q = q.strip() if q else ""
+    cache_key = f"songs:{book}:{vol}:{clean_q}:{page}:{active_canon}"
+    cached_html = HTML_PAGE_CACHE.get(cache_key)
+    if cached_html is not None:
+        resp = HTMLResponse(content=cached_html)
+        resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+        resp.headers["X-Page-Cache"] = "HIT"
+        return resp
+
     canon_ctx = get_canon_context(active_canon)
     
     songbooks = await asyncio.to_thread(get_song_books)
     volumes = await asyncio.to_thread(get_song_volumes, book)
-    clean_q = q.strip() if q else ""
     page_size = 40
     offset = (page - 1) * page_size
     
@@ -911,7 +1011,7 @@ async def songs_directory_page(
     total_count = songs_data["total_count"]
     total_pages = max(1, (total_count + page_size - 1) // page_size)
     
-    return templates.TemplateResponse(
+    resp = templates.TemplateResponse(
         request=request,
         name="songs.html",
         context={
@@ -927,6 +1027,11 @@ async def songs_directory_page(
             "total_pages": total_pages,
         },
     )
+    if resp.body:
+        HTML_PAGE_CACHE.set(cache_key, resp.body)
+    resp.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+    resp.headers["X-Page-Cache"] = "MISS"
+    return resp
 
 
 @app.get("/songs/{song_id}", response_class=HTMLResponse)
