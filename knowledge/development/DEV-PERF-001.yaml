@@ -29,7 +29,7 @@ do:
   - "Maintain high-throughput standards established via the triple-optimization architecture (SQLite FTS5, LRU in-memory caching, and `asyncio.to_thread`):"
     - "Search Throughput: >= 90 RPS (baseline: 27.5 RPS -> 90.6 RPS, 3.3x speedup; p50: 136.6 ms)."
     - "Reader Throughput: >= 140 RPS (baseline: 145.8 RPS; p95: 370.7 ms)."
-    - "Mixed Multi-Page Traffic: >= 170 RPS (baseline: 107.2 RPS -> 176.0 RPS, +64% speedup) at 60 concurrency with 0.00% error rate."
+    - "Mixed Multi-Page Traffic: >= 200 RPS (achieved 211.3 - 227.1 RPS with p50: 61.3 ms; 0.00% error rate maintained across 5 to 250 concurrency)."
 
 dont:
   - "Do not rely exclusively on single-worker benchmarks to assess multi-core production server potential."
