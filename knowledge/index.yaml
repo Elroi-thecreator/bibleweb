@@ -1,7 +1,7 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/bible"
-knowledge_units_count: 14
+knowledge_units_count: 15
 last_updated: "2026-10-15"
 
 knowledge_units:
@@ -26,6 +26,9 @@ knowledge_units:
     - id: DEV-TEST-001
       file: "knowledge/development/DEV-TEST-001.yaml"
       title: "Automated Verification, Route Integrity & Standalone Executable Smoke Testing"
+    - id: DEV-PERF-001
+      file: "knowledge/development/DEV-PERF-001.yaml"
+      title: "Asynchronous Load Testing, Concurrency Saturation & Capacity Benchmarking Standard"
 
   product:
     - id: PROD-AUDIO-001

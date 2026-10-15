@@ -24,6 +24,14 @@ try:
 except ImportError:
     HAS_EDGE_TTS = False
 
+try:
+    from brotli_asgi import BrotliMiddleware
+    HAS_BROTLI = True
+except ImportError:
+    HAS_BROTLI = False
+
+from fastapi.middleware.gzip import GZipMiddleware
+
 from app.db import (
     BIBLE_BOOKS,
     DEUTEROCANONICAL_BOOKS,
@@ -55,6 +63,12 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 PLANS_DIR = STATIC_DIR / "plans"
 
 app = FastAPI(title="Holy Bible - வேதம்")
+
+# HTTP Compression Middleware (Brotli with automatic Gzip fallback, minimum payload 1000 bytes)
+if HAS_BROTLI:
+    app.add_middleware(BrotliMiddleware, minimum_size=1000)
+else:
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))

@@ -1,0 +1,43 @@
+id: DEV-PERF-001
+type: development_standard
+title: Asynchronous Load Testing, Concurrency Saturation & Capacity Benchmarking Standard
+domain: development
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: backend_team
+
+applies_to:
+  - backend
+  - database
+  - benchmarking
+  - deployment
+
+rule:
+  "All backend optimizations, concurrency adjustments, and web deployments must be benchmarked using the asynchronous load testing suite (`scripts/load_test.py`) to measure throughput (RPS), latency percentiles (p50, p95, p99), error rates, and worker saturation limits."
+
+do:
+  - "Use `scripts/load_test.py` with `aiohttp` to simulate concurrent user sessions without adding external commercial test runner dependencies."
+  - "Benchmark both isolated scenarios (`health`, `reader`, `search`, `songs`, `quiz`) and mixed weighted user simulations (`--scenario mixed`)."
+  - "Run concurrency ramping (`--scenario ramp`) across concurrency levels [5, 15, 30, 60, 120, 250] to map the saturation curve and determine peak capacity."
+  - "Scale Uvicorn workers (`--workers 4` or `(2 * CPU) + 1`) in production web deployments to unblock CPU-bound Jinja2 template rendering and maximize multi-core throughput."
+  - "Mount `BrotliMiddleware` (with `GZipMiddleware` fallback) in `app/main.py` with `minimum_size=1000` to compress text, HTML, and JSON responses by >91% (reducing 310 KB reader HTML to 25.7 KB under Brotli and 27.5 KB under Gzip)."
+  - "Verify compression headers and decompression roundtrip integrity using `scripts/test_compression.py`."
+
+dont:
+  - "Do not rely exclusively on single-worker benchmarks to assess multi-core production server potential."
+  - "Do not deploy high-concurrency write transactions into SQLite without testing lock contention in WAL mode."
+  - "Do not execute load tests against external third-party neural TTS streaming endpoints (`/api/audio/stream`) to prevent upstream rate-limiting."
+
+reason:
+  "FastAPI and SQLite deliver sub-millisecond local queries, but single-worker event loops can be bottlenecked by heavy Jinja2 template serialization and unpooled SQLite connections. Standardized load testing ensures predictable performance and guides infrastructure sizing."
+
+related_items:
+  - ARCH-SYS-001
+  - ARCH-DATA-001
+  - DEV-PY-001
+  - DEV-TEST-001
+  - ADR-002

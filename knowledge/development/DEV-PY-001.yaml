@@ -24,6 +24,7 @@ do:
   - "Implement clean canonical URL structures (`/`, `/{canon}/{version}/{book}/{chapter}`, `/quiz`, `/search`)."
   - "Ensure query parameters on HTML page endpoints (e.g., `/search`, `/plans`) do not impose mandatory `min_length` constraints that cause 422 JSON validation responses; empty query states must render the appropriate HTML landing template."
   - "Return clear JSON error structures with HTTP status codes for API endpoints (`/api/verses`, `/api/quiz`)."
+  - "Mount `BrotliMiddleware` (with `GZipMiddleware` fallback) with a 1,000-byte threshold to compress dynamic HTML and JSON responses."
   - "Sanitize and escape user input before rendering in Jinja2 templates to prevent Cross-Site Scripting (XSS)."
 
 dont:
