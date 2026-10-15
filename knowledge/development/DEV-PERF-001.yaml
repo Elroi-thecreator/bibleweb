@@ -3,7 +3,7 @@ type: development_standard
 title: Asynchronous Load Testing, Concurrency Saturation & Capacity Benchmarking Standard
 domain: development
 status: approved
-version: 1.1.0
+version: 1.2.0
 authority:
   level: official
   confidence: high
@@ -31,8 +31,9 @@ do:
     - "Reader Throughput: >= 140 RPS (baseline: 145.8 RPS; p95: 370.7 ms)."
     - "Mixed Multi-Page Traffic: >= 200 RPS (sustained ~200 RPS under 500 concurrency; 0.00% error rate maintained across 5 to 500 concurrency)."
   - "Maintain awareness of single-host failure thresholds identified via `scripts/stress_breakpoint_test.py`:"
-    - "Capacity Limit (100% Stability): Up to 1,000 concurrent connections (0.00% error rate, p50: ~7.7s, queue delay governed by Little's Law L = lambda * W)."
-    - "Complete Failure Threshold: >= 1,500 concurrent connections (95.02% error rate due to OS TCP listen backlog exhaustion, ClientConnectorError socket drops, and client timeouts)."
+    - "Capacity Limit (100% Stability): Up to 1,250 concurrent connections with connection warmup ramp (121.4 RPS, 0.00% error rate, p50: 4.8s, p95: 7.1s). Cold-start unramped limit is 1,000 concurrency."
+    - "Complete Failure Threshold: 1,500 - 1,750 concurrent connections (67.61% error rate at 1,500 and 96.61% at 1,750 concurrency due to OS socket buffer exhaustion, ClientConnectorError dropped handshakes, and client timeouts)."
+    - "System Resilience: SQLite databases and thread-local connection pools remain 100% uncorrupted during and after total load failure; deep health verification returns ok in <1 second once traffic clears."
 
 dont:
   - "Do not rely exclusively on single-worker benchmarks to assess multi-core production server potential."
