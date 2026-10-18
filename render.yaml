@@ -13,4 +13,9 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: WEB_CONCURRENCY
-        value: "4"
+        value: "1"
+      - key: PAGE_CACHE_SIZE
+        value: "128"
+      - key: AUDIO_CACHE_SIZE
+        value: "30"
+

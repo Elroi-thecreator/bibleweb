@@ -3,7 +3,7 @@ type: development_standard
 title: Asynchronous Load Testing, Concurrency Saturation & Capacity Benchmarking Standard
 domain: development
 status: approved
-version: 1.5.0
+version: 1.6.0
 authority:
   level: official
   confidence: high
@@ -17,13 +17,14 @@ applies_to:
   - deployment
 
 rule:
-  "All backend optimizations, concurrency adjustments, and web deployments must be benchmarked using the asynchronous load testing suite (`scripts/load_test.py` and `scripts/stress_breakpoint_test.py`) to measure throughput (RPS), latency percentiles (p50, p95, p99), error rates, circuit-breaker overload shedding, and worker saturation limits."
+  "All backend optimizations, concurrency adjustments, and web deployments must be benchmarked using the asynchronous load testing suite (`scripts/load_test.py` and `scripts/stress_breakpoint_test.py`) to measure throughput (RPS), latency percentiles (p50, p95, p99), error rates, circuit-breaker overload shedding, and worker saturation limits, while strictly enforcing memory ceilings based on hosting platform instance quotas."
 
 do:
+  - "Enforce strict memory-budgeted worker and cache sizing according to deployment tiers: on memory-constrained PaaS environments (e.g., Render Free/Starter tier with 512 MB RAM ceiling), configure `WEB_CONCURRENCY=1`, `PAGE_CACHE_SIZE=128`, and `AUDIO_CACHE_SIZE=30` with auto-detected `RENDER` environment defaults (SQLite mmap 16MB, cache -2000) so process RSS remains stable at ~90-120 MB (providing ~400 MB of safety headroom to prevent container OOM SIGKILL restarts)."
   - "Use `scripts/load_test.py` and `scripts/stress_breakpoint_test.py` with `aiohttp` to simulate concurrent user sessions without adding external commercial test runner dependencies."
   - "Benchmark both isolated scenarios (`health`, `reader`, `search`, `songs`, `quiz`) and mixed weighted user simulations (`--scenario mixed`)."
   - "Run concurrency ramping across concurrency levels [300, 500, 750, 1000, 1250, 1500, 1750, 2000] to map the saturation curve and verify circuit breaker overload shedding."
-  - "Scale Uvicorn workers (`--workers 4` or `(2 * CPU) + 1`) via `scripts/run_server.py` in production web deployments to unblock CPU-bound Jinja2 template rendering and maximize multi-core throughput."
+  - "Scale Uvicorn workers (`--workers 4` or `(2 * CPU) + 1`) via `scripts/run_server.py` in production VM / dedicated container deployments (>2GB RAM) to unblock CPU-bound Jinja2 template rendering and maximize multi-core throughput."
   - "Tune Uvicorn network socket parameters: `--backlog 2048`, `--timeout-keep-alive 20`, and `--limit-concurrency 350` per worker on Windows (`FD_SETSIZE 512` boundary) to trigger graceful HTTP 503 shedding instead of Winsock process crashes."
   - "Implement Pre-Compressed Brotli & Gzip Buffer Caching in `BoundedHTMLCache` in `app/main.py`: generate `.br` (quality 4) and `.gzip` (level 5) once on first render. Routes return pre-compressed bytes with `Content-Encoding: br/gzip` directly, bypassing `BrotliMiddleware` runtime compression with 0 ms CPU overhead."
   - "Verify compression headers, Brotli/Gzip caching, and decompression roundtrip integrity using `scripts/test_robustness.py`."
@@ -41,6 +42,8 @@ do:
     - "System Resilience: SQLite databases and thread-local connection pools remain 100% uncorrupted during and after total load failure; deep health verification returns ok in <1 second once traffic clears."
 
 dont:
+  - "Do not configure multi-worker Uvicorn (`WEB_CONCURRENCY > 1`) on instances or containers with 512 MB RAM or less (such as Render Free Tier), as 4 worker processes consume ~450 MB baseline RSS and immediately trigger Out-of-Memory (OOM) eviction during traffic spikes."
+  - "Do not maintain unbounded in-memory audio/binary caches; always bound with thread-safe LRU eviction (`BoundedAudioCache`) to prevent memory leaks from audio streaming."
   - "Do not rely exclusively on single-worker benchmarks to assess multi-core production server potential."
   - "Do not execute synchronous database queries directly on the asyncio event loop under high concurrent loads."
   - "Do not deploy scripture search relying solely on unindexed table scans with `LIKE '%query%'`."

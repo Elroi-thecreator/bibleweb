@@ -49,8 +49,10 @@ def get_connection():
     conn.row_factory = sqlite3.Row
     try:
         conn.execute("PRAGMA query_only = ON;")
-        conn.execute("PRAGMA mmap_size = 67108864;")  # 64 MB memory-mapped I/O
-        conn.execute("PRAGMA cache_size = -8000;")     # 8 MB page cache
+        mmap_size = int(os.getenv("SQLITE_MMAP_SIZE", "16777216" if os.getenv("RENDER") else "67108864"))
+        cache_size = int(os.getenv("SQLITE_CACHE_SIZE", "-2000" if os.getenv("RENDER") else "-8000"))
+        conn.execute(f"PRAGMA mmap_size = {mmap_size};")
+        conn.execute(f"PRAGMA cache_size = {cache_size};")
     except Exception:
         pass
     _local_storage.bible_conn = conn
@@ -83,8 +85,10 @@ def get_songs_connection():
     conn.row_factory = sqlite3.Row
     try:
         conn.execute("PRAGMA query_only = ON;")
-        conn.execute("PRAGMA mmap_size = 33554432;")  # 32 MB memory-mapped I/O
-        conn.execute("PRAGMA cache_size = -4000;")     # 4 MB page cache
+        mmap_size = int(os.getenv("SONGS_SQLITE_MMAP_SIZE", "8388608" if os.getenv("RENDER") else "33554432"))
+        cache_size = int(os.getenv("SONGS_SQLITE_CACHE_SIZE", "-1000" if os.getenv("RENDER") else "-4000"))
+        conn.execute(f"PRAGMA mmap_size = {mmap_size};")
+        conn.execute(f"PRAGMA cache_size = {cache_size};")
     except Exception:
         pass
     _local_storage.songs_conn = conn

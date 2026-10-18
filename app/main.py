@@ -5,6 +5,7 @@ import gzip
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import platform
 import random
@@ -168,7 +169,51 @@ class BoundedHTMLCache:
             }
 
 
-HTML_PAGE_CACHE = BoundedHTMLCache(maxsize=512)
+PAGE_CACHE_SIZE = int(os.getenv("PAGE_CACHE_SIZE", "128" if os.getenv("RENDER") else "512"))
+HTML_PAGE_CACHE = BoundedHTMLCache(maxsize=PAGE_CACHE_SIZE)
+
+
+class BoundedAudioCache:
+    """Thread-safe bounded LRU cache for generated TTS audio byte buffers."""
+    def __init__(self, maxsize: int = 50):
+        self.maxsize = maxsize
+        self._cache = OrderedDict()
+        self._lock = threading.Lock()
+
+    def get(self, key: str) -> bytes | None:
+        with self._lock:
+            cached = self._cache.get(key)
+            if cached is not None:
+                self._cache.move_to_end(key)
+                return cached
+            return None
+
+    def set(self, key: str, value: bytes) -> None:
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+            self._cache[key] = value
+            if len(self._cache) > self.maxsize:
+                self._cache.popitem(last=False)
+
+    def __contains__(self, key: str) -> bool:
+        with self._lock:
+            return key in self._cache
+
+    def __getitem__(self, key: str) -> bytes:
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+                return self._cache[key]
+        raise KeyError(key)
+
+    def __setitem__(self, key: str, value: bytes) -> None:
+        self.set(key, value)
+
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._cache)
+
 
 
 @asynccontextmanager
@@ -269,7 +314,9 @@ async def custom_unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 START_TIME = time.time()
-AUDIO_CACHE = {}
+AUDIO_CACHE_SIZE = int(os.getenv("AUDIO_CACHE_SIZE", "30" if os.getenv("RENDER") else "100"))
+AUDIO_CACHE = BoundedAudioCache(maxsize=AUDIO_CACHE_SIZE)
+
 
 DAILY_VERSE_PROTESTANT = {
     "ref_en": "John 3:16",
@@ -496,8 +543,6 @@ async def stream_audio(
                         fp.write(chunk["data"])
                 audio_bytes = fp.getvalue()
                 if len(audio_bytes) > 0:
-                    if len(AUDIO_CACHE) > 500:
-                        AUDIO_CACHE.pop(next(iter(AUDIO_CACHE)))
                     AUDIO_CACHE[cache_key] = audio_bytes
                     return Response(
                         content=audio_bytes,
@@ -514,8 +559,6 @@ async def stream_audio(
         tts.write_to_fp(fp)
         audio_bytes = fp.getvalue()
 
-        if len(AUDIO_CACHE) > 500:
-            AUDIO_CACHE.pop(next(iter(AUDIO_CACHE)))
         AUDIO_CACHE[cache_key] = audio_bytes
 
         return Response(
