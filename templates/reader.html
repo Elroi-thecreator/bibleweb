@@ -281,7 +281,7 @@
 
         <div class="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
             <button onclick="window.bibleAudio ? window.bibleAudio.prev() : null" class="text-stone-400 hover:text-white text-sm sm:text-base p-1 cursor-pointer" title="Previous verse">⏮</button>
-            <button id="audio-play-pause-btn" onclick="window.bibleAudio ? (window.bibleAudio.isPaused ? window.bibleAudio.resume() : window.bibleAudio.pause()) : null" 
+            <button id="audio-play-pause-btn" onclick="window.bibleAudio ? window.bibleAudio.togglePlayPause() : null" 
                     class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center text-xs sm:text-sm font-bold shadow-md cursor-pointer shrink-0">
                 ⏸
             </button>

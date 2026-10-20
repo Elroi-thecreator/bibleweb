@@ -619,8 +619,13 @@
             } else {
                 localStorage.setItem('bible_audio_voice_en', voice);
             }
-            if (window.bibleAudio && typeof window.bibleAudio.syncDockVoiceOptions === 'function') {
-                window.bibleAudio.syncDockVoiceOptions();
+            if (window.bibleAudio) {
+                if (typeof window.bibleAudio.syncDockVoiceOptions === 'function') {
+                    window.bibleAudio.syncDockVoiceOptions();
+                }
+                if (window.bibleAudio.lang === lang && typeof window.bibleAudio.setVoice === 'function') {
+                    window.bibleAudio.setVoice(voice);
+                }
             }
             showToast("Voice preference saved! 🎙️");
         }

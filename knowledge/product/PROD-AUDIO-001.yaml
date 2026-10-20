@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation & Per-Verse Download Caching Standard
 domain: product
 status: approved
-version: 1.6.0
+version: 1.7.0
 authority:
   level: official
   confidence: high
@@ -39,6 +39,11 @@ do:
   - "Highlight the currently active verse on the screen synchronously with the audio speech synthesizer so readers can follow along visually."
   - "Provide intuitive Play, Pause, Resume, Stop, Next/Previous, Rate, and Bass Tone controls with keyboard shortcuts (Spacebar for Play/Pause)."
   - "Maintain continuous playback by automatically advancing to the next verse until the chapter completes."
+  - "Guard asynchronous verse loading with `requestedIndex` checks (`if (this.currentIndex !== requestedIndex || !this.isPlaying) return;`) to ensure out-of-order promise resolutions never hijack user navigation."
+  - "Implement universal `togglePlayPause()` method across audio docks and controls to smoothly handle unstarted, playing, and paused states with zero dead-clicks."
+  - "When playback pauses or halts, immediately revert playing verse badges back to 'downloaded' (if in memory cache) or 'idle' to eliminate stale pulsing indicators."
+  - "Safely pause `<audio>` elements before revoking blob object URLs (`URL.revokeObjectURL`) inside `clearAllBlobs()` to prevent browser audio decoder abort exceptions."
+  - "Execute complete end-to-end flow verification (`test_audio_flow_e2e.py`, `test_audio_deduplication.py`, `test_audio.py`, `test_robustness.py`) prior to pushing code to source control."
 
 dont:
   - "Do not pin or run older edge-tts versions (< 7.3.1) which cause WSServerHandshakeError: 403 on Microsoft's Bing platform."

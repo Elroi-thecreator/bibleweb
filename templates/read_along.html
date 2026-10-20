@@ -348,7 +348,48 @@ let currentSpeedIndex = 0;
 
 // In-memory Audio Blob & Status Store for Read-Along
 const readalongAudioBlobs = new Map(); // itemKey -> { blob, blobUrl }
-const readalongInFlight = new Map();   // itemKey -> Promise<string>
+const readalongInFlight = new Map(); // itemKey -> Promise<string>
+
+function updateReadAlongVerseStatusUI(item, status) {
+    if (!item || item.type !== 'verse') return;
+    const el = document.getElementById(`readalong-status-${item.bookId}-${item.chapter}-${item.verse}`);
+    if (!el) return;
+
+    switch (status) {
+        case 'downloading':
+            el.innerHTML = `
+                <span class="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-full bg-amber-100/90 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 text-[8px] font-semibold border border-amber-300/80 dark:border-amber-700/80 animate-pulse" title="Downloading / ஆடியோ பதிவிறங்குகிறது...">
+                    <svg class="w-2 h-2 animate-spin text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                </span>
+            `;
+            break;
+        case 'downloaded':
+            el.innerHTML = `
+                <span class="inline-flex items-center px-1 py-0.2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-[8px] font-medium border border-emerald-200/80 dark:border-emerald-800/60" title="Audio ready">
+                    <svg class="w-2 h-2 text-emerald-600 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                </span>
+            `;
+            break;
+        case 'playing':
+            el.innerHTML = `
+                <span class="inline-flex items-center px-1 py-0.2 rounded-full bg-amber-600 text-white text-[8px] font-bold animate-pulse" title="Playing">
+                    <span class="text-[8px]">🔊</span>
+                </span>
+            `;
+            break;
+        case 'error':
+            el.innerHTML = `
+                <span class="inline-flex items-center px-1 py-0.2 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-[8px] border border-rose-200" title="Error">
+                    <span>⚠️</span>
+                </span>
+            `;
+            break;
+        case 'idle':
+        default:
+            el.innerHTML = '';
+            break;
+    }
+}
 
 const bassLevels = [
     { pitch: '+0Hz', label: 'Normal', mobile: 'Std' },
@@ -491,7 +532,7 @@ function startReadingWithAudio() {
     playQueueIndex(currentQueueIndex);
 }
 
-function playQueueIndex(index) {
+async function playQueueIndex(index) {
     if (index >= audioQueue.length) {
         triggerOutroBlessing();
         return;
@@ -568,6 +609,9 @@ function playQueueIndex(index) {
         blobUrl = await p;
     }
 
+    if (currentQueueIndex !== index) return;
+    readalongDownloadedItems.add(itemKey);
+
     updateReadAlongVerseStatusUI(item, 'playing');
     audioElement.src = blobUrl;
     audioElement.playbackRate = speeds[currentSpeedIndex];
@@ -597,14 +641,25 @@ function updatePlayIcons(playing) {
 }
 
 function toggleAudioPlayback() {
+    if (!audioElement.src || audioElement.src === window.location.href) {
+        playQueueIndex(currentQueueIndex || 0);
+        return;
+    }
     if (audioElement.paused) {
-        audioElement.play();
-        isAudioPlaying = true;
-        updatePlayIcons(true);
+        audioElement.play().then(() => {
+            isAudioPlaying = true;
+            updatePlayIcons(true);
+            if (audioQueue[currentQueueIndex]) {
+                updateReadAlongVerseStatusUI(audioQueue[currentQueueIndex], 'playing');
+            }
+        }).catch(e => console.warn(e));
     } else {
         audioElement.pause();
         isAudioPlaying = false;
         updatePlayIcons(false);
+        if (audioQueue[currentQueueIndex]) {
+            updateReadAlongVerseStatusUI(audioQueue[currentQueueIndex], 'downloaded');
+        }
     }
 }
 
@@ -722,6 +777,9 @@ async function processReadAlongPrefetchQueue() {
 function stepItem(direction) {
     const target = currentQueueIndex + direction;
     if (target >= 0 && target < audioQueue.length) {
+        if (audioQueue[currentQueueIndex]) {
+            updateReadAlongVerseStatusUI(audioQueue[currentQueueIndex], 'downloaded');
+        }
         playQueueIndex(target);
     }
 }
@@ -734,6 +792,9 @@ function jumpToVerseNode(bookId, chapter, verse) {
         parseInt(i.verse) === parseInt(verse)
     );
     if (targetIndex !== -1) {
+        if (audioQueue[currentQueueIndex]) {
+            updateReadAlongVerseStatusUI(audioQueue[currentQueueIndex], 'downloaded');
+        }
         playQueueIndex(targetIndex);
     }
 }
@@ -761,7 +822,7 @@ function cycleAudioBass() {
     readalongDownloadedItems.clear();
     readalongPrefetchQueue = [];
     if (isAudioPlaying && currentQueueIndex < audioQueue.length) {
-        streamAudioForItem(audioQueue[currentQueueIndex]);
+        playQueueIndex(currentQueueIndex);
     }
 }
 
@@ -775,6 +836,9 @@ function updateBassButtons() {
 
 // Auto-advance
 audioElement.addEventListener('ended', () => {
+    if (audioQueue[currentQueueIndex]) {
+        updateReadAlongVerseStatusUI(audioQueue[currentQueueIndex], 'downloaded');
+    }
     currentQueueIndex++;
     playQueueIndex(currentQueueIndex);
 });

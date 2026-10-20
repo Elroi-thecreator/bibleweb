@@ -119,6 +119,9 @@ class BibleContinuousAudio {
     }
 
     clearAllBlobs() {
+        if (this.audio) {
+            try { this.audio.pause(); } catch (_) {}
+        }
         for (const record of this.verseAudioBlobs.values()) {
             if (record && record.blobUrl) {
                 try { URL.revokeObjectURL(record.blobUrl); } catch (_) {}
@@ -128,15 +131,22 @@ class BibleContinuousAudio {
         this.inFlightRequests.clear();
         this.prefetchQueue = [];
         this.isPrefetching = false;
-        this.verses.forEach((_, idx) => this.updateVerseStatusUI(idx, 'idle'));
+        if (this.verses && this.verses.length > 0) {
+            this.verses.forEach((_, idx) => this.updateVerseStatusUI(idx, 'idle'));
+        }
     }
 
     init(bookId, chapter, nextChapter, mode) {
-        this.clearAllBlobs();
         this.bookId = bookId;
         this.chapter = chapter;
         this.nextChapter = nextChapter;
         this.mode = mode;
+
+        if (this.mode === 'en') {
+            this.lang = 'en';
+        } else if (this.mode === 'ta') {
+            this.lang = 'ta';
+        }
 
         const items = document.querySelectorAll('.verse-item');
         this.verses = Array.from(items).map((el, idx) => ({
@@ -147,6 +157,9 @@ class BibleContinuousAudio {
             textEn: el.querySelector('.verse-text-en')?.innerText.trim() || '',
             textTa: el.querySelector('.verse-text-ta')?.innerText.trim() || ''
         }));
+
+        this.clearAllBlobs();
+        document.querySelectorAll('.verse-audio-status-pill').forEach(el => el.innerHTML = '');
 
         const savedState = sessionStorage.getItem('bible_autoplay_state');
         if (savedState) {
@@ -269,6 +282,16 @@ class BibleContinuousAudio {
         return downloadPromise;
     }
 
+    togglePlayPause() {
+        if (!this.isPlaying) {
+            this.play(this.currentIndex || 0);
+        } else if (this.isPaused) {
+            this.resume();
+        } else {
+            this.pause();
+        }
+    }
+
     async play(fromIndex = 0) {
         if (this.currentIndex === fromIndex && this.isPlaying) {
             if (this.isPaused) {
@@ -279,9 +302,13 @@ class BibleContinuousAudio {
             return;
         }
 
-        // Revert previous verse status to 'downloaded' if cached
-        if (this.currentIndex !== fromIndex && this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
-            this.updateVerseStatusUI(this.currentIndex, 'downloaded');
+        // Revert previous verse status to 'downloaded' if cached, or 'idle'
+        if (this.currentIndex !== fromIndex) {
+            if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
+                this.updateVerseStatusUI(this.currentIndex, 'downloaded');
+            } else {
+                this.updateVerseStatusUI(this.currentIndex, 'idle');
+            }
         }
 
         this.isPlaying = true;
@@ -299,19 +326,22 @@ class BibleContinuousAudio {
             return;
         }
 
-        const v = this.verses[this.currentIndex];
+        const requestedIndex = this.currentIndex;
+        const v = this.verses[requestedIndex];
+        if (!v) return;
         this.spotlightVerse(v);
 
         // Fetch or get from cache (checks if already downloaded, never duplicates)
-        const blobUrl = await this.ensureVerseAudioDownloaded(this.currentIndex);
-        if (!blobUrl || !this.isPlaying) return;
+        const blobUrl = await this.ensureVerseAudioDownloaded(requestedIndex);
+        if (!blobUrl || !this.isPlaying || this.currentIndex !== requestedIndex) return;
 
         this.audio.src = blobUrl;
         this.audio.playbackRate = parseFloat(this.rate);
 
         this.audio.play().then(() => {
+            if (this.currentIndex !== requestedIndex || !this.isPlaying) return;
             this.setPlayPauseIcon(true);
-            this.updateVerseStatusUI(this.currentIndex, 'playing');
+            this.updateVerseStatusUI(requestedIndex, 'playing');
             this.startChapterPrefetchPipeline();
         }).catch(err => {
             console.warn("Autoplay block or delay:", err);
@@ -422,16 +452,20 @@ class BibleContinuousAudio {
             if (this.verses[this.currentIndex]) {
                 const playBtn = document.getElementById(`verse-play-btn-${this.currentIndex}`);
                 if (playBtn) playBtn.innerHTML = '▶';
+                if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
+                    this.updateVerseStatusUI(this.currentIndex, 'downloaded');
+                }
             }
         }
     }
 
     resume() {
         if (this.isPlaying && this.isPaused) {
-            this.audio.play();
-            this.isPaused = false;
-            this.setPlayPauseIcon(true);
-            this.updateVerseStatusUI(this.currentIndex, 'playing');
+            this.audio.play().then(() => {
+                this.isPaused = false;
+                this.setPlayPauseIcon(true);
+                this.updateVerseStatusUI(this.currentIndex, 'playing');
+            }).catch(e => console.warn(e));
         } else {
             this.play(this.currentIndex);
         }
@@ -452,19 +486,24 @@ class BibleContinuousAudio {
         sessionStorage.removeItem('bible_autoplay_state');
 
         // Mark previously playing verse back to downloaded if in cache
-        if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
-            this.updateVerseStatusUI(this.currentIndex, 'downloaded');
-        } else {
-            this.updateVerseStatusUI(this.currentIndex, 'idle');
+        if (this.currentIndex >= 0 && this.currentIndex < this.verses.length) {
+            if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
+                this.updateVerseStatusUI(this.currentIndex, 'downloaded');
+            } else {
+                this.updateVerseStatusUI(this.currentIndex, 'idle');
+            }
         }
 
         document.querySelectorAll('.verse-item').forEach(el => {
             el.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-50/70', 'dark:bg-amber-950/40');
         });
+        this.setPlayPauseIcon(false);
         this.hideDock();
     }
 
     next() {
+        this.isPlaying = true;
+        this.isPaused = false;
         if (this.currentIndex < this.verses.length - 1) {
             if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
                 this.updateVerseStatusUI(this.currentIndex, 'downloaded');
@@ -477,6 +516,8 @@ class BibleContinuousAudio {
     }
 
     prev() {
+        this.isPlaying = true;
+        this.isPaused = false;
         if (this.currentIndex > 0) {
             if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
                 this.updateVerseStatusUI(this.currentIndex, 'downloaded');
@@ -512,6 +553,11 @@ class BibleContinuousAudio {
     }
 
     syncDockVoiceOptions() {
+        const langSelect = document.getElementById('audio-lang-select');
+        if (langSelect && langSelect.value !== this.lang) {
+            langSelect.value = this.lang;
+        }
+
         const voiceSelect = document.getElementById('audio-voice-select');
         if (voiceSelect) {
             if (this.lang === 'ta') {
@@ -539,6 +585,11 @@ class BibleContinuousAudio {
         if (pitchSelect) {
             pitchSelect.value = this.getEffectivePitch();
         }
+
+        const rateSelect = document.getElementById('audio-rate-select');
+        if (rateSelect) {
+            rateSelect.value = String(this.rate);
+        }
     }
 
     setRate(rate) {
@@ -565,3 +616,18 @@ class BibleContinuousAudio {
 }
 
 window.bibleAudio = new BibleContinuousAudio();
+
+
+// Global keyboard shortcut: Spacebar toggles Audio Bible Play/Pause (when not inside inputs)
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select' || document.activeElement?.isContentEditable) {
+            return;
+        }
+        if (window.bibleAudio && (window.bibleAudio.isPlaying || window.bibleAudio.isPaused)) {
+            e.preventDefault();
+            window.bibleAudio.togglePlayPause();
+        }
+    }
+});
