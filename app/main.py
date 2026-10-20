@@ -515,7 +515,11 @@ async def stream_audio(
         return Response(
             content=AUDIO_CACHE[cache_key],
             media_type="audio/mpeg",
-            headers={"X-TTS-Engine": "cache", "X-TTS-Voice": target_voice},
+            headers={
+                "Cache-Control": "public, max-age=86400",
+                "X-TTS-Engine": "cache",
+                "X-TTS-Voice": target_voice,
+            },
         )
 
     # 1. Primary Engine: Microsoft Neural Edge-TTS (Natural Human Cadence)
@@ -547,7 +551,11 @@ async def stream_audio(
                     return Response(
                         content=audio_bytes,
                         media_type="audio/mpeg",
-                        headers={"X-TTS-Engine": "edge-neural", "X-TTS-Voice": v_name},
+                        headers={
+                            "Cache-Control": "public, max-age=86400",
+                            "X-TTS-Engine": "edge-neural",
+                            "X-TTS-Voice": v_name,
+                        },
                     )
             except Exception as neural_err:
                 print(f"[Audio Stream] Edge-TTS error for voice {v_name}: {neural_err}")
@@ -564,7 +572,11 @@ async def stream_audio(
         return Response(
             content=audio_bytes,
             media_type="audio/mpeg",
-            headers={"X-TTS-Engine": "gtts-fallback", "X-TTS-Voice": target_voice},
+            headers={
+                "Cache-Control": "public, max-age=86400",
+                "X-TTS-Engine": "gtts-fallback",
+                "X-TTS-Voice": target_voice,
+            },
         )
     except Exception as fallback_err:
         return JSONResponse(content={"error": str(fallback_err)}, status_code=500)

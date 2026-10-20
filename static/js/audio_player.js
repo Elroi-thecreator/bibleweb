@@ -1,6 +1,9 @@
 class BibleContinuousAudio {
     constructor() {
         this.audio = new Audio();
+        this.preloader = new Audio();
+        this.preloader.muted = true;
+        this.preloader.volume = 0;
         this.isPlaying = false;
         this.isPaused = false;
         this.currentIndex = 0;
@@ -101,10 +104,48 @@ class BibleContinuousAudio {
         
         this.audio.play().then(() => {
             this.setPlayPauseIcon(true);
+            this.prefetchNext();
         }).catch(err => {
             console.warn("Autoplay block or delay:", err);
             this.setPlayPauseIcon(false);
         });
+    }
+
+    prefetchNext() {
+        try {
+            if (!this.isPlaying) return;
+
+            const nextIndex = this.currentIndex + 1;
+            // Strict boundary guard: For the last verse (or single-verse chapters),
+            // nextIndex >= verses.length. Safely exit without error.
+            if (nextIndex >= this.verses.length) {
+                return;
+            }
+
+            const nextV = this.verses[nextIndex];
+            if (!nextV) return;
+
+            let text = (this.lang === 'ta') ? nextV.textTa : nextV.textEn;
+            if (!text && this.lang === 'ta') text = nextV.textEn;
+
+            // Strip editorial bracket markers [...] and {...}
+            text = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
+            if (!text) return;
+
+            const voice = this.getEffectiveVoice();
+            const nextAudioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(this.rate)}`;
+
+            if (!this.preloader) {
+                this.preloader = new Audio();
+                this.preloader.muted = true;
+                this.preloader.volume = 0;
+            }
+            this.preloader.preload = 'auto';
+            this.preloader.src = nextAudioUrl;
+            this.preloader.load();
+        } catch (err) {
+            console.debug('Silent audio prefetch notice:', err);
+        }
     }
 
     getEffectiveVoice() {
@@ -157,6 +198,11 @@ class BibleContinuousAudio {
         this.isPaused = false;
         this.audio.pause();
         this.audio.currentTime = 0;
+        if (this.preloader) {
+            this.preloader.pause();
+            this.preloader.removeAttribute('src');
+            this.preloader.load();
+        }
         sessionStorage.removeItem('bible_autoplay_state');
 
         document.querySelectorAll('.verse-item').forEach(el => {
@@ -228,6 +274,9 @@ class BibleContinuousAudio {
     setRate(rate) {
         this.rate = rate;
         this.audio.playbackRate = parseFloat(rate);
+        if (this.isPlaying) {
+            this.prefetchNext();
+        }
     }
 
     showDock() {

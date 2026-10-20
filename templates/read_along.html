@@ -321,6 +321,9 @@ let introTimer = null;
 let introSeconds = 5;
 
 const audioElement = document.getElementById('readalong-audio');
+let readalongPreloader = new Audio();
+readalongPreloader.muted = true;
+readalongPreloader.volume = 0;
 let audioQueue = [];
 let currentQueueIndex = 0;
 let isAudioPlaying = false;
@@ -508,6 +511,7 @@ function playQueueIndex(index) {
         .then(() => {
             isAudioPlaying = true;
             updatePlayIcons(true);
+            prefetchNextReadAlongItem();
         })
         .catch(err => {
             console.warn("Audio waiting for user gesture:", err);
@@ -539,6 +543,57 @@ function toggleAudioPlayback() {
     }
 }
 
+function prefetchNextReadAlongItem() {
+    try {
+        if (!isAudioPlaying) return;
+
+        const nextIndex = currentQueueIndex + 1;
+        // Edge Case: When playing the last verse of the reading plan/chapter
+        if (nextIndex >= audioQueue.length) {
+            const blessingText = currentLanguage === 'ta' ? OUTRO_BLESSING_TA : OUTRO_BLESSING_EN;
+            const outroVoice = (currentLanguage === 'ta')
+                ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
+                : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
+            const cleanBlessing = (blessingText || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
+            if (!cleanBlessing) return;
+
+            const outroUrl = `/api/audio/stream?text=${encodeURIComponent(cleanBlessing)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
+            if (!readalongPreloader) {
+                readalongPreloader = new Audio();
+                readalongPreloader.muted = true;
+                readalongPreloader.volume = 0;
+            }
+            readalongPreloader.preload = 'auto';
+            readalongPreloader.src = outroUrl;
+            readalongPreloader.load();
+            return;
+        }
+
+        const nextItem = audioQueue[nextIndex];
+        if (!nextItem) return;
+
+        const text = currentLanguage === 'ta' ? nextItem.text_ta : nextItem.text_en;
+        const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
+        if (!cleanAudioText) return;
+
+        const activeVoice = (currentLanguage === 'ta')
+            ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
+            : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
+        const nextUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
+
+        if (!readalongPreloader) {
+            readalongPreloader = new Audio();
+            readalongPreloader.muted = true;
+            readalongPreloader.volume = 0;
+        }
+        readalongPreloader.preload = 'auto';
+        readalongPreloader.src = nextUrl;
+        readalongPreloader.load();
+    } catch (err) {
+        console.debug('Silent read-along prefetch notice:', err);
+    }
+}
+
 function stepItem(direction) {
     const target = currentQueueIndex + direction;
     if (target >= 0 && target < audioQueue.length) {
@@ -566,6 +621,9 @@ function cycleAudioSpeed() {
     const mbSpeed = document.getElementById('mobile-speed-btn');
     if (sbSpeed) sbSpeed.innerText = `${rate.toFixed(1)}x`;
     if (mbSpeed) mbSpeed.innerText = `${rate.toFixed(1)}x`;
+    if (isAudioPlaying) {
+        prefetchNextReadAlongItem();
+    }
 }
 
 // Auto-advance
@@ -585,6 +643,11 @@ audioElement.addEventListener('error', () => {
 function triggerOutroBlessing() {
     audioElement.pause();
     isAudioPlaying = false;
+    if (readalongPreloader) {
+        readalongPreloader.pause();
+        readalongPreloader.removeAttribute('src');
+        readalongPreloader.load();
+    }
 
     const outroCard = document.getElementById('outro-card');
     outroCard.classList.remove('hidden');
