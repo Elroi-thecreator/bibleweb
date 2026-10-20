@@ -81,27 +81,29 @@ def test_frontend_concurrency_static():
     audio_js_path = BASE_DIR / "static" / "js" / "audio_player.js"
     audio_js = audio_js_path.read_text(encoding="utf-8")
 
-    assert "const CONCURRENCY = 3;" in audio_js, "audio_player.js missing CONCURRENCY = 3"
+    assert "const CONCURRENCY = 4;" in audio_js, "audio_player.js missing CONCURRENCY = 4"
     assert "await Promise.all(workers);" in audio_js, "audio_player.js missing Promise.all(workers)"
     assert "this.startChapterPrefetchPipeline();" in audio_js, "audio_player.js missing startChapterPrefetchPipeline"
     assert "this.prefetchQueue.shift()" in audio_js, "audio_player.js missing prefetchQueue worker consumption"
+    assert "proactivePrewarmOpeningVerses" in audio_js, "audio_player.js missing proactivePrewarmOpeningVerses"
     # Ensure immediate prefetch call exists in playCurrent before await
     idx_prefetch_call = audio_js.find("this.startChapterPrefetchPipeline();")
     idx_await_verse = audio_js.find("const blobUrl = await this.ensureVerseAudioDownloaded(requestedIndex);")
     assert idx_prefetch_call != -1 and idx_await_verse != -1 and idx_prefetch_call < idx_await_verse, \
         "audio_player.js must start chapter prefetch pipeline immediately before awaiting current verse"
 
-    print("✓ static/js/audio_player.js verified with 3-worker concurrency and immediate prefetching")
+    print("✓ static/js/audio_player.js verified with 4-worker concurrency, immediate prefetching & proactive prewarm")
 
     # 2. templates/read_along.html
     readalong_path = BASE_DIR / "templates" / "read_along.html"
     readalong_html = readalong_path.read_text(encoding="utf-8")
 
-    assert "const CONCURRENCY = 3;" in readalong_html, "read_along.html missing CONCURRENCY = 3"
+    assert "const CONCURRENCY = 4;" in readalong_html, "read_along.html missing CONCURRENCY = 4"
     assert "await Promise.all(workers);" in readalong_html, "read_along.html missing Promise.all(workers)"
     assert "startReadAlongPrefetchPipeline();" in readalong_html, "read_along.html missing startReadAlongPrefetchPipeline"
+    assert "prewarmReadAlongItem" in readalong_html, "read_along.html missing prewarmReadAlongItem"
 
-    print("✓ templates/read_along.html verified with 3-worker concurrency and immediate prefetching")
+    print("✓ templates/read_along.html verified with 4-worker concurrency, immediate prefetching & intro prewarm")
 
 
 async def test_backend_persistent_disk_cache():
@@ -124,7 +126,8 @@ async def test_backend_persistent_disk_cache():
     elapsed1 = time.perf_counter() - t0
     assert res1.status_code == 200, f"Expected 200, got {res1.status_code}"
     assert len(res1.content) > 0, "Empty audio stream"
-    print(f"✓ Initial synthesis completed in {elapsed1:.2f}s ({len(res1.content)} bytes, engine={res1.headers.get('x-tts-engine')})")
+    assert "immutable" in res1.headers.get("cache-control", ""), f"Missing immutable cache header: {res1.headers.get('cache-control')}"
+    print(f"✓ Initial synthesis completed in {elapsed1:.2f}s ({len(res1.content)} bytes, engine={res1.headers.get('x-tts-engine')}, cache-control={res1.headers.get('cache-control')})")
 
     # Step 2: Verify disk cache file exists
     assert AUDIO_CACHE_DIR.exists(), f"AUDIO_CACHE_DIR does not exist: {AUDIO_CACHE_DIR}"

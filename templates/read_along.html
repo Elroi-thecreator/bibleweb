@@ -485,7 +485,55 @@ window.addEventListener('DOMContentLoaded', () => {
             skipIntro();
         }
     }, 1000);
+
+    // Proactively prewarm opening items during 5-second intro countdown
+    setTimeout(() => {
+        prewarmReadAlongItem(0);
+        prewarmReadAlongItem(1);
+    }, 300);
 });
+
+function prewarmReadAlongItem(index) {
+    if (index < 0 || index >= audioQueue.length) return;
+    const item = audioQueue[index];
+    if (!item) return;
+
+    const text = currentLanguage === 'ta' ? item.text_ta : item.text_en;
+    const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
+    if (!cleanAudioText) return;
+
+    const activeVoice = (currentLanguage === 'ta')
+        ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
+        : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
+    const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
+    const itemKey = `${item.bookId || 'title'}_${item.chapter || '0'}_${item.verse || '0'}_${currentLanguage}_${activeVoice}_${speeds[currentSpeedIndex]}_${activePitch}`;
+
+    if (readalongAudioBlobs.has(itemKey) || readalongInFlight.has(itemKey)) return;
+
+    updateReadAlongVerseStatusUI(item, 'downloading');
+    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
+
+    const p = (async () => {
+        try {
+            const res = await fetch(streamUrl, { headers: { 'Accept': 'audio/mpeg' } });
+            if (res.ok) {
+                const blob = await res.blob();
+                if (blob && blob.size > 0) {
+                    const bUrl = URL.createObjectURL(blob);
+                    readalongAudioBlobs.set(itemKey, { blob, blobUrl: bUrl });
+                    updateReadAlongVerseStatusUI(item, 'downloaded');
+                    return bUrl;
+                }
+            }
+            return streamUrl;
+        } catch (_) {
+            return null;
+        } finally {
+            readalongInFlight.delete(itemKey);
+        }
+    })();
+    readalongInFlight.set(itemKey, p);
+}
 
 function skipIntro() {
     if (introTimer) clearInterval(introTimer);
@@ -736,7 +784,7 @@ async function processReadAlongPrefetchQueue() {
     if (isReadalongPrefetching) return;
     isReadalongPrefetching = true;
 
-    const CONCURRENCY = 3;
+    const CONCURRENCY = 4;
     const workers = Array.from({ length: CONCURRENCY }, async () => {
         while (readalongPrefetchQueue.length > 0 && isAudioPlaying) {
             const targetIdx = readalongPrefetchQueue.shift();
@@ -841,7 +889,7 @@ async function processReadAlongPrefetchQueue() {
                 readalongInFlight.delete(itemKey);
             }
 
-            await new Promise(r => setTimeout(r, 40));
+            await new Promise(r => setTimeout(r, 20));
         }
     });
 

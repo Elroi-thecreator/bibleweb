@@ -242,6 +242,29 @@ class BibleContinuousAudio {
                 this.audio.currentTime = pos * this.audio.duration;
             });
         }
+
+        // Proactively prewarm opening verses (0, 1) quietly on page load
+        if (!savedState) {
+            this.proactivePrewarmOpeningVerses();
+        }
+    }
+
+    proactivePrewarmOpeningVerses() {
+        if (!this.verses || this.verses.length === 0) return;
+        const runPrewarm = () => {
+            const count = Math.min(2, this.verses.length);
+            for (let i = 0; i < count; i++) {
+                this.ensureVerseAudioDownloaded(i).catch(err => {
+                    console.debug("[Audio Prewarm] Notice:", err);
+                });
+            }
+        };
+
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(runPrewarm, { timeout: 1000 });
+        } else {
+            setTimeout(runPrewarm, 500);
+        }
     }
 
     async ensureVerseAudioDownloaded(index) {
@@ -443,7 +466,7 @@ class BibleContinuousAudio {
         if (this.isPrefetching) return;
         this.isPrefetching = true;
 
-        const CONCURRENCY = 3;
+        const CONCURRENCY = 4;
         const workers = Array.from({ length: CONCURRENCY }, async () => {
             while (this.prefetchQueue.length > 0 && (this.isPlaying || this.isPaused)) {
                 const nextIndex = this.prefetchQueue.shift();
@@ -467,7 +490,7 @@ class BibleContinuousAudio {
                 }
 
                 // Brief pacing delay between worker turns
-                await new Promise(r => setTimeout(r, 40));
+                await new Promise(r => setTimeout(r, 20));
             }
         });
 

@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation, Concurrent Chapter Prefetching & Persistent Audio Cache Standard
 domain: product
 status: approved
-version: 1.12.0
+version: 1.13.0
 authority:
   level: official
   confidence: high
@@ -18,7 +18,7 @@ applies_to:
   - tts
 
 rule:
-  "The Audio Bible Text-to-Speech (TTS) synthesizer reads Scripture verses naturally and continuously using Microsoft Edge Neural TTS (edge-tts >= 7.3.1 with Sec-MS-GEC token support) with configurable Voice Tone & Bass Pitch Modulation (+0Hz Normal, -4Hz Warm Bass, -8Hz Deep Bass, -12Hz Heavy Bass) with Male Heavy/Deep Bass voices (en-US-ChristopherNeural, ta-LK-KumarNeural) and -8Hz pitch modulation set as the system default across all endpoints and UI modes, alongside alternative male voices (Brian, Valluvar, Guy) and female neural voices (Pallavi, Jenny, Neerja) with automatic gTTS fallback, strictly omitting editorial brackets (`[...]`), curly braces (`{...}`), footnotes, and cross-reference annotations, displaying per-verse download status badges directly on each verse item, and accelerating chapter downloads using an immediate concurrent worker pool (`CONCURRENCY = 3`, `Promise.all(workers)`) alongside two-tier in-memory (`verseAudioBlobs`, `BoundedAudioCache`) and persistent disk (`AUDIO_CACHE_DIR`, `.audio_cache`) caching with in-flight request deduplication (`inFlightRequests`) to ensure zero-lag instant playback and guarantee no verse is ever downloaded redundantly."
+  "The Audio Bible Text-to-Speech (TTS) synthesizer reads Scripture verses naturally and continuously using Microsoft Edge Neural TTS (edge-tts >= 7.3.1 with Sec-MS-GEC token support) with configurable Voice Tone & Bass Pitch Modulation (+0Hz Normal, -4Hz Warm Bass, -8Hz Deep Bass, -12Hz Heavy Bass) with Male Heavy/Deep Bass voices (en-US-ChristopherNeural, ta-LK-KumarNeural) and -8Hz pitch modulation set as the system default across all endpoints and UI modes, alongside alternative male voices (Brian, Valluvar, Guy) and female neural voices (Pallavi, Jenny, Neerja) with automatic gTTS fallback, strictly omitting editorial brackets (`[...]`), curly braces (`{...}`), footnotes, and cross-reference annotations, displaying per-verse download status badges directly on each verse item, and accelerating chapter downloads using proactive page-load pre-warming (`proactivePrewarmOpeningVerses`, `prewarmReadAlongItem`), a 4-worker concurrent pool (`CONCURRENCY = 4`, `Promise.all(workers)`), two-tier in-memory (`verseAudioBlobs`, `BoundedAudioCache`) and persistent disk (`AUDIO_CACHE_DIR`, `.audio_cache`) caching with in-flight request deduplication (`inFlightRequests`) and 7-day immutable HTTP caching (`Cache-Control: public, max-age=604800, immutable`) to ensure zero-lag instant playback and guarantee no verse is ever downloaded redundantly."
 
 do:
   - "Pin edge-tts >= 7.3.1 in requirements.txt and verify active virtual environment installation to ensure valid Sec-MS-GEC anti-abuse token handshake with Microsoft Edge WebSocket servers."
@@ -30,14 +30,15 @@ do:
   - "Enable seamless verse click-to-play across both reader interfaces (`reader.html` and `read_along.html`) where clicking the verse number, badge, or verse item immediately streams or replays from local in-memory blob cache."
   - "Store downloaded verse audio blobs in memory (`verseAudioBlobs` Map with local `blobUrl`) so that any clicked verse plays instantly with zero network calls if already downloaded."
   - "Track in-flight download promises (`inFlightRequests` Map) to guarantee that concurrent clicks or prefetch overlaps never trigger duplicate or redundant network requests."
+  - "Proactively pre-warm opening verses (`proactivePrewarmOpeningVerses()`, `prewarmReadAlongItem()`) quietly during idle page load and intro countdown so clicking Play starts audio in 0ms."
   - "Start the chapter background prefetch pipeline immediately upon initiating playback in `playCurrent()` / `playQueueIndex()`, downloading upcoming verses concurrently with verse 0."
-  - "Execute background prefetching using a concurrent worker pool (`CONCURRENCY = 3`, `Promise.all(workers)`) across both `audio_player.js` and `read_along.html` to accelerate chapter verse prefetching up to the end of the chapter by ~3.5x."
+  - "Execute background prefetching using a 4-worker concurrent pool (`CONCURRENCY = 4`, `Promise.all(workers)`) across both `audio_player.js` and `read_along.html` to accelerate chapter verse prefetching up to the end of the chapter."
   - "Prime the `<audio>` preloader element with the immediate next verse (`currentIndex + 1`) as soon as worker 0 completes its download, eliminating all transition latency between verses."
   - "Persist synthesized audio byte buffers to local disk storage (`AUDIO_CACHE_DIR`, `.audio_cache`) in `BoundedAudioCache` so subsequent chapter playbacks or app restarts retrieve audio in < 1ms without remote TTS synthesis."
   - "Normalize incoming speech pitch parameters (`normalize_speech_pitch`) supporting presets ('normal', 'warm_bass', 'bass', 'base', 'more_base', 'extra_bass') and valid Edge-TTS regex (`^[+-]\\d+Hz$`)."
   - "Include `target_pitch` in LRU and client cache keys (`{target_voice}:{target_rate}:{target_pitch}:{clean_text}`) and return `X-TTS-Pitch` headers to prevent cross-tone cache collision."
   - "When streaming TTS audio via `/api/audio/stream`, prioritize requested neural voice, then gracefully attempt same-gender alternative neural voices before falling back to gTTS."
-  - "Return `Cache-Control: public, max-age=86400` from `/api/audio/stream` to allow client-side HTTP caching alongside server in-memory LRU caching with capacity for up to 1000 verse audio streams and disk persistence."
+  - "Return `Cache-Control: public, max-age=604800, immutable` from `/api/audio/stream` to allow client-side persistent HTTP caching alongside server in-memory LRU caching and disk persistence."
   - "If an audio prefetch request fails or returns non-200, automatically retry up to 3 times with exponential backoff (400ms, 800ms) to ensure guaranteed verse availability."
   - "Enforce strict boundary guards when prefetching so that playing the last verse of a chapter, single-verse chapters, or ending a queue never fails, throws index errors, or attempts out-of-bounds audio synthesis."
   - "Before dispatching verse text to TTS, strip out all text enclosed in square brackets `\\[.*?\\]` and curly braces `\\{.*?\\}` using regex pre-processing."

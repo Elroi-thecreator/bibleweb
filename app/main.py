@@ -604,7 +604,7 @@ async def stream_audio(
             content=AUDIO_CACHE[cache_key],
             media_type="audio/mpeg",
             headers={
-                "Cache-Control": "public, max-age=86400",
+                "Cache-Control": "public, max-age=604800, immutable",
                 "X-TTS-Engine": "cache",
                 "X-TTS-Voice": target_voice,
                 "X-TTS-Pitch": target_pitch,
@@ -642,7 +642,7 @@ async def stream_audio(
                         content=audio_bytes,
                         media_type="audio/mpeg",
                         headers={
-                            "Cache-Control": "public, max-age=86400",
+                            "Cache-Control": "public, max-age=604800, immutable",
                             "X-TTS-Engine": "edge-neural",
                             "X-TTS-Voice": v_name,
                             "X-TTS-Pitch": target_pitch,
@@ -664,7 +664,7 @@ async def stream_audio(
             content=audio_bytes,
             media_type="audio/mpeg",
             headers={
-                "Cache-Control": "public, max-age=86400",
+                "Cache-Control": "public, max-age=604800, immutable",
                 "X-TTS-Engine": "gtts-fallback",
                 "X-TTS-Voice": target_voice,
                 "X-TTS-Pitch": target_pitch,
