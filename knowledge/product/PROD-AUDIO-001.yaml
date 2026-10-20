@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation, Concurrent Chapter Prefetching & Persistent Audio Cache Standard
 domain: product
 status: approved
-version: 1.13.0
+version: 1.14.0
 authority:
   level: official
   confidence: high
@@ -49,6 +49,8 @@ do:
   - "Cleanly cancel pending verse transition timers (`transitionTimeout`, `readalongTransitionTimeout`) whenever the user pauses, steps forward/backward, stops, or clicks on a verse to eliminate unexpected skips or double advances."
   - "Guard asynchronous verse loading with `requestedIndex` checks (`if (this.currentIndex !== requestedIndex || !this.isPlaying) return;`) to ensure out-of-order promise resolutions never hijack user navigation."
   - "Implement universal `togglePlayPause()` method across audio docks and controls to smoothly handle unstarted, playing, and paused states with zero dead-clicks."
+  - "Ensure immediate and unconditional pause responsiveness across all audio states (active playback, in-flight verse network download, and the 1-second inter-verse gap) by checking `this.isPaused` / `!isAudioPlaying` immediately following asynchronous operations (`ensureVerseAudioDownloaded`, `readalongInFlight`, `audio.play()`) and wrapping pause calls in error-tolerant blocks to safely absorb browser `AbortError`."
+  - "Render initial play/pause buttons with play icon `▶` in server-rendered templates (`reader.html` `#audio-play-pause-btn`) so initial visual state strictly matches idle audio."
   - "When playback pauses or halts, immediately revert playing verse badges back to 'downloaded' (if in memory cache) or 'idle' to eliminate stale pulsing indicators."
   - "Safely pause `<audio>` elements before revoking blob object URLs (`URL.revokeObjectURL`) inside `clearAllBlobs()` to prevent browser audio decoder abort exceptions."
   - "Centralize voice engine selection exclusively in the Settings Page/Modal (`#setting-voice-ta`, `#setting-voice-en`) to keep audio player docks lightweight, uncluttered, and mobile-friendly."
@@ -72,6 +74,7 @@ dont:
   - "Do not crowd reader audio docks with voice selection dropdowns; route neural voice configurations through the dedicated Global Settings modal."
   - "Do not hide audio progress counters or playback bars on mobile viewports."
   - "Do not abruptly jump to the next verse with zero gap upon verse completion; enforce a 1-second meditative pause between consecutive verses."
+  - "Do not allow asynchronous promise completions (such as verse download resolution or `.play().then(...)`) to override or bypass a user's pause command."
 
 reason:
   "Showing real-time download status on each verse gives readers instant visual confirmation of audio availability. Coupling immediate parallel 3-worker prefetching with two-tier in-memory and persistent disk caching drops chapter verse prefetch times by over 3.5x and provides sub-millisecond instant audio playback for subsequent listens, all while preventing duplicate requests."

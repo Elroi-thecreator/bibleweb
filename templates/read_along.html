@@ -692,7 +692,10 @@ async function playQueueIndex(index) {
         blobUrl = await p;
     }
 
-    if (currentQueueIndex !== index) return;
+    if (currentQueueIndex !== index || !isAudioPlaying) {
+        if (audioQueue[index]) updateReadAlongVerseStatusUI(audioQueue[index], 'downloaded');
+        return;
+    }
     readalongDownloadedItems.add(itemKey);
 
     updateReadAlongVerseStatusUI(item, 'playing');
@@ -701,6 +704,12 @@ async function playQueueIndex(index) {
 
     audioElement.play()
         .then(() => {
+            if (!isAudioPlaying || currentQueueIndex !== index) {
+                try { audioElement.pause(); } catch (_) {}
+                updatePlayIcons(false);
+                if (audioQueue[index]) updateReadAlongVerseStatusUI(audioQueue[index], 'downloaded');
+                return;
+            }
             isAudioPlaying = true;
             updatePlayIcons(true);
             startReadAlongPrefetchPipeline();
@@ -725,8 +734,10 @@ function updatePlayIcons(playing) {
 
 function toggleAudioPlayback() {
     if (!audioElement.src || audioElement.src === window.location.href) {
-        playQueueIndex(currentQueueIndex || 0);
-        return;
+        if (!isAudioPlaying) {
+            playQueueIndex(currentQueueIndex || 0);
+            return;
+        }
     }
     if (readalongTransitionTimeout) {
         clearTimeout(readalongTransitionTimeout);
@@ -744,20 +755,33 @@ function toggleAudioPlayback() {
         playQueueIndex(currentQueueIndex);
         return;
     }
-    if (audioElement.paused) {
-        audioElement.play().then(() => {
-            isAudioPlaying = true;
-            updatePlayIcons(true);
-            if (audioQueue[currentQueueIndex]) {
-                updateReadAlongVerseStatusUI(audioQueue[currentQueueIndex], 'playing');
-            }
-        }).catch(e => console.warn(e));
-    } else {
-        audioElement.pause();
+    if (isAudioPlaying) {
         isAudioPlaying = false;
         updatePlayIcons(false);
+        try { audioElement.pause(); } catch (_) {}
         if (audioQueue[currentQueueIndex]) {
             updateReadAlongVerseStatusUI(audioQueue[currentQueueIndex], 'downloaded');
+        }
+    } else {
+        isAudioPlaying = true;
+        updatePlayIcons(true);
+        if (audioElement.src && audioElement.src !== window.location.href && !audioElement.ended) {
+            audioElement.play().then(() => {
+                if (!isAudioPlaying) {
+                    audioElement.pause();
+                    updatePlayIcons(false);
+                    return;
+                }
+                if (audioQueue[currentQueueIndex]) {
+                    updateReadAlongVerseStatusUI(audioQueue[currentQueueIndex], 'playing');
+                }
+            }).catch(e => {
+                console.warn(e);
+                isAudioPlaying = false;
+                updatePlayIcons(false);
+            });
+        } else {
+            playQueueIndex(currentQueueIndex || 0);
         }
     }
 }

@@ -429,12 +429,25 @@ class BibleContinuousAudio {
         // Fetch or get from cache (checks if already downloaded, never duplicates)
         const blobUrl = await this.ensureVerseAudioDownloaded(requestedIndex);
         if (!blobUrl || !this.isPlaying || this.currentIndex !== requestedIndex) return;
+        if (this.isPaused) {
+            this.setPlayPauseIcon(false);
+            if (this.verseAudioBlobs.has(this.getVerseCacheKey(requestedIndex))) {
+                this.updateVerseStatusUI(requestedIndex, 'downloaded');
+            }
+            return;
+        }
 
         this.audio.src = blobUrl;
         this.audio.playbackRate = parseFloat(this.rate);
 
         this.audio.play().then(() => {
             if (this.currentIndex !== requestedIndex || !this.isPlaying) return;
+            if (this.isPaused) {
+                try { this.audio.pause(); } catch (_) {}
+                this.setPlayPauseIcon(false);
+                this.updateVerseStatusUI(requestedIndex, 'downloaded');
+                return;
+            }
             this.setPlayPauseIcon(true);
             this.updateVerseStatusUI(requestedIndex, 'playing');
             this.startChapterPrefetchPipeline();
@@ -572,16 +585,19 @@ class BibleContinuousAudio {
             this.transitionTimeout = null;
             this.isPausedDuringGap = true;
         }
-        if (this.isPlaying && !this.isPaused) {
-            this.audio.pause();
-            this.isPaused = true;
-            this.setPlayPauseIcon(false);
-            if (this.verses[this.currentIndex]) {
-                const playBtn = document.getElementById(`verse-play-btn-${this.currentIndex}`);
-                if (playBtn) playBtn.innerHTML = '▶';
-                if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
-                    this.updateVerseStatusUI(this.currentIndex, 'downloaded');
-                }
+        this.isPaused = true;
+        this.setPlayPauseIcon(false);
+        if (this.audio) {
+            try { this.audio.pause(); } catch (_) {}
+        }
+        if (this.verses[this.currentIndex]) {
+            const playBtn = document.getElementById(`verse-play-btn-${this.currentIndex}`);
+            if (playBtn) {
+                playBtn.innerHTML = '▶';
+                playBtn.classList.remove('text-amber-600', 'font-bold');
+            }
+            if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
+                this.updateVerseStatusUI(this.currentIndex, 'downloaded');
             }
         }
     }
@@ -596,11 +612,18 @@ class BibleContinuousAudio {
             return;
         }
         if (this.isPlaying && this.isPaused) {
-            this.audio.play().then(() => {
-                this.isPaused = false;
-                this.setPlayPauseIcon(true);
-                this.updateVerseStatusUI(this.currentIndex, 'playing');
-            }).catch(e => console.warn(e));
+            this.isPaused = false;
+            this.setPlayPauseIcon(true);
+            if (this.audio && this.audio.src) {
+                this.audio.play().then(() => {
+                    this.updateVerseStatusUI(this.currentIndex, 'playing');
+                }).catch(e => {
+                    console.warn(e);
+                    this.setPlayPauseIcon(false);
+                });
+            } else {
+                this.playCurrent();
+            }
         } else {
             this.play(this.currentIndex);
         }

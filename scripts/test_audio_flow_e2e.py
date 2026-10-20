@@ -114,9 +114,24 @@ def test_javascript_syntax_and_symbols():
     assert "1000" in audio_js and "clearTimeout(this.transitionTimeout)" in audio_js, \
         "audio_player.js missing 1-second transition pause or cleanup"
 
+    # Check pause guards in playCurrent and pause()
+    assert "if (this.isPaused) {" in audio_js, "audio_player.js missing this.isPaused guard in playCurrent"
+    assert "try { this.audio.pause(); } catch (_) {}" in audio_js, \
+        "audio_player.js must safely catch potential AbortError during pause"
+
     print("✓ audio_player.js passed all static flow & race-condition guard checks")
 
-    # 1.2 Read templates/read_along.html
+    # 1.2 Read templates/reader.html
+    with open("templates/reader.html", "r", encoding="utf-8") as f:
+        reader_html = f.read()
+
+    assert 'id="audio-play-pause-btn"' in reader_html, "reader.html missing #audio-play-pause-btn"
+    assert "▶" in reader_html and "⏸" not in reader_html[reader_html.find('id="audio-play-pause-btn"'):reader_html.find('id="audio-play-pause-btn"') + 350], \
+        "reader.html #audio-play-pause-btn must default to play icon ▶ when idle"
+
+    print("✓ templates/reader.html verified initial play icon ▶ on audio play/pause button")
+
+    # 1.3 Read templates/read_along.html
     with open("templates/read_along.html", "r", encoding="utf-8") as f:
         readalong_html = f.read()
 
@@ -144,6 +159,12 @@ def test_javascript_syntax_and_symbols():
     assert "readalongTransitionTimeout" in readalong_html, "read_along.html missing readalongTransitionTimeout"
     assert "1000" in readalong_html and "clearTimeout(readalongTransitionTimeout)" in readalong_html, \
         "read_along.html missing 1-second transition pause or cleanup"
+
+    # Check pause guards in read_along.html
+    assert "if (currentQueueIndex !== index || !isAudioPlaying)" in readalong_html, \
+        "read_along.html playQueueIndex missing !isAudioPlaying guard"
+    assert "try { audioElement.pause(); } catch (_) {}" in readalong_html, \
+        "read_along.html missing safe audioElement.pause() in toggle/playQueueIndex"
 
     print("✓ templates/read_along.html passed all async/await, function definition & error checks")
 
