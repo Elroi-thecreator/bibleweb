@@ -13,3 +13,13 @@ dist/
 .audio_cache/
 
 data/whatsapp_subscribers.sqlite.db
+
+node_modules/
+.next/
+wa-akg/node_modules/
+wa-akg/.next/
+wa-akg/.env
+wa-akg/.env.local
+wa-akg/data/auth/
+wa-akg/data/media/
+wa-akg/logs/
