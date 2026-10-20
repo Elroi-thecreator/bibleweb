@@ -12,3 +12,4 @@ dist/
 !windows_app/holybible.spec
 .audio_cache/
 
+data/whatsapp_subscribers.sqlite.db

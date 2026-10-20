@@ -1,0 +1,40 @@
+id: ARCH-WA-001
+type: architecture_standard
+title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
+domain: architecture
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+applies_to:
+  - backend
+  - whatsapp_gateway
+  - routes
+
+rule:
+  "The WhatsApp gateway integration uses an isolated 5-layer decoupled architecture based on WA-AKG (Next.js + Baileys). Core gateway communication, conversational session storage, and command dispatching in `whatsapp_gateway/client/` and `whatsapp_gateway/bot/` must maintain zero dependencies on application databases or schemas, isolating all domain behaviors into `whatsapp_gateway/adapters/` and exposing a mountable FastAPI router in `whatsapp_gateway/routes/`."
+
+do:
+  - "Keep Layer 1 (`whatsapp_gateway/client/`) and Layer 2 (`whatsapp_gateway/bot/`) strictly domain-agnostic so the package can be dropped into any other FastAPI or Python project without modification."
+  - "Isolate application-specific interactions (scripture queries, hymn retrieval, quiz evaluation, and audio clips) strictly within Layer 3 (`whatsapp_gateway/adapters/`)."
+  - "Wrap all blocking SQLite queries in `await asyncio.to_thread(...)` within adapter handlers as mandated by DEV-PY-001."
+  - "Support multi-turn conversations (such as interactive quizzes) via an in-memory session store with automatic TTL expiration."
+  - "Provide a simulation mode in `WAClient` (`simulation_mode=True`) enabling automated end-to-end verification without live WhatsApp hardware."
+  - "Mount the controller into `app/main.py` using standard FastAPI router patterns: `app.include_router(whatsapp_router, prefix='/api/whatsapp')`."
+
+dont:
+  - "Do not import `app.db`, `app.quiz_data`, or `app.plans_data` inside `whatsapp_gateway/client/` or `whatsapp_gateway/bot/`."
+  - "Do not block the main asyncio event loop with synchronous audio synthesis or database reads."
+  - "Do not process webhook messages where `payload.is_from_me()` is True, preventing recursive bot message loops."
+
+reason:
+  "Strict layer separation ensures full reusability across future software projects, keeps the codebase maintainable, and guarantees that external messaging failures cannot destabilize core desktop or web scripture reading services."
+
+related_items:
+  - ARCH-SYS-001
+  - ARCH-DATA-001
+  - DEV-PY-001

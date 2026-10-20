@@ -6,6 +6,7 @@ services:
     region: singapore
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: DATABASE_PATH
@@ -18,4 +19,5 @@ services:
         value: "128"
       - key: AUDIO_CACHE_SIZE
         value: "30"
-
+      - key: WA_SIMULATION_MODE
+        value: "true"

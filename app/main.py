@@ -1539,3 +1539,26 @@ async def read_along_plan_day(request: Request, plan_type: str, day: int):
             "next_day": day + 1 if day < plan_obj["total_days"] else None,
         },
     )
+
+
+# ---------------------------------------------------------
+# Decoupled WhatsApp Gateway & Bot Integration (WA-AKG)
+# ---------------------------------------------------------
+from whatsapp_gateway.routes.webhook import router as whatsapp_router
+app.include_router(whatsapp_router, prefix="/api/whatsapp", tags=["whatsapp"])
+
+
+
+@app.get("/whatsapp", response_class=HTMLResponse)
+async def whatsapp_hub_page(request: Request):
+    """Interactive WhatsApp Assistant Hub, Chat Simulator, and Devotional Broadcast Dashboard."""
+    active_canon = resolve_canon(request)
+    canon_ctx = get_canon_context(active_canon)
+    return templates.TemplateResponse(
+        request=request,
+        name="whatsapp.html",
+        context={
+            **canon_ctx,
+            "page_title": "WhatsApp Bible Assistant",
+        },
+    )
