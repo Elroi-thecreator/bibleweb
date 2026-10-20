@@ -314,7 +314,7 @@ async def custom_unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 START_TIME = time.time()
-AUDIO_CACHE_SIZE = int(os.getenv("AUDIO_CACHE_SIZE", "30" if os.getenv("RENDER") else "100"))
+AUDIO_CACHE_SIZE = int(os.getenv("AUDIO_CACHE_SIZE", "150" if os.getenv("RENDER") else "500"))
 AUDIO_CACHE = BoundedAudioCache(maxsize=AUDIO_CACHE_SIZE)
 
 

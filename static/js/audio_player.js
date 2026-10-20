@@ -6,6 +6,11 @@ class BibleContinuousAudio {
         this.preloader.volume = 0;
         this.isPlaying = false;
         this.isPaused = false;
+        this.prefetchQueue = [];
+        this.isPrefetching = false;
+        this.downloadedVerses = new Set();
+        this.prefetchRetryLimit = 3;
+        this.isPaused = false;
         this.currentIndex = 0;
         this.verses = [];
         this.lang = 'ta';
@@ -69,6 +74,9 @@ class BibleContinuousAudio {
         }
 
         this.syncDockVoiceOptions();
+        this.prefetchQueue = [];
+        this.downloadedVerses.clear();
+        this.isPrefetching = false;
     }
 
     play(fromIndex = 0) {
@@ -104,48 +112,103 @@ class BibleContinuousAudio {
         
         this.audio.play().then(() => {
             this.setPlayPauseIcon(true);
-            this.prefetchNext();
+            this.startChapterPrefetchPipeline();
         }).catch(err => {
             console.warn("Autoplay block or delay:", err);
             this.setPlayPauseIcon(false);
         });
     }
 
-    prefetchNext() {
-        try {
-            if (!this.isPlaying) return;
+    startChapterPrefetchPipeline() {
+        if (!this.isPlaying && !this.isPaused) return;
 
-            const nextIndex = this.currentIndex + 1;
-            // Strict boundary guard: For the last verse (or single-verse chapters),
-            // nextIndex >= verses.length. Safely exit without error.
-            if (nextIndex >= this.verses.length) {
-                return;
-            }
+        // Build queue of all upcoming verses to the end of the chapter
+        const upcoming = [];
+        for (let i = this.currentIndex + 1; i < this.verses.length; i++) {
+            upcoming.push(i);
+        }
+
+        this.prefetchQueue = upcoming;
+
+        if (!this.isPrefetching) {
+            this.processPrefetchQueue();
+        }
+    }
+
+    async processPrefetchQueue() {
+        if (this.isPrefetching) return;
+        this.isPrefetching = true;
+
+        while (this.prefetchQueue.length > 0 && (this.isPlaying || this.isPaused)) {
+            const nextIndex = this.prefetchQueue.shift();
+
+            // Guard against chapter boundaries
+            if (nextIndex >= this.verses.length) continue;
 
             const nextV = this.verses[nextIndex];
-            if (!nextV) return;
+            if (!nextV) continue;
 
             let text = (this.lang === 'ta') ? nextV.textTa : nextV.textEn;
             if (!text && this.lang === 'ta') text = nextV.textEn;
 
             // Strip editorial bracket markers [...] and {...}
             text = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
-            if (!text) return;
+            if (!text) continue;
 
             const voice = this.getEffectiveVoice();
-            const nextAudioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(this.rate)}`;
+            const rate = this.rate;
+            const verseCacheKey = `${this.bookId}_${this.chapter}_${nextIndex}_${this.lang}_${voice}_${rate}`;
 
-            if (!this.preloader) {
-                this.preloader = new Audio();
-                this.preloader.muted = true;
-                this.preloader.volume = 0;
+            // Skip if already confirmed downloaded
+            if (this.downloadedVerses.has(verseCacheKey)) {
+                continue;
             }
-            this.preloader.preload = 'auto';
-            this.preloader.src = nextAudioUrl;
-            this.preloader.load();
-        } catch (err) {
-            console.debug('Silent audio prefetch notice:', err);
+
+            const streamUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(rate)}`;
+
+            // Automated download with verification & retry
+            let confirmed = false;
+            for (let attempt = 1; attempt <= this.prefetchRetryLimit; attempt++) {
+                if (!this.isPlaying && !this.isPaused) break;
+
+                try {
+                    const res = await fetch(streamUrl, {
+                        method: 'GET',
+                        priority: 'low',
+                        headers: { 'Accept': 'audio/mpeg' }
+                    });
+
+                    if (res.ok) {
+                        const contentType = res.headers.get('content-type') || '';
+                        const blob = await res.blob();
+                        if (blob && blob.size > 0 && (contentType.includes('audio') || res.status === 200)) {
+                            confirmed = true;
+                            this.downloadedVerses.add(verseCacheKey);
+
+                            // Prime preloader element if this is the immediate next verse
+                            if (nextIndex === this.currentIndex + 1 && this.preloader) {
+                                this.preloader.src = streamUrl;
+                                this.preloader.preload = 'auto';
+                                this.preloader.load();
+                            }
+                            break;
+                        }
+                    }
+                    console.warn(`[Audio Pipeline] Verse ${nextV.verseDisplay || nextV.verse} attempt ${attempt} returned HTTP ${res.status}. Retrying...`);
+                } catch (err) {
+                    console.warn(`[Audio Pipeline] Verse ${nextV.verseDisplay || nextV.verse} attempt ${attempt} network error:`, err);
+                }
+
+                if (!confirmed && attempt < this.prefetchRetryLimit && (this.isPlaying || this.isPaused)) {
+                    await new Promise(r => setTimeout(r, attempt * 500));
+                }
+            }
+
+            // Brief pacing delay between downloads
+            await new Promise(r => setTimeout(r, 60));
         }
+
+        this.isPrefetching = false;
     }
 
     getEffectiveVoice() {
@@ -161,6 +224,8 @@ class BibleContinuousAudio {
         } else {
             localStorage.setItem('bible_audio_voice_en', voiceName);
         }
+        this.downloadedVerses.clear();
+        this.prefetchQueue = [];
         if (this.isPlaying) this.playCurrent();
     }
 
@@ -196,6 +261,8 @@ class BibleContinuousAudio {
     stop() {
         this.isPlaying = false;
         this.isPaused = false;
+        this.prefetchQueue = [];
+        this.isPrefetching = false;
         this.audio.pause();
         this.audio.currentTime = 0;
         if (this.preloader) {
@@ -247,6 +314,8 @@ class BibleContinuousAudio {
     setLanguage(lang) {
         this.lang = lang;
         this.syncDockVoiceOptions();
+        this.downloadedVerses.clear();
+        this.prefetchQueue = [];
         if (this.isPlaying) this.playCurrent();
     }
 
@@ -274,8 +343,10 @@ class BibleContinuousAudio {
     setRate(rate) {
         this.rate = rate;
         this.audio.playbackRate = parseFloat(rate);
+        this.downloadedVerses.clear();
+        this.prefetchQueue = [];
         if (this.isPlaying) {
-            this.prefetchNext();
+            this.startChapterPrefetchPipeline();
         }
     }
 

@@ -324,6 +324,10 @@ const audioElement = document.getElementById('readalong-audio');
 let readalongPreloader = new Audio();
 readalongPreloader.muted = true;
 readalongPreloader.volume = 0;
+let readalongPrefetchQueue = [];
+let isReadalongPrefetching = false;
+let readalongDownloadedItems = new Set();
+const PREFETCH_RETRY_LIMIT = 3;
 let audioQueue = [];
 let currentQueueIndex = 0;
 let isAudioPlaying = false;
@@ -448,6 +452,8 @@ function setLanguage(lang) {
 
     applyReadAlongFontSize(currentFontRem);
 
+    readalongDownloadedItems.clear();
+    readalongPrefetchQueue = [];
     if (isAudioPlaying) {
         playQueueIndex(currentQueueIndex);
     }
@@ -511,7 +517,7 @@ function playQueueIndex(index) {
         .then(() => {
             isAudioPlaying = true;
             updatePlayIcons(true);
-            prefetchNextReadAlongItem();
+            startReadAlongPrefetchPipeline();
         })
         .catch(err => {
             console.warn("Audio waiting for user gesture:", err);
@@ -543,55 +549,109 @@ function toggleAudioPlayback() {
     }
 }
 
-function prefetchNextReadAlongItem() {
-    try {
-        if (!isAudioPlaying) return;
+function startReadAlongPrefetchPipeline() {
+    if (!isAudioPlaying) return;
 
-        const nextIndex = currentQueueIndex + 1;
-        // Edge Case: When playing the last verse of the reading plan/chapter
-        if (nextIndex >= audioQueue.length) {
+    // Build queue of upcoming items up to the end of audioQueue, including outro
+    const upcoming = [];
+    for (let i = currentQueueIndex + 1; i < audioQueue.length; i++) {
+        upcoming.push(i);
+    }
+    // Also enqueue outro sentinel index
+    upcoming.push(audioQueue.length);
+
+    readalongPrefetchQueue = upcoming;
+
+    if (!isReadalongPrefetching) {
+        processReadAlongPrefetchQueue();
+    }
+}
+
+async function processReadAlongPrefetchQueue() {
+    if (isReadalongPrefetching) return;
+    isReadalongPrefetching = true;
+
+    while (readalongPrefetchQueue.length > 0 && isAudioPlaying) {
+        const targetIdx = readalongPrefetchQueue.shift();
+
+        let streamUrl = '';
+        let itemKey = '';
+        let itemLabel = '';
+
+        if (targetIdx >= audioQueue.length) {
+            // Outro blessing
             const blessingText = currentLanguage === 'ta' ? OUTRO_BLESSING_TA : OUTRO_BLESSING_EN;
             const outroVoice = (currentLanguage === 'ta')
                 ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
                 : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
             const cleanBlessing = (blessingText || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
-            if (!cleanBlessing) return;
+            if (!cleanBlessing) continue;
 
-            const outroUrl = `/api/audio/stream?text=${encodeURIComponent(cleanBlessing)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
-            if (!readalongPreloader) {
-                readalongPreloader = new Audio();
-                readalongPreloader.muted = true;
-                readalongPreloader.volume = 0;
+            itemKey = `outro_${currentLanguage}_${outroVoice}_${speeds[currentSpeedIndex]}`;
+            itemLabel = 'Outro Blessing';
+            streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanBlessing)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
+        } else {
+            const item = audioQueue[targetIdx];
+            if (!item) continue;
+
+            const text = currentLanguage === 'ta' ? item.text_ta : item.text_en;
+            const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
+            if (!cleanAudioText) continue;
+
+            const activeVoice = (currentLanguage === 'ta')
+                ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
+                : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
+
+            itemKey = `${item.bookId}_${item.chapter}_${item.verse || 'title'}_${currentLanguage}_${activeVoice}_${speeds[currentSpeedIndex]}`;
+            itemLabel = `${item.ref_en || item.ref_ta || targetIdx}`;
+            streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
+        }
+
+        if (readalongDownloadedItems.has(itemKey)) {
+            continue; // Already downloaded & confirmed
+        }
+
+        let confirmed = false;
+        for (let attempt = 1; attempt <= PREFETCH_RETRY_LIMIT; attempt++) {
+            if (!isAudioPlaying) break;
+
+            try {
+                const res = await fetch(streamUrl, {
+                    method: 'GET',
+                    priority: 'low',
+                    headers: { 'Accept': 'audio/mpeg' }
+                });
+
+                if (res.ok) {
+                    const contentType = res.headers.get('content-type') || '';
+                    const blob = await res.blob();
+                    if (blob && blob.size > 0 && (contentType.includes('audio') || res.status === 200)) {
+                        confirmed = true;
+                        readalongDownloadedItems.add(itemKey);
+
+                        // If immediate next item, prime preloader element
+                        if (targetIdx === currentQueueIndex + 1 && readalongPreloader) {
+                            readalongPreloader.src = streamUrl;
+                            readalongPreloader.preload = 'auto';
+                            readalongPreloader.load();
+                        }
+                        break;
+                    }
+                }
+                console.warn(`[ReadAlong Prefetch] ${itemLabel} attempt ${attempt} returned HTTP ${res.status}. Retrying...`);
+            } catch (err) {
+                console.warn(`[ReadAlong Prefetch] ${itemLabel} attempt ${attempt} network error:`, err);
             }
-            readalongPreloader.preload = 'auto';
-            readalongPreloader.src = outroUrl;
-            readalongPreloader.load();
-            return;
+
+            if (!confirmed && attempt < PREFETCH_RETRY_LIMIT && isAudioPlaying) {
+                await new Promise(r => setTimeout(r, attempt * 500));
+            }
         }
 
-        const nextItem = audioQueue[nextIndex];
-        if (!nextItem) return;
-
-        const text = currentLanguage === 'ta' ? nextItem.text_ta : nextItem.text_en;
-        const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
-        if (!cleanAudioText) return;
-
-        const activeVoice = (currentLanguage === 'ta')
-            ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
-            : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
-        const nextUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
-
-        if (!readalongPreloader) {
-            readalongPreloader = new Audio();
-            readalongPreloader.muted = true;
-            readalongPreloader.volume = 0;
-        }
-        readalongPreloader.preload = 'auto';
-        readalongPreloader.src = nextUrl;
-        readalongPreloader.load();
-    } catch (err) {
-        console.debug('Silent read-along prefetch notice:', err);
+        await new Promise(r => setTimeout(r, 60));
     }
+
+    isReadalongPrefetching = false;
 }
 
 function stepItem(direction) {
@@ -621,8 +681,10 @@ function cycleAudioSpeed() {
     const mbSpeed = document.getElementById('mobile-speed-btn');
     if (sbSpeed) sbSpeed.innerText = `${rate.toFixed(1)}x`;
     if (mbSpeed) mbSpeed.innerText = `${rate.toFixed(1)}x`;
+    readalongDownloadedItems.clear();
+    readalongPrefetchQueue = [];
     if (isAudioPlaying) {
-        prefetchNextReadAlongItem();
+        startReadAlongPrefetchPipeline();
     }
 }
 
@@ -643,6 +705,8 @@ audioElement.addEventListener('error', () => {
 function triggerOutroBlessing() {
     audioElement.pause();
     isAudioPlaying = false;
+    readalongPrefetchQueue = [];
+    isReadalongPrefetching = false;
     if (readalongPreloader) {
         readalongPreloader.pause();
         readalongPreloader.removeAttribute('src');
