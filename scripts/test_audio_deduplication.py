@@ -41,7 +41,13 @@ def run_checks():
         "Missing verse-audio-status-pill class in reader.html"
     assert 'id="verse-play-btn-{{ loop.index0 }}"' in reader_html, \
         "Missing per-verse play button id in reader.html"
-    print("✓ 1. reader.html has per-verse download status badge and button identifiers")
+    assert 'data-text-ta="{{ v.text_ta }}"' in reader_html, \
+        "reader.html must include data-text-ta on verse items"
+    assert 'data-text-en="{{ v.text_en }}"' in reader_html, \
+        "reader.html must include data-text-en on verse items"
+    assert 'handleVerseItemClick' in reader_html, \
+        "reader.html must implement handleVerseItemClick"
+    print("✓ 1. reader.html has per-verse download status badge, text attributes, and click handlers")
 
     # 2. Inspect static/js/audio_player.js
     with open("static/js/audio_player.js", "r", encoding="utf-8") as f:

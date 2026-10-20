@@ -111,32 +111,29 @@ class BibleContinuousAudio {
         switch (status) {
             case 'downloading':
                 el.innerHTML = `
-                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-100/90 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 text-[9px] font-semibold border border-amber-300/80 dark:border-amber-700/80 animate-pulse shadow-xs" title="Downloading verse audio / ஆடியோ பதிவிறங்குகிறது...">
-                        <svg class="w-2.5 h-2.5 animate-spin text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                        <span class="hidden sm:inline">Downloading</span>
+                    <span class="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-full bg-amber-100/90 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 text-[8px] font-semibold border border-amber-300/80 dark:border-amber-700/80 animate-pulse" title="Downloading / ஆடியோ பதிவிறங்குகிறது...">
+                        <svg class="w-2 h-2 animate-spin text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                     </span>
                 `;
                 break;
             case 'downloaded':
                 el.innerHTML = `
-                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-[9px] font-medium border border-emerald-200/80 dark:border-emerald-800/60 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition shadow-xs" title="Audio downloaded & ready in memory (zero network lag)">
-                        <svg class="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                        <span class="hidden sm:inline">Ready</span>
+                    <span class="inline-flex items-center px-1 py-0.2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-[8px] font-medium border border-emerald-200/80 dark:border-emerald-800/60 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition" title="Audio ready">
+                        <svg class="w-2 h-2 text-emerald-600 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                     </span>
                 `;
                 break;
             case 'playing':
                 el.innerHTML = `
-                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[9px] font-bold shadow-xs animate-pulse" title="Playing verse audio / வாசிக்கப்படுகிறது">
-                        <span class="text-[10px]">🔊</span>
-                        <span class="hidden sm:inline">Playing</span>
+                    <span class="inline-flex items-center px-1 py-0.2 rounded-full bg-amber-600 text-white text-[8px] font-bold animate-pulse" title="Playing">
+                        <span class="text-[8px]">🔊</span>
                     </span>
                 `;
                 break;
             case 'error':
                 el.innerHTML = `
-                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-[9px] border border-rose-200 dark:border-rose-900/50 cursor-pointer" title="Audio download issue. Tap to retry.">
-                        <span>⚠️ Retry</span>
+                    <span class="inline-flex items-center px-1 py-0.2 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-[8px] border border-rose-200" title="Error">
+                        <span>⚠️</span>
                     </span>
                 `;
                 break;
@@ -183,8 +180,8 @@ class BibleContinuousAudio {
             verse: el.id.replace('v', ''),
             verseDisplay: el.dataset.verseDisplay || el.id.replace('v', ''),
             element: el,
-            textEn: el.querySelector('.verse-text-en')?.innerText.trim() || '',
-            textTa: el.querySelector('.verse-text-ta')?.innerText.trim() || ''
+            textEn: el.dataset.textEn || el.querySelector('.verse-text-en')?.innerText.trim() || '',
+            textTa: el.dataset.textTa || el.querySelector('.verse-text-ta')?.innerText.trim() || ''
         }));
 
         this.clearAllBlobs();
@@ -196,7 +193,7 @@ class BibleContinuousAudio {
             sessionStorage.removeItem('bible_autoplay_state');
             this.lang = state.lang || 'ta';
             this.rate = state.rate || 1.0;
-            this.pitch = state.pitch || localStorage.getItem('bible_audio_pitch') || '+0Hz';
+            this.pitch = state.pitch || localStorage.getItem('bible_audio_pitch') || '-8Hz';
 
             const langEl = document.getElementById('audio-lang-select');
             const rateEl = document.getElementById('audio-rate-select');
@@ -260,6 +257,7 @@ class BibleContinuousAudio {
             try {
                 let text = (this.lang === 'ta') ? v.textTa : v.textEn;
                 if (!text && this.lang === 'ta') text = v.textEn;
+                if (!text && this.lang === 'en') text = v.textTa;
 
                 // Strip editorial bracket markers [...] and {...}
                 text = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
@@ -393,6 +391,9 @@ class BibleContinuousAudio {
         }).catch(err => {
             console.warn("Autoplay block or delay:", err);
             this.setPlayPauseIcon(false);
+            if (this.verseAudioBlobs.has(cacheKey)) {
+                this.updateVerseStatusUI(requestedIndex, 'downloaded');
+            }
         });
     }
 
