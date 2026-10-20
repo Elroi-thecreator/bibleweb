@@ -10,4 +10,5 @@ build/
 dist/
 *.spec
 !windows_app/holybible.spec
+.audio_cache/
 

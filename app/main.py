@@ -76,6 +76,13 @@ STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 PLANS_DIR = STATIC_DIR / "plans"
 
+if os.getenv("AUDIO_CACHE_DIR"):
+    AUDIO_CACHE_DIR = Path(os.environ["AUDIO_CACHE_DIR"]).resolve()
+elif getattr(sys, "frozen", False):
+    AUDIO_CACHE_DIR = Path(os.environ.get("LOCALAPPDATA", os.path.expanduser("~"))) / "HolyBible" / "audio_cache"
+else:
+    AUDIO_CACHE_DIR = BASE_DIR / ".audio_cache"
+
 
 class CachedPage:
     """Pre-rendered HTML payload with pre-compressed Brotli and Gzip buffers."""
@@ -174,11 +181,17 @@ HTML_PAGE_CACHE = BoundedHTMLCache(maxsize=PAGE_CACHE_SIZE)
 
 
 class BoundedAudioCache:
-    """Thread-safe bounded LRU cache for generated TTS audio byte buffers."""
-    def __init__(self, maxsize: int = 50):
+    """Thread-safe bounded LRU cache with disk persistence for generated TTS audio byte buffers."""
+    def __init__(self, maxsize: int = 500, cache_dir: Path | None = None):
         self.maxsize = maxsize
+        self.cache_dir = cache_dir
         self._cache = OrderedDict()
         self._lock = threading.Lock()
+        if self.cache_dir:
+            try:
+                self.cache_dir.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                print(f"[AudioCache] Warning creating cache dir: {e}")
 
     def get(self, key: str) -> bytes | None:
         with self._lock:
@@ -186,7 +199,22 @@ class BoundedAudioCache:
             if cached is not None:
                 self._cache.move_to_end(key)
                 return cached
-            return None
+
+        # Check persistent disk cache if available
+        if self.cache_dir:
+            fpath = self.cache_dir / f"{key}.mp3"
+            if fpath.is_file():
+                try:
+                    data = fpath.read_bytes()
+                    if len(data) > 0:
+                        with self._lock:
+                            self._cache[key] = data
+                            if len(self._cache) > self.maxsize:
+                                self._cache.popitem(last=False)
+                        return data
+                except Exception as e:
+                    print(f"[AudioCache] Disk read error for {key}: {e}")
+        return None
 
     def set(self, key: str, value: bytes) -> None:
         with self._lock:
@@ -196,15 +224,29 @@ class BoundedAudioCache:
             if len(self._cache) > self.maxsize:
                 self._cache.popitem(last=False)
 
+        # Write to persistent disk cache
+        if self.cache_dir and len(value) > 0:
+            fpath = self.cache_dir / f"{key}.mp3"
+            tmp_path = self.cache_dir / f"{key}.tmp"
+            try:
+                tmp_path.write_bytes(value)
+                tmp_path.replace(fpath)
+            except Exception as e:
+                print(f"[AudioCache] Disk write error for {key}: {e}")
+
     def __contains__(self, key: str) -> bool:
         with self._lock:
-            return key in self._cache
+            if key in self._cache:
+                return True
+        if self.cache_dir:
+            fpath = self.cache_dir / f"{key}.mp3"
+            return fpath.is_file() and fpath.stat().st_size > 0
+        return False
 
     def __getitem__(self, key: str) -> bytes:
-        with self._lock:
-            if key in self._cache:
-                self._cache.move_to_end(key)
-                return self._cache[key]
+        val = self.get(key)
+        if val is not None:
+            return val
         raise KeyError(key)
 
     def __setitem__(self, key: str, value: bytes) -> None:
@@ -314,8 +356,8 @@ async def custom_unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 START_TIME = time.time()
-AUDIO_CACHE_SIZE = int(os.getenv("AUDIO_CACHE_SIZE", "150" if os.getenv("RENDER") else "500"))
-AUDIO_CACHE = BoundedAudioCache(maxsize=AUDIO_CACHE_SIZE)
+AUDIO_CACHE_SIZE = int(os.getenv("AUDIO_CACHE_SIZE", "200" if os.getenv("RENDER") else "1000"))
+AUDIO_CACHE = BoundedAudioCache(maxsize=AUDIO_CACHE_SIZE, cache_dir=AUDIO_CACHE_DIR)
 
 
 DAILY_VERSE_PROTESTANT = {

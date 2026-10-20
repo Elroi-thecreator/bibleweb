@@ -376,6 +376,9 @@ class BibleContinuousAudio {
         if (!v) return;
         this.spotlightVerse(v);
 
+        // Immediately start chapter prefetch pipeline so upcoming verses download concurrently
+        this.startChapterPrefetchPipeline();
+
         // Fetch or get from cache (checks if already downloaded, never duplicates)
         const blobUrl = await this.ensureVerseAudioDownloaded(requestedIndex);
         if (!blobUrl || !this.isPlaying || this.currentIndex !== requestedIndex) return;
@@ -391,7 +394,7 @@ class BibleContinuousAudio {
         }).catch(err => {
             console.warn("Autoplay block or delay:", err);
             this.setPlayPauseIcon(false);
-            if (this.verseAudioBlobs.has(cacheKey)) {
+            if (this.verseAudioBlobs.has(this.getVerseCacheKey(requestedIndex))) {
                 this.updateVerseStatusUI(requestedIndex, 'downloaded');
             }
         });
@@ -416,33 +419,41 @@ class BibleContinuousAudio {
         if (this.isPrefetching) return;
         this.isPrefetching = true;
 
-        while (this.prefetchQueue.length > 0 && (this.isPlaying || this.isPaused)) {
-            const nextIndex = this.prefetchQueue.shift();
+        const CONCURRENCY = 3;
+        const workers = Array.from({ length: CONCURRENCY }, async () => {
+            while (this.prefetchQueue.length > 0 && (this.isPlaying || this.isPaused)) {
+                const nextIndex = this.prefetchQueue.shift();
+                if (nextIndex === undefined || nextIndex >= this.verses.length) continue;
 
-            if (nextIndex >= this.verses.length) continue;
+                const cacheKey = this.getVerseCacheKey(nextIndex);
+                if (this.verseAudioBlobs.has(cacheKey)) {
+                    // Already downloaded, ensure UI reflects it and skip network request
+                    this.updateVerseStatusUI(nextIndex, 'downloaded');
+                    continue;
+                }
 
-            const cacheKey = this.getVerseCacheKey(nextIndex);
-            if (this.verseAudioBlobs.has(cacheKey)) {
-                // Already downloaded, ensure UI reflects it and skip network request
-                this.updateVerseStatusUI(nextIndex, 'downloaded');
-                continue;
+                // Download using unified deduplicating pipeline
+                const blobUrl = await this.ensureVerseAudioDownloaded(nextIndex);
+
+                // Prime preloader element if this is the immediate next verse
+                if (blobUrl && nextIndex === this.currentIndex + 1 && this.preloader) {
+                    this.preloader.src = blobUrl;
+                    this.preloader.preload = 'auto';
+                    this.preloader.load();
+                }
+
+                // Brief pacing delay between worker turns
+                await new Promise(r => setTimeout(r, 40));
             }
+        });
 
-            // Download using unified deduplicating pipeline
-            const blobUrl = await this.ensureVerseAudioDownloaded(nextIndex);
-
-            // Prime preloader element if this is the immediate next verse
-            if (blobUrl && nextIndex === this.currentIndex + 1 && this.preloader) {
-                this.preloader.src = blobUrl;
-                this.preloader.preload = 'auto';
-                this.preloader.load();
-            }
-
-            // Brief pacing delay between downloads
-            await new Promise(r => setTimeout(r, 60));
-        }
-
+        await Promise.all(workers);
         this.isPrefetching = false;
+
+        // Restart if new items were enqueued while workers were completing
+        if (this.prefetchQueue.length > 0 && (this.isPlaying || this.isPaused)) {
+            this.processPrefetchQueue();
+        }
     }
 
     getEffectiveVoice() {

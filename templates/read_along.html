@@ -561,6 +561,9 @@ async function playQueueIndex(index) {
     }
 
     currentQueueIndex = index;
+    isAudioPlaying = true;
+    updatePlayIcons(true);
+    startReadAlongPrefetchPipeline();
     const item = audioQueue[index];
     const text = currentLanguage === 'ta' ? item.text_ta : item.text_en;
     const ref = currentLanguage === 'ta' ? item.ref_ta : item.ref_en;
@@ -709,93 +712,121 @@ async function processReadAlongPrefetchQueue() {
     if (isReadalongPrefetching) return;
     isReadalongPrefetching = true;
 
-    while (readalongPrefetchQueue.length > 0 && isAudioPlaying) {
-        const targetIdx = readalongPrefetchQueue.shift();
+    const CONCURRENCY = 3;
+    const workers = Array.from({ length: CONCURRENCY }, async () => {
+        while (readalongPrefetchQueue.length > 0 && isAudioPlaying) {
+            const targetIdx = readalongPrefetchQueue.shift();
+            if (targetIdx === undefined) continue;
 
-        let streamUrl = '';
-        let itemKey = '';
-        let itemLabel = '';
+            let streamUrl = '';
+            let itemKey = '';
+            let itemLabel = '';
 
-        if (targetIdx >= audioQueue.length) {
-            // Outro blessing
-            const blessingText = currentLanguage === 'ta' ? OUTRO_BLESSING_TA : OUTRO_BLESSING_EN;
-            const outroVoice = (currentLanguage === 'ta')
-                ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
-                : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
-            const cleanBlessing = (blessingText || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
-            if (!cleanBlessing) continue;
+            if (targetIdx >= audioQueue.length) {
+                // Outro blessing
+                const blessingText = currentLanguage === 'ta' ? OUTRO_BLESSING_TA : OUTRO_BLESSING_EN;
+                const outroVoice = (currentLanguage === 'ta')
+                    ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
+                    : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
+                const cleanBlessing = (blessingText || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
+                if (!cleanBlessing) continue;
 
-            const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
-            itemKey = `outro_${currentLanguage}_${outroVoice}_${speeds[currentSpeedIndex]}_${activePitch}`;
-            itemLabel = 'Outro Blessing';
-            streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanBlessing)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
-        } else {
-            const item = audioQueue[targetIdx];
-            if (!item) continue;
+                const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
+                itemKey = `outro_${currentLanguage}_${outroVoice}_${speeds[currentSpeedIndex]}_${activePitch}`;
+                itemLabel = 'Outro Blessing';
+                streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanBlessing)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
+            } else {
+                const item = audioQueue[targetIdx];
+                if (!item) continue;
 
-            const text = currentLanguage === 'ta' ? item.text_ta : item.text_en;
-            const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
-            if (!cleanAudioText) continue;
+                const text = currentLanguage === 'ta' ? item.text_ta : item.text_en;
+                const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
+                if (!cleanAudioText) continue;
 
-            const activeVoice = (currentLanguage === 'ta')
-                ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
-                : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
+                const activeVoice = (currentLanguage === 'ta')
+                    ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
+                    : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
 
-            const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
-            itemKey = `${item.bookId}_${item.chapter}_${item.verse || 'title'}_${currentLanguage}_${activeVoice}_${speeds[currentSpeedIndex]}_${activePitch}`;
-            itemLabel = `${item.ref_en || item.ref_ta || targetIdx}`;
-            streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
-        }
+                const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
+                itemKey = `${item.bookId}_${item.chapter}_${item.verse || 'title'}_${currentLanguage}_${activeVoice}_${speeds[currentSpeedIndex]}_${activePitch}`;
+                itemLabel = `${item.ref_en || item.ref_ta || targetIdx}`;
+                streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
+            }
 
-        if (readalongDownloadedItems.has(itemKey)) {
-            continue; // Already downloaded & confirmed
-        }
+            if (readalongDownloadedItems.has(itemKey) || readalongAudioBlobs.has(itemKey)) {
+                const it = audioQueue[targetIdx];
+                if (it) updateReadAlongVerseStatusUI(it, 'downloaded');
+                continue; // Already downloaded & confirmed
+            }
 
-        let confirmed = false;
-        for (let attempt = 1; attempt <= PREFETCH_RETRY_LIMIT; attempt++) {
-            if (!isAudioPlaying) break;
+            if (readalongInFlight.has(itemKey)) {
+                await readalongInFlight.get(itemKey);
+                continue;
+            }
 
-            try {
-                const res = await fetch(streamUrl, {
-                    method: 'GET',
-                    priority: 'low',
-                    headers: { 'Accept': 'audio/mpeg' }
-                });
+            const it = audioQueue[targetIdx];
+            if (it) updateReadAlongVerseStatusUI(it, 'downloading');
 
-                if (res.ok) {
-                    const contentType = res.headers.get('content-type') || '';
-                    const blob = await res.blob();
-                    if (blob && blob.size > 0 && (contentType.includes('audio') || res.status === 200)) {
-                        confirmed = true;
-                        readalongDownloadedItems.add(itemKey);
-                        const bUrl = URL.createObjectURL(blob);
-                        readalongAudioBlobs.set(itemKey, { blob: blob, blobUrl: bUrl });
-                        const it = audioQueue[targetIdx];
-                        if (it) updateReadAlongVerseStatusUI(it, 'downloaded');
+            const downloadPromise = (async () => {
+                let confirmed = false;
+                for (let attempt = 1; attempt <= PREFETCH_RETRY_LIMIT; attempt++) {
+                    if (!isAudioPlaying) break;
 
-                        // If immediate next item, prime preloader element
-                        if (targetIdx === currentQueueIndex + 1 && readalongPreloader) {
-                            readalongPreloader.src = bUrl;
-                            readalongPreloader.preload = 'auto';
-                            readalongPreloader.load();
+                    try {
+                        const res = await fetch(streamUrl, {
+                            method: 'GET',
+                            priority: 'low',
+                            headers: { 'Accept': 'audio/mpeg' }
+                        });
+
+                        if (res.ok) {
+                            const contentType = res.headers.get('content-type') || '';
+                            const blob = await res.blob();
+                            if (blob && blob.size > 0 && (contentType.includes('audio') || res.status === 200)) {
+                                confirmed = true;
+                                readalongDownloadedItems.add(itemKey);
+                                const bUrl = URL.createObjectURL(blob);
+                                readalongAudioBlobs.set(itemKey, { blob: blob, blobUrl: bUrl });
+                                if (it) updateReadAlongVerseStatusUI(it, 'downloaded');
+
+                                // If immediate next item, prime preloader element
+                                if (targetIdx === currentQueueIndex + 1 && readalongPreloader) {
+                                    readalongPreloader.src = bUrl;
+                                    readalongPreloader.preload = 'auto';
+                                    readalongPreloader.load();
+                                }
+                                return bUrl;
+                            }
                         }
-                        break;
+                        console.warn(`[ReadAlong Prefetch] ${itemLabel} attempt ${attempt} returned HTTP ${res.status}. Retrying...`);
+                    } catch (err) {
+                        console.warn(`[ReadAlong Prefetch] ${itemLabel} attempt ${attempt} network error:`, err);
+                    }
+
+                    if (!confirmed && attempt < PREFETCH_RETRY_LIMIT && isAudioPlaying) {
+                        await new Promise(r => setTimeout(r, attempt * 400));
                     }
                 }
-                console.warn(`[ReadAlong Prefetch] ${itemLabel} attempt ${attempt} returned HTTP ${res.status}. Retrying...`);
-            } catch (err) {
-                console.warn(`[ReadAlong Prefetch] ${itemLabel} attempt ${attempt} network error:`, err);
+                return null;
+            })();
+
+            readalongInFlight.set(itemKey, downloadPromise);
+            try {
+                await downloadPromise;
+            } finally {
+                readalongInFlight.delete(itemKey);
             }
 
-            if (!confirmed && attempt < PREFETCH_RETRY_LIMIT && isAudioPlaying) {
-                await new Promise(r => setTimeout(r, attempt * 500));
-            }
+            await new Promise(r => setTimeout(r, 40));
         }
+    });
 
-        await new Promise(r => setTimeout(r, 60));
-    }
-
+    await Promise.all(workers);
     isReadalongPrefetching = false;
+
+    if (readalongPrefetchQueue.length > 0 && isAudioPlaying) {
+        processReadAlongPrefetchQueue();
+    }
 }
 
 function stepItem(direction) {

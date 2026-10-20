@@ -33,7 +33,7 @@ knowledge_units:
   product:
     - id: PROD-AUDIO-001
       file: "knowledge/product/PROD-AUDIO-001.yaml"
-      title: "Audio Bible Text-to-Speech Engine, Deep Bass Modulation & Per-Verse Download Caching Standard"
+      title: "Audio Bible Text-to-Speech Engine, Deep Bass Modulation, Concurrent Chapter Prefetching & Persistent Audio Cache Standard"
     - id: PROD-QUIZ-001
       file: "knowledge/product/PROD-QUIZ-001.yaml"
       title: "Daily Bible Quiz Generation, Difficulty Scaling & Scoring Standard"
