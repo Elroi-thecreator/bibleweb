@@ -1,4 +1,7 @@
 services:
+  # =========================================================
+  # 1. Holy Bible Main Web Server (FastAPI + Embedded SQLite)
+  # =========================================================
   - type: web
     name: elroi-bible
     runtime: python
@@ -20,4 +23,47 @@ services:
       - key: AUDIO_CACHE_SIZE
         value: "30"
       - key: WA_SIMULATION_MODE
+        value: "false"
+      - key: WA_SESSION_ID
+        value: default
+      - key: WA_GATEWAY_URL
+        value: http://wa-akg-gateway:3000/api
+
+  # =========================================================
+  # 2. WA-AKG WhatsApp Gateway (Next.js + Baileys + Prisma)
+  # =========================================================
+  - type: web
+    name: wa-akg-gateway
+    runtime: node
+    plan: free
+    region: singapore
+    repo: https://github.com/mrifqidaffaaditya/WA-AKG.git
+    branch: main
+    buildCommand: npm install --legacy-peer-deps && npx prisma generate && npx prisma db push --accept-data-loss && node scripts/setup-admin.js admin@example.com admin123 && npm run build
+    startCommand: npm run start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: PORT
+        value: "3000"
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: AUTH_TRUST_HOST
         value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wa-akg-postgres
+          property: connectionString
+
+# =========================================================
+# 3. PostgreSQL Database (Persists WA-AKG Sessions & Keys)
+# =========================================================
+databases:
+  - name: wa-akg-postgres
+    plan: free
+    region: singapore
+    databaseName: wa_akg
+    user: wa_akg_user
