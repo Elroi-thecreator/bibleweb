@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation & Per-Verse Download Caching Standard
 domain: product
 status: approved
-version: 1.7.0
+version: 1.8.0
 authority:
   level: official
   confidence: high
@@ -43,6 +43,8 @@ do:
   - "Implement universal `togglePlayPause()` method across audio docks and controls to smoothly handle unstarted, playing, and paused states with zero dead-clicks."
   - "When playback pauses or halts, immediately revert playing verse badges back to 'downloaded' (if in memory cache) or 'idle' to eliminate stale pulsing indicators."
   - "Safely pause `<audio>` elements before revoking blob object URLs (`URL.revokeObjectURL`) inside `clearAllBlobs()` to prevent browser audio decoder abort exceptions."
+  - "Centralize voice engine selection exclusively in the Settings Page/Modal (`#setting-voice-ta`, `#setting-voice-en`) to keep audio player docks lightweight, uncluttered, and mobile-friendly."
+  - "Display real-time audio playback progress prominently across mobile and desktop views using interactive seek tracks (`#audio-progress-bar`, `#readalong-mobile-progress-bar`), verse counters (`#audio-progress-count`, `#mobile-progress-count`, e.g. `1/51`), and time indicators (`#audio-time-label`)."
   - "Execute complete end-to-end flow verification (`test_audio_flow_e2e.py`, `test_audio_deduplication.py`, `test_audio.py`, `test_robustness.py`) prior to pushing code to source control."
 
 dont:
@@ -56,7 +58,8 @@ dont:
   - "Do not attempt to prefetch beyond the chapter's verse array length on the last verse."
   - "Do not allow background prefetch failures or network blips to interrupt or halt the currently playing audio stream."
   - "Do not block UI scrolling or responsiveness during speech synthesis."
-  - "Do not lose the user's current reading position or tone preference when toggling audio playback."
+  - "Do not crowd reader audio docks with voice selection dropdowns; route neural voice configurations through the dedicated Global Settings modal."
+  - "Do not hide audio progress counters or playback bars on mobile viewports."
 
 reason:
   "Showing real-time download status on each verse gives readers instant visual confirmation of audio availability. Coupling this with client-side blob caching and in-flight request deduplication eliminates duplicate network overhead, provides sub-millisecond instant verse playback on click, and ensures smooth, uninterrupted listening without redundant network requests."

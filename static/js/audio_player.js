@@ -49,6 +49,35 @@ class BibleContinuousAudio {
                 }, 1000);
             }
         });
+
+        this.audio.addEventListener('timeupdate', () => {
+            this.updateAudioProgressUI();
+        });
+
+        this.audio.addEventListener('loadedmetadata', () => {
+            this.updateAudioProgressUI();
+        });
+    }
+
+    updateAudioProgressUI() {
+        const cur = this.audio.currentTime || 0;
+        const dur = this.audio.duration || 0;
+        const pct = dur > 0 ? Math.min(100, Math.max(0, (cur / dur) * 100)) : 0;
+
+        const progressBar = document.getElementById('audio-progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${pct}%`;
+        }
+
+        const timeLabel = document.getElementById('audio-time-label');
+        if (timeLabel) {
+            const formatTime = (sec) => {
+                const m = Math.floor(sec / 60);
+                const s = Math.floor(sec % 60);
+                return `${m}:${s < 10 ? '0' : ''}${s}`;
+            };
+            timeLabel.innerText = `${formatTime(cur)} / ${formatTime(dur)}`;
+        }
     }
 
     getVerseCacheKey(index) {
@@ -180,6 +209,24 @@ class BibleContinuousAudio {
         }
 
         this.syncDockVoiceOptions();
+
+        // Update progress counter in dock (e.g. 1/51)
+        const pCount = document.getElementById('audio-progress-count');
+        if (pCount && this.verses.length > 0) {
+            pCount.innerText = `1/${this.verses.length}`;
+        }
+
+        // Attach interactive seek listener to audio progress track
+        const track = document.getElementById('audio-progress-track');
+        if (track && !track._hasSeekListener) {
+            track._hasSeekListener = true;
+            track.addEventListener('click', (e) => {
+                if (!this.audio || !this.audio.duration) return;
+                const rect = track.getBoundingClientRect();
+                const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                this.audio.currentTime = pos * this.audio.duration;
+            });
+        }
     }
 
     async ensureVerseAudioDownloaded(index) {
@@ -442,6 +489,14 @@ class BibleContinuousAudio {
 
         const label = document.getElementById('audio-verse-label');
         if (label) label.innerText = `Verse ${v.verseDisplay || v.verse}`;
+
+        const progressCount = document.getElementById('audio-progress-count');
+        if (progressCount) {
+            progressCount.innerText = `${this.currentIndex + 1}/${this.verses.length}`;
+        }
+
+        const pBar = document.getElementById('audio-progress-bar');
+        if (pBar) pBar.style.width = '0%';
     }
 
     pause() {
@@ -498,6 +553,10 @@ class BibleContinuousAudio {
             el.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-50/70', 'dark:bg-amber-950/40');
         });
         this.setPlayPauseIcon(false);
+        const pBar = document.getElementById('audio-progress-bar');
+        if (pBar) pBar.style.width = '0%';
+        const timeLabel = document.getElementById('audio-time-label');
+        if (timeLabel) timeLabel.innerText = '0:00 / 0:00';
         this.hideDock();
     }
 

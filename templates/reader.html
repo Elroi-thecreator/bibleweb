@@ -268,18 +268,32 @@
     </div>
 </div>
 
-<!-- Persistent Audio Dock -->
-<div id="audio-dock" class="fixed bottom-14 sm:bottom-0 inset-x-0 bg-stone-950/95 backdrop-blur-md text-stone-100 p-2 sm:p-3 sm:px-8 border-t border-stone-800 shadow-2xl z-50 transform translate-y-full transition-transform duration-300 ease-in-out">
-    <div class="max-w-4xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3">
-        <div class="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
+<!-- Persistent Audio Dock with Real-Time Progress -->
+<div id="audio-dock" class="fixed bottom-14 sm:bottom-0 inset-x-0 bg-stone-950/95 backdrop-blur-md text-stone-100 px-3 py-2 sm:py-2.5 sm:px-8 border-t border-stone-800 shadow-2xl z-50 transform translate-y-full transition-transform duration-300 ease-in-out">
+    <!-- Real-time Audio Playback Progress Bar (Interactive Seek) -->
+    <div class="absolute top-0 inset-x-0 h-1 bg-stone-800/80 cursor-pointer overflow-hidden group" id="audio-progress-track" title="Tap to seek audio">
+        <div id="audio-progress-bar" class="h-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 transition-all duration-100 ease-linear" style="width: 0%"></div>
+    </div>
+
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3 mt-0.5">
+        <!-- Verse Info & Progress Counter -->
+        <div class="flex items-center space-x-2 sm:space-x-2.5 min-w-0 shrink">
             <span class="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
             <div class="min-w-0">
-                <span class="font-cinzel text-[10px] sm:text-[11px] text-stone-400 block leading-none truncate max-w-[85px] sm:max-w-none">{{ book.name_en }} {{ chapter }}</span>
-                <span id="audio-verse-label" class="font-bold text-xs text-white font-cinzel leading-tight truncate block">Verse 1</span>
+                <div class="flex items-center gap-1.5 leading-none">
+                    <span class="font-cinzel text-[10px] sm:text-[11px] text-stone-400 truncate max-w-[75px] sm:max-w-none">{{ book.name_en }} {{ chapter }}</span>
+                    <!-- Real-time verse progress counter (e.g. 1/51) -->
+                    <span id="audio-progress-count" class="text-[9px] sm:text-[10px] font-mono px-1 py-0.2 rounded bg-stone-900 border border-stone-800 text-amber-400 font-bold shrink-0">1/{{ verses|length }}</span>
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                    <span id="audio-verse-label" class="font-bold text-xs text-white font-cinzel leading-tight truncate">Verse 1</span>
+                    <span id="audio-time-label" class="text-[9px] text-stone-400 font-mono hidden xs:inline">0:00 / 0:00</span>
+                </div>
             </div>
         </div>
 
-        <div class="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
+        <!-- Center Controls: Prev, Play/Pause, Next, Stop -->
+        <div class="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
             <button onclick="window.bibleAudio ? window.bibleAudio.prev() : null" class="text-stone-400 hover:text-white text-sm sm:text-base p-1 cursor-pointer" title="Previous verse">⏮</button>
             <button id="audio-play-pause-btn" onclick="window.bibleAudio ? window.bibleAudio.togglePlayPause() : null" 
                     class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center text-xs sm:text-sm font-bold shadow-md cursor-pointer shrink-0">
@@ -292,30 +306,22 @@
             </button>
         </div>
 
+        <!-- Right Options: Language, Speed, and Settings Gear (Voice change centralized in Settings page) -->
         <div class="flex items-center space-x-1 sm:space-x-2 text-xs shrink-0">
-            <select id="audio-lang-select" onchange="window.bibleAudio ? window.bibleAudio.setLanguage(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1.5 sm:px-2 py-1 text-[11px] focus:outline-none max-w-[65px] sm:max-w-none">
+            <select id="audio-lang-select" onchange="window.bibleAudio ? window.bibleAudio.setLanguage(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1.5 sm:px-2 py-1 text-[11px] focus:outline-none" title="Audio Language">
                 <option value="ta" selected>Tamil</option>
                 <option value="en">English</option>
             </select>
-            <select id="audio-voice-select" onchange="window.bibleAudio ? window.bibleAudio.setVoice(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1 sm:px-2 py-1 text-[11px] focus:outline-none max-w-[95px] sm:max-w-none" title="Select Voice">
-                <option value="ta-IN-ValluvarNeural">வள்ளுவர் (Male - IN)</option>
-                <option value="ta-LK-KumarNeural">குமார் (Deep Bass - LK)</option>
-                <option value="ta-SG-AnbuNeural">அன்பு (Male - SG)</option>
-                <option value="ta-MY-SuryaNeural">சூர்யா (Male - MY)</option>
-                <option value="ta-IN-PallaviNeural">பல்லவி (Female - IN)</option>
-            </select>
-            <select id="audio-pitch-select" onchange="window.bibleAudio ? window.bibleAudio.setPitch(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1 sm:px-2 py-1 text-[11px] focus:outline-none max-w-[80px] sm:max-w-none" title="Voice Bass Tone / பாஸ் குரல்">
-                <option value="+0Hz" selected>Normal</option>
-                <option value="-4Hz">Warm Bass</option>
-                <option value="-8Hz">Deep Bass</option>
-                <option value="-12Hz">Heavy Bass</option>
-            </select>
-            <select id="audio-rate-select" onchange="window.bibleAudio ? window.bibleAudio.setRate(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1 sm:px-2 py-1 text-[11px] focus:outline-none">
+            <select id="audio-rate-select" onchange="window.bibleAudio ? window.bibleAudio.setRate(this.value) : null" class="bg-stone-900 text-stone-200 border border-stone-700 rounded-lg px-1 sm:px-2 py-1 text-[11px] focus:outline-none" title="Playback Speed">
                 <option value="0.75">0.75x</option>
                 <option value="1.0" selected>1.0x</option>
                 <option value="1.25">1.25x</option>
                 <option value="1.5">1.5x</option>
             </select>
+            <button type="button" onclick="toggleSettingsModal()" class="px-2 py-1 bg-stone-900 hover:bg-stone-800 text-stone-300 hover:text-amber-400 rounded-lg border border-stone-700 text-xs font-semibold flex items-center gap-1 cursor-pointer transition shadow-xs" title="Voice & Tone Settings (குரல் அமைப்புகள்)">
+                <span class="text-xs">⚙️</span>
+                <span class="hidden md:inline text-[11px]">Voice</span>
+            </button>
         </div>
     </div>
 </div>

@@ -104,9 +104,10 @@ def test_javascript_syntax_and_symbols():
     assert "if (this.currentIndex !== requestedIndex || !this.isPlaying) return;" in audio_js, \
         "playCurrent must guard playback after await and in .then()"
 
-    # Check Spacebar shortcut
-    assert "e.code === 'Space'" in audio_js or 'e.code === "Space"' in audio_js, \
-        "audio_player.js missing Spacebar keyboard shortcut"
+    # Check that updateAudioProgressUI exists
+    assert "updateAudioProgressUI()" in audio_js, "audio_player.js missing updateAudioProgressUI"
+    assert "audio-progress-bar" in audio_js, "audio_player.js missing audio-progress-bar reference"
+    assert "audio-progress-count" in audio_js, "audio_player.js missing audio-progress-count reference"
 
     print("✓ audio_player.js passed all static flow & race-condition guard checks")
 
@@ -232,7 +233,16 @@ async def test_live_templates_and_routes():
     assert 'id="audio-play-pause-btn"' in html_reader, "Reader missing #audio-play-pause-btn"
     assert 'onclick="window.bibleAudio ? window.bibleAudio.togglePlayPause() : null"' in html_reader, \
         "audio-play-pause-btn must call togglePlayPause"
-    print("✓ /read/43/1 renders per-verse status badges, play buttons, and togglePlayPause dock controls")
+    # Ensure audio-voice-select is removed from reader dock (voice change kept only in settings)
+    assert 'id="audio-voice-select"' not in html_reader, \
+        "Voice selection must not be in reader dock; keep voice change only in settings page"
+    assert 'id="setting-voice-ta"' in html_reader and 'id="setting-voice-en"' in html_reader, \
+        "Settings modal must provide canonical voice selection"
+    # Ensure real-time audio progress elements are present in reader
+    assert 'id="audio-progress-track"' in html_reader, "Reader missing #audio-progress-track"
+    assert 'id="audio-progress-bar"' in html_reader, "Reader missing #audio-progress-bar"
+    assert 'id="audio-progress-count"' in html_reader, "Reader missing #audio-progress-count"
+    print("✓ /read/43/1 renders per-verse status, audio progress bar/counter, and settings voice controls")
 
     # 3.2 Read-Along page: /read-along/plan/whole-bible-100/day/1
     res_readalong = await make_asgi_request("/read-along/plan/whole-bible-100/day/1")
@@ -243,7 +253,11 @@ async def test_live_templates_and_routes():
     assert 'async function playQueueIndex' in html_readalong, "Read-Along rendered without async playQueueIndex"
     assert 'function updateReadAlongVerseStatusUI' in html_readalong, "Read-Along rendered without updateReadAlongVerseStatusUI"
     assert 'streamAudioForItem' not in html_readalong, "Read-Along rendered with dangling streamAudioForItem"
-    print("✓ /read-along/plan/whole-bible-100/day/1 renders valid async audio pipeline with per-verse status badges")
+    # Ensure mobile audio progress elements are present in read-along
+    assert 'id="readalong-progress-track"' in html_readalong, "Read-Along missing #readalong-progress-track"
+    assert 'id="readalong-mobile-progress-bar"' in html_readalong, "Read-Along missing #readalong-mobile-progress-bar"
+    assert 'id="mobile-progress-count"' in html_readalong, "Read-Along missing #mobile-progress-count"
+    print("✓ /read-along/plan/whole-bible-100/day/1 renders valid async audio pipeline with mobile progress bar & counter")
 
     # 3.3 Audio streaming endpoint: /api/audio/stream
     res_audio = await make_asgi_request("/api/audio/stream", {

@@ -241,12 +241,22 @@
     <!-- 4. BOTTOM ACTION FOOTER BAR (MOBILE ONLY)                                 -->
     <!-- ========================================================================= -->
     <div id="mobile-audio-bar" class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#faf8f5]/95 dark:bg-[#11100f]/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 px-3.5 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-lg">
-        <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 min-w-0">
+        <!-- Audio Playback Progress Bar on Mobile -->
+        <div class="absolute top-0 inset-x-0 h-1 bg-stone-200/80 dark:bg-stone-800/80 cursor-pointer overflow-hidden" id="readalong-progress-track" title="Tap to seek audio">
+            <div id="readalong-mobile-progress-bar" class="h-full bg-gradient-to-r from-amber-600 to-amber-500 transition-all duration-100 ease-linear" style="width: 0%"></div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 mt-0.5">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
-                <span id="mobile-verse-ref" class="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">
-                    Tap Read Along
-                </span>
+                <div class="min-w-0">
+                    <span id="mobile-verse-ref" class="text-xs font-bold text-stone-900 dark:text-stone-100 truncate block">
+                        Tap Read Along
+                    </span>
+                    <span id="mobile-progress-count" class="text-[10px] font-mono font-bold text-amber-700 dark:text-amber-400 block leading-none mt-0.5">
+                        0 / 0
+                    </span>
+                </div>
             </div>
 
             <div class="flex items-center gap-1 flex-shrink-0">
@@ -547,9 +557,11 @@ async function playQueueIndex(index) {
     const sbRef = document.getElementById('sidebar-verse-ref');
     const sbCount = document.getElementById('sidebar-progress-count');
     const mbRef = document.getElementById('mobile-verse-ref');
+    const mbCount = document.getElementById('mobile-progress-count');
     if (sbRef) sbRef.innerText = ref;
     if (sbCount) sbCount.innerText = `${index + 1} / ${audioQueue.length}`;
     if (mbRef) mbRef.innerText = ref;
+    if (mbCount) mbCount.innerText = `${index + 1} / ${audioQueue.length}`;
 
     // Reset visual highlights
     document.querySelectorAll('.verse-row').forEach(n => {
@@ -833,6 +845,27 @@ function updateBassButtons() {
     if (sb) sb.innerText = b.label;
     if (mb) mb.innerText = `Bass: ${b.mobile}`;
 }
+
+// Real-time audio progress bar updates on mobile
+audioElement.addEventListener('timeupdate', () => {
+    if (!audioElement.duration) return;
+    const pct = Math.min(100, Math.max(0, (audioElement.currentTime / audioElement.duration) * 100));
+    const mbBar = document.getElementById('readalong-mobile-progress-bar');
+    if (mbBar) mbBar.style.width = `${pct}%`;
+});
+
+// Interactive seek on progress track
+document.addEventListener('DOMContentLoaded', () => {
+    const raTrack = document.getElementById('readalong-progress-track');
+    if (raTrack) {
+        raTrack.addEventListener('click', (e) => {
+            if (!audioElement || !audioElement.duration) return;
+            const rect = raTrack.getBoundingClientRect();
+            const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            audioElement.currentTime = pos * audioElement.duration;
+        });
+    }
+});
 
 // Auto-advance
 audioElement.addEventListener('ended', () => {
