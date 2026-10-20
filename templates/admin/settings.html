@@ -210,54 +210,94 @@
                 </div>
             </div>
 
-            <!-- Card: WhatsApp Gateway & Bot Management -->
+            <!-- Card: WhatsApp Gateway & Bot Configuration Form -->
             <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
                 <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
                     <div class="flex items-center gap-2">
                         <span class="text-lg">💬</span>
-                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">WhatsApp Gateway & Bot</h2>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">WhatsApp Gateway & Bot Setup</h2>
                     </div>
                     <span id="wa-mode-badge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {% if wa_simulation %}bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300{% else %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300{% endif %}">
                         {% if wa_simulation %}Simulation Mode{% else %}Live Gateway{% endif %}
                     </span>
                 </div>
 
-                <div class="space-y-2 text-xs">
-                    <div class="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800">
-                        <span class="text-stone-500">Gateway URL (WA_GATEWAY_URL):</span>
-                        <span class="font-mono font-medium text-stone-800 dark:text-stone-200">{{ wa_config.gateway_url }}</span>
+                <form id="wa-config-form" onsubmit="saveWaConfig(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label for="wa_gateway_url" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                            Gateway Base URL (WA-AKG Endpoint)
+                        </label>
+                        <input type="url" id="wa_gateway_url" name="gateway_url" required
+                               value="{{ wa_config.gateway_url }}"
+                               placeholder="e.g. http://localhost:3000/api or https://my-wa-gateway.up.railway.app/api"
+                               class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                        <span class="text-[10px] text-stone-400 mt-0.5 block">Points to your WA-AKG REST API service. Updates apply live immediately.</span>
                     </div>
-                    <div class="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800">
-                        <span class="text-stone-500">Session ID (WA_SESSION_ID):</span>
-                        <span class="font-mono font-medium text-stone-800 dark:text-stone-200">{{ wa_config.session_id }}</span>
-                    </div>
-                    <div class="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800">
-                        <span class="text-stone-500">Webhook Receiver URL:</span>
-                        <span class="font-mono text-[11px] text-amber-600">/api/whatsapp/webhook</span>
-                    </div>
-                    <div class="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800">
-                        <span class="text-stone-500">Active Daily Subscribers:</span>
-                        <span class="font-mono font-bold text-emerald-600">{{ wa_subscribers_count }} enrolled</span>
-                    </div>
-                </div>
 
-                <!-- Admin WhatsApp Controls -->
-                <div class="pt-2 space-y-2">
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <button onclick="toggleWaSimulation()" id="wa-toggle-btn"
-                                class="flex-1 py-2 px-3 {% if wa_simulation %}bg-purple-600 hover:bg-purple-700{% else %}bg-emerald-600 hover:bg-emerald-700{% endif %} text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
-                            <span>🔄</span>
-                            <span id="wa-toggle-label">{% if wa_simulation %}Switch to Live Gateway{% else %}Switch to Simulation{% endif %}</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="wa_session_id" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                Session ID
+                            </label>
+                            <input type="text" id="wa_session_id" name="session_id" required
+                                   value="{{ wa_config.session_id }}"
+                                   placeholder="default"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="wa_api_key" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                API Key / Gateway Secret (Optional)
+                            </label>
+                            <input type="password" id="wa_api_key" name="api_key"
+                                   value="{{ wa_config.api_key or '' }}"
+                                   placeholder="Leave blank if no key required"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="wa_simulation_select" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                            Operating Mode
+                        </label>
+                        <select id="wa_simulation_select" name="enable_simulation_mode"
+                                class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                            <option value="true" {% if wa_simulation %}selected{% endif %}>🧪 Simulation Mode (In-Browser Virtual Assistant & Simulator - No Phone Required)</option>
+                            <option value="false" {% if not wa_simulation %}selected{% endif %}>🟢 Live Gateway Mode (Connects to WA-AKG Baileys & Real WhatsApp Phone)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                            Webhook Receiver URL (Paste into WA-AKG Session Webhook)
+                        </label>
+                        <div class="flex items-center gap-1.5">
+                            <input type="text" id="wa_webhook_full_url" readonly
+                                   class="w-full px-3 py-1.5 bg-stone-100 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl font-mono text-[11px] text-amber-700 dark:text-amber-400 select-all">
+                            <button type="button" onclick="copyWebhookUrl()" class="px-2.5 py-1.5 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl text-[11px] font-semibold transition shrink-0 cursor-pointer">
+                                📋 Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex flex-col sm:flex-row gap-2">
+                        <button type="submit" id="wa-save-btn"
+                                class="flex-1 py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                            <span>💾</span>
+                            <span>Save & Apply Configuration</span>
                         </button>
-                        <button onclick="pingWaGateway()"
+                        <button type="button" onclick="pingWaGateway()"
                                 class="py-2 px-3 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer">
                             <span>📡</span> Ping Gateway
                         </button>
                     </div>
+                </form>
 
+                <div class="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs">
+                    <span class="text-stone-500">Active Subscribers: <strong>{{ wa_subscribers_count }}</strong></span>
                     <button onclick="triggerDevotionalPush()" 
-                            class="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
-                        <span>📢</span> Trigger Daily Devotional Broadcast Now
+                            class="py-1 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer">
+                        <span>📢</span> Broadcast Devotionals
                     </button>
                 </div>
             </div>
@@ -425,6 +465,62 @@
             setTimeout(() => {
                 toast.classList.add('hidden');
             }, 3500);
+        }
+
+        // Initialize Webhook Full URL
+        document.addEventListener('DOMContentLoaded', () => {
+            const hookInput = document.getElementById('wa_webhook_full_url');
+            if (hookInput) {
+                hookInput.value = window.location.origin + '/api/whatsapp/webhook';
+            }
+        });
+
+        function copyWebhookUrl() {
+            const hookInput = document.getElementById('wa_webhook_full_url');
+            if (hookInput) {
+                navigator.clipboard.writeText(hookInput.value).then(() => {
+                    showToast('📋 Webhook URL copied to clipboard!');
+                }).catch(() => {
+                    hookInput.select();
+                    document.execCommand('copy');
+                    showToast('📋 Webhook URL copied!');
+                });
+            }
+        }
+
+        async function saveWaConfig(event) {
+            event.preventDefault();
+            const btn = document.getElementById('wa-save-btn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span>⏳</span><span>Saving...</span>';
+            btn.disabled = true;
+
+            const payload = {
+                gateway_url: document.getElementById('wa_gateway_url').value.trim(),
+                session_id: document.getElementById('wa_session_id').value.trim(),
+                api_key: document.getElementById('wa_api_key').value.trim(),
+                enable_simulation_mode: document.getElementById('wa_simulation_select').value === 'true'
+            };
+
+            try {
+                const res = await fetch('/admin/api/whatsapp/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to save configuration'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error while saving WhatsApp configuration', true);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
         }
 
         async function purgeHtmlCache() {

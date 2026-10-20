@@ -21,7 +21,7 @@ from app.admin.auth import (
     get_authenticated_admin,
     require_admin,
 )
-from whatsapp_gateway.config import config as wa_config
+from whatsapp_gateway.config import config as wa_config, save_persisted_config
 from whatsapp_gateway.routes.webhook import get_client
 from whatsapp_gateway.subscribers import get_active_subscribers, get_subscriber_count
 from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
@@ -239,6 +239,63 @@ async def api_clear_audio_cache(request: Request):
     return {"status": "ok", "message": "Text-to-Speech audio cache (memory & disk) cleared."}
 
 
+@router.post("/api/whatsapp/config")
+async def api_update_wa_config(request: Request):
+    """
+    Updates and persists WhatsApp Gateway URL, session ID, API key,
+    and simulation mode at runtime.
+    """
+    require_admin(request)
+    try:
+        body = await request.json()
+    except Exception:
+        body = await _parse_form_data(request)
+
+    gateway_url = body.get("gateway_url")
+    session_id = body.get("session_id")
+    api_key = body.get("api_key")
+    enable_simulation_mode = body.get("enable_simulation_mode")
+
+    if enable_simulation_mode is not None:
+        if isinstance(enable_simulation_mode, str):
+            enable_simulation_mode = enable_simulation_mode.lower() in ("true", "1", "yes", "on")
+        else:
+            enable_simulation_mode = bool(enable_simulation_mode)
+
+    if gateway_url is not None:
+        gateway_url = gateway_url.strip()
+        if gateway_url and not (gateway_url.startswith("http://") or gateway_url.startswith("https://")):
+            raise HTTPException(status_code=400, detail="Gateway URL must begin with http:// or https://")
+
+    # Persist configuration overrides to data/whatsapp_config.json
+    saved = save_persisted_config(
+        gateway_url=gateway_url,
+        session_id=session_id,
+        api_key=api_key,
+        enable_simulation_mode=enable_simulation_mode,
+    )
+
+    # Dynamically update the active WAClient runtime singleton
+    wa_client = get_client()
+    wa_client.update_config(
+        base_url=saved.get("gateway_url"),
+        default_session_id=saved.get("session_id"),
+        api_key=saved.get("api_key"),
+        simulation_mode=saved.get("enable_simulation_mode"),
+    )
+
+    return {
+        "status": "ok",
+        "message": "WhatsApp Gateway configuration saved successfully!",
+        "config": {
+            "gateway_url": wa_client.base_url,
+            "session_id": wa_client.default_session_id,
+            "has_api_key": bool(wa_client.api_key),
+            "simulation_mode": wa_client.simulation_mode,
+        },
+    }
+
+
 @router.post("/api/whatsapp/toggle-simulation")
 async def api_toggle_wa_simulation(request: Request):
     """Toggles WhatsApp gateway between Live Gateway Mode and Simulation Mode."""
@@ -246,6 +303,7 @@ async def api_toggle_wa_simulation(request: Request):
     wa_client = get_client()
     new_mode = not wa_client.simulation_mode
     wa_client.simulation_mode = new_mode
+    save_persisted_config(enable_simulation_mode=new_mode)
     return {
         "status": "ok",
         "simulation_mode": new_mode,
@@ -271,33 +329,27 @@ async def api_ping_wa_gateway(request: Request):
     """Tests HTTP reachability and latency of the configured WA-AKG gateway."""
     require_admin(request)
     wa_client = get_client()
-    if wa_client.simulation_mode:
-        return {
-            "status": "simulation",
-            "message": "Gateway ping simulated (Simulation Mode is currently active).",
-            "latency_ms": 0,
-        }
 
-    target_url = f"{wa_config.gateway_url.rstrip('/')}/status"
+    target_url = f"{wa_client.base_url.rstrip('/')}/status"
     t0 = time.time()
     try:
         import httpx
         async with httpx.AsyncClient(timeout=5.0) as client:
             headers = {}
-            if wa_config.api_key:
-                headers["Authorization"] = f"Bearer {wa_config.api_key}"
+            if wa_client.api_key:
+                headers["Authorization"] = f"Bearer {wa_client.api_key}"
             resp = await client.get(target_url, headers=headers)
             latency = round((time.time() - t0) * 1000, 1)
             return {
                 "status": "ok" if resp.is_success else "warning",
                 "http_status": resp.status_code,
                 "latency_ms": latency,
-                "message": f"Gateway reached with HTTP {resp.status_code}",
+                "message": f"Gateway reached at {target_url} (HTTP {resp.status_code})",
             }
     except Exception as e:
         latency = round((time.time() - t0) * 1000, 1)
         return {
             "status": "error",
             "latency_ms": latency,
-            "message": f"Connection failed: {str(e)}",
+            "message": f"Could not reach {target_url} ({str(e)})",
         }

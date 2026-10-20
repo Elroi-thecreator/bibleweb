@@ -13,4 +13,5 @@ dist/
 .audio_cache/
 
 data/whatsapp_subscribers.sqlite.db
+data/whatsapp_config.json
 wa-akg/

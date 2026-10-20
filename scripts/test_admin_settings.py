@@ -146,30 +146,66 @@ async def run_admin_tests():
         assert data["status"] == "ok"
         print(f"  ✅ WhatsApp mode toggled: simulation_mode={data['simulation_mode']}.")
 
-        # Toggle back to true
-        if not data["simulation_mode"]:
-            await client.post("/admin/api/whatsapp/toggle-simulation", cookies=cookies)
+        # -------------------------------------------------------------
+        # 11. WhatsApp Gateway Configuration Updates (URL, Session, Key)
+        # -------------------------------------------------------------
+        print("\n[11] Testing POST /admin/api/whatsapp/config unauthenticated...")
+        async with AsyncClient(transport=transport, base_url="http://testserver") as anon_client:
+            res = await anon_client.post("/admin/api/whatsapp/config", json={"gateway_url": "https://test.com"})
+            assert res.status_code == 401, f"Expected 401, got {res.status_code}"
+            print("  ✅ Unauthenticated config update blocked with HTTP 401.")
+
+        print("\n[12] Testing POST /admin/api/whatsapp/config invalid URL validation...")
+        res = await client.post("/admin/api/whatsapp/config", json={"gateway_url": "invalid_url"}, cookies=cookies)
+        assert res.status_code == 400, f"Expected 400, got {res.status_code}"
+        print("  ✅ Malformed URL rejected with HTTP 400.")
+
+        print("\n[13] Testing POST /admin/api/whatsapp/config valid update & runtime application...")
+        test_new_url = "https://wa.external-gateway.com/api"
+        res = await client.post(
+            "/admin/api/whatsapp/config",
+            json={
+                "gateway_url": test_new_url,
+                "session_id": "church-office",
+                "api_key": "sec_token_999",
+                "enable_simulation_mode": True,
+            },
+            cookies=cookies,
+        )
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        cfg_data = res.json()
+        assert cfg_data["status"] == "ok"
+        assert cfg_data["config"]["gateway_url"] == test_new_url
+        assert cfg_data["config"]["session_id"] == "church-office"
+        assert cfg_data["config"]["has_api_key"] is True
+        print(f"  ✅ WhatsApp Gateway URL updated live to: {cfg_data['config']['gateway_url']}")
+
+        print("\n[14] Testing POST /admin/api/whatsapp/ping-gateway...")
+        res = await client.post("/admin/api/whatsapp/ping-gateway", cookies=cookies)
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        ping_data = res.json()
+        print(f"  ✅ Gateway Ping executed with status: {ping_data.get('status')}")
 
         # -------------------------------------------------------------
-        # 11. Test Admin Logout
+        # 15. Test Admin Logout
         # -------------------------------------------------------------
-        print("\n[11] Testing GET /admin/logout...")
+        print("\n[15] Testing GET /admin/logout...")
         res = await client.get("/admin/logout", cookies=cookies)
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
         print("  ✅ Logged out successfully and redirected to login page.")
 
         # -------------------------------------------------------------
-        # 12. Verify Session Invalidation after Logout
+        # 16. Verify Session Invalidation after Logout
         # -------------------------------------------------------------
-        print("\n[12] Testing GET /admin/settings without cookie after logout...")
+        print("\n[16] Testing GET /admin/settings without cookie after logout...")
         res = await client.get("/admin/settings")
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
         print("  ✅ Verified admin settings is strictly unreachable after logout.")
 
     print("\n" + "=" * 70)
-    print("🎉 ALL 12 ADMIN SECURITY & SETTINGS TESTS PASSED WITH 100% SUCCESS!")
+    print("🎉 ALL 16 ADMIN SECURITY, SETTINGS & CONFIG TESTS PASSED WITH 100% SUCCESS!")
     print("=" * 70)
 
 

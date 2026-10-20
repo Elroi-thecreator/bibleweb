@@ -54,6 +54,37 @@ class WAClient:
         )
         self.simulated_outbox: List[Dict[str, Any]] = []
 
+    def update_config(
+        self,
+        base_url: Optional[str] = None,
+        default_session_id: Optional[str] = None,
+        api_key: Optional[str] = None,
+        simulation_mode: Optional[bool] = None,
+    ) -> None:
+        """Dynamically update client endpoint, credentials, and simulation mode."""
+        if base_url is not None:
+            self.base_url = base_url.strip().rstrip("/")
+        if default_session_id is not None:
+            self.default_session_id = default_session_id.strip()
+        if api_key is not None:
+            clean_key = api_key.strip()
+            self.api_key = clean_key if clean_key else None
+        if simulation_mode is not None:
+            self.simulation_mode = bool(simulation_mode)
+
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        self._client.headers.update(headers)
+
+    def toggle_simulation(self, enable: Optional[bool] = None) -> bool:
+        """Toggles or sets simulation mode."""
+        if enable is None:
+            self.simulation_mode = not self.simulation_mode
+        else:
+            self.simulation_mode = bool(enable)
+        return self.simulation_mode
+
     async def close(self) -> None:
         """Close the underlying HTTP client session."""
         await self._client.aclose()

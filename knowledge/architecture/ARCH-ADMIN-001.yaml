@@ -3,7 +3,7 @@ type: architecture_standard
 title: Administrator Authentication, Protected Settings & System Telemetry Architecture
 domain: architecture
 status: approved
-version: 1.0.0
+version: 1.1.0
 authority:
   level: official
   confidence: high
@@ -18,11 +18,14 @@ applies_to:
   - templates
 
 rule:
-  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, and all administrative management APIs (`/admin/api/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons to prevent timing attacks."
+  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, and all administrative management APIs (`/admin/api/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons. Administrators can dynamically update, test, and persist runtime settings—including the WhatsApp Gateway Base URL, Session ID, API Key, and Simulation Mode—via `POST /admin/api/whatsapp/config` with persistent backing in `data/whatsapp_config.json`."
 
 do:
   - "Mount all administrative routes under `/admin` with route-level security guards (`require_admin`)."
   - "Redirect public `/settings` to `/admin/settings` to ensure configuration controls are accessible exclusively to authorized administrators."
+  - "Provide interactive runtime configuration on `/admin/settings` to view, edit, and persist the WhatsApp Gateway Base URL (`gateway_url`), Session ID (`session_id`), API Key (`api_key`), and Operating Mode (`enable_simulation_mode`)."
+  - "Persist administrative configuration overrides to `data/whatsapp_config.json` while maintaining backward compatibility with environment variable fallbacks (`WA_GATEWAY_URL`, `WA_SESSION_ID`, `WA_API_KEY`)."
+  - "Apply runtime WhatsApp configuration changes immediately to the active `WAClient` instance via `wa_client.update_config(...)` with zero downtime or server restarts."
   - "Authenticate administrator credentials (`ADMIN_USERNAME`, `ADMIN_PASSWORD`) using `secrets.compare_digest` to eliminate timing attack vulnerabilities."
   - "Sign session tokens with HMAC-SHA256 (`base64(username:timestamp:hmac_signature)`) using `ADMIN_SECRET_KEY` or a cryptographically stable machine seed."
   - "Store admin session tokens in secure `HttpOnly`, `SameSite=Lax` cookies named `bible_admin_session` with a 7-day expiration (604,800s)."
