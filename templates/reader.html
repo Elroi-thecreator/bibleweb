@@ -187,7 +187,14 @@
 
             <!-- Verse Header Line -->
             <div class="flex items-center justify-between text-xs mb-1.5">
-                <span class="font-cinzel font-bold text-amber-800/80 dark:text-amber-500/80 text-xs tracking-wider">{{ chapter }}:{{ v.verse_display or v.verse }}</span>
+                <div class="flex items-center space-x-2 min-w-0">
+                    <span class="font-cinzel font-bold text-amber-800/80 dark:text-amber-500/80 text-xs tracking-wider shrink-0">{{ chapter }}:{{ v.verse_display or v.verse }}</span>
+                    <!-- Audio download / playback status for THIS verse only -->
+                    <span id="verse-audio-status-{{ loop.index0 }}" 
+                          class="verse-audio-status-pill inline-flex items-center cursor-pointer transition-all duration-200" 
+                          onclick="window.bibleAudio ? window.bibleAudio.play({{ loop.index0 }}) : null"
+                          title="Audio status for verse {{ v.verse_display or v.verse }}"></span>
+                </div>
                 
                 <!-- Subdued Touch & Hover Actions -->
                 <div class="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 flex items-center space-x-1.5 sm:space-x-2 text-stone-400 transition-opacity shrink-0">
@@ -206,7 +213,7 @@
                             title="Bookmark verse">
                         ☆
                     </button>
-                    <button type="button" onclick="window.bibleAudio ? window.bibleAudio.play({{ loop.index0 }}) : null" title="Read from here" class="hover:text-amber-600 text-xs sm:text-[11px] p-0.5 cursor-pointer">
+                    <button type="button" id="verse-play-btn-{{ loop.index0 }}" onclick="window.bibleAudio ? window.bibleAudio.play({{ loop.index0 }}) : null" title="Listen from verse {{ v.verse_display or v.verse }}" class="verse-play-btn hover:text-amber-600 text-xs sm:text-[11px] p-0.5 cursor-pointer">
                         ▶
                     </button>
                     <button type="button" onclick="handleCopyClick(this)" 

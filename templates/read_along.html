@@ -146,8 +146,9 @@
                          data-text-en="{{ v.text_en }}">
                         
                         <div class="flex items-start gap-3">
-                            <span class="text-[12px] font-mono font-semibold text-amber-700/70 dark:text-amber-500/70 pt-1 select-none min-w-[24px] text-right flex-shrink-0 group-hover:text-amber-600">
-                                {{ v.verse_display or v.verse }}
+                            <span class="text-[12px] font-mono font-semibold text-amber-700/70 dark:text-amber-500/70 pt-1 select-none min-w-[24px] text-right flex-shrink-0 group-hover:text-amber-600 flex flex-col items-end">
+                                <span>{{ v.verse_display or v.verse }}</span>
+                                <span id="readalong-status-{{ ch.book_id }}-{{ ch.chapter }}-{{ v.verse }}" class="readalong-verse-status-pill inline-flex items-center"></span>
                             </span>
                             
                             <p class="verse-content text-stone-800 dark:text-stone-200 leading-[1.9] tracking-wide transition-all"
@@ -345,6 +346,10 @@ let isAudioPlaying = false;
 const speeds = [1.0, 1.25, 1.5, 2.0];
 let currentSpeedIndex = 0;
 
+// In-memory Audio Blob & Status Store for Read-Along
+const readalongAudioBlobs = new Map(); // itemKey -> { blob, blobUrl }
+const readalongInFlight = new Map();   // itemKey -> Promise<string>
+
 const bassLevels = [
     { pitch: '+0Hz', label: 'Normal', mobile: 'Std' },
     { pitch: '-4Hz', label: 'Warm', mobile: 'Warm' },
@@ -530,8 +535,41 @@ function playQueueIndex(index) {
         ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
         : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
     const activePitch = localStorage.getItem('bible_audio_pitch') || '+0Hz';
-    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
-    audioElement.src = streamUrl;
+    const itemKey = `${item.bookId || 'title'}_${item.chapter || '0'}_${item.verse || '0'}_${currentLanguage}_${activeVoice}_${speeds[currentSpeedIndex]}_${activePitch}`;
+
+    let blobUrl = null;
+    if (readalongAudioBlobs.has(itemKey)) {
+        console.log(`[Read-Along] Item ${itemKey} is ALREADY DOWNLOADED. Using memory blob.`);
+        blobUrl = readalongAudioBlobs.get(itemKey).blobUrl;
+    } else if (readalongInFlight.has(itemKey)) {
+        console.log(`[Read-Along] Item ${itemKey} download is ALREADY IN-FLIGHT. Awaiting download.`);
+        updateReadAlongVerseStatusUI(item, 'downloading');
+        blobUrl = await readalongInFlight.get(itemKey);
+    } else {
+        updateReadAlongVerseStatusUI(item, 'downloading');
+        const streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
+        const p = (async () => {
+            try {
+                const res = await fetch(streamUrl, { headers: { 'Accept': 'audio/mpeg' } });
+                if (res.ok) {
+                    const blob = await res.blob();
+                    if (blob && blob.size > 0) {
+                        const bUrl = URL.createObjectURL(blob);
+                        readalongAudioBlobs.set(itemKey, { blob, blobUrl: bUrl });
+                        return bUrl;
+                    }
+                }
+                return streamUrl;
+            } finally {
+                readalongInFlight.delete(itemKey);
+            }
+        })();
+        readalongInFlight.set(itemKey, p);
+        blobUrl = await p;
+    }
+
+    updateReadAlongVerseStatusUI(item, 'playing');
+    audioElement.src = blobUrl;
     audioElement.playbackRate = speeds[currentSpeedIndex];
 
     audioElement.play()
@@ -651,10 +689,14 @@ async function processReadAlongPrefetchQueue() {
                     if (blob && blob.size > 0 && (contentType.includes('audio') || res.status === 200)) {
                         confirmed = true;
                         readalongDownloadedItems.add(itemKey);
+                        const bUrl = URL.createObjectURL(blob);
+                        readalongAudioBlobs.set(itemKey, { blob: blob, blobUrl: bUrl });
+                        const it = audioQueue[targetIdx];
+                        if (it) updateReadAlongVerseStatusUI(it, 'downloaded');
 
                         // If immediate next item, prime preloader element
                         if (targetIdx === currentQueueIndex + 1 && readalongPreloader) {
-                            readalongPreloader.src = streamUrl;
+                            readalongPreloader.src = bUrl;
                             readalongPreloader.preload = 'auto';
                             readalongPreloader.load();
                         }

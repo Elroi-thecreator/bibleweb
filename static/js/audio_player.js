@@ -8,9 +8,13 @@ class BibleContinuousAudio {
         this.isPaused = false;
         this.prefetchQueue = [];
         this.isPrefetching = false;
-        this.downloadedVerses = new Set();
+
+        // In-memory Audio Blob & Status Store to prevent duplicate/multiple downloads
+        this.verseAudioBlobs = new Map(); // cacheKey -> { blob: Blob, blobUrl: string, size: number, timestamp: number }
+        this.inFlightRequests = new Map(); // cacheKey -> Promise<string> (resolves to blobUrl)
+        this.verseStatuses = new Map();    // index -> 'idle' | 'downloading' | 'downloaded' | 'playing' | 'error'
+
         this.prefetchRetryLimit = 3;
-        this.isPaused = false;
         this.currentIndex = 0;
         this.verses = [];
         this.lang = 'ta';
@@ -27,6 +31,10 @@ class BibleContinuousAudio {
     setupAudioListeners() {
         this.audio.addEventListener('ended', () => {
             if (this.isPlaying && !this.isPaused) {
+                // Keep completed verse marked as downloaded
+                if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
+                    this.updateVerseStatusUI(this.currentIndex, 'downloaded');
+                }
                 this.currentIndex++;
                 this.playCurrent();
             }
@@ -43,7 +51,88 @@ class BibleContinuousAudio {
         });
     }
 
+    getVerseCacheKey(index) {
+        const voice = this.getEffectiveVoice();
+        const rate = this.rate;
+        const pitch = this.getEffectivePitch();
+        return `${this.bookId}_${this.chapter}_${index}_${this.lang}_${voice}_${rate}_${pitch}`;
+    }
+
+    updateVerseStatusUI(index, status) {
+        if (index < 0 || index >= this.verses.length) return;
+        this.verseStatuses.set(index, status);
+
+        const el = document.getElementById(`verse-audio-status-${index}`);
+        const playBtn = document.getElementById(`verse-play-btn-${index}`);
+
+        if (playBtn) {
+            if (status === 'playing') {
+                playBtn.innerHTML = '⏸';
+                playBtn.classList.add('text-amber-600', 'font-bold');
+                playBtn.title = `Pause verse ${this.verses[index]?.verseDisplay || index + 1}`;
+            } else {
+                playBtn.innerHTML = '▶';
+                playBtn.classList.remove('text-amber-600', 'font-bold');
+                playBtn.title = `Listen from verse ${this.verses[index]?.verseDisplay || index + 1}`;
+            }
+        }
+
+        if (!el) return;
+
+        switch (status) {
+            case 'downloading':
+                el.innerHTML = `
+                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-100/90 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 text-[9px] font-semibold border border-amber-300/80 dark:border-amber-700/80 animate-pulse shadow-xs" title="Downloading verse audio / ஆடியோ பதிவிறங்குகிறது...">
+                        <svg class="w-2.5 h-2.5 animate-spin text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <span class="hidden sm:inline">Downloading</span>
+                    </span>
+                `;
+                break;
+            case 'downloaded':
+                el.innerHTML = `
+                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-[9px] font-medium border border-emerald-200/80 dark:border-emerald-800/60 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition shadow-xs" title="Audio downloaded & ready in memory (zero network lag)">
+                        <svg class="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                        <span class="hidden sm:inline">Ready</span>
+                    </span>
+                `;
+                break;
+            case 'playing':
+                el.innerHTML = `
+                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[9px] font-bold shadow-xs animate-pulse" title="Playing verse audio / வாசிக்கப்படுகிறது">
+                        <span class="text-[10px]">🔊</span>
+                        <span class="hidden sm:inline">Playing</span>
+                    </span>
+                `;
+                break;
+            case 'error':
+                el.innerHTML = `
+                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-[9px] border border-rose-200 dark:border-rose-900/50 cursor-pointer" title="Audio download issue. Tap to retry.">
+                        <span>⚠️ Retry</span>
+                    </span>
+                `;
+                break;
+            case 'idle':
+            default:
+                el.innerHTML = '';
+                break;
+        }
+    }
+
+    clearAllBlobs() {
+        for (const record of this.verseAudioBlobs.values()) {
+            if (record && record.blobUrl) {
+                try { URL.revokeObjectURL(record.blobUrl); } catch (_) {}
+            }
+        }
+        this.verseAudioBlobs.clear();
+        this.inFlightRequests.clear();
+        this.prefetchQueue = [];
+        this.isPrefetching = false;
+        this.verses.forEach((_, idx) => this.updateVerseStatusUI(idx, 'idle'));
+    }
+
     init(bookId, chapter, nextChapter, mode) {
+        this.clearAllBlobs();
         this.bookId = bookId;
         this.chapter = chapter;
         this.nextChapter = nextChapter;
@@ -78,20 +167,131 @@ class BibleContinuousAudio {
         }
 
         this.syncDockVoiceOptions();
-        this.prefetchQueue = [];
-        this.downloadedVerses.clear();
-        this.isPrefetching = false;
     }
 
-    play(fromIndex = 0) {
+    async ensureVerseAudioDownloaded(index) {
+        if (index < 0 || index >= this.verses.length) return null;
+        const v = this.verses[index];
+        if (!v) return null;
+
+        const cacheKey = this.getVerseCacheKey(index);
+
+        // 1. Check whether verse is ALREADY downloaded
+        if (this.verseAudioBlobs.has(cacheKey)) {
+            console.log(`[Audio Pipeline] Verse ${v.verseDisplay || v.verse} is ALREADY DOWNLOADED in memory blob cache. Reusing local audio.`);
+            if (this.currentIndex === index && this.isPlaying && !this.isPaused) {
+                this.updateVerseStatusUI(index, 'playing');
+            } else {
+                this.updateVerseStatusUI(index, 'downloaded');
+            }
+            return this.verseAudioBlobs.get(cacheKey).blobUrl;
+        }
+
+        // 2. Check whether verse download is ALREADY IN-FLIGHT (prevents duplicate requests)
+        if (this.inFlightRequests.has(cacheKey)) {
+            console.log(`[Audio Pipeline] Verse ${v.verseDisplay || v.verse} is ALREADY IN-FLIGHT. Awaiting existing download.`);
+            return this.inFlightRequests.get(cacheKey);
+        }
+
+        // 3. Update status to downloading on this verse ONLY
+        this.updateVerseStatusUI(index, 'downloading');
+
+        const downloadPromise = (async () => {
+            try {
+                let text = (this.lang === 'ta') ? v.textTa : v.textEn;
+                if (!text && this.lang === 'ta') text = v.textEn;
+
+                // Strip editorial bracket markers [...] and {...}
+                text = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
+                if (!text) {
+                    this.updateVerseStatusUI(index, 'idle');
+                    return null;
+                }
+
+                const voice = this.getEffectiveVoice();
+                const rate = this.rate;
+                const pitch = this.getEffectivePitch();
+                const streamUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(rate)}&pitch=${encodeURIComponent(pitch)}`;
+
+                let confirmedBlob = null;
+                for (let attempt = 1; attempt <= this.prefetchRetryLimit; attempt++) {
+                    try {
+                        const res = await fetch(streamUrl, {
+                            method: 'GET',
+                            headers: { 'Accept': 'audio/mpeg' }
+                        });
+
+                        if (res.ok) {
+                            const contentType = res.headers.get('content-type') || '';
+                            const blob = await res.blob();
+                            if (blob && blob.size > 0 && (contentType.includes('audio') || res.status === 200)) {
+                                confirmedBlob = blob;
+                                break;
+                            }
+                        }
+                        console.warn(`[Audio Pipeline] Verse ${v.verseDisplay || v.verse} attempt ${attempt} returned HTTP ${res.status}. Retrying...`);
+                    } catch (err) {
+                        console.warn(`[Audio Pipeline] Verse ${v.verseDisplay || v.verse} attempt ${attempt} network error:`, err);
+                    }
+
+                    if (!confirmedBlob && attempt < this.prefetchRetryLimit) {
+                        await new Promise(r => setTimeout(r, attempt * 400));
+                    }
+                }
+
+                if (!confirmedBlob) {
+                    this.updateVerseStatusUI(index, 'error');
+                    return null;
+                }
+
+                // Store blob & create object URL
+                const blobUrl = URL.createObjectURL(confirmedBlob);
+                this.verseAudioBlobs.set(cacheKey, {
+                    blob: confirmedBlob,
+                    blobUrl: blobUrl,
+                    size: confirmedBlob.size,
+                    timestamp: Date.now()
+                });
+
+                if (this.currentIndex === index && this.isPlaying && !this.isPaused) {
+                    this.updateVerseStatusUI(index, 'playing');
+                } else {
+                    this.updateVerseStatusUI(index, 'downloaded');
+                }
+
+                return blobUrl;
+            } finally {
+                this.inFlightRequests.delete(cacheKey);
+            }
+        })();
+
+        this.inFlightRequests.set(cacheKey, downloadPromise);
+        return downloadPromise;
+    }
+
+    async play(fromIndex = 0) {
+        if (this.currentIndex === fromIndex && this.isPlaying) {
+            if (this.isPaused) {
+                this.resume();
+            } else {
+                this.pause();
+            }
+            return;
+        }
+
+        // Revert previous verse status to 'downloaded' if cached
+        if (this.currentIndex !== fromIndex && this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
+            this.updateVerseStatusUI(this.currentIndex, 'downloaded');
+        }
+
         this.isPlaying = true;
         this.isPaused = false;
         this.currentIndex = fromIndex;
         this.showDock();
-        this.playCurrent();
+        await this.playCurrent();
     }
 
-    playCurrent() {
+    async playCurrent() {
         if (!this.isPlaying) return;
 
         if (this.currentIndex >= this.verses.length) {
@@ -102,21 +302,16 @@ class BibleContinuousAudio {
         const v = this.verses[this.currentIndex];
         this.spotlightVerse(v);
 
-        let text = (this.lang === 'ta') ? v.textTa : v.textEn;
-        if (!text && this.lang === 'ta') text = v.textEn;
+        // Fetch or get from cache (checks if already downloaded, never duplicates)
+        const blobUrl = await this.ensureVerseAudioDownloaded(this.currentIndex);
+        if (!blobUrl || !this.isPlaying) return;
 
-        // Strip anything inside [] or {} (verse numbers, editorial brackets)
-        text = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
-
-        const voice = this.getEffectiveVoice();
-        const pitch = this.getEffectivePitch();
-        const audioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(this.rate)}&pitch=${encodeURIComponent(pitch)}`;
-        
-        this.audio.src = audioUrl;
+        this.audio.src = blobUrl;
         this.audio.playbackRate = parseFloat(this.rate);
-        
+
         this.audio.play().then(() => {
             this.setPlayPauseIcon(true);
+            this.updateVerseStatusUI(this.currentIndex, 'playing');
             this.startChapterPrefetchPipeline();
         }).catch(err => {
             console.warn("Autoplay block or delay:", err);
@@ -127,7 +322,6 @@ class BibleContinuousAudio {
     startChapterPrefetchPipeline() {
         if (!this.isPlaying && !this.isPaused) return;
 
-        // Build queue of all upcoming verses to the end of the chapter
         const upcoming = [];
         for (let i = this.currentIndex + 1; i < this.verses.length; i++) {
             upcoming.push(i);
@@ -147,67 +341,23 @@ class BibleContinuousAudio {
         while (this.prefetchQueue.length > 0 && (this.isPlaying || this.isPaused)) {
             const nextIndex = this.prefetchQueue.shift();
 
-            // Guard against chapter boundaries
             if (nextIndex >= this.verses.length) continue;
 
-            const nextV = this.verses[nextIndex];
-            if (!nextV) continue;
-
-            let text = (this.lang === 'ta') ? nextV.textTa : nextV.textEn;
-            if (!text && this.lang === 'ta') text = nextV.textEn;
-
-            // Strip editorial bracket markers [...] and {...}
-            text = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
-            if (!text) continue;
-
-            const voice = this.getEffectiveVoice();
-            const rate = this.rate;
-            const pitch = this.getEffectivePitch();
-            const verseCacheKey = `${this.bookId}_${this.chapter}_${nextIndex}_${this.lang}_${voice}_${rate}_${pitch}`;
-
-            // Skip if already confirmed downloaded
-            if (this.downloadedVerses.has(verseCacheKey)) {
+            const cacheKey = this.getVerseCacheKey(nextIndex);
+            if (this.verseAudioBlobs.has(cacheKey)) {
+                // Already downloaded, ensure UI reflects it and skip network request
+                this.updateVerseStatusUI(nextIndex, 'downloaded');
                 continue;
             }
 
-            const streamUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(rate)}&pitch=${encodeURIComponent(pitch)}`;
+            // Download using unified deduplicating pipeline
+            const blobUrl = await this.ensureVerseAudioDownloaded(nextIndex);
 
-            // Automated download with verification & retry
-            let confirmed = false;
-            for (let attempt = 1; attempt <= this.prefetchRetryLimit; attempt++) {
-                if (!this.isPlaying && !this.isPaused) break;
-
-                try {
-                    const res = await fetch(streamUrl, {
-                        method: 'GET',
-                        priority: 'low',
-                        headers: { 'Accept': 'audio/mpeg' }
-                    });
-
-                    if (res.ok) {
-                        const contentType = res.headers.get('content-type') || '';
-                        const blob = await res.blob();
-                        if (blob && blob.size > 0 && (contentType.includes('audio') || res.status === 200)) {
-                            confirmed = true;
-                            this.downloadedVerses.add(verseCacheKey);
-
-                            // Prime preloader element if this is the immediate next verse
-                            if (nextIndex === this.currentIndex + 1 && this.preloader) {
-                                this.preloader.src = streamUrl;
-                                this.preloader.preload = 'auto';
-                                this.preloader.load();
-                            }
-                            break;
-                        }
-                    }
-                    console.warn(`[Audio Pipeline] Verse ${nextV.verseDisplay || nextV.verse} attempt ${attempt} returned HTTP ${res.status}. Retrying...`);
-                } catch (err) {
-                    console.warn(`[Audio Pipeline] Verse ${nextV.verseDisplay || nextV.verse} attempt ${attempt} network error:`, err);
-                }
-
-                if (!confirmed && attempt < this.prefetchRetryLimit && (this.isPlaying || this.isPaused)) {
-                    await new Promise(r => setTimeout(r, attempt * 500));
-                }
+            // Prime preloader element if this is the immediate next verse
+            if (blobUrl && nextIndex === this.currentIndex + 1 && this.preloader) {
+                this.preloader.src = blobUrl;
+                this.preloader.preload = 'auto';
+                this.preloader.load();
             }
 
             // Brief pacing delay between downloads
@@ -230,8 +380,7 @@ class BibleContinuousAudio {
         } else {
             localStorage.setItem('bible_audio_voice_en', voiceName);
         }
-        this.downloadedVerses.clear();
-        this.prefetchQueue = [];
+        this.clearAllBlobs();
         if (this.isPlaying) this.playCurrent();
     }
 
@@ -250,8 +399,7 @@ class BibleContinuousAudio {
         if (settingPitch && settingPitch.value !== pitchValue) {
             settingPitch.value = pitchValue;
         }
-        this.downloadedVerses.clear();
-        this.prefetchQueue = [];
+        this.clearAllBlobs();
         if (this.isPlaying) this.playCurrent();
     }
 
@@ -271,6 +419,10 @@ class BibleContinuousAudio {
             this.audio.pause();
             this.isPaused = true;
             this.setPlayPauseIcon(false);
+            if (this.verses[this.currentIndex]) {
+                const playBtn = document.getElementById(`verse-play-btn-${this.currentIndex}`);
+                if (playBtn) playBtn.innerHTML = '▶';
+            }
         }
     }
 
@@ -279,6 +431,7 @@ class BibleContinuousAudio {
             this.audio.play();
             this.isPaused = false;
             this.setPlayPauseIcon(true);
+            this.updateVerseStatusUI(this.currentIndex, 'playing');
         } else {
             this.play(this.currentIndex);
         }
@@ -298,6 +451,13 @@ class BibleContinuousAudio {
         }
         sessionStorage.removeItem('bible_autoplay_state');
 
+        // Mark previously playing verse back to downloaded if in cache
+        if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
+            this.updateVerseStatusUI(this.currentIndex, 'downloaded');
+        } else {
+            this.updateVerseStatusUI(this.currentIndex, 'idle');
+        }
+
         document.querySelectorAll('.verse-item').forEach(el => {
             el.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-50/70', 'dark:bg-amber-950/40');
         });
@@ -306,6 +466,9 @@ class BibleContinuousAudio {
 
     next() {
         if (this.currentIndex < this.verses.length - 1) {
+            if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
+                this.updateVerseStatusUI(this.currentIndex, 'downloaded');
+            }
             this.currentIndex++;
             this.playCurrent();
         } else {
@@ -315,6 +478,9 @@ class BibleContinuousAudio {
 
     prev() {
         if (this.currentIndex > 0) {
+            if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
+                this.updateVerseStatusUI(this.currentIndex, 'downloaded');
+            }
             this.currentIndex--;
             this.playCurrent();
         }
@@ -341,8 +507,7 @@ class BibleContinuousAudio {
     setLanguage(lang) {
         this.lang = lang;
         this.syncDockVoiceOptions();
-        this.downloadedVerses.clear();
-        this.prefetchQueue = [];
+        this.clearAllBlobs();
         if (this.isPlaying) this.playCurrent();
     }
 
@@ -379,10 +544,9 @@ class BibleContinuousAudio {
     setRate(rate) {
         this.rate = rate;
         this.audio.playbackRate = parseFloat(rate);
-        this.downloadedVerses.clear();
-        this.prefetchQueue = [];
+        this.clearAllBlobs();
         if (this.isPlaying) {
-            this.startChapterPrefetchPipeline();
+            this.playCurrent();
         }
     }
 
