@@ -1,9 +1,9 @@
 id: PROD-AUDIO-001
 type: product_standard
-title: Audio Bible Text-to-Speech Engine & Catholic Study Bracket Omission Standard
+title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation & Catholic Study Bracket Omission Standard
 domain: product
 status: approved
-version: 1.4.0
+version: 1.5.0
 authority:
   level: official
   confidence: high
@@ -18,11 +18,15 @@ applies_to:
   - tts
 
 rule:
-  "The Audio Bible Text-to-Speech (TTS) synthesizer reads Scripture verses naturally and continuously using Microsoft Edge Neural TTS (edge-tts >= 7.3.1 with Sec-MS-GEC token support) with same-gender neural fallbacks (Valluvar, Anbu, Surya, Kumar for Male; Pallavi for Female) and gTTS fallback, strictly omitting editorial brackets (`[...]`), curly braces (`{...}`), footnotes, and cross-reference annotations, while utilizing an automated full-chapter sequential pre-download pipeline with blob verification, 3-attempt exponential backoff retries, and high-capacity LRU RAM/HTTP caching (AUDIO_CACHE_SIZE=500) to ensure zero-lag continuous listening."
+  "The Audio Bible Text-to-Speech (TTS) synthesizer reads Scripture verses naturally and continuously using Microsoft Edge Neural TTS (edge-tts >= 7.3.1 with Sec-MS-GEC token support) with configurable Voice Tone & Bass Pitch Modulation (+0Hz Normal, -4Hz Warm Bass, -8Hz Deep Bass, -12Hz Heavy Bass) alongside deep resonant male voices (Kumar, Christopher, Brian, Valluvar, Guy) and female neural voices (Pallavi, Jenny, Neerja) with automatic gTTS fallback, strictly omitting editorial brackets (`[...]`), curly braces (`{...}`), footnotes, and cross-reference annotations, while utilizing an automated full-chapter sequential pre-download pipeline with blob verification, 3-attempt exponential backoff retries, and high-capacity pitch-isolated LRU RAM/HTTP caching (AUDIO_CACHE_SIZE=500) to ensure zero-lag continuous listening."
 
 do:
   - "Pin edge-tts >= 7.3.1 in requirements.txt and verify active virtual environment installation to ensure valid Sec-MS-GEC anti-abuse token handshake with Microsoft Edge WebSocket servers."
-  - "Support multi-region Tamil Male voices (India: ta-IN-ValluvarNeural, Singapore: ta-SG-AnbuNeural, Malaysia: ta-MY-SuryaNeural, Sri Lanka: ta-LK-KumarNeural) and Female voice (ta-IN-PallaviNeural)."
+  - "Support multi-region Tamil Male voices (India: ta-IN-ValluvarNeural, Sri Lanka: ta-LK-KumarNeural Deep Bass, Singapore: ta-SG-AnbuNeural, Malaysia: ta-MY-SuryaNeural) and Female voice (ta-IN-PallaviNeural)."
+  - "Support resonant English voices (en-US-ChristopherNeural Deep Bass, en-US-BrianNeural Warm Baritone, en-US-GuyNeural, en-US-JennyNeural, en-IN-NeerjaNeural)."
+  - "Provide dedicated Voice Tone & Bass controls across the persistent Reader Audio Dock (`#audio-pitch-select`), Global Settings Modal (`#setting-audio-pitch`), and Read-Along Prayer mode (`cycleAudioBass()`)."
+  - "Normalize incoming speech pitch parameters (`normalize_speech_pitch`) supporting presets ('normal', 'warm_bass', 'bass', 'base', 'more_base', 'extra_bass') and valid Edge-TTS regex (`^[+-]\\d+Hz$`)."
+  - "Include `target_pitch` in LRU and client cache keys (`{target_voice}:{target_rate}:{target_pitch}:{clean_text}`) and return `X-TTS-Pitch` headers to prevent cross-tone cache collision."
   - "When streaming TTS audio via `/api/audio/stream`, prioritize requested neural voice, then gracefully attempt same-gender alternative neural voices before falling back to gTTS."
   - "Return `Cache-Control: public, max-age=86400` from `/api/audio/stream` to allow client-side HTTP caching alongside server in-memory LRU caching with capacity for up to 500 verse audio streams."
   - "Execute an automated background prefetch pipeline that sequentially pre-downloads upcoming verses up to the full chapter/plan, confirming download completion (blob.size > 0) before advancing."
@@ -30,21 +34,22 @@ do:
   - "Enforce strict boundary guards when prefetching so that playing the last verse of a chapter, single-verse chapters, or ending a queue never fails, throws index errors, or attempts out-of-bounds audio synthesis."
   - "Before dispatching verse text to TTS, strip out all text enclosed in square brackets `\\[.*?\\]` and curly braces `\\{.*?\\}` using regex pre-processing."
   - "Highlight the currently active verse on the screen synchronously with the audio speech synthesizer so readers can follow along visually."
-  - "Provide intuitive Play, Pause, Resume, Stop, and Next/Previous verse controls with keyboard shortcuts (Spacebar for Play/Pause)."
+  - "Provide intuitive Play, Pause, Resume, Stop, Next/Previous, Rate, and Bass Tone controls with keyboard shortcuts (Spacebar for Play/Pause)."
   - "Maintain continuous playback by automatically advancing to the next verse until the chapter completes."
 
 dont:
   - "Do not pin or run older edge-tts versions (< 7.3.1) which cause WSServerHandshakeError: 403 on Microsoft's Bing platform."
   - "Do not fall back immediately to female gTTS when a male voice is requested if alternative neural male voices are reachable."
+  - "Do not omit pitch from cache key hashing, which causes cross-tone collision when toggling between standard and bass voices."
   - "Do not read translator notes, editorial insertions, or manuscript variant markers enclosed in `[]` or `{}` aloud."
   - "Do not flood the network with simultaneous chapter requests; download upcoming chapter verses sequentially with pacing delays to prevent throttling."
   - "Do not attempt to prefetch beyond the chapter's verse array length on the last verse."
   - "Do not allow background prefetch failures or network blips to interrupt or halt the currently playing audio stream."
   - "Do not block UI scrolling or responsiveness during speech synthesis."
-  - "Do not lose the user's current reading position when toggling audio playback."
+  - "Do not lose the user's current reading position or tone preference when toggling audio playback."
 
 reason:
-  "Microsoft Edge Neural TTS provides authentic, solemn, human-like voice cadences crucial for scripture listening. Microsoft introduced a Sec-MS-GEC handshake requirement, causing edge-tts < 7.3.1 to fail with HTTP 403 and silently fall back to female gTTS. Upgrading edge-tts in the runtime environment eliminates the 6-second timeout overhead. Running an automated sequential full-chapter pre-download pipeline with confirmation checks and retries guarantees that all subsequent verses are preloaded and buffered in RAM/HTTP cache well before the user reaches them, completely eliminating between-verse latency."
+  "Scripture meditation benefits immensely from solemn, resonant, deep bass voice cadences. Microsoft Edge Neural TTS natively supports prosodic pitch modulation (`^[+-]\\d+Hz$`). By pairing deep male neural voices (such as ta-LK-KumarNeural and en-US-ChristopherNeural) with calibrated pitch offsets (-4Hz, -8Hz, -12Hz), listeners receive a rich, authoritative, cathedral-like bass narration experience without requiring client-side audio DSP re-encoding."
 
 related_items:
   - ARCH-SYS-001

@@ -212,6 +212,14 @@
                     </button>
                 </div>
 
+                <!-- Bass / Tone Setting Pill -->
+                <div class="flex items-center justify-between px-1 text-[11px] pt-1 border-t border-stone-200/40 dark:border-stone-800/40">
+                    <span class="text-stone-400 font-medium">Bass / Tone</span>
+                    <button type="button" onclick="cycleAudioBass()" id="sidebar-bass-btn" class="px-2 py-0.5 rounded bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-mono font-bold text-[10px] transition cursor-pointer" title="Toggle Voice Bass Tone">
+                        Normal
+                    </button>
+                </div>
+
                 <!-- Chapter Badges -->
                 <div class="pt-2 border-t border-stone-200/60 dark:border-stone-800/60 space-y-1">
                     <span class="text-[9px] font-bold text-stone-400 uppercase tracking-wider block px-1">Chapters</span>
@@ -254,6 +262,9 @@
                 </button>
                 <button type="button" onclick="cycleAudioSpeed()" id="mobile-speed-btn" class="px-1.5 py-0.5 rounded-md bg-stone-200 dark:bg-stone-800 text-[10px] font-mono font-bold ml-1 cursor-pointer">
                     1.0x
+                </button>
+                <button type="button" onclick="cycleAudioBass()" id="mobile-bass-btn" class="px-1.5 py-0.5 rounded-md bg-stone-200 dark:bg-stone-800 text-[10px] font-mono font-bold ml-1 cursor-pointer" title="Toggle Voice Bass Tone">
+                    Bass: Std
                 </button>
             </div>
         </div>
@@ -334,6 +345,14 @@ let isAudioPlaying = false;
 const speeds = [1.0, 1.25, 1.5, 2.0];
 let currentSpeedIndex = 0;
 
+const bassLevels = [
+    { pitch: '+0Hz', label: 'Normal', mobile: 'Std' },
+    { pitch: '-4Hz', label: 'Warm', mobile: 'Warm' },
+    { pitch: '-8Hz', label: 'Deep Bass', mobile: 'Deep' },
+    { pitch: '-12Hz', label: 'Heavy Bass', mobile: 'Heavy' }
+];
+let currentBassIndex = Math.max(0, bassLevels.findIndex(b => b.pitch === (localStorage.getItem('bible_audio_pitch') || '+0Hz')));
+
 // Builds the unified playlist (Title announcement -> Verse 1 -> Verse 2 -> etc.)
 function buildAudioQueue() {
     audioQueue = [];
@@ -377,6 +396,7 @@ function buildAudioQueue() {
 window.addEventListener('DOMContentLoaded', () => {
     applyReadAlongFontSize(currentFontRem);
     buildAudioQueue();
+    updateBassButtons();
 
     const savedLang = localStorage.getItem('bible_reading_lang');
     if (savedLang === 'en' || savedLang === 'ta') {
@@ -509,7 +529,8 @@ function playQueueIndex(index) {
     const activeVoice = (currentLanguage === 'ta')
         ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
         : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
-    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
+    const activePitch = localStorage.getItem('bible_audio_pitch') || '+0Hz';
+    const streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
     audioElement.src = streamUrl;
     audioElement.playbackRate = speeds[currentSpeedIndex];
 
@@ -587,9 +608,10 @@ async function processReadAlongPrefetchQueue() {
             const cleanBlessing = (blessingText || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
             if (!cleanBlessing) continue;
 
-            itemKey = `outro_${currentLanguage}_${outroVoice}_${speeds[currentSpeedIndex]}`;
+            const activePitch = localStorage.getItem('bible_audio_pitch') || '+0Hz';
+            itemKey = `outro_${currentLanguage}_${outroVoice}_${speeds[currentSpeedIndex]}_${activePitch}`;
             itemLabel = 'Outro Blessing';
-            streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanBlessing)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
+            streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanBlessing)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
         } else {
             const item = audioQueue[targetIdx];
             if (!item) continue;
@@ -602,9 +624,10 @@ async function processReadAlongPrefetchQueue() {
                 ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
                 : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
 
-            itemKey = `${item.bookId}_${item.chapter}_${item.verse || 'title'}_${currentLanguage}_${activeVoice}_${speeds[currentSpeedIndex]}`;
+            const activePitch = localStorage.getItem('bible_audio_pitch') || '+0Hz';
+            itemKey = `${item.bookId}_${item.chapter}_${item.verse || 'title'}_${currentLanguage}_${activeVoice}_${speeds[currentSpeedIndex]}_${activePitch}`;
             itemLabel = `${item.ref_en || item.ref_ta || targetIdx}`;
-            streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
+            streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
         }
 
         if (readalongDownloadedItems.has(itemKey)) {
@@ -688,6 +711,26 @@ function cycleAudioSpeed() {
     }
 }
 
+function cycleAudioBass() {
+    currentBassIndex = (currentBassIndex + 1) % bassLevels.length;
+    const b = bassLevels[currentBassIndex];
+    localStorage.setItem('bible_audio_pitch', b.pitch);
+    updateBassButtons();
+    readalongDownloadedItems.clear();
+    readalongPrefetchQueue = [];
+    if (isAudioPlaying && currentQueueIndex < audioQueue.length) {
+        streamAudioForItem(audioQueue[currentQueueIndex]);
+    }
+}
+
+function updateBassButtons() {
+    const b = bassLevels[currentBassIndex];
+    const sb = document.getElementById('sidebar-bass-btn');
+    const mb = document.getElementById('mobile-bass-btn');
+    if (sb) sb.innerText = b.label;
+    if (mb) mb.innerText = `Bass: ${b.mobile}`;
+}
+
 // Auto-advance
 audioElement.addEventListener('ended', () => {
     currentQueueIndex++;
@@ -720,7 +763,8 @@ function triggerOutroBlessing() {
     const outroVoice = (currentLanguage === 'ta')
         ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural')
         : (localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural');
-    audioElement.src = `/api/audio/stream?text=${encodeURIComponent(blessingText)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}`;
+    const activePitch = localStorage.getItem('bible_audio_pitch') || '+0Hz';
+    audioElement.src = `/api/audio/stream?text=${encodeURIComponent(blessingText)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&rate=${encodeURIComponent(speeds[currentSpeedIndex])}&pitch=${encodeURIComponent(activePitch)}`;
     audioElement.play().catch(() => {});
 
     let outroSeconds = 5;

@@ -383,9 +383,12 @@ VOICE_CONFIG = {
         "default": "ta-IN-ValluvarNeural",
         "male": "ta-IN-ValluvarNeural",
         "valluvar": "ta-IN-ValluvarNeural",
+        "kumar": "ta-LK-KumarNeural",
+        "bass": "ta-LK-KumarNeural",
+        "base": "ta-LK-KumarNeural",
+        "deep": "ta-LK-KumarNeural",
         "anbu": "ta-SG-AnbuNeural",
         "surya": "ta-MY-SuryaNeural",
-        "kumar": "ta-LK-KumarNeural",
         "female": "ta-IN-PallaviNeural",
         "pallavi": "ta-IN-PallaviNeural",
         "venba": "ta-SG-VenbaNeural",
@@ -397,13 +400,18 @@ VOICE_CONFIG = {
         "jenny": "en-US-JennyNeural",
         "male": "en-US-GuyNeural",
         "guy": "en-US-GuyNeural",
+        "christopher": "en-US-ChristopherNeural",
+        "brian": "en-US-BrianNeural",
+        "bass": "en-US-ChristopherNeural",
+        "base": "en-US-ChristopherNeural",
+        "deep": "en-US-ChristopherNeural",
         "neerja": "en-IN-NeerjaNeural",
     },
 }
 
 MALE_VOICE_FALLBACKS = {
-    "ta": ["ta-IN-ValluvarNeural", "ta-SG-AnbuNeural", "ta-MY-SuryaNeural", "ta-LK-KumarNeural"],
-    "en": ["en-US-GuyNeural", "en-US-ChristopherNeural"],
+    "ta": ["ta-IN-ValluvarNeural", "ta-LK-KumarNeural", "ta-SG-AnbuNeural", "ta-MY-SuryaNeural"],
+    "en": ["en-US-ChristopherNeural", "en-US-BrianNeural", "en-US-GuyNeural"],
 }
 
 FEMALE_VOICE_FALLBACKS = {
@@ -426,6 +434,38 @@ def normalize_speech_rate(raw_rate: str) -> str:
         return f"+{pct_diff}%" if pct_diff >= 0 else f"{pct_diff}%"
     except (ValueError, TypeError):
         return "-4%"
+
+
+def normalize_speech_pitch(raw_pitch: str) -> str:
+    r"""Normalizes pitch parameter into valid Edge-TTS pitch string (^[+-]\d+Hz$)."""
+    if not raw_pitch:
+        return "+0Hz"
+    pitch_str = str(raw_pitch).strip().lower()
+    preset_map = {
+        "normal": "+0Hz",
+        "default": "+0Hz",
+        "standard": "+0Hz",
+        "std": "+0Hz",
+        "warm_bass": "-4Hz",
+        "warm": "-4Hz",
+        "low": "-5Hz",
+        "bass": "-8Hz",
+        "base": "-8Hz",
+        "deep": "-8Hz",
+        "deep_bass": "-8Hz",
+        "more_base": "-10Hz",
+        "more_bass": "-10Hz",
+        "extra_bass": "-12Hz",
+        "heavy_bass": "-12Hz",
+    }
+    if pitch_str in preset_map:
+        return preset_map[pitch_str]
+
+    match = re.match(r"^([+-]?\d+)\s*(?:hz)?$", pitch_str, re.IGNORECASE)
+    if match:
+        val = int(match.group(1))
+        return f"{val:+d}Hz"
+    return "+0Hz"
 
 
 def resolve_voice_name(lang: str, voice_param: str = None) -> str:
@@ -503,13 +543,19 @@ async def stream_audio(
     lang: str = Query("ta"),
     voice: str = Query(None),
     rate: str = Query(None),
+    pitch: str = Query(None),
 ):
     target_lang = "ta" if lang == "ta" else "en"
     clean_text = preprocess_scripture_text(text, target_lang)
     target_voice = resolve_voice_name(target_lang, voice)
     target_rate = normalize_speech_rate(rate)
+    target_pitch = normalize_speech_pitch(pitch)
 
-    cache_key = hashlib.md5(f"{target_voice}:{target_rate}:{clean_text}".encode("utf-8")).hexdigest()
+    # If user explicitly requested bass/base alias without specifying pitch, apply deep bass tone
+    if voice and str(voice).strip().lower() in ["bass", "base", "deep", "deep_bass"] and not pitch:
+        target_pitch = "-8Hz"
+
+    cache_key = hashlib.md5(f"{target_voice}:{target_rate}:{target_pitch}:{clean_text}".encode("utf-8")).hexdigest()
 
     if cache_key in AUDIO_CACHE:
         return Response(
@@ -519,6 +565,7 @@ async def stream_audio(
                 "Cache-Control": "public, max-age=86400",
                 "X-TTS-Engine": "cache",
                 "X-TTS-Voice": target_voice,
+                "X-TTS-Pitch": target_pitch,
             },
         )
 
@@ -540,6 +587,7 @@ async def stream_audio(
                     text=clean_text,
                     voice=v_name,
                     rate=target_rate,
+                    pitch=target_pitch,
                 )
                 fp = io.BytesIO()
                 async for chunk in communicate.stream():
@@ -555,6 +603,7 @@ async def stream_audio(
                             "Cache-Control": "public, max-age=86400",
                             "X-TTS-Engine": "edge-neural",
                             "X-TTS-Voice": v_name,
+                            "X-TTS-Pitch": target_pitch,
                         },
                     )
             except Exception as neural_err:
@@ -576,6 +625,7 @@ async def stream_audio(
                 "Cache-Control": "public, max-age=86400",
                 "X-TTS-Engine": "gtts-fallback",
                 "X-TTS-Voice": target_voice,
+                "X-TTS-Pitch": target_pitch,
             },
         )
     except Exception as fallback_err:

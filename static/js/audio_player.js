@@ -15,6 +15,7 @@ class BibleContinuousAudio {
         this.verses = [];
         this.lang = 'ta';
         this.rate = 1.0;
+        this.pitch = localStorage.getItem('bible_audio_pitch') || '+0Hz';
         this.bookId = null;
         this.chapter = null;
         this.nextChapter = null;
@@ -64,11 +65,14 @@ class BibleContinuousAudio {
             sessionStorage.removeItem('bible_autoplay_state');
             this.lang = state.lang || 'ta';
             this.rate = state.rate || 1.0;
+            this.pitch = state.pitch || localStorage.getItem('bible_audio_pitch') || '+0Hz';
 
             const langEl = document.getElementById('audio-lang-select');
             const rateEl = document.getElementById('audio-rate-select');
+            const pitchEl = document.getElementById('audio-pitch-select');
             if (langEl) langEl.value = this.lang;
             if (rateEl) rateEl.value = this.rate;
+            if (pitchEl) pitchEl.value = this.pitch;
 
             setTimeout(() => this.play(0), 400);
         }
@@ -105,7 +109,8 @@ class BibleContinuousAudio {
         text = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
 
         const voice = this.getEffectiveVoice();
-        const audioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(this.rate)}`;
+        const pitch = this.getEffectivePitch();
+        const audioUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(this.rate)}&pitch=${encodeURIComponent(pitch)}`;
         
         this.audio.src = audioUrl;
         this.audio.playbackRate = parseFloat(this.rate);
@@ -157,14 +162,15 @@ class BibleContinuousAudio {
 
             const voice = this.getEffectiveVoice();
             const rate = this.rate;
-            const verseCacheKey = `${this.bookId}_${this.chapter}_${nextIndex}_${this.lang}_${voice}_${rate}`;
+            const pitch = this.getEffectivePitch();
+            const verseCacheKey = `${this.bookId}_${this.chapter}_${nextIndex}_${this.lang}_${voice}_${rate}_${pitch}`;
 
             // Skip if already confirmed downloaded
             if (this.downloadedVerses.has(verseCacheKey)) {
                 continue;
             }
 
-            const streamUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(rate)}`;
+            const streamUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(rate)}&pitch=${encodeURIComponent(pitch)}`;
 
             // Automated download with verification & retry
             let confirmed = false;
@@ -223,6 +229,26 @@ class BibleContinuousAudio {
             localStorage.setItem('bible_audio_voice_ta', voiceName);
         } else {
             localStorage.setItem('bible_audio_voice_en', voiceName);
+        }
+        this.downloadedVerses.clear();
+        this.prefetchQueue = [];
+        if (this.isPlaying) this.playCurrent();
+    }
+
+    getEffectivePitch() {
+        return this.pitch || localStorage.getItem('bible_audio_pitch') || '+0Hz';
+    }
+
+    setPitch(pitchValue) {
+        this.pitch = pitchValue;
+        localStorage.setItem('bible_audio_pitch', pitchValue);
+        const pitchSelect = document.getElementById('audio-pitch-select');
+        if (pitchSelect && pitchSelect.value !== pitchValue) {
+            pitchSelect.value = pitchValue;
+        }
+        const settingPitch = document.getElementById('setting-audio-pitch');
+        if (settingPitch && settingPitch.value !== pitchValue) {
+            settingPitch.value = pitchValue;
         }
         this.downloadedVerses.clear();
         this.prefetchQueue = [];
@@ -302,7 +328,8 @@ class BibleContinuousAudio {
         if (this.nextChapter) {
             sessionStorage.setItem('bible_autoplay_state', JSON.stringify({
                 lang: this.lang,
-                rate: this.rate
+                rate: this.rate,
+                pitch: this.getEffectivePitch()
             }));
             window.location.href = `/read/${this.bookId}/${this.nextChapter}?mode=${this.mode}`;
         } else {
@@ -321,22 +348,31 @@ class BibleContinuousAudio {
 
     syncDockVoiceOptions() {
         const voiceSelect = document.getElementById('audio-voice-select');
-        if (!voiceSelect) return;
-        if (this.lang === 'ta') {
-            voiceSelect.innerHTML = `
-                <option value="ta-IN-ValluvarNeural">வள்ளுவர் (Male - IN)</option>
-                <option value="ta-SG-AnbuNeural">அன்பு (Male - SG)</option>
-                <option value="ta-MY-SuryaNeural">சூர்யா (Male - MY)</option>
-                <option value="ta-IN-PallaviNeural">பல்லவி (Female - IN)</option>
-            `;
-            voiceSelect.value = localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural';
-        } else {
-            voiceSelect.innerHTML = `
-                <option value="en-US-JennyNeural">Jenny (Female)</option>
-                <option value="en-US-GuyNeural">Guy (Male)</option>
-                <option value="en-IN-NeerjaNeural">Neerja (India)</option>
-            `;
-            voiceSelect.value = localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural';
+        if (voiceSelect) {
+            if (this.lang === 'ta') {
+                voiceSelect.innerHTML = `
+                    <option value="ta-IN-ValluvarNeural">வள்ளுவர் (Male - IN)</option>
+                    <option value="ta-LK-KumarNeural">குமார் (Deep Bass Male - LK)</option>
+                    <option value="ta-SG-AnbuNeural">அன்பு (Male - SG)</option>
+                    <option value="ta-MY-SuryaNeural">சூர்யா (Male - MY)</option>
+                    <option value="ta-IN-PallaviNeural">பல்லவி (Female - IN)</option>
+                `;
+                voiceSelect.value = localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural';
+            } else {
+                voiceSelect.innerHTML = `
+                    <option value="en-US-ChristopherNeural">Christopher (Deep Bass Male)</option>
+                    <option value="en-US-BrianNeural">Brian (Resonant Male)</option>
+                    <option value="en-US-GuyNeural">Guy (Male)</option>
+                    <option value="en-US-JennyNeural">Jenny (Female)</option>
+                    <option value="en-IN-NeerjaNeural">Neerja (India)</option>
+                `;
+                voiceSelect.value = localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural';
+            }
+        }
+
+        const pitchSelect = document.getElementById('audio-pitch-select');
+        if (pitchSelect) {
+            pitchSelect.value = this.getEffectivePitch();
         }
     }
 
