@@ -20,7 +20,7 @@ class BibleContinuousAudio {
         this.currentIndex = 0;
         this.verses = [];
         this.lang = 'ta';
-        this.rate = 1.0;
+        this.rate = parseFloat(localStorage.getItem('bible_audio_rate')) || 1.0;
         this.pitch = localStorage.getItem('bible_audio_pitch') || '-8Hz';
         this.bookId = null;
         this.chapter = null;
@@ -100,9 +100,8 @@ class BibleContinuousAudio {
 
     getVerseCacheKey(index) {
         const voice = this.getEffectiveVoice();
-        const rate = this.rate;
         const pitch = this.getEffectivePitch();
-        return `${this.bookId}_${this.chapter}_${index}_${this.lang}_${voice}_${rate}_${pitch}`;
+        return `${this.bookId}_${this.chapter}_${index}_${this.lang}_${voice}_${pitch}`;
     }
 
     updateVerseStatusUI(index, status) {
@@ -210,17 +209,20 @@ class BibleContinuousAudio {
             const state = JSON.parse(savedState);
             sessionStorage.removeItem('bible_autoplay_state');
             this.lang = state.lang || 'ta';
-            this.rate = state.rate || 1.0;
+            this.rate = parseFloat(state.rate) || parseFloat(localStorage.getItem('bible_audio_rate')) || 1.0;
             this.pitch = state.pitch || localStorage.getItem('bible_audio_pitch') || '-8Hz';
 
             const langEl = document.getElementById('audio-lang-select');
             const rateEl = document.getElementById('audio-rate-select');
             const pitchEl = document.getElementById('audio-pitch-select');
             if (langEl) langEl.value = this.lang;
-            if (rateEl) rateEl.value = this.rate;
+            if (rateEl) rateEl.value = String(this.rate);
             if (pitchEl) pitchEl.value = this.pitch;
 
             setTimeout(() => this.play(0), 400);
+        } else {
+            const rateEl = document.getElementById('audio-rate-select');
+            if (rateEl) rateEl.value = String(this.rate);
         }
 
         this.syncDockVoiceOptions();
@@ -308,9 +310,8 @@ class BibleContinuousAudio {
                 }
 
                 const voice = this.getEffectiveVoice();
-                const rate = this.rate;
                 const pitch = this.getEffectivePitch();
-                const streamUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(rate)}&pitch=${encodeURIComponent(pitch)}`;
+                const streamUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&pitch=${encodeURIComponent(pitch)}`;
 
                 let confirmedBlob = null;
                 for (let attempt = 1; attempt <= this.prefetchRetryLimit; attempt++) {
@@ -770,11 +771,14 @@ class BibleContinuousAudio {
     }
 
     setRate(rate) {
-        this.rate = rate;
-        this.audio.playbackRate = parseFloat(rate);
-        this.clearAllBlobs();
-        if (this.isPlaying) {
-            this.playCurrent();
+        this.rate = parseFloat(rate) || 1.0;
+        localStorage.setItem('bible_audio_rate', String(this.rate));
+        if (this.audio) {
+            this.audio.playbackRate = this.rate;
+        }
+        const rateSelect = document.getElementById('audio-rate-select');
+        if (rateSelect && rateSelect.value !== String(this.rate)) {
+            rateSelect.value = String(this.rate);
         }
     }
 

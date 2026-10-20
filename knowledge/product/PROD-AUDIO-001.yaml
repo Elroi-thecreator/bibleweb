@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation, Concurrent Chapter Prefetching & Persistent Audio Cache Standard
 domain: product
 status: approved
-version: 1.14.0
+version: 1.15.0
 authority:
   level: official
   confidence: high
@@ -44,6 +44,8 @@ do:
   - "Before dispatching verse text to TTS, strip out all text enclosed in square brackets `\\[.*?\\]` and curly braces `\\{.*?\\}` using regex pre-processing."
   - "Highlight the currently active verse on the screen synchronously with the audio speech synthesizer so readers can follow along visually."
   - "Provide intuitive Play, Pause, Resume, Stop, Next/Previous, Rate, and Bass Tone controls with keyboard shortcuts (Spacebar for Play/Pause)."
+  - "Modulate audio playback speed (0.75x, 1.0x, 1.25x, 1.5x, 2.0x) exclusively in client hardware via HTML5 Audio `playbackRate` (`audio.playbackRate = rate`), decoupling playback speed entirely from client cache keys (`getVerseCacheKey`, `itemKey`) and network stream URLs so that switching speeds never clears in-memory blobs, never interrupts playback, and makes 0 redundant network calls."
+  - "Persist audio playback speed selection in `localStorage` (`bible_audio_rate`) to maintain consistent playback velocity across reader modes and chapter transitions."
   - "Maintain continuous playback by automatically advancing to the next verse until the chapter completes."
   - "Insert a 1-second meditative pause (`setTimeout(..., 1000)`) between consecutive verses upon audio playback completion to allow readers to reflect on each Scripture verse comfortably before advancing."
   - "Cleanly cancel pending verse transition timers (`transitionTimeout`, `readalongTransitionTimeout`) whenever the user pauses, steps forward/backward, stops, or clicks on a verse to eliminate unexpected skips or double advances."
@@ -75,6 +77,8 @@ dont:
   - "Do not hide audio progress counters or playback bars on mobile viewports."
   - "Do not abruptly jump to the next verse with zero gap upon verse completion; enforce a 1-second meditative pause between consecutive verses."
   - "Do not allow asynchronous promise completions (such as verse download resolution or `.play().then(...)`) to override or bypass a user's pause command."
+  - "Do not call `clearAllBlobs()` or re-download audio files when the user adjusts audio playback speed; speed is a presentation property of the client player, not a synthesis attribute."
+  - "Do not include playback rate or speed in client-side audio cache keys (`getVerseCacheKey`, `itemKey`)."
 
 reason:
   "Showing real-time download status on each verse gives readers instant visual confirmation of audio availability. Coupling immediate parallel 3-worker prefetching with two-tier in-memory and persistent disk caching drops chapter verse prefetch times by over 3.5x and provides sub-millisecond instant audio playback for subsequent listens, all while preventing duplicate requests."

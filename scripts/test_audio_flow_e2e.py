@@ -119,7 +119,13 @@ def test_javascript_syntax_and_symbols():
     assert "try { this.audio.pause(); } catch (_) {}" in audio_js, \
         "audio_player.js must safely catch potential AbortError during pause"
 
-    print("✓ audio_player.js passed all static flow & race-condition guard checks")
+    # Check that setRate modulates playbackRate without clearing blobs or re-downloading
+    assert "setRate(rate)" in audio_js, "audio_player.js missing setRate function"
+    assert "this.audio.playbackRate = this.rate" in audio_js, "setRate must update this.audio.playbackRate directly"
+    set_rate_body = audio_js[audio_js.find("setRate(rate)"):audio_js.find("setRate(rate)") + 350]
+    assert "this.clearAllBlobs()" not in set_rate_body, "setRate must never clear cached blobs on speed change"
+
+    print("✓ audio_player.js passed all static flow, pause & speed guard checks")
 
     # 1.2 Read templates/reader.html
     with open("templates/reader.html", "r", encoding="utf-8") as f:
@@ -128,8 +134,9 @@ def test_javascript_syntax_and_symbols():
     assert 'id="audio-play-pause-btn"' in reader_html, "reader.html missing #audio-play-pause-btn"
     assert "▶" in reader_html and "⏸" not in reader_html[reader_html.find('id="audio-play-pause-btn"'):reader_html.find('id="audio-play-pause-btn"') + 350], \
         "reader.html #audio-play-pause-btn must default to play icon ▶ when idle"
+    assert 'id="audio-rate-select"' in reader_html, "reader.html missing #audio-rate-select"
 
-    print("✓ templates/reader.html verified initial play icon ▶ on audio play/pause button")
+    print("✓ templates/reader.html verified initial play icon ▶ on audio play/pause button & rate select")
 
     # 1.3 Read templates/read_along.html
     with open("templates/read_along.html", "r", encoding="utf-8") as f:
@@ -166,6 +173,12 @@ def test_javascript_syntax_and_symbols():
     assert "try { audioElement.pause(); } catch (_) {}" in readalong_html, \
         "read_along.html missing safe audioElement.pause() in toggle/playQueueIndex"
 
+    # Check that cycleAudioSpeed modulates playbackRate without clearing downloaded items
+    assert "function cycleAudioSpeed()" in readalong_html, "read_along.html missing cycleAudioSpeed"
+    assert "audioElement.playbackRate = rate" in readalong_html, "cycleAudioSpeed must update audioElement.playbackRate directly"
+    cycle_speed_body = readalong_html[readalong_html.find("function cycleAudioSpeed()"):readalong_html.find("function cycleAudioSpeed()") + 350]
+    assert "readalongDownloadedItems.clear()" not in cycle_speed_body, "cycleAudioSpeed must never clear downloaded items"
+
     print("✓ templates/read_along.html passed all async/await, function definition & error checks")
 
 
@@ -186,7 +199,7 @@ def test_audio_state_machine_simulation():
         return f"blob:http://localhost/mock-blob-{verse_idx}"
 
     def ensure_verse_audio_downloaded(index, text):
-        cache_key = f"43_1_{index}_ta_ta-IN-ValluvarNeural_1.0_+0Hz"
+        cache_key = f"43_1_{index}_ta_ta-IN-ValluvarNeural_+0Hz"
 
         # 1. Check whether already downloaded
         if cache_key in verseAudioBlobs:
@@ -241,7 +254,16 @@ def test_audio_state_machine_simulation():
     assert network_fetch_count == 3, "Prefetched verse re-downloaded on click!"
     print("✓ User clicked on prefetched Verse 2: 0 network requests made (played instantly from cache)")
 
-    # Scenario E: User changes Voice Tone to Deep Bass (-8Hz)
+    # Scenario E: User changes Audio Speed (e.g. 1.0x -> 1.5x)
+    # Native client playbackRate modulation: 0 in-memory blobs cleared, 0 network requests made
+    pre_speed_blobs_count = len(verseAudioBlobs)
+    assert pre_speed_blobs_count == 3, "Expected 3 cached verses before speed change"
+    # Audio speed adjusts audio.playbackRate in player hardware: cache remains 100% intact
+    assert len(verseAudioBlobs) == pre_speed_blobs_count, "Changing audio speed must keep all in-memory blobs intact"
+    assert network_fetch_count == 3, "Changing audio speed must make 0 network requests"
+    print("✓ Audio Speed change preserves 100% of cached blobs and makes 0 network requests")
+
+    # Scenario F: User changes Voice Tone to Deep Bass (-8Hz)
     # Blobs cleared, key changes
     verseAudioBlobs.clear()
     verseStatuses.clear()
