@@ -39,8 +39,8 @@ services:
     region: singapore
     repo: https://github.com/mrifqidaffaaditya/WA-AKG.git
     branch: main
-    buildCommand: npm install --legacy-peer-deps && npx prisma generate && npx prisma db push --accept-data-loss && node scripts/setup-admin.js admin@example.com admin123 && npm run build
-    startCommand: npm run start
+    buildCommand: npm install --legacy-peer-deps && sed -i 's/"mysql"/"postgresql"/g' prisma/schema.prisma && npx prisma generate && npm run build
+    startCommand: npx prisma db push --accept-data-loss && node scripts/setup-admin.js admin@example.com admin123 && npm run start
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
