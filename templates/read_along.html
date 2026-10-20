@@ -317,10 +317,22 @@ const CHAPTERS_LIST = {{ day.chapters | tojson }};
 const OUTRO_BLESSING_TA = {{ day.outro.ta | tojson }};
 const OUTRO_BLESSING_EN = {{ day.outro.en | tojson }};
 
-// Font Sizing
-const FONT_STORAGE_KEY = 'bible_font_size';
+// Font Sizing (Dedicated isolated key so read-along rem values never overwrite reader pixel sizes)
+const FONT_STORAGE_KEY = 'bible_readalong_font_rem';
 const DEFAULT_FONT_REM = 1.1;
+
+// Self-healing: if legacy bible_font_size was corrupted with a rem value (< 12), restore it to 18px
+try {
+    const legacySize = localStorage.getItem('bible_font_size');
+    if (legacySize && parseFloat(legacySize) < 12) {
+        localStorage.setItem('bible_font_size', '18');
+    }
+} catch(_) {}
+
 let currentFontRem = parseFloat(localStorage.getItem(FONT_STORAGE_KEY)) || DEFAULT_FONT_REM;
+if (isNaN(currentFontRem) || currentFontRem < 0.8 || currentFontRem > 2.5) {
+    currentFontRem = DEFAULT_FONT_REM;
+}
 
 function applyReadAlongFontSize(remVal) {
     currentFontRem = Math.min(1.85, Math.max(0.9, remVal));

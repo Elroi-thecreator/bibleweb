@@ -49,20 +49,16 @@
         body.theme-sepia { background-color: #FAF6EE; color: #2D241E; }
         body.theme-sepia .bg-card { background-color: #F3EBDD; border-color: #E2D3BF; }
 
-        /* Direct match for every verse paragraph tag in reader.html */
+        /* Direct match for verse paragraphs without affecting verse badges, numbers, or action controls */
         #reader-container,
-        #reader-content,
         #reader-content p,
-        #reader-content span,
-        .verse-item,
         .verse-item p,
-        .verse-item span,
         .verse-text,
         .verse-text-en,
         .verse-text-ta,
         .verse-en,
         .verse-ta {
-            font-size: var(--reader-font-size) !important;
+            font-size: var(--reader-font-size, 18px) !important;
         }
 
         /* Proportional line heights */
@@ -85,8 +81,14 @@
                     document.body.classList.add('theme-sepia');
                 }
 
-                var savedSize = localStorage.getItem('bible_font_size') || '18';
-                document.documentElement.style.setProperty('--reader-font-size', savedSize + 'px');
+                var rawSize = localStorage.getItem('bible_font_size');
+                var numSize = parseFloat(rawSize);
+                // Self-healing: if unset or corrupted by legacy float/rem values (< 12px or > 36px), reset to 18px default
+                if (!rawSize || isNaN(numSize) || numSize < 12 || numSize > 36) {
+                    numSize = 18;
+                    localStorage.setItem('bible_font_size', '18');
+                }
+                document.documentElement.style.setProperty('--reader-font-size', numSize + 'px');
             } catch(e) {}
         })();
     </script>

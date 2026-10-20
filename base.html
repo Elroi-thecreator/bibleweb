@@ -84,8 +84,14 @@
                     document.body.classList.add('theme-sepia');
                 }
 
-                var savedSize = localStorage.getItem('bible_font_size') || '18';
-                document.documentElement.style.setProperty('--reader-font-size', savedSize + 'px');
+                var rawSize = localStorage.getItem('bible_font_size');
+                var numSize = parseFloat(rawSize);
+                // Self-healing: if unset or corrupted by legacy float/rem values (< 12px or > 36px), reset to 18px default
+                if (!rawSize || isNaN(numSize) || numSize < 12 || numSize > 36) {
+                    numSize = 18;
+                    localStorage.setItem('bible_font_size', '18');
+                }
+                document.documentElement.style.setProperty('--reader-font-size', numSize + 'px');
             } catch(e) {}
         })();
     </script>

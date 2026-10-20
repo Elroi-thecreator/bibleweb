@@ -1,7 +1,7 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/bible"
-knowledge_units_count: 15
+knowledge_units_count: 16
 last_updated: "2026-10-20"
 
 knowledge_units:
@@ -43,6 +43,9 @@ knowledge_units:
     - id: PROD-SONGS-001
       file: "knowledge/product/PROD-SONGS-001.yaml"
       title: "Christian Song Lyrics, Contemporary Worship Collections & Hymnal Standard"
+    - id: PROD-TYPO-001
+      file: "knowledge/product/PROD-TYPO-001.yaml"
+      title: "Scripture Typography, Persistent Font Scaling & Multi-Reader Isolation Standard"
 
   decisions:
     - id: ADR-001

@@ -294,7 +294,14 @@ window.updateReaderUIForPlan = updateReaderUIForPlan;
 // 4. Robust Persistent Font-Size Engine
 // ==========================================
 function applyPersistentFontSize() {
-    const size = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
+    let raw = localStorage.getItem(STORAGE_KEYS.FONT_SIZE);
+    let size = parseFloat(raw);
+    // Self-healing: if unset or corrupted by legacy float/rem values (< 12px or > 36px), reset to 18px default
+    if (!raw || isNaN(size) || size < 12 || size > 36) {
+        size = 18;
+        localStorage.setItem(STORAGE_KEYS.FONT_SIZE, '18');
+    }
+    size = Math.round(size);
     document.documentElement.style.setProperty('--reader-font-size', `${size}px`);
 
     // Ensure style node is present and holds explicit selector rules
@@ -307,12 +314,8 @@ function applyPersistentFontSize() {
     styleEl.innerHTML = `
         :root { --reader-font-size: ${size}px; }
         #reader-container,
-        #reader-content,
         #reader-content p,
-        #reader-content span,
-        .verse-item,
         .verse-item p,
-        .verse-item span,
         .verse-text,
         .verse-text-en,
         .verse-text-ta,
@@ -325,8 +328,12 @@ function applyPersistentFontSize() {
 window.applyPersistentFontSize = applyPersistentFontSize;
 
 function adjustFontSize(delta) {
-    const currentSize = parseInt(localStorage.getItem(STORAGE_KEYS.FONT_SIZE) || '18');
-    let newSize = delta === 0 ? 18 : Math.min(Math.max(currentSize + (delta * 2), 13), 32);
+    let raw = localStorage.getItem(STORAGE_KEYS.FONT_SIZE);
+    let currentSize = parseFloat(raw);
+    if (!raw || isNaN(currentSize) || currentSize < 12 || currentSize > 36) {
+        currentSize = 18;
+    }
+    let newSize = delta === 0 ? 18 : Math.min(Math.max(Math.round(currentSize + (delta * 2)), 13), 32);
 
     localStorage.setItem(STORAGE_KEYS.FONT_SIZE, newSize.toString());
     applyPersistentFontSize();
@@ -730,7 +737,14 @@ async function syncWithSupabase() {
         localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(merged.bookmarks));
         localStorage.setItem(STORAGE_KEYS.HIGHLIGHTS, JSON.stringify(merged.highlights));
         localStorage.setItem(STORAGE_KEYS.READ_CHAPTERS, JSON.stringify(merged.read_chapters));
-        if (merged.font_size) localStorage.setItem(STORAGE_KEYS.FONT_SIZE, merged.font_size);
+        if (merged.font_size) {
+            let fVal = parseFloat(merged.font_size);
+            if (!isNaN(fVal) && fVal >= 12 && fVal <= 36) {
+                localStorage.setItem(STORAGE_KEYS.FONT_SIZE, Math.round(fVal).toString());
+            } else {
+                localStorage.setItem(STORAGE_KEYS.FONT_SIZE, '18');
+            }
+        }
         if (merged.custom_reading_plans) {
             localStorage.setItem(STORAGE_KEYS.CUSTOM_PLANS, JSON.stringify(merged.custom_reading_plans));
         }

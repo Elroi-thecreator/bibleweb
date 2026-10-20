@@ -1,0 +1,41 @@
+id: PROD-TYPO-001
+type: product_standard
+title: Scripture Typography, Persistent Font Scaling & Multi-Reader Isolation Standard
+domain: product
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: frontend_team
+
+applies_to:
+  - frontend
+  - reader
+  - read_along
+  - typography
+  - storage
+
+rule:
+  "Scripture text across all reader views (Chapter Reader and Read-Along Prayer Mode) must maintain an optimal, comfortable default font size of 18px (with allowed adjustment range from 13px to 32px), with strict storage key isolation (`bible_font_size` for pixel-based reader and `bible_readalong_font_rem` for rem-based read-along) and automatic self-healing routines to prevent cross-view unit collisions or microscopic font rendering."
+
+do:
+  - "Default the Chapter Reader font size to 18px (`--reader-font-size: 18px;`) across `:root`, `applyPersistentFontSize()`, and head restoration scripts."
+  - "Enforce a strict bounds check (`size >= 12 && size <= 36`) when restoring `bible_font_size` from `localStorage` in `templates/base.html` and `static/js/storage.js`."
+  - "Automatically heal corrupted or legacy float/rem values (e.g. `< 12` such as `1.1` or `1.85`) by restoring the standard default `18px` in `localStorage`."
+  - "Isolate Read-Along font size state into a dedicated storage key (`bible_readalong_font_rem`) to prevent rem values from colliding with or corrupting the Chapter Reader's pixel settings."
+  - "Target font-size CSS rules specifically to verse paragraph elements (`#reader-content p`, `.verse-item p`, `.verse-text`, `.verse-text-en`, `.verse-text-ta`, `.verse-en`, `.verse-ta`) without overriding verse numbers, action buttons, or audio status pills."
+  - "Provide a one-click 'Reset' font size button that cleanly restores the default 18px size across the reader View Menu and Settings Modal."
+
+dont:
+  - "Do not share a single `localStorage` key across components using conflicting unit systems (e.g. rem in Read-Along vs px in Chapter Reader)."
+  - "Do not apply `font-size: ... !important` to generic container `span` selectors inside `.verse-item`, which would distort audio status badges, action icons, and verse number labels."
+  - "Do not allow unbounded or corrupt font sizes (e.g. `1px` or `288px`) to persist across page reloads or Supabase cloud synchronization."
+
+reason:
+  "Clear, legible scripture typography is paramount for Bible study and devotional reading. Strict key isolation and automatic self-healing ensure users always experience crisp, properly proportioned text without accidental degradation into unreadable microscopic fonts."
+
+related_items:
+  - ARCH-SYS-001
+  - PROD-AUDIO-001
