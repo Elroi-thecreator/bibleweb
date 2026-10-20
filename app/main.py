@@ -13,6 +13,9 @@ import re
 import sys
 import threading
 import time
+
+START_TIME = time.time()
+
 try:
     import brotli
     HAS_BROTLI_LIB = True
@@ -255,6 +258,37 @@ class BoundedAudioCache:
     def __len__(self) -> int:
         with self._lock:
             return len(self._cache)
+
+    def clear(self, purge_disk: bool = False) -> None:
+        """Purges memory cache and optionally clears on-disk audio segments."""
+        with self._lock:
+            self._cache.clear()
+        if purge_disk and self.cache_dir and self.cache_dir.is_dir():
+            for f in self.cache_dir.glob("*.mp3"):
+                try:
+                    f.unlink(missing_ok=True)
+                except Exception:
+                    pass
+
+    def stats(self) -> dict:
+        """Returns in-memory item count, maxsize, disk file count and disk usage in MB."""
+        disk_files = 0
+        disk_bytes = 0
+        if self.cache_dir and self.cache_dir.is_dir():
+            for f in self.cache_dir.glob("*.mp3"):
+                disk_files += 1
+                try:
+                    disk_bytes += f.stat().st_size
+                except Exception:
+                    pass
+        with self._lock:
+            mem_size = len(self._cache)
+        return {
+            "memory_items": mem_size,
+            "maxsize": self.maxsize,
+            "disk_files": disk_files,
+            "disk_size_mb": round(disk_bytes / (1024 * 1024), 2),
+        }
 
 
 
@@ -1562,3 +1596,20 @@ async def whatsapp_hub_page(request: Request):
             "page_title": "WhatsApp Bible Assistant",
         },
     )
+
+
+# ---------------------------------------------------------
+# Admin Control Center & Protected Settings Routes
+# ---------------------------------------------------------
+from app.admin import admin_router
+app.include_router(admin_router, prefix="/admin", tags=["admin"])
+
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_redirect(request: Request):
+    """
+    Redirects /settings directly to /admin/settings,
+    strictly enforcing administrator authentication.
+    """
+    return RedirectResponse(url="/admin/settings", status_code=303)
+

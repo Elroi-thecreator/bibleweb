@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Admin Login | Holy Bible Administration</title>
+    
+    <!-- PWA Manifest & Browser Meta -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#b45309">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600&family=Noto+Serif+Tamil:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['Lora', 'serif'],
+                        cinzel: ['Cinzel', 'serif'],
+                        tamil: ['"Noto Serif Tamil"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (function() {
+            try {
+                var savedTheme = localStorage.getItem('bible_app_theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch(e) {}
+        })();
+    </script>
+</head>
+<body class="bg-stone-100 text-stone-900 dark:bg-stone-950 dark:text-stone-100 min-h-screen flex flex-col justify-center items-center p-4 font-serif">
+
+    <div class="max-w-md w-full">
+        <!-- Logo and Brand Header -->
+        <div class="text-center mb-8">
+            <a href="/" class="inline-flex items-center space-x-2.5 mb-3 group">
+                <span class="w-10 h-10 rounded-2xl bg-amber-700 group-hover:bg-amber-600 text-white flex items-center justify-center font-cinzel font-bold text-lg shadow-md transition">†</span>
+                <div class="text-left">
+                    <span class="font-cinzel tracking-wider text-xl font-bold block leading-none text-stone-900 dark:text-stone-100">THE BIBLE</span>
+                    <span class="font-tamil text-xs text-amber-800 dark:text-amber-400 leading-none">நிர்வாக முகப்பு</span>
+                </div>
+            </a>
+            <h1 class="text-2xl font-cinzel font-bold text-stone-900 dark:text-stone-100 mt-2">Admin Control Center</h1>
+            <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">System Settings & Configuration Authentication</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-white dark:bg-stone-900 rounded-3xl shadow-xl border border-stone-200 dark:border-stone-800 p-7 sm:p-8">
+
+            {% if error %}
+            <div class="mb-5 p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-2xl flex items-center gap-3 text-rose-800 dark:text-rose-300 text-xs">
+                <span class="text-base shrink-0">⚠️</span>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            {% if info %}
+            <div class="mb-5 p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 rounded-2xl flex items-center gap-3 text-emerald-800 dark:text-emerald-300 text-xs">
+                <span class="text-base shrink-0">ℹ️</span>
+                <span>{{ info }}</span>
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/admin/login" class="space-y-4">
+                <input type="hidden" name="next" value="{{ next_url or '/admin/settings' }}">
+
+                <div>
+                    <label for="username" class="block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1.5">
+                        Admin Username
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="username" name="username" value="{{ username or 'admin' }}" required autocomplete="username"
+                               class="w-full px-4 py-2.5 text-sm bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                        <span class="absolute right-3.5 top-2.5 text-stone-400 text-sm">👤</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400">
+                            Password
+                        </label>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="password" name="password" required autocomplete="current-password" autofocus
+                               placeholder="Enter admin password..."
+                               class="w-full px-4 py-2.5 text-sm bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-2 focus:ring-amber-600 focus:outline-none transition pr-10">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-2.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 cursor-pointer">
+                            <span id="eye-icon" class="text-sm">👁️</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" 
+                            class="w-full py-3 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-sm transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+                        <span>🔐</span>
+                        <span>Sign In to Admin Panel</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6 pt-5 border-t border-stone-100 dark:border-stone-800 text-center">
+                <p class="text-[11px] text-stone-400 dark:text-stone-500">
+                    Protected administrative endpoint. Authorized access only.<br>
+                    Credentials configured via <code class="font-mono bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded text-[10px]">ADMIN_PASSWORD</code>.
+                </p>
+            </div>
+        </div>
+
+        <!-- Back to Website -->
+        <div class="text-center mt-6">
+            <a href="/" class="text-xs text-stone-500 hover:text-amber-700 dark:hover:text-amber-400 transition inline-flex items-center gap-1.5">
+                <span>←</span>
+                <span>Return to Scripture Reader</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.textContent = '🙈';
+            } else {
+                passInput.type = 'password';
+                eyeIcon.textContent = '👁️';
+            }
+        }
+    </script>
+</body>
+</html>

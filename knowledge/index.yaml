@@ -1,7 +1,7 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/bible"
-knowledge_units_count: 17
+knowledge_units_count: 18
 last_updated: "2026-10-20"
 
 knowledge_units:
@@ -18,6 +18,9 @@ knowledge_units:
     - id: ARCH-WA-001
       file: "knowledge/architecture/ARCH-WA-001.yaml"
       title: "Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture"
+    - id: ARCH-ADMIN-001
+      file: "knowledge/architecture/ARCH-ADMIN-001.yaml"
+      title: "Administrator Authentication, Protected Settings & System Telemetry Architecture"
 
   development:
     - id: DEV-PY-001

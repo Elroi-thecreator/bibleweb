@@ -1,0 +1,303 @@
+"""
+Admin Routes and System Management API.
+Provides endpoints for the Admin Login, Settings/Configuration Dashboard,
+Cache Purging, WhatsApp Mode Switching, and Devotional Broadcast Control.
+"""
+
+import asyncio
+import os
+import platform
+import time
+from typing import Optional
+from urllib.parse import parse_qs
+from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+from app.admin.auth import (
+    COOKIE_NAME,
+    authenticate_credentials,
+    create_session_token,
+    get_authenticated_admin,
+    require_admin,
+)
+from whatsapp_gateway.config import config as wa_config
+from whatsapp_gateway.routes.webhook import get_client
+from whatsapp_gateway.subscribers import get_active_subscribers, get_subscriber_count
+from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
+from app.db import DB_PATH, SONGS_DB_PATH
+
+router = APIRouter()
+
+
+def _get_app_context():
+    """Lazily retrieve main application caches and runtime references to avoid circular imports."""
+    from app.main import AUDIO_CACHE, HTML_PAGE_CACHE, START_TIME, templates
+    return HTML_PAGE_CACHE, AUDIO_CACHE, START_TIME, templates
+
+
+def _format_uptime(seconds: float) -> str:
+    """Formats seconds into human-readable duration string."""
+    mins, sec = divmod(int(seconds), 60)
+    hrs, mins = divmod(mins, 60)
+    days, hrs = divmod(hrs, 24)
+    if days > 0:
+        return f"{days}d {hrs}h {mins}m"
+    if hrs > 0:
+        return f"{hrs}h {mins}m {sec}s"
+    return f"{mins}m {sec}s"
+
+
+@router.get("", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
+async def admin_root(request: Request):
+    """Admin root redirects directly to /admin/settings."""
+    return RedirectResponse(url="/admin/settings", status_code=303)
+
+
+@router.get("/login", response_class=HTMLResponse)
+async def admin_login_page(request: Request, next: Optional[str] = "/admin/settings", msg: Optional[str] = None):
+    """Renders the Administrator Login page."""
+    user = get_authenticated_admin(request)
+    if user:
+        return RedirectResponse(url=next or "/admin/settings", status_code=303)
+
+    _, _, _, templates = _get_app_context()
+    info_msg = None
+    if msg == "logged_out":
+        info_msg = "You have been safely signed out."
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/login.html",
+        context={
+            "next_url": next,
+            "info": info_msg,
+            "error": None,
+            "username": os.getenv("ADMIN_USERNAME", "admin"),
+        },
+    )
+
+
+async def _parse_form_data(request: Request) -> dict:
+    """Parses URL-encoded or multipart form body without forcing python-multipart dependency."""
+    try:
+        body = await request.body()
+        parsed = parse_qs(body.decode("utf-8", errors="replace"))
+        return {k: v[0] if v else "" for k, v in parsed.items()}
+    except Exception:
+        return {}
+
+
+@router.post("/login", response_class=HTMLResponse)
+async def admin_login_submit(request: Request):
+    """Processes admin credentials, issues an HMAC session cookie, and redirects."""
+    _, _, _, templates = _get_app_context()
+    form_data = await _parse_form_data(request)
+    username = form_data.get("username", "")
+    password = form_data.get("password", "")
+    next_url = form_data.get("next", "/admin/settings")
+
+    if authenticate_credentials(username, password):
+        token = create_session_token(username.strip())
+        target_url = next_url if (next_url and next_url.startswith("/admin")) else "/admin/settings"
+        response = RedirectResponse(url=target_url, status_code=303)
+        response.set_cookie(
+            key=COOKIE_NAME,
+            value=token,
+            max_age=7 * 24 * 60 * 60,
+            httponly=True,
+            samesite="lax",
+            path="/",
+        )
+        return response
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/login.html",
+        context={
+            "next_url": next_url,
+            "error": "Invalid admin username or password. Please try again.",
+            "username": username,
+        },
+        status_code=401,
+    )
+
+
+@router.get("/logout")
+@router.post("/logout")
+async def admin_logout(request: Request):
+    """Clears the admin session cookie and redirects to login."""
+    response = RedirectResponse(url="/admin/login?msg=logged_out", status_code=303)
+    response.delete_cookie(key=COOKIE_NAME, path="/")
+    return response
+
+
+@router.get("/settings", response_class=HTMLResponse)
+async def admin_settings_page(request: Request):
+    """Main Administrator Configuration & System Telemetry Dashboard."""
+    # Enforce admin authentication
+    user = get_authenticated_admin(request)
+    if not user:
+        return RedirectResponse(url=f"/admin/login?next={request.url.path}", status_code=303)
+
+    html_cache, audio_cache, start_time, templates = _get_app_context()
+    wa_client = get_client()
+
+    # 1. System Telemetry & Process Info
+    uptime_sec = time.time() - start_time
+    uptime_str = _format_uptime(uptime_sec)
+
+    try:
+        import psutil
+        proc = psutil.Process()
+        mem_rss_mb = round(proc.memory_info().rss / (1024 * 1024), 1)
+        mem_pct = round(psutil.virtual_memory().percent, 1)
+    except Exception:
+        mem_rss_mb = 0.0
+        mem_pct = 0.0
+
+    sys_info = {
+        "os_name": platform.system(),
+        "platform": platform.platform(),
+        "python_version": platform.python_version(),
+        "pid": os.getpid(),
+        "is_render": bool(os.getenv("RENDER")),
+    }
+
+    # 2. Cache Statistics
+    cache_stats = html_cache.stats()
+    audio_stats = audio_cache.stats()
+
+    # 3. WhatsApp Gateway Status & Active Subscribers
+    wa_simulation = wa_client.simulation_mode
+    subscribers = await get_active_subscribers()
+    subscribers_count = len(subscribers)
+
+    # 4. Embedded SQLite Database Telemetry
+    def _get_db_telemetry():
+        bible_mb = round(os.path.getsize(DB_PATH) / (1024 * 1024), 2) if os.path.exists(DB_PATH) else 0.0
+        songs_mb = round(os.path.getsize(SONGS_DB_PATH) / (1024 * 1024), 2) if os.path.exists(SONGS_DB_PATH) else 0.0
+
+        sub_db_path = os.path.join(os.path.dirname(DB_PATH), "whatsapp_subscribers.sqlite.db")
+        sub_kb = round(os.path.getsize(sub_db_path) / 1024, 1) if os.path.exists(sub_db_path) else 0.0
+
+        return {
+            "bible_path": DB_PATH,
+            "bible_size_mb": bible_mb,
+            "bible_verses_count": "31,102",
+            "songs_path": SONGS_DB_PATH,
+            "songs_size_mb": songs_mb,
+            "songs_count": "2,300+",
+            "song_books_count": 13,
+            "subscribers_path": sub_db_path,
+            "subscribers_size_kb": sub_kb,
+        }
+
+    db_stats = await asyncio.to_thread(_get_db_telemetry)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/settings.html",
+        context={
+            "username": user,
+            "uptime_formatted": uptime_str,
+            "memory_rss_mb": mem_rss_mb,
+            "memory_percent": mem_pct,
+            "sys_info": sys_info,
+            "cache_stats": cache_stats,
+            "audio_stats": audio_stats,
+            "wa_config": wa_config,
+            "wa_simulation": wa_simulation,
+            "wa_subscribers": subscribers,
+            "wa_subscribers_count": subscribers_count,
+            "db_stats": db_stats,
+        },
+    )
+
+
+# =====================================================================
+# Administrative Action APIs (Protected by require_admin)
+# =====================================================================
+
+@router.post("/api/cache/clear-html")
+async def api_clear_html_cache(request: Request):
+    """Purges the in-memory pre-rendered HTML page cache."""
+    require_admin(request)
+    html_cache, _, _, _ = _get_app_context()
+    prev_size = html_cache.size()
+    html_cache.clear()
+    return {"status": "ok", "message": f"HTML Page Cache cleared ({prev_size} pages evicted)."}
+
+
+@router.post("/api/cache/clear-audio")
+async def api_clear_audio_cache(request: Request):
+    """Purges the in-memory and disk persistent Text-to-Speech audio cache."""
+    require_admin(request)
+    _, audio_cache, _, _ = _get_app_context()
+    audio_cache.clear(purge_disk=True)
+    return {"status": "ok", "message": "Text-to-Speech audio cache (memory & disk) cleared."}
+
+
+@router.post("/api/whatsapp/toggle-simulation")
+async def api_toggle_wa_simulation(request: Request):
+    """Toggles WhatsApp gateway between Live Gateway Mode and Simulation Mode."""
+    require_admin(request)
+    wa_client = get_client()
+    new_mode = not wa_client.simulation_mode
+    wa_client.simulation_mode = new_mode
+    return {
+        "status": "ok",
+        "simulation_mode": new_mode,
+        "message": f"WhatsApp Gateway switched to {'Simulation Mode' if new_mode else 'Live Gateway Mode'}.",
+    }
+
+
+@router.post("/api/whatsapp/broadcast-devotional")
+async def api_broadcast_devotional(request: Request):
+    """Manually dispatches the daily devotional broadcast to all active subscribers."""
+    require_admin(request)
+    result = await push_daily_devotional()
+    return {
+        "status": "ok",
+        "delivered": result.get("delivered", 0),
+        "total": result.get("total", 0),
+        "message": f"Successfully delivered daily devotional to {result.get('delivered', 0)} of {result.get('total', 0)} subscribers.",
+    }
+
+
+@router.post("/api/whatsapp/ping-gateway")
+async def api_ping_wa_gateway(request: Request):
+    """Tests HTTP reachability and latency of the configured WA-AKG gateway."""
+    require_admin(request)
+    wa_client = get_client()
+    if wa_client.simulation_mode:
+        return {
+            "status": "simulation",
+            "message": "Gateway ping simulated (Simulation Mode is currently active).",
+            "latency_ms": 0,
+        }
+
+    target_url = f"{wa_config.gateway_url.rstrip('/')}/status"
+    t0 = time.time()
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            headers = {}
+            if wa_config.api_key:
+                headers["Authorization"] = f"Bearer {wa_config.api_key}"
+            resp = await client.get(target_url, headers=headers)
+            latency = round((time.time() - t0) * 1000, 1)
+            return {
+                "status": "ok" if resp.is_success else "warning",
+                "http_status": resp.status_code,
+                "latency_ms": latency,
+                "message": f"Gateway reached with HTTP {resp.status_code}",
+            }
+    except Exception as e:
+        latency = round((time.time() - t0) * 1000, 1)
+        return {
+            "status": "error",
+            "latency_ms": latency,
+            "message": f"Connection failed: {str(e)}",
+        }

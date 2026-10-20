@@ -26,7 +26,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 # Ensure repository root is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.main import app
+from app.main import app, HAS_BROTLI_LIB
 
 async def asgi_request(path: str, query_string: str = "", headers: list = None):
     scope = {
@@ -116,7 +116,8 @@ async def test_robustness():
     )
     assert status_br == 200
     assert headers_br.get("x-page-cache") == "HIT", f"Expected cache HIT, got {headers_br.get('x-page-cache')}"
-    assert headers_br.get("content-encoding") == "br", f"Expected br encoding, got {headers_br.get('content-encoding')}"
+    expected_enc = "br" if HAS_BROTLI_LIB else "gzip"
+    assert headers_br.get("content-encoding") == expected_enc, f"Expected {expected_enc} encoding, got {headers_br.get('content-encoding')}"
     assert len(body_br) > 0 and len(body_br) < 50000
 
     status_gz, headers_gz, body_gz = await asgi_request(

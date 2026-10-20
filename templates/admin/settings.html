@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Admin Settings & System Configuration | Holy Bible</title>
+
+    <!-- PWA Manifest & Browser Meta -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#b45309">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600&family=Noto+Serif+Tamil:wght@400;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['Lora', 'serif'],
+                        cinzel: ['Cinzel', 'serif'],
+                        tamil: ['"Noto Serif Tamil"', 'serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        (function() {
+            try {
+                var savedTheme = localStorage.getItem('bible_app_theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch(e) {}
+        })();
+    </script>
+</head>
+<body class="bg-stone-100 text-stone-900 dark:bg-stone-950 dark:text-stone-100 min-h-screen flex flex-col font-serif">
+
+    <!-- Top Admin Header -->
+    <header class="sticky top-0 z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 transition">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+            <!-- Brand & Breadcrumb -->
+            <div class="flex items-center space-x-3">
+                <a href="/" class="flex items-center space-x-2 shrink-0 group">
+                    <span class="w-8 h-8 rounded-xl bg-amber-700 group-hover:bg-amber-600 text-white flex items-center justify-center font-cinzel font-bold text-sm shadow-xs transition">†</span>
+                    <span class="font-cinzel tracking-wider text-base font-bold text-stone-900 dark:text-stone-100">THE BIBLE</span>
+                </a>
+                <span class="text-stone-300 dark:text-stone-700">/</span>
+                <span class="px-2.5 py-1 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-xs font-semibold tracking-wide">
+                    ADMIN SETTINGS
+                </span>
+            </div>
+
+            <!-- Admin Actions -->
+            <div class="flex items-center space-x-2 sm:space-x-3 text-xs">
+                <a href="/whatsapp" class="px-3 py-1.5 rounded-xl border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-600 dark:text-stone-300 transition flex items-center gap-1.5 font-medium">
+                    <span>💬</span> <span class="hidden sm:inline">WhatsApp Hub</span>
+                </a>
+                <a href="/" class="px-3 py-1.5 rounded-xl border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-600 dark:text-stone-300 transition flex items-center gap-1.5 font-medium">
+                    <span>📖</span> <span class="hidden sm:inline">Reader</span>
+                </a>
+                <div class="h-5 w-px bg-stone-200 dark:bg-stone-800"></div>
+                <span class="hidden md:inline text-stone-500 text-xs">User: <strong class="text-stone-700 dark:text-stone-300">{{ username }}</strong></span>
+                <a href="/admin/logout" class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 font-semibold transition flex items-center gap-1">
+                    <span>🚪</span> <span>Sign Out</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+
+        <!-- Toast Notification Container -->
+        <div id="toast" class="hidden fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl text-xs font-semibold flex items-center gap-2 transition-all transform duration-200"></div>
+
+        <!-- Hero Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-stone-200 dark:border-stone-800">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-cinzel font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+                    <span>⚙️</span> System Settings & Controls
+                </h1>
+                <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1">
+                    Live telemetry, database health, in-memory cache purge, WhatsApp bot routing, and environment parameters.
+                </p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="location.reload()" class="px-3 py-2 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
+                    <span>🔄</span> Refresh Status
+                </button>
+            </div>
+        </div>
+
+        <!-- 4 Quick Telemetry Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Metric 1: System Health -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-4 sm:p-5 border border-stone-200 dark:border-stone-800 shadow-xs">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">Service Status</span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                </div>
+                <div class="text-lg sm:text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">ONLINE</div>
+                <div class="text-[11px] text-stone-400 mt-1">Uptime: <span class="font-medium text-stone-600 dark:text-stone-300">{{ uptime_formatted }}</span></div>
+            </div>
+
+            <!-- Metric 2: Memory Usage -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-4 sm:p-5 border border-stone-200 dark:border-stone-800 shadow-xs">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">Process Memory</span>
+                    <span class="text-xs">🧠</span>
+                </div>
+                <div class="text-lg sm:text-xl font-bold font-mono text-stone-900 dark:text-stone-100">{{ memory_rss_mb }} MB</div>
+                <div class="text-[11px] text-stone-400 mt-1">System RAM: <span class="font-medium text-stone-600 dark:text-stone-300">{{ memory_percent }}%</span></div>
+            </div>
+
+            <!-- Metric 3: Page Cache Hit Rate -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-4 sm:p-5 border border-stone-200 dark:border-stone-800 shadow-xs">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">HTML Cache Ratio</span>
+                    <span class="text-xs">⚡</span>
+                </div>
+                <div class="text-lg sm:text-xl font-bold font-mono text-amber-600 dark:text-amber-400">{{ cache_stats.hit_ratio_pct }}%</div>
+                <div class="text-[11px] text-stone-400 mt-1">{{ cache_stats.size }} / {{ cache_stats.maxsize }} pages cached</div>
+            </div>
+
+            <!-- Metric 4: WhatsApp Engine -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-4 sm:p-5 border border-stone-200 dark:border-stone-800 shadow-xs">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">WhatsApp Engine</span>
+                    <span class="text-xs">💬</span>
+                </div>
+                <div class="text-lg sm:text-xl font-bold font-mono {% if wa_simulation %}text-purple-600 dark:text-purple-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+                    {% if wa_simulation %}SIMULATION{% else %}LIVE GATEWAY{% endif %}
+                </div>
+                <div class="text-[11px] text-stone-400 mt-1">Subscribers: <span class="font-medium text-stone-600 dark:text-stone-300">{{ wa_subscribers_count }} active</span></div>
+            </div>
+        </div>
+
+        <!-- 2-Column Responsive Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Card: In-Memory & Disk Cache Controls -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">⚡</span>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Performance & Cache Control</h2>
+                    </div>
+                    <span class="text-[10px] uppercase font-bold text-stone-400 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded">High Throughput</span>
+                </div>
+
+                <p class="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                    Pre-rendered HTML pages are cached in memory with Brotli & Gzip compression. Text-to-speech audio segments are cached in memory and persisted to disk.
+                </p>
+
+                <!-- HTML Page Cache Sub-section -->
+                <div class="p-4 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-800 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold uppercase tracking-wide text-stone-700 dark:text-stone-300">HTML Page Cache (BoundedHTMLCache)</span>
+                        <span class="text-xs font-mono font-bold text-amber-600">{{ cache_stats.size }} / {{ cache_stats.maxsize }}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div class="bg-white dark:bg-stone-800 p-2 rounded-lg border border-stone-200 dark:border-stone-700">
+                            <div class="text-[10px] text-stone-400">Hits</div>
+                            <div class="font-mono font-bold text-emerald-600">{{ cache_stats.hits }}</div>
+                        </div>
+                        <div class="bg-white dark:bg-stone-800 p-2 rounded-lg border border-stone-200 dark:border-stone-700">
+                            <div class="text-[10px] text-stone-400">Misses</div>
+                            <div class="font-mono font-bold text-rose-500">{{ cache_stats.misses }}</div>
+                        </div>
+                        <div class="bg-white dark:bg-stone-800 p-2 rounded-lg border border-stone-200 dark:border-stone-700">
+                            <div class="text-[10px] text-stone-400">Hit Ratio</div>
+                            <div class="font-mono font-bold text-stone-800 dark:text-stone-200">{{ cache_stats.hit_ratio_pct }}%</div>
+                        </div>
+                    </div>
+                    <button onclick="purgeHtmlCache()" 
+                            class="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                        <span>🗑️</span> Purge HTML Cache
+                    </button>
+                </div>
+
+                <!-- Audio TTS Cache Sub-section -->
+                <div class="p-4 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-800 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold uppercase tracking-wide text-stone-700 dark:text-stone-300">TTS Audio Cache (BoundedAudioCache)</span>
+                        <span class="text-xs font-mono font-bold text-amber-600">{{ audio_stats.memory_items }} in-mem</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                        <div class="bg-white dark:bg-stone-800 p-2 rounded-lg border border-stone-200 dark:border-stone-700">
+                            <div class="text-[10px] text-stone-400">Disk Cached Files</div>
+                            <div class="font-mono font-bold text-stone-800 dark:text-stone-200">{{ audio_stats.disk_files }} files</div>
+                        </div>
+                        <div class="bg-white dark:bg-stone-800 p-2 rounded-lg border border-stone-200 dark:border-stone-700">
+                            <div class="text-[10px] text-stone-400">Disk Cache Size</div>
+                            <div class="font-mono font-bold text-stone-800 dark:text-stone-200">{{ audio_stats.disk_size_mb }} MB</div>
+                        </div>
+                    </div>
+                    <button onclick="purgeAudioCache()" 
+                            class="w-full py-2 px-3 bg-stone-700 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                        <span>🎧</span> Purge Audio TTS Cache (Memory & Disk)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card: WhatsApp Gateway & Bot Management -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">💬</span>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">WhatsApp Gateway & Bot</h2>
+                    </div>
+                    <span id="wa-mode-badge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {% if wa_simulation %}bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300{% else %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300{% endif %}">
+                        {% if wa_simulation %}Simulation Mode{% else %}Live Gateway{% endif %}
+                    </span>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800">
+                        <span class="text-stone-500">Gateway URL (WA_GATEWAY_URL):</span>
+                        <span class="font-mono font-medium text-stone-800 dark:text-stone-200">{{ wa_config.gateway_url }}</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800">
+                        <span class="text-stone-500">Session ID (WA_SESSION_ID):</span>
+                        <span class="font-mono font-medium text-stone-800 dark:text-stone-200">{{ wa_config.session_id }}</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800">
+                        <span class="text-stone-500">Webhook Receiver URL:</span>
+                        <span class="font-mono text-[11px] text-amber-600">/api/whatsapp/webhook</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-stone-100 dark:border-stone-800">
+                        <span class="text-stone-500">Active Daily Subscribers:</span>
+                        <span class="font-mono font-bold text-emerald-600">{{ wa_subscribers_count }} enrolled</span>
+                    </div>
+                </div>
+
+                <!-- Admin WhatsApp Controls -->
+                <div class="pt-2 space-y-2">
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <button onclick="toggleWaSimulation()" id="wa-toggle-btn"
+                                class="flex-1 py-2 px-3 {% if wa_simulation %}bg-purple-600 hover:bg-purple-700{% else %}bg-emerald-600 hover:bg-emerald-700{% endif %} text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                            <span>🔄</span>
+                            <span id="wa-toggle-label">{% if wa_simulation %}Switch to Live Gateway{% else %}Switch to Simulation{% endif %}</span>
+                        </button>
+                        <button onclick="pingWaGateway()"
+                                class="py-2 px-3 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                            <span>📡</span> Ping Gateway
+                        </button>
+                    </div>
+
+                    <button onclick="triggerDevotionalPush()" 
+                            class="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                        <span>📢</span> Trigger Daily Devotional Broadcast Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card: Dual Embedded SQLite Databases -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">🗄️</span>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Embedded SQLite Databases</h2>
+                    </div>
+                    <span class="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded">All Healthy</span>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <!-- Bible Database -->
+                    <div class="p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-stone-800 dark:text-stone-200">📖 Scripture DB (bible.sqlite.db)</span>
+                            <span class="font-mono text-[11px] text-stone-500">{{ db_stats.bible_size_mb }} MB</span>
+                        </div>
+                        <p class="font-mono text-[10px] text-stone-400 truncate mb-1.5">{{ db_stats.bible_path }}</p>
+                        <div class="flex gap-4 text-[11px] text-stone-600 dark:text-stone-300">
+                            <span>Protestant: <strong>66 books</strong></span>
+                            <span>Catholic: <strong>73 books</strong></span>
+                            <span>Total Verses: <strong>{{ db_stats.bible_verses_count }}</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Songs Database -->
+                    <div class="p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-stone-800 dark:text-stone-200">🎵 Songs DB (songs.sqlite.db)</span>
+                            <span class="font-mono text-[11px] text-stone-500">{{ db_stats.songs_size_mb }} MB</span>
+                        </div>
+                        <p class="font-mono text-[10px] text-stone-400 truncate mb-1.5">{{ db_stats.songs_path }}</p>
+                        <div class="flex gap-4 text-[11px] text-stone-600 dark:text-stone-300">
+                            <span>Songbooks: <strong>{{ db_stats.song_books_count }}</strong></span>
+                            <span>Indexed Songs: <strong>{{ db_stats.songs_count }}</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Subscribers Database -->
+                    <div class="p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-stone-800 dark:text-stone-200">📱 Subscribers DB (whatsapp_subscribers.sqlite.db)</span>
+                            <span class="font-mono text-[11px] text-stone-500">{{ db_stats.subscribers_size_kb }} KB</span>
+                        </div>
+                        <p class="font-mono text-[10px] text-stone-400 truncate mb-1.5">{{ db_stats.subscribers_path }}</p>
+                        <div class="flex gap-4 text-[11px] text-stone-600 dark:text-stone-300">
+                            <span>Subscribers Table: <strong>Ready</strong></span>
+                            <span>Active Count: <strong>{{ wa_subscribers_count }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card: System Runtime & Environment -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">🖥️</span>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Server & Environment</h2>
+                    </div>
+                    <span class="text-[10px] uppercase font-bold text-stone-400 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded">Python {{ sys_info.python_version }}</span>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between py-1.5 border-b border-stone-100 dark:border-stone-800">
+                        <span class="text-stone-500">Operating System:</span>
+                        <span class="font-mono font-medium text-stone-800 dark:text-stone-200">{{ sys_info.os_name }} ({{ sys_info.platform }})</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-stone-100 dark:border-stone-800">
+                        <span class="text-stone-500">Process ID (PID):</span>
+                        <span class="font-mono font-medium text-stone-800 dark:text-stone-200">{{ sys_info.pid }}</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-stone-100 dark:border-stone-800">
+                        <span class="text-stone-500">Deployment Target:</span>
+                        <span class="font-mono font-medium {% if sys_info.is_render %}text-emerald-600{% else %}text-stone-700 dark:text-stone-300{% endif %}">
+                            {% if sys_info.is_render %}Render.com Web Service{% else %}Local / Standalone Server{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-stone-100 dark:border-stone-800">
+                        <span class="text-stone-500">Edge-TTS Neural Voices:</span>
+                        <span class="font-mono font-medium text-emerald-600">Available (Deep Bass -8Hz)</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-stone-100 dark:border-stone-800">
+                        <span class="text-stone-500">gTTS Fallback Engine:</span>
+                        <span class="font-mono font-medium text-emerald-600">Active</span>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-900/60 text-[11px] text-amber-900 dark:text-amber-300 space-y-1">
+                    <div class="font-bold flex items-center gap-1">
+                        <span>🔒</span> Security & Credentials Reference
+                    </div>
+                    <p class="leading-relaxed">
+                        To change the administrator password or configure a live WhatsApp gateway, add or update environment variables in your Render Dashboard:
+                        <code class="font-mono bg-white dark:bg-stone-900 px-1 py-0.5 rounded text-[10px]">ADMIN_PASSWORD</code>, 
+                        <code class="font-mono bg-white dark:bg-stone-900 px-1 py-0.5 rounded text-[10px]">WA_SIMULATION_MODE</code>, 
+                        <code class="font-mono bg-white dark:bg-stone-900 px-1 py-0.5 rounded text-[10px]">WA_GATEWAY_URL</code>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent WhatsApp Subscribers Management Table -->
+        <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">📋</span>
+                    <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Daily Devotional Subscribers</h2>
+                </div>
+                <span class="text-xs text-stone-500">Total: <strong>{{ wa_subscribers|length }}</strong> enrolled</span>
+            </div>
+
+            {% if wa_subscribers and wa_subscribers|length > 0 %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-stone-200 dark:border-stone-800 text-stone-400 uppercase text-[10px]">
+                            <th class="py-2.5 px-3">Recipient Phone</th>
+                            <th class="py-2.5 px-3">Name</th>
+                            <th class="py-2.5 px-3">Language</th>
+                            <th class="py-2.5 px-3">Plan ID</th>
+                            <th class="py-2.5 px-3">Enrolled At</th>
+                            <th class="py-2.5 px-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-stone-100 dark:divide-stone-800/60 font-mono">
+                        {% for sub in wa_subscribers %}
+                        <tr class="hover:bg-stone-50 dark:hover:bg-stone-800/40 transition">
+                            <td class="py-2.5 px-3 font-semibold text-stone-800 dark:text-stone-200">{{ sub.phone }}</td>
+                            <td class="py-2.5 px-3 text-stone-600 dark:text-stone-400 font-serif">{{ sub.name or 'Friend' }}</td>
+                            <td class="py-2.5 px-3 uppercase text-[11px]">{{ sub.language }}</td>
+                            <td class="py-2.5 px-3 text-stone-500">{{ sub.plan_id }}</td>
+                            <td class="py-2.5 px-3 text-stone-400 text-[11px]">{{ sub.created_at or 'Recently' }}</td>
+                            <td class="py-2.5 px-3">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Active</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-stone-400 text-xs space-y-2">
+                <span class="text-3xl block">📭</span>
+                <p>No active WhatsApp subscribers registered yet.</p>
+                <p class="text-[11px] text-stone-500">Users can subscribe by sending <code class="font-mono bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded">subscribe</code> to the bot or simulator.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+    <!-- AJAX Management Script -->
+    <script>
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-xs font-semibold flex items-center gap-2 transition-all transform duration-200 ' + 
+                (isError ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white');
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3500);
+        }
+
+        async function purgeHtmlCache() {
+            try {
+                const res = await fetch('/admin/api/cache/clear-html', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to clear cache'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error while clearing HTML cache', true);
+            }
+        }
+
+        async function purgeAudioCache() {
+            try {
+                const res = await fetch('/admin/api/cache/clear-audio', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to clear audio cache'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error while clearing audio cache', true);
+            }
+        }
+
+        async function toggleWaSimulation() {
+            try {
+                const res = await fetch('/admin/api/whatsapp/toggle-simulation', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ WhatsApp Mode updated: ' + (data.simulation_mode ? 'Simulation Mode' : 'Live Gateway'));
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to toggle mode'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error toggling WhatsApp mode', true);
+            }
+        }
+
+        async function pingWaGateway() {
+            showToast('📡 Pinging WhatsApp Gateway...');
+            try {
+                const res = await fetch('/admin/api/whatsapp/ping-gateway', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok && data.status === 'ok') {
+                    showToast('✅ Gateway Responded (' + data.latency_ms + 'ms): ' + data.message);
+                } else {
+                    showToast('⚠️ Gateway Warning: ' + (data.message || 'Unavailable in simulation mode'), true);
+                }
+            } catch (err) {
+                showToast('❌ Gateway connection error', true);
+            }
+        }
+
+        async function triggerDevotionalPush() {
+            if (!confirm('Are you sure you want to trigger the daily devotional broadcast to all subscribers right now?')) {
+                return;
+            }
+            showToast('📢 Dispatching daily devotionals...');
+            try {
+                const res = await fetch('/admin/api/whatsapp/broadcast-devotional', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('🎉 ' + data.message);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to broadcast'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error sending devotionals', true);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+id: ARCH-ADMIN-001
+type: architecture_standard
+title: Administrator Authentication, Protected Settings & System Telemetry Architecture
+domain: architecture
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: security_architecture
+
+applies_to:
+  - backend
+  - admin
+  - security
+  - routes
+  - templates
+
+rule:
+  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, and all administrative management APIs (`/admin/api/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons to prevent timing attacks."
+
+do:
+  - "Mount all administrative routes under `/admin` with route-level security guards (`require_admin`)."
+  - "Redirect public `/settings` to `/admin/settings` to ensure configuration controls are accessible exclusively to authorized administrators."
+  - "Authenticate administrator credentials (`ADMIN_USERNAME`, `ADMIN_PASSWORD`) using `secrets.compare_digest` to eliminate timing attack vulnerabilities."
+  - "Sign session tokens with HMAC-SHA256 (`base64(username:timestamp:hmac_signature)`) using `ADMIN_SECRET_KEY` or a cryptographically stable machine seed."
+  - "Store admin session tokens in secure `HttpOnly`, `SameSite=Lax` cookies named `bible_admin_session` with a 7-day expiration (604,800s)."
+  - "Provide diagnostic telemetry on `/admin/settings`: server uptime, CPU/memory usage via `psutil`, database health for dual SQLite databases (`bible.sqlite.db`, `songs.sqlite.db`, `whatsapp_subscribers.sqlite.db`), and cache metrics."
+  - "Provide instant administrative actions: Purge HTML Cache (`BoundedHTMLCache`), Purge Audio TTS Cache (`BoundedAudioCache`), Toggle WhatsApp Simulation Mode, Ping External Gateway, and Manually Trigger Daily Devotional Broadcasts."
+  - "Provide clean session termination via `/admin/logout`, properly clearing the session cookie and redirecting to the login portal."
+
+dont:
+  - "Do not expose administrative configuration, cache eviction, or broadcast triggers without authentication."
+  - "Do not use standard string comparison (`==`) for password validation; always use `secrets.compare_digest`."
+  - "Do not store plaintext passwords or unsigned tokens in client cookies or LocalStorage."
+  - "Do not return raw 500 error stack traces on failed administrative actions; return structured JSON payloads."
+
+reason:
+  "Restricting administrative capabilities and system configuration behind cryptographic HMAC session tokens and timing-safe authentication protects system resources, prevents unauthorized broadcast spamming or cache manipulation, and provides administrators with a centralized control dashboard."
+
+related_items:
+  - ARCH-SYS-001
+  - ARCH-WA-001
+  - DEV-PY-001
