@@ -196,6 +196,19 @@ async def get_gateway_status() -> Dict[str, Any]:
     }
 
 
+@router.post("/toggle-simulation")
+async def toggle_simulation_mode() -> Dict[str, Any]:
+    """
+    Toggles between Simulation Mode and Live WA-AKG Gateway mode.
+    """
+    _client.simulation_mode = not _client.simulation_mode
+    return {
+        "simulation_mode": _client.simulation_mode,
+        "mode_label": "Simulation (Mock Active)" if _client.simulation_mode else "Live Gateway",
+    }
+
+
+
 @router.post("/push-devotional")
 async def trigger_push_devotional() -> Dict[str, Any]:
     """
