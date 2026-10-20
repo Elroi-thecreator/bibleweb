@@ -15,6 +15,8 @@ class BibleContinuousAudio {
         this.verseStatuses = new Map();    // index -> 'idle' | 'downloading' | 'downloaded' | 'playing' | 'error'
 
         this.prefetchRetryLimit = 3;
+        this.transitionTimeout = null;
+        this.isPausedDuringGap = false;
         this.currentIndex = 0;
         this.verses = [];
         this.lang = 'ta';
@@ -35,8 +37,24 @@ class BibleContinuousAudio {
                 if (this.verseAudioBlobs.has(this.getVerseCacheKey(this.currentIndex))) {
                     this.updateVerseStatusUI(this.currentIndex, 'downloaded');
                 }
-                this.currentIndex++;
-                this.playCurrent();
+
+                // Give 1 sec gap between each verse for solemn scripture meditation
+                if (this.currentIndex < this.verses.length - 1) {
+                    if (this.transitionTimeout) {
+                        clearTimeout(this.transitionTimeout);
+                    }
+                    this.transitionTimeout = setTimeout(() => {
+                        this.transitionTimeout = null;
+                        this.isPausedDuringGap = false;
+                        if (this.isPlaying && !this.isPaused) {
+                            this.currentIndex++;
+                            this.playCurrent();
+                        }
+                    }, 1000);
+                } else {
+                    this.currentIndex++;
+                    this.playCurrent();
+                }
             }
         });
 
@@ -356,6 +374,12 @@ class BibleContinuousAudio {
             }
         }
 
+        if (this.transitionTimeout) {
+            clearTimeout(this.transitionTimeout);
+            this.transitionTimeout = null;
+        }
+        this.isPausedDuringGap = false;
+
         this.isPlaying = true;
         this.isPaused = false;
         this.currentIndex = fromIndex;
@@ -520,6 +544,11 @@ class BibleContinuousAudio {
     }
 
     pause() {
+        if (this.transitionTimeout) {
+            clearTimeout(this.transitionTimeout);
+            this.transitionTimeout = null;
+            this.isPausedDuringGap = true;
+        }
         if (this.isPlaying && !this.isPaused) {
             this.audio.pause();
             this.isPaused = true;
@@ -535,6 +564,14 @@ class BibleContinuousAudio {
     }
 
     resume() {
+        if (this.isPausedDuringGap) {
+            this.isPausedDuringGap = false;
+            this.isPaused = false;
+            this.setPlayPauseIcon(true);
+            this.currentIndex++;
+            this.playCurrent();
+            return;
+        }
         if (this.isPlaying && this.isPaused) {
             this.audio.play().then(() => {
                 this.isPaused = false;
@@ -547,6 +584,11 @@ class BibleContinuousAudio {
     }
 
     stop() {
+        if (this.transitionTimeout) {
+            clearTimeout(this.transitionTimeout);
+            this.transitionTimeout = null;
+        }
+        this.isPausedDuringGap = false;
         this.isPlaying = false;
         this.isPaused = false;
         this.prefetchQueue = [];
@@ -581,6 +623,11 @@ class BibleContinuousAudio {
     }
 
     next() {
+        if (this.transitionTimeout) {
+            clearTimeout(this.transitionTimeout);
+            this.transitionTimeout = null;
+        }
+        this.isPausedDuringGap = false;
         this.isPlaying = true;
         this.isPaused = false;
         if (this.currentIndex < this.verses.length - 1) {
@@ -595,6 +642,11 @@ class BibleContinuousAudio {
     }
 
     prev() {
+        if (this.transitionTimeout) {
+            clearTimeout(this.transitionTimeout);
+            this.transitionTimeout = null;
+        }
+        this.isPausedDuringGap = false;
         this.isPlaying = true;
         this.isPaused = false;
         if (this.currentIndex > 0) {

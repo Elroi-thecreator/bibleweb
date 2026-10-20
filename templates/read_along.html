@@ -367,6 +367,8 @@ let currentQueueIndex = 0;
 let isAudioPlaying = false;
 const speeds = [1.0, 1.25, 1.5, 2.0];
 let currentSpeedIndex = 0;
+let readalongTransitionTimeout = null;
+let isPausedDuringGap = false;
 
 // In-memory Audio Blob & Status Store for Read-Along
 const readalongAudioBlobs = new Map(); // itemKey -> { blob, blobUrl }
@@ -555,6 +557,12 @@ function startReadingWithAudio() {
 }
 
 async function playQueueIndex(index) {
+    if (readalongTransitionTimeout) {
+        clearTimeout(readalongTransitionTimeout);
+        readalongTransitionTimeout = null;
+    }
+    isPausedDuringGap = false;
+
     if (index >= audioQueue.length) {
         triggerOutroBlessing();
         return;
@@ -670,6 +678,22 @@ function updatePlayIcons(playing) {
 function toggleAudioPlayback() {
     if (!audioElement.src || audioElement.src === window.location.href) {
         playQueueIndex(currentQueueIndex || 0);
+        return;
+    }
+    if (readalongTransitionTimeout) {
+        clearTimeout(readalongTransitionTimeout);
+        readalongTransitionTimeout = null;
+        isPausedDuringGap = true;
+        isAudioPlaying = false;
+        updatePlayIcons(false);
+        return;
+    }
+    if (isPausedDuringGap) {
+        isPausedDuringGap = false;
+        isAudioPlaying = true;
+        updatePlayIcons(true);
+        currentQueueIndex++;
+        playQueueIndex(currentQueueIndex);
         return;
     }
     if (audioElement.paused) {
@@ -910,13 +934,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Auto-advance
+// Auto-advance with 1 sec gap between each verse
 audioElement.addEventListener('ended', () => {
     if (audioQueue[currentQueueIndex]) {
         updateReadAlongVerseStatusUI(audioQueue[currentQueueIndex], 'downloaded');
     }
-    currentQueueIndex++;
-    playQueueIndex(currentQueueIndex);
+    if (currentQueueIndex < audioQueue.length - 1) {
+        if (readalongTransitionTimeout) {
+            clearTimeout(readalongTransitionTimeout);
+        }
+        readalongTransitionTimeout = setTimeout(() => {
+            readalongTransitionTimeout = null;
+            isPausedDuringGap = false;
+            if (isAudioPlaying) {
+                currentQueueIndex++;
+                playQueueIndex(currentQueueIndex);
+            }
+        }, 1000);
+    } else {
+        currentQueueIndex++;
+        playQueueIndex(currentQueueIndex);
+    }
 });
 
 audioElement.addEventListener('error', () => {

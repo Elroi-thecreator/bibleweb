@@ -109,6 +109,11 @@ def test_javascript_syntax_and_symbols():
     assert "audio-progress-bar" in audio_js, "audio_player.js missing audio-progress-bar reference"
     assert "audio-progress-count" in audio_js, "audio_player.js missing audio-progress-count reference"
 
+    # Check 1-second gap between verses on ended event
+    assert "this.transitionTimeout" in audio_js, "audio_player.js missing transitionTimeout property"
+    assert "1000" in audio_js and "clearTimeout(this.transitionTimeout)" in audio_js, \
+        "audio_player.js missing 1-second transition pause or cleanup"
+
     print("✓ audio_player.js passed all static flow & race-condition guard checks")
 
     # 1.2 Read templates/read_along.html
@@ -134,6 +139,11 @@ def test_javascript_syntax_and_symbols():
     # Check that toggleAudioPlayback handles unstarted state
     assert "if (!audioElement.src || audioElement.src === window.location.href)" in readalong_html, \
         "read_along.html toggleAudioPlayback must handle unstarted audio state"
+
+    # Check 1-second gap between verses in read-along
+    assert "readalongTransitionTimeout" in readalong_html, "read_along.html missing readalongTransitionTimeout"
+    assert "1000" in readalong_html and "clearTimeout(readalongTransitionTimeout)" in readalong_html, \
+        "read_along.html missing 1-second transition pause or cleanup"
 
     print("✓ templates/read_along.html passed all async/await, function definition & error checks")
 
