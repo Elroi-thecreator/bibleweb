@@ -380,13 +380,13 @@ async def service_worker():
 
 VOICE_CONFIG = {
     "ta": {
-        "default": "ta-IN-ValluvarNeural",
-        "male": "ta-IN-ValluvarNeural",
-        "valluvar": "ta-IN-ValluvarNeural",
+        "default": "ta-LK-KumarNeural",
+        "male": "ta-LK-KumarNeural",
         "kumar": "ta-LK-KumarNeural",
         "bass": "ta-LK-KumarNeural",
         "base": "ta-LK-KumarNeural",
         "deep": "ta-LK-KumarNeural",
+        "valluvar": "ta-IN-ValluvarNeural",
         "anbu": "ta-SG-AnbuNeural",
         "surya": "ta-MY-SuryaNeural",
         "female": "ta-IN-PallaviNeural",
@@ -395,16 +395,16 @@ VOICE_CONFIG = {
         "kani": "ta-MY-KaniNeural",
     },
     "en": {
-        "default": "en-US-JennyNeural",
-        "female": "en-US-JennyNeural",
-        "jenny": "en-US-JennyNeural",
-        "male": "en-US-GuyNeural",
-        "guy": "en-US-GuyNeural",
+        "default": "en-US-ChristopherNeural",
+        "male": "en-US-ChristopherNeural",
         "christopher": "en-US-ChristopherNeural",
-        "brian": "en-US-BrianNeural",
         "bass": "en-US-ChristopherNeural",
         "base": "en-US-ChristopherNeural",
         "deep": "en-US-ChristopherNeural",
+        "brian": "en-US-BrianNeural",
+        "guy": "en-US-GuyNeural",
+        "female": "en-US-JennyNeural",
+        "jenny": "en-US-JennyNeural",
         "neerja": "en-IN-NeerjaNeural",
     },
 }
@@ -439,7 +439,7 @@ def normalize_speech_rate(raw_rate: str) -> str:
 def normalize_speech_pitch(raw_pitch: str) -> str:
     r"""Normalizes pitch parameter into valid Edge-TTS pitch string (^[+-]\d+Hz$)."""
     if not raw_pitch:
-        return "+0Hz"
+        return "-8Hz"
     pitch_str = str(raw_pitch).strip().lower()
     preset_map = {
         "normal": "+0Hz",

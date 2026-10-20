@@ -74,6 +74,8 @@ async def run_tests():
     assert "base" in VOICE_CONFIG["en"]
     assert resolve_voice_name("en", "bass") == "en-US-ChristopherNeural"
     assert resolve_voice_name("en", "base") == "en-US-ChristopherNeural"
+    assert resolve_voice_name("en") == "en-US-ChristopherNeural", "Default EN voice must be Christopher Deep Bass"
+    assert resolve_voice_name("ta") == "ta-LK-KumarNeural", "Default TA voice must be Kumar Deep Bass" 
     print("✓ 1. Deep voice aliases ('bass', 'base', 'kumar', 'christopher', 'brian') verified")
 
     # 2. Test Fallbacks
@@ -94,7 +96,7 @@ async def run_tests():
     assert normalize_speech_pitch("-6Hz") == "-6Hz"
     assert normalize_speech_pitch("+2Hz") == "+2Hz"
     assert normalize_speech_pitch("-8") == "-8Hz"
-    assert normalize_speech_pitch(None) == "+0Hz"
+    assert normalize_speech_pitch(None) == "-8Hz"
     print("✓ 3. Pitch normalization & preset mappings verified")
 
     # 4. ASGI Stream Test: Normal Pitch

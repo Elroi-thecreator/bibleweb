@@ -313,8 +313,8 @@
                     <div>
                         <label class="text-[10px] text-stone-400 block mb-1">Tamil (தமிழ் குரல்)</label>
                         <select id="setting-voice-ta" onchange="setAudioVoicePreference('ta', this.value)" class="w-full p-2 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs font-medium">
-                            <option value="ta-IN-ValluvarNeural" selected>வள்ளுவர் (ஆண் / Male - IN)</option>
-                            <option value="ta-LK-KumarNeural">குமார் (கம்பீர பாஸ் / Deep Bass - LK)</option>
+                            <option value="ta-LK-KumarNeural" selected>குமார் (கம்பீர பாஸ் ஆண் / Deep Bass Male - LK)</option>
+                            <option value="ta-IN-ValluvarNeural">வள்ளுவர் (ஆண் / Male - IN)</option>
                             <option value="ta-SG-AnbuNeural">அன்பு (ஆண் / Male - SG)</option>
                             <option value="ta-MY-SuryaNeural">சூர்யா (ஆண் / Male - MY)</option>
                             <option value="ta-IN-PallaviNeural">பல்லவி (பெண் / Female - IN)</option>
@@ -323,10 +323,10 @@
                     <div>
                         <label class="text-[10px] text-stone-400 block mb-1">English Voice</label>
                         <select id="setting-voice-en" onchange="setAudioVoicePreference('en', this.value)" class="w-full p-2 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs font-medium">
-                            <option value="en-US-ChristopherNeural">Christopher (Deep Bass Male)</option>
+                            <option value="en-US-ChristopherNeural" selected>Christopher (Deep Bass Male)</option>
                             <option value="en-US-BrianNeural">Brian (Resonant Male)</option>
                             <option value="en-US-GuyNeural">Guy (Male)</option>
-                            <option value="en-US-JennyNeural" selected>Jenny (Female)</option>
+                            <option value="en-US-JennyNeural">Jenny (Female)</option>
                             <option value="en-IN-NeerjaNeural">Neerja (India)</option>
                         </select>
                     </div>
@@ -337,10 +337,10 @@
                         <span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Deep Scripture Tone</span>
                     </div>
                     <select id="setting-audio-pitch" onchange="setAudioPitchPreference(this.value)" class="w-full p-2 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs font-medium">
-                        <option value="+0Hz" selected>Normal / இயல்பான குரல் (Standard Pitch)</option>
+                        <option value="-8Hz" selected>Deep Bass / கம்பீர பாஸ் குரல் (-8 Hz - Recommended)</option>
+                        <option value="-12Hz">Heavy Bass / ஆழ்ந்த கனத்த பாஸ் (-12 Hz)</option>
                         <option value="-4Hz">Warm Bass / மென்மையான பாஸ் (-4 Hz)</option>
-                        <option value="-8Hz">Deep Bass / கம்பீர பாஸ் குரல் (-8 Hz - Recommended)</option>
-                        <option value="-12Hz">Extra Deep Bass / ஆழ்ந்த கம்பீர பாஸ் (-12 Hz)</option>
+                        <option value="+0Hz">Normal / இயல்பான குரல் (Standard Pitch)</option>
                     </select>
                 </div>
                 <div class="flex justify-end pt-0.5">
@@ -644,8 +644,8 @@
                 sampleAudioPlayer.pause();
                 sampleAudioPlayer = null;
             }
-            const voiceTa = localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural';
-            const pitch = localStorage.getItem('bible_audio_pitch') || '+0Hz';
+            const voiceTa = localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural';
+            const pitch = localStorage.getItem('bible_audio_pitch') || '-8Hz';
             const sampleText = "ஆதியிலே தேவன் வானத்தையும் பூமியையும் சிருஷ்டித்தார்.";
             showToast("Playing neural sample... 🔊");
             sampleAudioPlayer = new Audio(`/api/audio/stream?lang=ta&voice=${encodeURIComponent(voiceTa)}&pitch=${encodeURIComponent(pitch)}&text=${encodeURIComponent(sampleText)}`);
@@ -656,9 +656,19 @@
             const vTa = document.getElementById('setting-voice-ta');
             const vEn = document.getElementById('setting-voice-en');
             const pEl = document.getElementById('setting-audio-pitch');
-            if (vTa) vTa.value = localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural';
-            if (vEn) vEn.value = localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural';
-            if (pEl) pEl.value = localStorage.getItem('bible_audio_pitch') || '+0Hz';
+
+            // Default to Male Deep Bass (Christopher & Kumar at -8Hz)
+            const savedEn = localStorage.getItem('bible_audio_voice_en');
+            const finalEn = (!savedEn || savedEn === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : savedEn;
+            if (vEn) vEn.value = finalEn;
+
+            const savedTa = localStorage.getItem('bible_audio_voice_ta');
+            const finalTa = savedTa || 'ta-LK-KumarNeural';
+            if (vTa) vTa.value = finalTa;
+
+            const savedPitch = localStorage.getItem('bible_audio_pitch');
+            const finalPitch = (!savedPitch || savedPitch === '+0Hz') ? '-8Hz' : savedPitch;
+            if (pEl) pEl.value = finalPitch;
         }
         document.addEventListener('DOMContentLoaded', initAudioVoiceSettings);
 

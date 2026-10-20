@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation & Per-Verse Download Caching Standard
 domain: product
 status: approved
-version: 1.8.0
+version: 1.9.0
 authority:
   level: official
   confidence: high
@@ -18,7 +18,7 @@ applies_to:
   - tts
 
 rule:
-  "The Audio Bible Text-to-Speech (TTS) synthesizer reads Scripture verses naturally and continuously using Microsoft Edge Neural TTS (edge-tts >= 7.3.1 with Sec-MS-GEC token support) with configurable Voice Tone & Bass Pitch Modulation (+0Hz Normal, -4Hz Warm Bass, -8Hz Deep Bass, -12Hz Heavy Bass) alongside deep resonant male voices (Kumar, Christopher, Brian, Valluvar, Guy) and female neural voices (Pallavi, Jenny, Neerja) with automatic gTTS fallback, strictly omitting editorial brackets (`[...]`), curly braces (`{...}`), footnotes, and cross-reference annotations, while displaying per-verse download status badges directly on each verse item and utilizing client in-memory blob caching (`verseAudioBlobs`) with in-flight request deduplication (`inFlightRequests`) to ensure that no verse is ever downloaded twice or multiple times under any click or prefetch condition."
+  "The Audio Bible Text-to-Speech (TTS) synthesizer reads Scripture verses naturally and continuously using Microsoft Edge Neural TTS (edge-tts >= 7.3.1 with Sec-MS-GEC token support) with configurable Voice Tone & Bass Pitch Modulation (+0Hz Normal, -4Hz Warm Bass, -8Hz Deep Bass, -12Hz Heavy Bass) with Male Heavy/Deep Bass voices (en-US-ChristopherNeural, ta-LK-KumarNeural) and -8Hz pitch modulation set as the system default across all endpoints and UI modes, alongside alternative male voices (Brian, Valluvar, Guy) and female neural voices (Pallavi, Jenny, Neerja) with automatic gTTS fallback, strictly omitting editorial brackets (`[...]`), curly braces (`{...}`), footnotes, and cross-reference annotations, while displaying per-verse download status badges directly on each verse item and utilizing client in-memory blob caching (`verseAudioBlobs`) with in-flight request deduplication (`inFlightRequests`) to ensure that no verse is ever downloaded twice or multiple times under any click or prefetch condition."
 
 do:
   - "Pin edge-tts >= 7.3.1 in requirements.txt and verify active virtual environment installation to ensure valid Sec-MS-GEC anti-abuse token handshake with Microsoft Edge WebSocket servers."
@@ -58,6 +58,7 @@ dont:
   - "Do not attempt to prefetch beyond the chapter's verse array length on the last verse."
   - "Do not allow background prefetch failures or network blips to interrupt or halt the currently playing audio stream."
   - "Do not block UI scrolling or responsiveness during speech synthesis."
+  - "Do not default to female neural voices; default to resonant Male Heavy/Deep Bass voices (Christopher and Kumar at -8Hz) across all languages."
   - "Do not crowd reader audio docks with voice selection dropdowns; route neural voice configurations through the dedicated Global Settings modal."
   - "Do not hide audio progress counters or playback bars on mobile viewports."
 

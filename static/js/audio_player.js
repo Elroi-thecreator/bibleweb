@@ -19,7 +19,7 @@ class BibleContinuousAudio {
         this.verses = [];
         this.lang = 'ta';
         this.rate = 1.0;
-        this.pitch = localStorage.getItem('bible_audio_pitch') || '+0Hz';
+        this.pitch = localStorage.getItem('bible_audio_pitch') || '-8Hz';
         this.bookId = null;
         this.chapter = null;
         this.nextChapter = null;
@@ -446,9 +446,13 @@ class BibleContinuousAudio {
 
     getEffectiveVoice() {
         if (this.lang === 'ta') {
-            return localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural';
+            return localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural';
         }
-        return localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural';
+        const savedEn = localStorage.getItem('bible_audio_voice_en');
+        if (!savedEn || savedEn === 'en-US-JennyNeural') {
+            return 'en-US-ChristopherNeural';
+        }
+        return savedEn;
     }
 
     setVoice(voiceName) {
@@ -462,7 +466,11 @@ class BibleContinuousAudio {
     }
 
     getEffectivePitch() {
-        return this.pitch || localStorage.getItem('bible_audio_pitch') || '+0Hz';
+        const p = this.pitch || localStorage.getItem('bible_audio_pitch');
+        if (!p || p === '+0Hz') {
+            return '-8Hz';
+        }
+        return p;
     }
 
     setPitch(pitchValue) {
@@ -627,7 +635,7 @@ class BibleContinuousAudio {
                     <option value="ta-MY-SuryaNeural">சூர்யா (Male - MY)</option>
                     <option value="ta-IN-PallaviNeural">பல்லவி (Female - IN)</option>
                 `;
-                voiceSelect.value = localStorage.getItem('bible_audio_voice_ta') || 'ta-IN-ValluvarNeural';
+                voiceSelect.value = localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural';
             } else {
                 voiceSelect.innerHTML = `
                     <option value="en-US-ChristopherNeural">Christopher (Deep Bass Male)</option>
@@ -636,7 +644,7 @@ class BibleContinuousAudio {
                     <option value="en-US-JennyNeural">Jenny (Female)</option>
                     <option value="en-IN-NeerjaNeural">Neerja (India)</option>
                 `;
-                voiceSelect.value = localStorage.getItem('bible_audio_voice_en') || 'en-US-JennyNeural';
+                voiceSelect.value = localStorage.getItem('bible_audio_voice_en') || 'en-US-ChristopherNeural';
             }
         }
 
