@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.1.0
+version: 1.2.0
 authority:
   level: official
   confidence: high
@@ -17,7 +17,7 @@ applies_to:
   - render
 
 rule:
-  "The WhatsApp gateway integration uses an isolated 5-layer decoupled architecture based on WA-AKG (Next.js + Baileys). Core gateway communication, conversational session storage, and command dispatching in `whatsapp_gateway/client/` and `whatsapp_gateway/bot/` must maintain zero dependencies on application databases or schemas, isolating all domain behaviors into `whatsapp_gateway/adapters/` and exposing a mountable FastAPI router in `whatsapp_gateway/routes/`. On cloud platforms (Render.com), the system deploys as a multi-service blueprint comprising the Python FastAPI web server, Node.js WA-AKG gateway, and managed PostgreSQL session store."
+  "The WhatsApp gateway integration uses an isolated 5-layer decoupled architecture based on WA-AKG (Next.js + Baileys). Core gateway communication, conversational session storage, and command dispatching in `whatsapp_gateway/client/` and `whatsapp_gateway/bot/` must maintain zero dependencies on application databases or schemas, isolating all domain behaviors into `whatsapp_gateway/adapters/` and exposing a mountable FastAPI router in `whatsapp_gateway/routes/`. On cloud platforms (Render.com), the application deploys as a single, self-contained Python web service using embedded SQLite databases and simulation mode, allowing the WhatsApp bot to function immediately with zero additional database or service provisioning."
 
 do:
   - "Keep Layer 1 (`whatsapp_gateway/client/`) and Layer 2 (`whatsapp_gateway/bot/`) strictly domain-agnostic so the package can be dropped into any other FastAPI or Python project without modification."
@@ -26,16 +26,16 @@ do:
   - "Support multi-turn conversations (such as interactive quizzes) via an in-memory session store with automatic TTL expiration."
   - "Provide a simulation mode in `WAClient` (`simulation_mode=True`) enabling automated end-to-end verification without live WhatsApp hardware."
   - "Mount the controller into `app/main.py` using standard FastAPI router patterns: `app.include_router(whatsapp_router, prefix='/api/whatsapp')`."
-  - "Configure `render.yaml` with multi-service blueprints to orchestrate the Python FastAPI server (`elroi-bible`), Node.js gateway (`wa-akg-gateway`), and managed PostgreSQL database (`wa-akg-postgres`) with zero-latency private networking."
+  - "Keep `render.yaml` as a single, lightweight web service blueprint (`elroi-bible`) to prevent exceeding Render's service/database quota limits."
 
 dont:
   - "Do not import `app.db`, `app.quiz_data`, or `app.plans_data` inside `whatsapp_gateway/client/` or `whatsapp_gateway/bot/`."
   - "Do not block the main asyncio event loop with synchronous audio synthesis or database reads."
   - "Do not process webhook messages where `payload.is_from_me()` is True, preventing recursive bot message loops."
-  - "Do not rely on ephemeral disk storage for live WhatsApp multi-device authentication; persist keys in managed PostgreSQL."
+  - "Do not declare unnecessary auxiliary services or databases in `render.yaml` that trigger quota limits on Render workspaces."
 
 reason:
-  "Strict layer separation ensures full reusability across future software projects, keeps the codebase maintainable, and guarantees that external messaging failures cannot destabilize core desktop or web scripture reading services. Multi-service orchestration provides seamless cloud deployment."
+  "Strict layer separation ensures full reusability across future software projects, keeps the codebase maintainable, and guarantees that external messaging failures cannot destabilize core desktop or web scripture reading services. Single-service deployment prevents quota exhaustion on Render."
 
 related_items:
   - ARCH-SYS-001
