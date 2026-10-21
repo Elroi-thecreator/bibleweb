@@ -5,6 +5,7 @@ Completely isolated in data/whatsapp_subscribers.sqlite.db.
 
 import asyncio
 from datetime import datetime
+import json
 from pathlib import Path
 import sqlite3
 import threading
@@ -14,6 +15,7 @@ from typing import Any, Dict, List, Optional
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "whatsapp_subscribers.sqlite.db"
+JSON_BACKUP_PATH = DATA_DIR / "whatsapp_subscribers.json"
 
 _lock = threading.Lock()
 
@@ -25,8 +27,24 @@ def get_db_connection() -> sqlite3.Connection:
     return conn
 
 
+def _save_json_backup(conn: sqlite3.Connection) -> None:
+    """Persists active subscribers to JSON file for zero-loss recovery across ephemeral restarts."""
+    try:
+        cursor = conn.execute("""
+            SELECT phone_number, push_name, language, plan_id, is_active, subscribed_at, updated_at
+            FROM whatsapp_subscribers
+            WHERE is_active = 1
+            ORDER BY subscribed_at DESC
+        """)
+        subs = [dict(row) for row in cursor.fetchall()]
+        with open(JSON_BACKUP_PATH, "w", encoding="utf-8") as f:
+            json.dump(subs, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+
+
 def init_subscribers_db() -> None:
-    """Creates the subscribers table if it does not already exist."""
+    """Creates the subscribers table and hydrates from JSON backup if empty."""
     with _lock:
         conn = get_db_connection()
         try:
@@ -42,6 +60,28 @@ def init_subscribers_db() -> None:
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 """)
+                # Hydrate from JSON backup if table is brand new/empty
+                cursor = conn.execute("SELECT COUNT(*) FROM whatsapp_subscribers WHERE is_active = 1")
+                count = cursor.fetchone()[0]
+                if count == 0 and JSON_BACKUP_PATH.exists():
+                    try:
+                        with open(JSON_BACKUP_PATH, "r", encoding="utf-8") as f:
+                            saved = json.load(f)
+                            for item in saved:
+                                conn.execute("""
+                                    INSERT OR REPLACE INTO whatsapp_subscribers
+                                    (phone_number, push_name, language, plan_id, is_active, subscribed_at, updated_at)
+                                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                                """, (
+                                    item.get("phone_number"),
+                                    item.get("push_name", ""),
+                                    item.get("language", "en"),
+                                    item.get("plan_id", "proverbs-31"),
+                                    item.get("is_active", 1),
+                                    item.get("subscribed_at", datetime.now().isoformat()),
+                                ))
+                    except Exception:
+                        pass
         finally:
             conn.close()
 
@@ -66,6 +106,7 @@ def _add_subscriber_sync(phone: str, name: str = "", language: str = "en", plan_
                         is_active = 1,
                         updated_at = CURRENT_TIMESTAMP
                 """, (clean_phone, name, language, plan_id))
+                _save_json_backup(conn)
             return True
         except Exception:
             return False
@@ -84,6 +125,7 @@ def _remove_subscriber_sync(phone: str) -> bool:
                     SET is_active = 0, updated_at = CURRENT_TIMESTAMP
                     WHERE phone_number = ?
                 """, (clean_phone,))
+                _save_json_backup(conn)
                 return cursor.rowcount > 0
         except Exception:
             return False
