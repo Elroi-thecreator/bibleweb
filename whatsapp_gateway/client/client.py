@@ -47,6 +47,7 @@ class WAClient:
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
+            headers["x-api-key"] = self.api_key
 
         self._client = httpx.AsyncClient(
             headers=headers,
@@ -75,6 +76,7 @@ class WAClient:
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
+            headers["x-api-key"] = self.api_key
         self._client.headers.update(headers)
 
     def toggle_simulation(self, enable: Optional[bool] = None) -> bool:
@@ -125,15 +127,22 @@ class WAClient:
                 raw=record,
             )
 
-        endpoint = f"{self.base_url}/messages/send-text"
-        payload = {
-            "sessionId": sess,
-            "to": target,
-            "text": text,
-        }
+        # WA-AKG native endpoint: POST /api/messages/{sessionId}/{jid}/send with {"message": text}
+        endpoint_native = f"{self.base_url}/messages/{sess}/{target}/send"
+        payload_native = {"message": text}
 
         try:
-            response = await self._client.post(endpoint, json=payload)
+            response = await self._client.post(endpoint_native, json=payload_native)
+            if response.status_code == 404:
+                # Fallback to generic endpoint: POST /api/messages/send-text
+                endpoint_fallback = f"{self.base_url}/messages/send-text"
+                payload_fallback = {
+                    "sessionId": sess,
+                    "to": target,
+                    "text": text,
+                }
+                response = await self._client.post(endpoint_fallback, json=payload_fallback)
+
             if response.status_code >= 400:
                 logger.error("WA-AKG error %s: %s", response.status_code, response.text)
                 return SendMessageResponse(
@@ -143,14 +152,20 @@ class WAClient:
                 )
 
             data = response.json()
+            msg_id = (
+                data.get("id")
+                or data.get("messageId")
+                or (data.get("data") or {}).get("key", {}).get("id")
+                or "sent"
+            )
             return SendMessageResponse(
                 success=True,
-                message_id=data.get("id") or data.get("messageId"),
+                message_id=msg_id,
                 to=target,
                 raw=data,
             )
         except httpx.RequestError as exc:
-            logger.error("Failed to connect to WA-AKG gateway at %s: %s", endpoint, exc)
+            logger.error("Failed to connect to WA-AKG gateway at %s: %s", endpoint_native, exc)
             raise WAGatewayConnectionError(f"Could not reach WA-AKG: {exc}") from exc
 
     async def send_media(
