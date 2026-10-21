@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.3.0
+version: 1.4.0
 authority:
   level: official
   confidence: high
@@ -15,9 +15,10 @@ applies_to:
   - whatsapp_gateway
   - routes
   - render
+  - supabase
 
 rule:
-  "The WhatsApp gateway integration uses an isolated 5-layer decoupled architecture based on WA-AKG (Next.js + Baileys). Core gateway communication, conversational session storage, and command dispatching in `whatsapp_gateway/client/` and `whatsapp_gateway/bot/` maintain zero dependencies on application databases or schemas, isolating all domain behaviors into `whatsapp_gateway/adapters/` and exposing a mountable FastAPI router in `whatsapp_gateway/routes/`. On cloud platforms (Render.com), the application orchestrates the `elroi-bible` Python web service, the `wa-akg-gateway` Node.js service (pulled cleanly via the `repo` field from `mrifqidaffaaditya/WA-AKG`), and a managed `wa-akg-postgres` database over Render's private network with zero egress costs."
+  "The WhatsApp gateway integration uses an isolated 5-layer decoupled architecture based on WA-AKG (Next.js + Baileys). Core gateway communication, conversational session storage, and command dispatching in `whatsapp_gateway/client/` and `whatsapp_gateway/bot/` maintain zero dependencies on application databases or schemas, isolating all domain behaviors into `whatsapp_gateway/adapters/` and exposing a mountable FastAPI router in `whatsapp_gateway/routes/`. On cloud platforms (Render.com), the application orchestrates the `elroi-bible` Python web service and the `wa-akg-gateway` Node.js service, while delegating persistent multi-device WhatsApp authentication and session storage to an external Supabase PostgreSQL database (`DATABASE_URL`), eliminating Render's 30-day database expiration and preserving Render resource quotas."
 
 do:
   - "Keep Layer 1 (`whatsapp_gateway/client/`) and Layer 2 (`whatsapp_gateway/bot/`) strictly domain-agnostic so the package can be dropped into any other FastAPI or Python project without modification."
@@ -26,8 +27,8 @@ do:
   - "Support multi-turn conversations (such as interactive quizzes) via an in-memory session store with automatic TTL expiration."
   - "Provide a simulation mode in `WAClient` (`simulation_mode=True`) enabling automated end-to-end verification without live WhatsApp hardware."
   - "Mount the controller into `app/main.py` using standard FastAPI router patterns: `app.include_router(whatsapp_router, prefix='/api/whatsapp')`."
-  - "Orchestrate `elroi-bible`, `wa-akg-gateway`, and `wa-akg-postgres` in `render.yaml` utilizing Render's `repo: https://github.com/mrifqidaffaaditya/WA-AKG.git` and private networking (`http://wa-akg-gateway:3000/api`)."
-  - "In `render.yaml`, adapt WA-AKG's Prisma datasource provider during build (`sed -i 's/\"mysql\"/\"postgresql\"/g' prisma/schema.prisma`) to seamlessly bind with Render's managed PostgreSQL database."
+  - "Orchestrate `elroi-bible` and `wa-akg-gateway` in `render.yaml` utilizing Render's `repo: https://github.com/mrifqidaffaaditya/WA-AKG.git` and connecting to external Supabase PostgreSQL via `DATABASE_URL` (`sync: false`)."
+  - "In `render.yaml`, adapt WA-AKG's Prisma datasource provider during build (`sed -i 's/\"mysql\"/\"postgresql\"/g' prisma/schema.prisma`) to seamlessly bind with Supabase PostgreSQL."
 
 dont:
   - "Do not import `app.db`, `app.quiz_data`, or `app.plans_data` inside `whatsapp_gateway/client/` or `whatsapp_gateway/bot/`."
