@@ -266,7 +266,16 @@ class WAClient:
         try:
             res = await self._client.get(endpoint)
             if res.status_code == 200:
-                return res.json()
+                raw_json = res.json()
+                inner_data = raw_json.get("data", {}) if isinstance(raw_json, dict) else {}
+                conn_status = inner_data.get("status") if isinstance(inner_data, dict) else None
+                # Normalize top-level status string for UI compatibility
+                return {
+                    "status": conn_status or ("CONNECTED" if raw_json.get("status") is True else "UNKNOWN"),
+                    "is_connected": conn_status == "CONNECTED",
+                    "data": inner_data,
+                    "raw": raw_json,
+                }
             return {"status": "UNKNOWN", "http_status": res.status_code, "detail": res.text}
         except Exception as exc:
             return {"status": "UNREACHABLE", "error": str(exc)}
