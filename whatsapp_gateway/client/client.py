@@ -127,9 +127,9 @@ class WAClient:
                 raw=record,
             )
 
-        # WA-AKG native endpoint: POST /api/messages/{sessionId}/{jid}/send with {"message": text}
+        # WA-AKG native endpoint: POST /api/messages/{sessionId}/{jid}/send with {"message": {"text": text}}
         endpoint_native = f"{self.base_url}/messages/{sess}/{target}/send"
-        payload_native = {"message": text}
+        payload_native = {"message": {"text": text}}
 
         try:
             response = await self._client.post(endpoint_native, json=payload_native)
@@ -142,6 +142,9 @@ class WAClient:
                     "text": text,
                 }
                 response = await self._client.post(endpoint_fallback, json=payload_fallback)
+            elif response.status_code >= 400 and "Invalid media type" in response.text:
+                # In case an older version expected a raw string:
+                response = await self._client.post(endpoint_native, json={"message": text})
 
             if response.status_code >= 400:
                 logger.error("WA-AKG error %s: %s", response.status_code, response.text)
