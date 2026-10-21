@@ -71,6 +71,8 @@ class IncomingWebhookPayload(BaseModel):
     def is_from_me(self) -> bool:
         """Determines if the message originated from the bot itself."""
         if self.data and isinstance(self.data, dict):
+            if self.data.get("fromMe") is True:
+                return True
             key = self.data.get("key", {})
             if isinstance(key, dict) and key.get("fromMe") is True:
                 return True
@@ -81,6 +83,10 @@ class IncomingWebhookPayload(BaseModel):
         if self.sender:
             return self.sender
         if self.data and isinstance(self.data, dict):
+            if "from" in self.data and self.data["from"]:
+                return str(self.data["from"])
+            if "sender" in self.data and self.data["sender"] and "@" in str(self.data["sender"]):
+                return str(self.data["sender"])
             key = self.data.get("key", {})
             if isinstance(key, dict):
                 remote_jid = key.get("remoteJid", "")
@@ -94,7 +100,7 @@ class IncomingWebhookPayload(BaseModel):
         if self.push_name:
             return self.push_name
         if self.data and isinstance(self.data, dict):
-            return self.data.get("pushName") or "User"
+            return self.data.get("pushName") or self.data.get("name") or "User"
         return "User"
 
     def get_text_content(self) -> str:
@@ -102,6 +108,14 @@ class IncomingWebhookPayload(BaseModel):
         if self.body is not None:
             return self.body.strip()
         if self.data and isinstance(self.data, dict):
+            # 0. WA-AKG simplified fields: content, caption, text
+            if "content" in self.data and self.data["content"] is not None:
+                return str(self.data["content"]).strip()
+            if "caption" in self.data and self.data["caption"] is not None:
+                return str(self.data["caption"]).strip()
+            if "text" in self.data and self.data["text"] is not None:
+                return str(self.data["text"]).strip()
+
             msg = self.data.get("message", {})
             if isinstance(msg, dict):
                 # 1. Plain text conversation
