@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.4.0
+version: 1.5.0
 authority:
   level: official
   confidence: high

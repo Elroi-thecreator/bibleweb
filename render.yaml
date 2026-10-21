@@ -27,7 +27,7 @@ services:
       - key: WA_SESSION_ID
         value: default
       - key: WA_GATEWAY_URL
-        value: https://wa-akg-gateway-7rh9.onrender.com/api
+        value: https://wa-akg-gateway-ub6a.onrender.com/api
 
   # =========================================================
   # 2. WA-AKG WhatsApp Gateway (Next.js + Baileys + Prisma)
@@ -53,5 +53,7 @@ services:
         generateValue: true
       - key: AUTH_TRUST_HOST
         value: "true"
+      - key: NEXTAUTH_URL
+        value: https://wa-akg-gateway-ub6a.onrender.com
       - key: DATABASE_URL
         sync: false

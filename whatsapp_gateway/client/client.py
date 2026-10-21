@@ -259,11 +259,11 @@ class WAClient:
         if self.simulation_mode:
             return {"sessionId": sess, "status": "CONNECTED", "simulation": True}
 
-        endpoint = f"{self.base_url}/sessions/{sess}/status"
+        endpoint = f"{self.base_url}/sessions/{sess}"
         try:
             res = await self._client.get(endpoint)
             if res.status_code == 200:
                 return res.json()
-            return {"status": "UNKNOWN", "http_status": res.status_code}
+            return {"status": "UNKNOWN", "http_status": res.status_code, "detail": res.text}
         except Exception as exc:
             return {"status": "UNREACHABLE", "error": str(exc)}
