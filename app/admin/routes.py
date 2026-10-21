@@ -330,7 +330,7 @@ async def api_ping_wa_gateway(request: Request):
     require_admin(request)
     wa_client = get_client()
 
-    target_url = f"{wa_client.base_url.rstrip('/')}/status"
+    target_url = f"{wa_client.base_url.rstrip('/')}/sessions/{wa_client.default_session_id}"
     t0 = time.time()
     try:
         import httpx
@@ -338,6 +338,7 @@ async def api_ping_wa_gateway(request: Request):
             headers = {}
             if wa_client.api_key:
                 headers["Authorization"] = f"Bearer {wa_client.api_key}"
+                headers["x-api-key"] = wa_client.api_key
             resp = await client.get(target_url, headers=headers)
             latency = round((time.time() - t0) * 1000, 1)
             return {

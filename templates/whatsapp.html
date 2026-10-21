@@ -252,8 +252,9 @@
             document.getElementById("gateway-url").textContent = data.gateway_url || "http://localhost:3000/api";
             document.getElementById("gateway-mode").textContent = data.simulation_mode ? "🧪 Simulation (Mock Active)" : "🟢 Live Gateway";
             
+            var isConnected = !!(data.session_status && (data.session_status.status === "CONNECTED" || (data.session_status.data && data.session_status.data.status === "CONNECTED")));
             var pill = document.getElementById("gateway-status-pill");
-            if (data.session_status && data.session_status.status === "CONNECTED") {
+            if (isConnected) {
                 pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800";
                 pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Connected</span>';
             } else if (data.simulation_mode) {
@@ -274,7 +275,7 @@
                 btnToggle.textContent = data.simulation_mode ? "🟢 Switch to Live Gateway" : "🧪 Switch to Simulation Mode";
             }
             if (banner) {
-                if (!data.simulation_mode && (!data.session_status || data.session_status.status !== "CONNECTED")) {
+                if (!data.simulation_mode && !isConnected) {
                     banner.classList.remove("hidden");
                 } else {
                     banner.classList.add("hidden");
