@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.10.0
+version: 1.12.0
 authority:
   level: official
   confidence: high
@@ -16,30 +16,54 @@ applies_to:
   - routes
   - render
   - supabase
+  - storage
+  - audio_player
 
 rule:
-  "The WhatsApp gateway integration uses an isolated 5-layer decoupled architecture based on WA-AKG (Next.js + Baileys). Core gateway communication, conversational session storage, and command dispatching in `whatsapp_gateway/client/` and `whatsapp_gateway/bot/` maintain zero dependencies on application databases or schemas, isolating all domain behaviors into `whatsapp_gateway/adapters/` and exposing a mountable FastAPI router in `whatsapp_gateway/routes/`. On cloud platforms (Render.com), the application orchestrates the `elroi-bible` Python web service and the `wa-akg-gateway` Node.js service, while delegating persistent multi-device WhatsApp authentication and session storage to an external Supabase PostgreSQL database (`DATABASE_URL`), eliminating Render's 30-day database expiration and preserving Render resource quotas."
+  "The WhatsApp gateway integration uses an isolated 5-layer decoupled architecture based on WA-AKG (Next.js + Baileys). Core gateway communication, conversational session storage, and command dispatching in `whatsapp_gateway/client/` and `whatsapp_gateway/bot/` maintain zero dependencies on application databases or schemas, isolating all domain behaviors into `whatsapp_gateway/adapters/` and exposing a mountable FastAPI router in `whatsapp_gateway/routes/`. On cloud platforms (Render.com), the application orchestrates the `elroi-bible` Python web service and the `wa-akg-gateway` Node.js service, while delegating persistent multi-device WhatsApp authentication and session storage to an external Supabase PostgreSQL database (`DATABASE_URL`), eliminating Render's 30-day database expiration and preserving Render resource quotas. Python-side subscriber state uses dual-persistence with thread-safe SQLite (`data/whatsapp_subscribers.sqlite.db`) and automatic JSON backup hydration (`data/whatsapp_subscribers.json`) to guarantee zero-loss recovery across ephemeral dyno/container restarts."
 
 do:
   - "Keep Layer 1 (`whatsapp_gateway/client/`) and Layer 2 (`whatsapp_gateway/bot/`) strictly domain-agnostic so the package can be dropped into any other FastAPI or Python project without modification."
   - "Isolate application-specific interactions (scripture queries, hymn retrieval, quiz evaluation, and audio clips) strictly within Layer 3 (`whatsapp_gateway/adapters/`)."
-  - "Wrap all blocking SQLite queries in `await asyncio.to_thread(...)` within adapter handlers as mandated by DEV-PY-001."
+  - "Wrap all blocking SQLite queries in `await asyncio.to_thread(...)` within adapter handlers and subscriber managers as mandated by DEV-PY-001."
   - "Support multi-turn conversations (such as interactive quizzes) via an in-memory session store with automatic TTL expiration."
   - "Provide a simulation mode in `WAClient` (`simulation_mode=True`) enabling automated end-to-end verification without live WhatsApp hardware."
+  - "Format outgoing text messages for WA-AKG Baileys engine with native payload structures `{'message': {'text': text}}` at `/messages/{sessionId}/{jid}/send`, falling back gracefully to `/messages/send-text`."
+  - "Dispatch voice notes and media to WA-AKG via `POST /api/messages/{sessionId}/{encodedJid}/media` using `multipart/form-data` with `file`, `type` ('voice' for push-to-talk waveforms or 'audio' for standard playback), and optional `caption`."
+  - "Avoid setting static `Content-Type: application/json` on the underlying `httpx.AsyncClient` session to permit `httpx` to dynamically calculate multipart boundaries for file uploads."
+  - "Parse audio commands using robust regex patterns matching single chapters (`audio John 1`), numbered books (`audio 1 John 1`), verse ranges (`audio John 1:1-5`), and Tamil scripture requests (`audio யோவான் 1`, `கேட்க யோவான் 1`)."
+  - "Synthesize audio voice notes using Microsoft Edge Neural TTS (`en-US-ChristopherNeural` for English, `ta-LK-KumarNeural` for Tamil) with deep bass modulation (`pitch='-8Hz'`), stripping editorial brackets/braces, with automatic `gTTS` fallback."
+  - "Provide automated graceful text fallback with chapter scripture text if media delivery fails or encounters upstream gateway errors, ensuring users never experience dead-silence."
+  - "Include `x-api-key` and `Authorization: Bearer <key>` headers in `WAClient` requests when an API key is configured."
+  - "Parse incoming webhooks via `IncomingWebhookPayload` supporting both simplified REST wrapper fields (`sender`, `from`, `body`, `text`, `caption`, `content`) and raw Baileys multi-device schemas (`conversation`, `extendedTextMessage.text`, `buttonsResponseMessage`, `listResponseMessage`)."
+  - "Normalize gateway session status responses in `WAClient.get_session_status()` to standardized top-level statuses (`CONNECTED`, `DISCONNECTED`, `INITIALIZING`, `UNKNOWN`, `UNREACHABLE`) for frontend UI consumers."
+  - "Implement dual-storage subscriber persistence: store active subscriptions in SQLite (`data/whatsapp_subscribers.sqlite.db`) and mirror active records to `data/whatsapp_subscribers.json` on every change; auto-hydrate the SQLite database from JSON upon cold container startup."
+  - "Support dynamic runtime gateway reconfiguration via `data/whatsapp_config.json` and `wa_client.update_config(...)` to hot-swap endpoint URLs, session IDs, and simulation modes with zero downtime."
+  - "Provide an interactive CLI message dispatcher and diagnostic tool (`scripts/send_whatsapp_message.py`) with `--audio` support for live session verification, manual alert dispatch, and terminal testing."
   - "Mount the controller into `app/main.py` using standard FastAPI router patterns: `app.include_router(whatsapp_router, prefix='/api/whatsapp')`."
   - "Orchestrate `elroi-bible` and `wa-akg-gateway` in `render.yaml` utilizing Render's `repo: https://github.com/mrifqidaffaaditya/WA-AKG.git` and connecting to external Supabase PostgreSQL via `DATABASE_URL` (`sync: false`)."
   - "In `render.yaml`, adapt WA-AKG's Prisma datasource provider during build (`sed -i 's/\"mysql\"/\"postgresql\"/g' prisma/schema.prisma`) to seamlessly bind with Supabase PostgreSQL."
 
 dont:
+  - "Do not post JSON payloads to non-existent endpoints like `/messages/send-media`; WA-AKG expects multipart/form-data at `/messages/{sessionId}/{jid}/media`."
+  - "Do not lock the `httpx.AsyncClient` default headers to `application/json` which corrupts multipart boundaries."
+  - "Do not use simplistic `.split(maxsplit=2)` string parsing for audio references, which fails on numbered books like 1 John or verse ranges."
+  - "Do not fail silently when audio dispatch encounters network issues; always reply with fallback scripture text."
   - "Do not import `app.db`, `app.quiz_data`, or `app.plans_data` inside `whatsapp_gateway/client/` or `whatsapp_gateway/bot/`."
   - "Do not block the main asyncio event loop with synchronous audio synthesis or database reads."
   - "Do not process webhook messages where `payload.is_from_me()` is True, preventing recursive bot message loops."
+  - "Do not rely exclusively on ephemeral container filesystems for subscriber records without JSON backup synchronization."
   - "Do not declare unnecessary auxiliary services or databases in `render.yaml` that trigger quota limits on Render workspaces."
+  - "Do not hardcode gateway session IDs or API keys in code; load from environment variables with admin runtime overrides."
 
 reason:
-  "Strict layer separation ensures full reusability across future software projects, keeps the codebase maintainable, and guarantees that external messaging failures cannot destabilize core desktop or web scripture reading services. Single-service deployment prevents quota exhaustion on Render."
+  "Strict layer separation ensures full reusability across future software projects, keeps the codebase maintainable, and guarantees that external messaging failures cannot destabilize core desktop or web scripture reading services. Offloading multi-device session auth to Supabase prevents 30-day database teardown, while JSON hydration shields subscriber subscriptions against ephemeral dyno cycling. Proper multipart media routing guarantees seamless delivery of devotional voice notes to mobile WhatsApp users."
 
 related_items:
   - ARCH-SYS-001
   - ARCH-DATA-001
+  - ARCH-ADMIN-001
   - DEV-PY-001
+  - DEV-TEST-001
+  - PROD-AUDIO-001
+  - ADR-005

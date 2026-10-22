@@ -1,8 +1,8 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/bible"
-knowledge_units_count: 18
-last_updated: "2026-10-21"
+knowledge_units_count: 19
+last_updated: "2026-10-22"
 
 knowledge_units:
   architecture:
@@ -48,7 +48,7 @@ knowledge_units:
       title: "Multi-Canon (Catholic 73 Books & Protestant 66 Books) Navigation Standard"
     - id: PROD-SONGS-001
       file: "knowledge/product/PROD-SONGS-001.yaml"
-      title: "Christian Song Lyrics, Contemporary Worship Collections & Hymnal Standard"
+      title: "Christian Song Lyrics, Hymnal Presentation & Dual-Page Search Standard"
     - id: PROD-TYPO-001
       file: "knowledge/product/PROD-TYPO-001.yaml"
       title: "Scripture Typography, Persistent Font Scaling & Multi-Reader Isolation Standard"
@@ -66,3 +66,6 @@ knowledge_units:
     - id: ADR-004
       file: "knowledge/decisions/ADR-004.yaml"
       title: "Decoupled Dedicated Song Lyrics Database (songs.sqlite.db) from Scripture Database (bible.sqlite.db)"
+    - id: ADR-005
+      file: "knowledge/decisions/ADR-005.yaml"
+      title: "External Supabase PostgreSQL & Persistent JSON Hydration for WA-AKG WhatsApp Multi-Device Gateway"

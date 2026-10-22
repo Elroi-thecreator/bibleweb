@@ -7,6 +7,7 @@ import base64
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+import urllib.parse
 import httpx
 
 from whatsapp_gateway.config import config as default_config
@@ -44,7 +45,7 @@ class WAClient:
             else default_config.enable_simulation_mode
         )
 
-        headers = {"Content-Type": "application/json"}
+        headers = {}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
             headers["x-api-key"] = self.api_key
@@ -73,10 +74,13 @@ class WAClient:
         if simulation_mode is not None:
             self.simulation_mode = bool(simulation_mode)
 
-        headers = {"Content-Type": "application/json"}
+        headers = {}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
             headers["x-api-key"] = self.api_key
+        # Clean any stale Content-Type header to allow httpx to set multipart boundaries dynamically
+        if "Content-Type" in self._client.headers:
+            del self._client.headers["Content-Type"]
         self._client.headers.update(headers)
 
     def toggle_simulation(self, enable: Optional[bool] = None) -> bool:
@@ -203,8 +207,6 @@ class WAClient:
         if not raw_bytes:
             raise ValueError("Either file_path or file_bytes must be provided for send_media.")
 
-        b64_content = base64.b64encode(raw_bytes).decode("ascii")
-
         if self.simulation_mode:
             logger.info("[SIMULATION] Dispatching WhatsApp Media (%s) to %s (len: %d bytes)", m_type, target, len(raw_bytes))
             record = {
@@ -224,19 +226,46 @@ class WAClient:
                 raw=record,
             )
 
-        endpoint = f"{self.base_url}/messages/send-media"
-        payload = {
-            "sessionId": sess,
-            "to": target,
-            "mediaType": m_type,
+        # Map mediaType for WA-AKG ChatService (expects "voice" for PTT voice notes, "audio" for audio files)
+        if m_type == "audio":
+            type_param = "voice" if ptt else "audio"
+        else:
+            type_param = m_type
+
+        # Determine file extension and MIME type
+        ext = Path(resolved_name or ("voice.mp3" if ptt else "audio.mp3")).suffix.lower()
+        mime_map = {
+            ".mp3": "audio/mpeg",
+            ".m4a": "audio/mp4",
+            ".ogg": "audio/ogg",
+            ".wav": "audio/wav",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".pdf": "application/pdf",
+        }
+        mime_type = mime_map.get(ext, "audio/mpeg" if m_type == "audio" else "application/octet-stream")
+
+        file_tuple_name = resolved_name or ("voice.mp3" if ptt else "audio.mp3")
+        files = {
+            "file": (file_tuple_name, raw_bytes, mime_type)
+        }
+        form_data = {
+            "type": type_param,
             "caption": caption or "",
-            "fileName": resolved_name or "file",
-            "ptt": ptt,
-            "mediaBase64": b64_content,
         }
 
+        # WA-AKG native endpoint: POST /api/messages/{sessionId}/{encodedJid}/media
+        encoded_target = urllib.parse.quote(target, safe="")
+        endpoint_native = f"{self.base_url}/messages/{sess}/{encoded_target}/media"
+
         try:
-            response = await self._client.post(endpoint, json=payload)
+            response = await self._client.post(endpoint_native, files=files, data=form_data)
+            if response.status_code == 404:
+                # Fallback to unencoded JID in path
+                endpoint_unencoded = f"{self.base_url}/messages/{sess}/{target}/media"
+                response = await self._client.post(endpoint_unencoded, files=files, data=form_data)
+
             if response.status_code >= 400:
                 logger.error("WA-AKG media error %s: %s", response.status_code, response.text)
                 return SendMessageResponse(
@@ -246,14 +275,20 @@ class WAClient:
                 )
 
             data = response.json()
+            msg_id = (
+                data.get("id")
+                or data.get("messageId")
+                or (data.get("data") or {}).get("key", {}).get("id")
+                or "sent"
+            )
             return SendMessageResponse(
                 success=True,
-                message_id=data.get("id") or data.get("messageId"),
+                message_id=msg_id,
                 to=target,
                 raw=data,
             )
         except httpx.RequestError as exc:
-            logger.error("Failed to dispatch media to WA-AKG gateway: %s", exc)
+            logger.error("Failed to dispatch media to WA-AKG gateway at %s: %s", endpoint_native, exc)
             raise WAGatewayConnectionError(f"Could not reach WA-AKG: {exc}") from exc
 
     async def get_session_status(self, session_id: Optional[str] = None) -> Dict[str, Any]:

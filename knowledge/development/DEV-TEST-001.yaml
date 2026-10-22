@@ -3,7 +3,7 @@ type: development_standard
 title: Automated Verification, Route Integrity & Standalone Executable Smoke Testing
 domain: development
 status: approved
-version: 1.1.0
+version: 1.2.0
 authority:
   level: official
   confidence: high
@@ -14,29 +14,43 @@ applies_to:
   - backend
   - windows_app
   - ci_cd
+  - admin
+  - whatsapp_gateway
+  - audio_player
 
 rule:
-  "Every change to backend routes, database schema, audio logic, or desktop packaging must pass automated validation, robustness verification, and smoke tests before committing or publishing release tags."
+  "Every change to backend routes, administrative security, database schemas, audio logic, messaging gateways, or desktop packaging must pass automated validation, robustness verification, and smoke tests before committing or publishing release tags."
 
 do:
   - "Verify FastAPI route integrity using `pytest` and `httpx.AsyncClient` or FastAPI `TestClient`."
   - "Execute `scripts/test_robustness.py` to verify OWASP security headers, static/reader caching, 304 Not Modified status, custom branded 404/500 error pages, and deep database health checks."
   - "Execute `scripts/test_compression.py` to verify Brotli and Gzip wire compression ratios (>91% savings) and 100% decompression roundtrip integrity."
-  - "Verify that empty query string navigations on user-facing routes (such as `/search`) return 200 HTML responses instead of 422 JSON validation errors."
+  - "Execute `scripts/test_admin_settings.py` to verify HMAC session authentication, constant-time password checks, route guards (`require_admin`), HTML/audio cache clearing, runtime configuration persistence (`data/whatsapp_config.json`), and system telemetry."
+  - "Execute `scripts/test_whatsapp_webhook.py` to verify incoming webhook parsing (both simplified and Baileys schemas), bot command routing, multi-turn quiz evaluation, subscriber dual-storage hydration, and broadcast delivery."
+  - "Execute `scripts/send_whatsapp_message.py` for manual diagnostics, interactive CLI message dispatching, and live gateway reachability verification."
+  - "Execute `scripts/test_typography.py` to verify persistent font scaling, bounds validation (12px - 36px), unit isolation (`bible_font_size` vs `bible_readalong_font_rem`), and automatic corrupted-value self-healing."
+  - "Execute `scripts/test_quiz_integrity.py` to verify quiz question schema, category balance, answer option shuffling, and scripture citation accuracy."
+  - "Execute `scripts/test_songs.py` to verify dual-database song integrity, bilingual lyric stanzas (`lines_ta`, `lines_en`), and 100% valid YouTube embed and stream URL coverage."
+  - "Execute audio test suite (`scripts/test_audio_flow_e2e.py`, `scripts/test_audio_deduplication.py`, `scripts/test_audio_concurrency_and_cache.py`, `scripts/test_audio.py`) to verify 4-worker concurrent prefetching, in-flight deduplication, and BoundedAudioCache disk persistence."
   - "Verify SQLite queries for verse counts across both Catholic (73 books) and Protestant (66 books) canons via `scripts/test_dual_corpus.py`."
   - "Validate that `windows_app/app.py` boots in headless/smoke mode without throwing unhandled exceptions."
   - "Verify that WinGet manifest generator (`windows_app/generate_winget_manifest.py`) outputs valid schema v1.6.0 YAML matching the compiled executable's SHA256."
   - "Ensure `git status` remains clean of temporary PyInstaller artifacts or SQLite journal files (`.db-journal`, `.db-wal`)."
 
 dont:
-  - "Do not commit changes with broken verse retrieval queries."
+  - "Do not commit changes with broken verse retrieval queries or failing administrative auth guards."
   - "Do not generate releases without matching binary SHA256 checksums."
-  - "Do not bypass GitHub Actions workflow checks."
+  - "Do not bypass GitHub Actions workflow checks or smoke tests."
+  - "Do not commit changes that fail automated compression or robustness suites."
 
 reason:
-  "Automated gate checks prevent regressions across web users and preserve seamless desktop distribution through Microsoft WinGet."
+  "Automated gate checks prevent regressions across web users, safeguard administrative security boundaries, protect message dispatch pipelines, and preserve seamless desktop distribution through Microsoft WinGet."
 
 related_items:
   - ARCH-SYS-001
   - ARCH-DIST-001
+  - ARCH-ADMIN-001
+  - ARCH-WA-001
   - DEV-BUILD-001
+  - DEV-PY-001
+  - DEV-PERF-001

@@ -183,12 +183,30 @@ async def run_tests():
         assert "Daily Scripture Reading Plan" in outbox[0]["text"]
         print("  ✅ Reading plan information successfully displayed.")
 
-        # 14. Test Audio Bible Generation
+        # 14. Test Audio Bible Generation across English, Tamil & Numbered Books
         print("\n[14] Testing Audio Bible 'audio John 1'...")
         outbox = await send_simulated_msg("audio John 1")
         assert len(outbox) == 1
-        assert outbox[0].get("media_type") == "audio" or "Audio" in outbox[0].get("text", "")
-        print("  ✅ Audio Bible handler processed successfully.")
+        assert outbox[0].get("media_type") == "audio" or "Audio" in outbox[0].get("caption", "") or "Audio" in outbox[0].get("text", "")
+        print("  ✅ 'audio John 1' processed successfully.")
+
+        print("     Testing Audio Bible with Numbered Book 'audio 1 John 1'...")
+        outbox_num = await send_simulated_msg("audio 1 John 1")
+        assert len(outbox_num) == 1
+        assert outbox_num[0].get("media_type") == "audio" or "1 John" in outbox_num[0].get("caption", "")
+        print("  ✅ 'audio 1 John 1' (numbered book) processed successfully.")
+
+        print("     Testing Audio Bible with Verse Range 'audio John 1:1-5'...")
+        outbox_range = await send_simulated_msg("audio John 1:1-5")
+        assert len(outbox_range) == 1
+        assert outbox_range[0].get("media_type") == "audio" or "1:1-5" in outbox_range[0].get("caption", "")
+        print("  ✅ 'audio John 1:1-5' (verse range) processed successfully.")
+
+        print("     Testing Audio Bible in Tamil 'audio யோவான் 1'...")
+        outbox_ta = await send_simulated_msg("audio யோவான் 1")
+        assert len(outbox_ta) == 1
+        assert outbox_ta[0].get("media_type") == "audio" or "வேத ஆடியோ" in outbox_ta[0].get("caption", "")
+        print("  ✅ 'audio யோவான் 1' (Tamil scripture audio) processed successfully.")
 
         # 15. Test Administrative Broadcast Endpoint
         print("\n[15] Testing POST /api/whatsapp/broadcast...")

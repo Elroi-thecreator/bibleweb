@@ -3,7 +3,7 @@ type: architecture_standard
 title: Administrator Authentication, Protected Settings & System Telemetry Architecture
 domain: architecture
 status: approved
-version: 1.1.0
+version: 1.2.0
 authority:
   level: official
   confidence: high
@@ -29,9 +29,10 @@ do:
   - "Authenticate administrator credentials (`ADMIN_USERNAME`, `ADMIN_PASSWORD`) using `secrets.compare_digest` to eliminate timing attack vulnerabilities."
   - "Sign session tokens with HMAC-SHA256 (`base64(username:timestamp:hmac_signature)`) using `ADMIN_SECRET_KEY` or a cryptographically stable machine seed."
   - "Store admin session tokens in secure `HttpOnly`, `SameSite=Lax` cookies named `bible_admin_session` with a 7-day expiration (604,800s)."
-  - "Provide diagnostic telemetry on `/admin/settings`: server uptime, CPU/memory usage via `psutil`, database health for dual SQLite databases (`bible.sqlite.db`, `songs.sqlite.db`, `whatsapp_subscribers.sqlite.db`), and cache metrics."
+  - "Provide diagnostic telemetry on `/admin/settings`: server uptime, CPU/memory usage via `psutil`, database health for embedded SQLite databases (`bible.sqlite.db`, `songs.sqlite.db`, `whatsapp_subscribers.sqlite.db`), JSON subscriber backup state (`data/whatsapp_subscribers.json`), and cache metrics."
   - "Provide instant administrative actions: Purge HTML Cache (`BoundedHTMLCache`), Purge Audio TTS Cache (`BoundedAudioCache`), Toggle WhatsApp Simulation Mode, Ping External Gateway, and Manually Trigger Daily Devotional Broadcasts."
   - "Provide clean session termination via `/admin/logout`, properly clearing the session cookie and redirecting to the login portal."
+  - "Execute `scripts/test_admin_settings.py` before releasing administrative changes to ensure 100% coverage of auth guards, session cookies, cache purges, and runtime configuration persistence."
 
 dont:
   - "Do not expose administrative configuration, cache eviction, or broadcast triggers without authentication."
@@ -46,3 +47,5 @@ related_items:
   - ARCH-SYS-001
   - ARCH-WA-001
   - DEV-PY-001
+  - DEV-TEST-001
+  - ADR-005

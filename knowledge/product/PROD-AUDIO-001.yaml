@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation, Concurrent Chapter Prefetching & Persistent Audio Cache Standard
 domain: product
 status: approved
-version: 1.15.0
+version: 1.16.0
 authority:
   level: official
   confidence: high
@@ -64,11 +64,11 @@ dont:
   - "Do not download audio for the same verse more than once; always verify `verseAudioBlobs` and `inFlightRequests` before initiating an HTTP GET."
   - "Do not re-fetch audio over the network if a user clicks on an already downloaded verse; immediately stream from the local cached `blobUrl`."
   - "Do not wait for verse 0 to finish downloading or start playing before initiating upcoming verse prefetching; launch concurrent chapter prefetch immediately."
-  - "Do not run a single-threaded sequential prefetch loop when prefetching upcoming verses; use a 3-worker concurrency pool."
+  - "Do not run a single-threaded sequential prefetch loop when prefetching upcoming verses; use a 4-worker concurrency pool."
   - "Do not fall back immediately to female gTTS when a male voice is requested if alternative neural male voices are reachable."
   - "Do not omit pitch from cache key hashing, which causes cross-tone collision when toggling between standard and bass voices."
   - "Do not read translator notes, editorial insertions, or manuscript variant markers enclosed in `[]` or `{}` aloud."
-  - "Do not flood the network beyond concurrency limits; cap prefetch concurrency at 3 workers to prevent Microsoft Edge-TTS rate limiting."
+  - "Do not flood the network beyond concurrency limits; cap prefetch concurrency at 4 workers to prevent Microsoft Edge-TTS rate limiting."
   - "Do not attempt to prefetch beyond the chapter's verse array length on the last verse."
   - "Do not allow background prefetch failures or network blips to interrupt or halt the currently playing audio stream."
   - "Do not block UI scrolling or responsiveness during speech synthesis."
@@ -81,7 +81,7 @@ dont:
   - "Do not include playback rate or speed in client-side audio cache keys (`getVerseCacheKey`, `itemKey`)."
 
 reason:
-  "Showing real-time download status on each verse gives readers instant visual confirmation of audio availability. Coupling immediate parallel 3-worker prefetching with two-tier in-memory and persistent disk caching drops chapter verse prefetch times by over 3.5x and provides sub-millisecond instant audio playback for subsequent listens, all while preventing duplicate requests."
+  "Showing real-time download status on each verse gives readers instant visual confirmation of audio availability. Coupling immediate parallel 4-worker prefetching with two-tier in-memory and persistent disk caching drops chapter verse prefetch times by over 3.5x and provides sub-millisecond instant audio playback for subsequent listens, all while preventing duplicate requests."
 
 related_items:
   - ARCH-SYS-001

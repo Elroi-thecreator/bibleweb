@@ -486,49 +486,137 @@ async def handle_unsubscribe(ctx: MessageContext) -> None:
 
 
 async def handle_audio_command(ctx: MessageContext) -> None:
-    """Handles audio voice note generation (e.g. 'audio John 3' or 'listen Psalm 23')."""
-    parts = ctx.text.strip().split(maxsplit=2)
-    if len(parts) < 3:
-        await ctx.reply_text("🎧 *Usage*: `audio <book> <chapter>` (e.g. `audio John 3` or `listen Psalm 23`)")
+    """Handles audio voice note generation (e.g. 'audio John 1' or 'listen Psalm 23' or 'audio யோவான் 1')."""
+    raw_text = ctx.text.strip()
+    cmd_match = re.match(r"^(?:audio|listen|voice|கேட்க)\s*(.*)$", raw_text, re.IGNORECASE)
+    ref = cmd_match.group(1).strip() if cmd_match else ""
+
+    if not ref:
+        await ctx.reply_text(
+            "🎧 *Audio Bible Voice Notes*\n\n"
+            "• `audio John 1` (Listen to John chapter 1)\n"
+            "• `audio 1 John 1:1-5` (Listen to specific verses)\n"
+            "• `audio Psalm 23` (Listen to Psalm 23)\n"
+            "• `audio யோவான் 1` (Listen in Tamil)\n\n"
+            "_Send `audio <book> <chapter>` to receive an instant WhatsApp voice note!_"
+        )
         return
 
-    raw_book = parts[1]
-    raw_chapter = parts[2]
-    if not raw_chapter.isdigit():
-        await ctx.reply_text("❌ Chapter must be a valid number (e.g. `audio John 3`).")
+    ref_match = re.match(
+        r"^([1-3]?\s*[a-zA-Z\u0B80-\u0BFF\s]+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$",
+        ref,
+        re.IGNORECASE,
+    )
+    if not ref_match:
+        await ctx.reply_text(
+            "❌ *Invalid format*. Please specify book and chapter:\n"
+            "• `audio John 1`\n"
+            "• `audio 1 John 1`\n"
+            "• `audio Psalm 23`\n"
+            "• `audio John 1:1-5`"
+        )
         return
 
-    chapter = int(raw_chapter)
+    raw_book = ref_match.group(1).strip()
+    chapter = int(ref_match.group(2))
+    v_start = int(ref_match.group(3)) if ref_match.group(3) else None
+    v_end = int(ref_match.group(4)) if ref_match.group(4) else v_start
+
     book_id = resolve_book_id(raw_book)
     if not book_id:
-        await ctx.reply_text(f"❌ Book '{raw_book}' not recognized.")
+        await ctx.reply_text(f"❌ Book '{raw_book}' not recognized. Please check spelling (e.g. `audio John 1`).")
         return
 
     book_meta = CATHOLIC_BOOK_MAP.get(book_id, BOOK_MAP.get(book_id))
     verses = await asyncio.to_thread(get_chapter_verses, book_id, chapter)
     if not verses:
-        await ctx.reply_text("❌ No chapter text available for audio playback.")
+        await ctx.reply_text(f"❌ No chapter text available for {book_meta.get('name_en', raw_book)} chapter {chapter}.")
         return
 
-    scripture_text = " ".join([v.get("text_en") or "" for v in verses[:5]])
-    caption = f"🎧 Audio Bible: {book_meta['name_en']} {chapter}:1-5"
+    total_verses = len(verses)
+    if v_start is not None:
+        start_idx = max(1, min(v_start, total_verses))
+        end_idx = max(start_idx, min(v_end or start_idx, total_verses))
+        if end_idx - start_idx + 1 > 7:
+            end_idx = start_idx + 6
+        selected_verses = verses[start_idx - 1:end_idx]
+        range_label = f"{chapter}:{start_idx}-{end_idx}" if start_idx != end_idx else f"{chapter}:{start_idx}"
+    else:
+        take = min(5, total_verses)
+        selected_verses = verses[:take]
+        range_label = f"{chapter}:1-{take}"
 
+    is_ta = is_tamil_text(raw_text) or is_tamil_text(raw_book)
+    book_name = book_meta["name_ta"] if is_ta else book_meta["name_en"]
+    lang_code = "ta" if is_ta else "en"
+    text_key = "text_ta" if is_ta else "text_en"
+
+    cleaned_lines = []
+    for v in selected_verses:
+        t = v.get(text_key) or (v.get("text_en") if is_ta else "") or ""
+        t_clean = re.sub(r"\[.*?\]|\{.*?\}", "", t).strip()
+        if t_clean:
+            cleaned_lines.append(t_clean)
+
+    if not cleaned_lines:
+        await ctx.reply_text(f"❌ Scripture text unavailable for {book_name} {range_label}.")
+        return
+
+    scripture_speech = " ".join(cleaned_lines)
+    caption_title = f"வேத ஆடியோ: {book_name} {range_label}" if is_ta else f"Audio Bible: {book_name} {range_label}"
+    caption = f"🎧 {caption_title}\n\n_Reply '{book_name} {chapter}' to read full text._"
+
+    # Neural speech synthesis with -8Hz deep bass
+    voice_name = "ta-LK-KumarNeural" if is_ta else "en-US-ChristopherNeural"
+    audio_bytes = b""
     try:
-        from gtts import gTTS
-        fp = io.BytesIO()
-        tts = gTTS(text=scripture_text, lang="en")
-        await asyncio.to_thread(tts.write_to_fp, fp)
-        audio_bytes = fp.getvalue()
+        import edge_tts
+        comm = edge_tts.Communicate(scripture_speech, voice_name, pitch="-8Hz")
+        async for chunk in comm.stream():
+            if chunk["type"] == "audio":
+                audio_bytes += chunk["data"]
+    except Exception as tts_err:
+        logger.warning("Edge-TTS error (%s), falling back to gTTS", tts_err)
 
-        await ctx.reply_audio(
+    if not audio_bytes:
+        try:
+            from gtts import gTTS
+            fp = io.BytesIO()
+            tts = gTTS(text=scripture_speech, lang=lang_code)
+            await asyncio.to_thread(tts.write_to_fp, fp)
+            audio_bytes = fp.getvalue()
+        except Exception as gtts_err:
+            logger.error("gTTS fallback failed: %s", gtts_err)
+            await ctx.reply_text(
+                f"⚠️ Could not synthesize audio voice note.\n\n"
+                f"📖 *{book_name} {range_label}*:\n\n{scripture_speech[:800]}"
+            )
+            return
+
+    safe_file_name = f"{book_meta['name_en'].replace(' ', '_')}_{chapter}.mp3"
+    try:
+        res = await ctx.reply_audio(
             file_path_or_bytes=audio_bytes,
             caption=caption,
             ptt=True,
-            file_name=f"{book_meta['name_en']}_{chapter}.mp3",
+            file_name=safe_file_name,
         )
+        if not res or not res.success:
+            err_detail = res.error if res else "Unknown dispatch error"
+            logger.error("Failed to deliver WhatsApp audio note to %s: %s", ctx.sender, err_detail)
+            await ctx.reply_text(
+                f"🎧 *{caption_title}*\n\n"
+                f"⚠️ _(Voice note delivery could not be completed: {err_detail})_\n\n"
+                f"📖 *Scripture Text:*\n{scripture_speech[:900]}\n\n"
+                f"_Reply '{book_name} {chapter}' to read the chapter._"
+            )
     except Exception as exc:
-        logger.error("TTS audio generation error: %s", exc)
-        await ctx.reply_text(f"⚠️ Could not generate audio clip: {exc}")
+        logger.error("Error dispatching audio note: %s", exc)
+        await ctx.reply_text(
+            f"🎧 *{caption_title}*\n\n"
+            f"📖 *Scripture Text:*\n{scripture_speech[:900]}\n\n"
+            f"_Reply '{book_name} {chapter}' to read the chapter._"
+        )
 
 
 async def handle_help_menu(ctx: MessageContext) -> None:

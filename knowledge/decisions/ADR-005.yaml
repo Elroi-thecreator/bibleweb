@@ -1,0 +1,36 @@
+id: ADR-005
+type: decision_record
+title: External Supabase PostgreSQL & Persistent JSON Hydration for WA-AKG WhatsApp Multi-Device Gateway
+domain: decisions
+status: accepted
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+context:
+  "Integrating the automated WhatsApp Bible assistant and daily devotional alerts required orchestrating the WA-AKG (Next.js + Baileys) gateway alongside the Python web service. WA-AKG requires a persistent relational database for Prisma to store Multi-Device WhatsApp authentication credentials, encryption keys, and session tokens. In our initial cloud deployment on Render.com, we considered hosting a managed Render PostgreSQL database (`wa-akg-postgres`) or local SQLite/MySQL. However, Render's free/starter managed databases expire and are deleted after 30 days, causing catastrophic loss of WhatsApp device pairings and requiring recurring manual QR-code re-linking. Furthermore, Render accounts enforce a strict 25-resource quota limit across all services and databases. Additionally, cloud dynos/containers on platforms like Render are ephemeral, causing local filesystem state writes to be lost during service redeploys or restarts."
+
+decision:
+  "We migrated WA-AKG's persistent session database to an external, perpetually persistent Supabase PostgreSQL database cluster configured via `DATABASE_URL` (`sync: false`) in `render.yaml`. We patched WA-AKG's Prisma datasource schema during the build step (`sed -i 's/\"mysql\"/\"postgresql\"/g' prisma/schema.prisma`). For Python-side subscriber management, we implemented dual storage: active subscribers are stored in a thread-safe embedded SQLite database (`data/whatsapp_subscribers.sqlite.db`) and simultaneously persisted to a JSON file (`data/whatsapp_subscribers.json`), which automatically hydrates the SQLite table upon cold container startups. Finally, we enabled live runtime gateway reconfiguration via an HMAC-protected administrative dashboard (`/admin/settings`)."
+
+consequences:
+  positive:
+    - "Eliminates the 30-day database teardown risk on Render, ensuring indefinite WhatsApp Multi-Device session persistence without periodic QR re-scans."
+    - "Conserves Render workspace quotas by offloading database management to an external Supabase PostgreSQL cluster."
+    - "Zero subscriber loss across ephemeral container rebuilds or dyno restarts thanks to automatic JSON backup hydration."
+    - "Enables dynamic zero-downtime updates to gateway URLs, session IDs, and API keys via protected administrative settings without redeploying code."
+    - "Keeps core Scripture and Song databases 100% offline-first and embedded in SQLite, isolating external network dependencies exclusively to WhatsApp messaging."
+  negative:
+    - "Requires maintaining external Supabase project credentials (`DATABASE_URL`)."
+    - "Build step on Render must include a sed patch command to adapt Prisma schema dialect from mysql to postgresql."
+
+related_items:
+  - ARCH-WA-001
+  - ARCH-ADMIN-001
+  - ARCH-DATA-001
+  - DEV-PY-001
+  - DEV-TEST-001
+  - ADR-002

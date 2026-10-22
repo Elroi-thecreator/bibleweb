@@ -3,7 +3,7 @@ type: development_standard
 title: FastAPI Backend Route Conventions, Async Patterns & Jinja2 Templates
 domain: development
 status: approved
-version: 1.4.0
+version: 1.5.0
 authority:
   level: official
   confidence: high
@@ -14,15 +14,19 @@ applies_to:
   - backend
   - routes
   - templates
+  - admin
+  - whatsapp_gateway
 
 rule:
-  "FastAPI routes in `app/main.py` must use asynchronous request handlers, offload all synchronous database calls to background worker threads using `await asyncio.to_thread(...)`, return cleanly structured Jinja2 templates or JSON payloads, enforce OWASP security headers, provide immutable HTTP caching with conditional ETags, cache pre-rendered and pre-compressed HTML responses in memory via `BoundedHTMLCache`, and handle errors via branded bilingual HTML templates."
+  "FastAPI routes in `app/main.py` and modular sub-routers (`app/admin/routes.py`, `whatsapp_gateway/routes/webhook.py`) must use asynchronous request handlers, offload all synchronous database calls and filesystem telemetry to background worker threads using `await asyncio.to_thread(...)`, return cleanly structured Jinja2 templates or JSON payloads, enforce OWASP security headers, provide immutable HTTP caching with conditional ETags, cache pre-rendered and pre-compressed HTML responses in memory via `BoundedHTMLCache`, mount administrative routes under `/admin` with cryptographic authentication guards (`require_admin`), and handle errors via branded bilingual HTML templates."
 
 do:
   - "Mount static files at `/static` using `app.mount('/static', StaticFiles(directory=get_static_dir()), name='static')`."
   - "Configure `Jinja2Templates` pointing to `get_templates_dir()` so templates render properly both in source mode and frozen executable mode."
-  - "Implement clean canonical URL structures (`/`, `/{canon}/{version}/{book}/{chapter}`, `/quiz`, `/search`, `/plans`, `/present`)."
-  - "Wrap all blocking SQLite database queries (`get_chapter_verses`, `search_verses`, `get_songs_list`, `get_song_by_id`, `get_song_books`, etc.) in `await asyncio.to_thread(...)` inside async route handlers to keep the asyncio event loop free for concurrent request orchestration."
+  - "Implement clean canonical URL structures (`/`, `/{canon}/{version}/{book}/{chapter}`, `/quiz`, `/search`, `/plans`, `/present`, `/whatsapp`, `/admin/login`, `/admin/settings`)."
+  - "Mount modular APIRouters cleanly: `app.include_router(whatsapp_router, prefix='/api/whatsapp', tags=['whatsapp'])` and `app.include_router(admin_router, prefix='/admin', tags=['admin'])`."
+  - "Redirect public `/settings` to `/admin/settings` via HTTP 303, strictly enforcing administrator authentication via `require_admin`."
+  - "Wrap all blocking SQLite database queries (`get_chapter_verses`, `search_verses`, `get_songs_list`, `get_song_by_id`, `get_song_books`, subscriber lookups, and DB telemetry) in `await asyncio.to_thread(...)` inside async route handlers to keep the asyncio event loop free for concurrent request orchestration."
   - "Cache pre-rendered and pre-compressed HTML responses in memory using `BoundedHTMLCache` (thread-safe LRU cache with bounded maxsize=512) storing raw HTML, Brotli (`.br`, quality 4), and Gzip (`.gzip`, level 5) across `/read/{book}/{chapter}`, `/`, `/songs`, `/search`, `/present/{book}/{chapter}`, and `/plans` to eliminate both Jinja2 rendering and Brotli recompression CPU overheads."
   - "In `BoundedHTMLCache.get_response(key, request)`, inspect incoming `Accept-Encoding` headers and directly return pre-compressed Brotli or Gzip byte buffers with `Content-Encoding: br/gzip`, allowing `BrotliMiddleware` to pass responses through with 0 ms CPU time."
   - "Enforce OWASP security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-XSS-Protection: 1; mode=block`) and aggressive static caching (`Cache-Control: public, max-age=604800, immutable`) via HTTP middleware."
@@ -30,7 +34,8 @@ do:
   - "Implement branded bilingual HTML exception handlers for `StarletteHTTPException` (404) and `Exception` (500) rendering `templates/404.html` and `templates/500.html` with search and navigation shortcuts, while returning structured JSON for `/api/*` endpoints."
   - "Use FastAPI's `@asynccontextmanager async def lifespan(app: FastAPI)` for startup connection pre-warming and graceful shutdown cleanup."
   - "Ensure query parameters on HTML page endpoints (e.g., `/search`, `/plans`) do not impose mandatory `min_length` constraints that cause 422 JSON validation responses; empty query states must render the appropriate HTML landing template."
-  - "Return clear JSON error structures with HTTP status codes for API endpoints (`/api/verses`, `/api/quiz`)."
+  - "Implement dependency-free URL-encoded and form data parsing (`_parse_form_data`) for administrative authentication to eliminate redundant external library dependencies."
+  - "Return clear JSON error structures with HTTP status codes for API endpoints (`/api/verses`, `/api/quiz`, `/admin/api/*`)."
   - "Mount `BrotliMiddleware` (with `GZipMiddleware` fallback) with a 1,000-byte threshold to compress dynamic un-cached HTML and JSON responses."
   - "Sanitize and escape user input before rendering in Jinja2 templates to prevent Cross-Site Scripting (XSS)."
 
@@ -39,14 +44,18 @@ dont:
   - "Do not return raw unformatted JSON errors or uncaught tracebacks to end users on HTML web routes."
   - "Do not omit HTTP caching and conditional ETag validation on immutable scripture chapter responses."
   - "Do not invoke synchronous database calls directly on the asyncio event loop without `await asyncio.to_thread(...)` in route handlers."
+  - "Do not expose administrative configuration or system management endpoints without `require_admin` role validation."
   - "Do not enforce `min_length` or strict validation constraints on optional HTML route query parameters that would cause FastAPI to abort and return a 422 JSON payload."
   - "Do not perform synchronous blocking I/O directly in high-throughput route handlers."
   - "Do not render untrusted HTML without autoescaping."
 
 reason:
-  "Standardized route definitions, deterministic caching, security headers, and branded fault-tolerant error handlers ensure exceptional reliability, user experience, and predictability across web and desktop runtimes."
+  "Standardized route definitions, deterministic caching, security headers, modular router mounting, and branded fault-tolerant error handlers ensure exceptional reliability, user experience, and predictability across web and desktop runtimes."
 
 related_items:
   - ARCH-SYS-001
   - ARCH-DATA-001
+  - ARCH-WA-001
+  - ARCH-ADMIN-001
   - DEV-BUILD-001
+  - DEV-TEST-001

@@ -36,6 +36,7 @@ async def send_message_cli(
     session_id: str,
     api_key: str | None = None,
     simulate: bool = False,
+    audio_passage: str | None = None,
 ):
     print("\n" + "=" * 70)
     print("📤 WhatsApp Dispatcher & Gateway Verification")
@@ -45,7 +46,10 @@ async def send_message_cli(
     print(f"  🔑 API Key     : {'••••••••' if api_key else '(None configured)'}")
     print(f"  🧪 Mode        : {'SIMULATION (Mock)' if simulate else 'LIVE GATEWAY'}")
     print(f"  🎯 Recipient   : {recipient}")
-    print(f"  💬 Message     : {message_text}")
+    if audio_passage:
+        print(f"  🎧 Audio Bible : {audio_passage}")
+    else:
+        print(f"  💬 Message     : {message_text}")
     print("-" * 70)
 
     client = WAClient(
@@ -53,7 +57,7 @@ async def send_message_cli(
         default_session_id=session_id,
         api_key=api_key,
         simulation_mode=simulate,
-        timeout=15.0,
+        timeout=25.0,
     )
 
     t0 = time.time()
@@ -69,7 +73,55 @@ async def send_message_cli(
     else:
         print("[1/2] 🧪 Simulation active: Skipping live gateway ping.")
 
-    # Dispatch Message
+    # Dispatch Message or Audio
+    if audio_passage:
+        print(f"\n[2/2] 🎙️ Synthesizing & dispatching Audio Bible voice note for '{audio_passage}'...")
+        try:
+            from gtts import gTTS
+            import io
+            audio_bytes = b""
+            try:
+                import edge_tts
+                comm = edge_tts.Communicate(f"Reading from {audio_passage}. In the beginning was the Word, and the Word was with God, and the Word was God.", "en-US-ChristopherNeural")
+                async for chunk in comm.stream():
+                    if chunk["type"] == "audio":
+                        audio_bytes += chunk["data"]
+            except Exception:
+                pass
+
+            if not audio_bytes:
+                fp = io.BytesIO()
+                tts = gTTS(text=f"Reading from {audio_passage}. In the beginning was the Word, and the Word was with God, and the Word was God.", lang="en")
+                tts.write_to_fp(fp)
+                audio_bytes = fp.getvalue()
+
+            res = await client.send_media(
+                to=recipient,
+                media_type="audio",
+                file_bytes=audio_bytes,
+                caption=f"🎧 Audio Bible: {audio_passage}",
+                file_name=f"{audio_passage.replace(' ', '_')}.mp3",
+                ptt=True,
+                session_id=session_id,
+            )
+            latency = round((time.time() - t0) * 1000, 1)
+
+            if res.success:
+                print(f"\n🎉 SUCCESS! Audio voice note delivered in {latency}ms.")
+                print(f"  • Message ID  : {res.message_id}")
+                print(f"  • Recipient   : {res.to}")
+                return True
+            else:
+                print(f"\n❌ AUDIO DELIVERY FAILED ({latency}ms).")
+                print(f"  • Error Details: {res.error}")
+                return False
+        except Exception as exc:
+            latency = round((time.time() - t0) * 1000, 1)
+            print(f"\n❌ EXCEPTION DURING AUDIO DISPATCH ({latency}ms): {exc}")
+            return False
+        finally:
+            await client.close()
+
     print("\n[2/2] 🚀 Sending WhatsApp message...")
     try:
         res = await client.send_text(
@@ -119,6 +171,11 @@ def main():
         help="WA-AKG Gateway API Key",
     )
     parser.add_argument(
+        "--audio",
+        default=None,
+        help="Audio Bible passage to synthesize and dispatch as voice note (e.g. 'John 1', 'Psalm 23')",
+    )
+    parser.add_argument(
         "--simulate",
         action="store_true",
         help="Run in local simulation mode without hitting external network",
@@ -134,8 +191,9 @@ def main():
         while not to_phone:
             to_phone = input("Phone number cannot be empty. Enter phone number: ").strip()
 
+    audio_pass = args.audio
     msg = args.message
-    if not msg:
+    if not msg and not audio_pass:
         default_verse = '📖 "For God so loved the world that He gave His only begotten Son, that whoever believes in Him should not perish but have everlasting life." — John 3:16'
         prompt = f"Enter message text (Press Enter for default John 3:16 Scripture):\n> "
         entered = input(prompt).strip()
@@ -148,16 +206,17 @@ def main():
 
     # If gateway URL is default localhost and user didn't specify --gateway-url, use hosted Render gateway
     if "localhost" in gw_url and not args.gateway_url:
-        gw_url = "https://wa-akg-gateway-7rh9.onrender.com/api"
+        gw_url = "https://wa-akg-gateway-ub6a.onrender.com/api"
 
     asyncio.run(
         send_message_cli(
             recipient=to_phone,
-            message_text=msg,
+            message_text=msg or "",
             gateway_url=gw_url,
             session_id=sess_id,
             api_key=key,
             simulate=sim,
+            audio_passage=audio_pass,
         )
     )
 
