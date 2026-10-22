@@ -302,6 +302,96 @@
                 </div>
             </div>
 
+            <!-- Card: RabbitMQ Task Queue & Telemetry -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">🐇</span>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">RabbitMQ Message Queue</h2>
+                    </div>
+                    <span id="queue-status-badge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {% if queue_status.enabled and queue_status.connected %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300{% elif queue_status.enabled %}bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300{% else %}bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400{% endif %}">
+                        {% if queue_status.enabled and queue_status.connected %}Active (RabbitMQ){% elif queue_status.enabled %}Direct Fallback{% else %}Disabled (Direct Mode){% endif %}
+                    </span>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <p class="text-stone-500 dark:text-stone-400 text-[11px] leading-relaxed">
+                        Asynchronous message queue decoupling incoming webhook ingestion from heavy speech synthesis (Edge-TTS) and devotional broadcasts.
+                    </p>
+
+                    <!-- Status Endpoint URL -->
+                    <div>
+                        <label class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                            Queue Status API Endpoint (Full URL)
+                        </label>
+                        <div class="flex items-center gap-1.5">
+                            <input type="text" id="wa_queue_status_full_url" readonly
+                                   class="w-full px-3 py-1.5 bg-stone-100 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl font-mono text-[11px] text-amber-700 dark:text-amber-400 select-all">
+                            <button type="button" onclick="copyQueueStatusUrl()" class="px-2.5 py-1.5 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl text-[11px] font-semibold transition shrink-0 cursor-pointer">
+                                📋 Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Broker URL Form -->
+                    <form id="queue-config-form" onsubmit="saveQueueConfig(event)" class="space-y-3">
+                        <div>
+                            <label for="queue_rabbitmq_url" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                RabbitMQ AMQP Broker URL
+                            </label>
+                            <input type="text" id="queue_rabbitmq_url" name="rabbitmq_url"
+                                   value="{{ wa_config.rabbitmq_url }}"
+                                   placeholder="amqp://guest:guest@localhost:5672/"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                            <span class="text-[10px] text-stone-400 mt-0.5 block">Supports local or cloud brokers (e.g. CloudAMQP). Passwords are masked in logs.</span>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-800">
+                            <div>
+                                <span class="font-bold text-stone-800 dark:text-stone-200 block text-[11px]">Asynchronous Queue Processing</span>
+                                <span class="text-[10px] text-stone-500">Auto-falls back to direct in-memory execution if broker is offline.</span>
+                            </div>
+                            <button type="button" onclick="toggleWaQueue()" id="queue-toggle-btn"
+                                    class="py-1 px-3 rounded-lg text-xs font-semibold transition cursor-pointer {% if queue_status.enabled %}bg-emerald-600 hover:bg-emerald-700 text-white{% else %}bg-stone-300 dark:bg-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-400{% endif %}">
+                                {% if queue_status.enabled %}✓ Enabled{% else %}Disabled{% endif %}
+                            </button>
+                        </div>
+
+                        <!-- 4 Telemetry Counters -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                            <div class="p-2 bg-stone-50 dark:bg-stone-800/60 rounded-lg border border-stone-200/60 dark:border-stone-800 text-center">
+                                <span class="text-[10px] text-stone-400 block uppercase">Inbound Q</span>
+                                <span class="font-mono text-xs font-bold text-stone-800 dark:text-stone-200">{{ queue_status.metrics.enqueued_incoming }}</span>
+                            </div>
+                            <div class="p-2 bg-stone-50 dark:bg-stone-800/60 rounded-lg border border-stone-200/60 dark:border-stone-800 text-center">
+                                <span class="text-[10px] text-stone-400 block uppercase">Processed</span>
+                                <span class="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{{ queue_status.metrics.consumer_processed }}</span>
+                            </div>
+                            <div class="p-2 bg-stone-50 dark:bg-stone-800/60 rounded-lg border border-stone-200/60 dark:border-stone-800 text-center">
+                                <span class="text-[10px] text-stone-400 block uppercase">Outbound Q</span>
+                                <span class="font-mono text-xs font-bold text-stone-800 dark:text-stone-200">{{ queue_status.metrics.enqueued_outgoing }}</span>
+                            </div>
+                            <div class="p-2 bg-stone-50 dark:bg-stone-800/60 rounded-lg border border-stone-200/60 dark:border-stone-800 text-center">
+                                <span class="text-[10px] text-stone-400 block uppercase">Direct / Fallback</span>
+                                <span class="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">{{ queue_status.metrics.direct_dispatches }}</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex flex-col sm:flex-row gap-2">
+                            <button type="submit" id="queue-save-btn"
+                                    class="flex-1 py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                                <span>💾</span>
+                                <span>Save Broker Settings</span>
+                            </button>
+                            <button type="button" onclick="pingRabbitMQ()"
+                                    class="py-2 px-3 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <span>🔌</span> Test Connection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Card: Dual Embedded SQLite Databases -->
             <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
                 <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
@@ -467,13 +557,92 @@
             }, 3500);
         }
 
-        // Initialize Webhook Full URL
+        // Initialize Webhook Full URL & Queue Status Full URL
         document.addEventListener('DOMContentLoaded', () => {
             const hookInput = document.getElementById('wa_webhook_full_url');
             if (hookInput) {
                 hookInput.value = window.location.origin + '/api/whatsapp/webhook';
             }
+            const queueInput = document.getElementById('wa_queue_status_full_url');
+            if (queueInput) {
+                queueInput.value = window.location.origin + '/api/whatsapp/queue/status';
+            }
         });
+
+        function copyQueueStatusUrl() {
+            const queueInput = document.getElementById('wa_queue_status_full_url');
+            if (queueInput) {
+                navigator.clipboard.writeText(queueInput.value).then(() => {
+                    showToast('📋 Queue Status URL copied to clipboard!');
+                }).catch(() => {
+                    queueInput.select();
+                    document.execCommand('copy');
+                    showToast('📋 Queue Status URL copied!');
+                });
+            }
+        }
+
+        async function saveQueueConfig(event) {
+            event.preventDefault();
+            const btn = document.getElementById('queue-save-btn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span>⏳</span><span>Saving...</span>';
+            btn.disabled = true;
+
+            const payload = {
+                rabbitmq_url: document.getElementById('queue_rabbitmq_url').value.trim()
+            };
+
+            try {
+                const res = await fetch('/admin/api/whatsapp/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to save configuration'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error while saving broker settings', true);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        async function toggleWaQueue() {
+            try {
+                const res = await fetch('/admin/api/whatsapp/queue/toggle', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to toggle queue'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error toggling queue', true);
+            }
+        }
+
+        async function pingRabbitMQ() {
+            showToast('🔌 Testing RabbitMQ broker connection...');
+            try {
+                const res = await fetch('/admin/api/whatsapp/queue/ping', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok && data.status === 'ok') {
+                    showToast('✅ ' + data.message);
+                } else {
+                    showToast('⚠️ ' + data.message, true);
+                }
+            } catch (err) {
+                showToast('❌ RabbitMQ ping error', true);
+            }
+        }
 
         function copyWebhookUrl() {
             const hookInput = document.getElementById('wa_webhook_full_url');

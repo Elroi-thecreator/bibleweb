@@ -187,25 +187,46 @@ async def run_admin_tests():
         print(f"  ✅ Gateway Ping executed with status: {ping_data.get('status')}")
 
         # -------------------------------------------------------------
-        # 15. Test Admin Logout
+        # 15. WhatsApp RabbitMQ Queue Admin Controls
         # -------------------------------------------------------------
-        print("\n[15] Testing GET /admin/logout...")
+        print("\n[15] Testing POST /admin/api/whatsapp/queue/toggle authenticated...")
+        res = await client.post("/admin/api/whatsapp/queue/toggle", cookies=cookies)
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        q_toggle = res.json()
+        assert q_toggle["status"] == "ok"
+        print(f"  ✅ Queue toggled successfully: {q_toggle['message']}")
+
+        # Toggle back to False
+        res = await client.post("/admin/api/whatsapp/queue/toggle", cookies=cookies)
+        assert res.status_code == 200
+
+        print("\n[16] Testing POST /admin/api/whatsapp/queue/ping authenticated...")
+        res = await client.post("/admin/api/whatsapp/queue/ping", cookies=cookies)
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        q_ping = res.json()
+        assert q_ping["status"] in ("ok", "warning")
+        print(f"  ✅ Queue Ping executed with status: {q_ping['status']}")
+
+        # -------------------------------------------------------------
+        # 17. Test Admin Logout
+        # -------------------------------------------------------------
+        print("\n[17] Testing GET /admin/logout...")
         res = await client.get("/admin/logout", cookies=cookies)
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
         print("  ✅ Logged out successfully and redirected to login page.")
 
         # -------------------------------------------------------------
-        # 16. Verify Session Invalidation after Logout
+        # 18. Verify Session Invalidation after Logout
         # -------------------------------------------------------------
-        print("\n[16] Testing GET /admin/settings without cookie after logout...")
+        print("\n[18] Testing GET /admin/settings without cookie after logout...")
         res = await client.get("/admin/settings")
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
         print("  ✅ Verified admin settings is strictly unreachable after logout.")
 
     print("\n" + "=" * 70)
-    print("🎉 ALL 16 ADMIN SECURITY, SETTINGS & CONFIG TESTS PASSED WITH 100% SUCCESS!")
+    print("🎉 ALL 18 ADMIN SECURITY, SETTINGS & CONFIG TESTS PASSED WITH 100% SUCCESS!")
     print("=" * 70)
 
 

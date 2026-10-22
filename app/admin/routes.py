@@ -196,6 +196,10 @@ async def admin_settings_page(request: Request):
 
     db_stats = await asyncio.to_thread(_get_db_telemetry)
 
+    # 5. WhatsApp RabbitMQ Queue Telemetry
+    from whatsapp_gateway.queue.manager import queue_manager
+    queue_status = queue_manager.get_status()
+
     return templates.TemplateResponse(
         request=request,
         name="admin/settings.html",
@@ -212,6 +216,7 @@ async def admin_settings_page(request: Request):
             "wa_subscribers": subscribers,
             "wa_subscribers_count": subscribers_count,
             "db_stats": db_stats,
+            "queue_status": queue_status,
         },
     )
 
@@ -255,12 +260,20 @@ async def api_update_wa_config(request: Request):
     session_id = body.get("session_id")
     api_key = body.get("api_key")
     enable_simulation_mode = body.get("enable_simulation_mode")
+    queue_enabled = body.get("queue_enabled")
+    rabbitmq_url = body.get("rabbitmq_url")
 
     if enable_simulation_mode is not None:
         if isinstance(enable_simulation_mode, str):
             enable_simulation_mode = enable_simulation_mode.lower() in ("true", "1", "yes", "on")
         else:
             enable_simulation_mode = bool(enable_simulation_mode)
+
+    if queue_enabled is not None:
+        if isinstance(queue_enabled, str):
+            queue_enabled = queue_enabled.lower() in ("true", "1", "yes", "on")
+        else:
+            queue_enabled = bool(queue_enabled)
 
     if gateway_url is not None:
         gateway_url = gateway_url.strip()
@@ -273,6 +286,8 @@ async def api_update_wa_config(request: Request):
         session_id=session_id,
         api_key=api_key,
         enable_simulation_mode=enable_simulation_mode,
+        queue_enabled=queue_enabled,
+        rabbitmq_url=rabbitmq_url,
     )
 
     # Dynamically update the active WAClient runtime singleton
@@ -284,16 +299,75 @@ async def api_update_wa_config(request: Request):
         simulation_mode=saved.get("enable_simulation_mode"),
     )
 
+    # Dynamically update QueueManager if queue settings changed
+    from whatsapp_gateway.queue.manager import queue_manager
+    if queue_enabled is not None or rabbitmq_url is not None:
+        await queue_manager.set_enabled(
+            enabled=saved.get("queue_enabled", False),
+            rabbitmq_url=saved.get("rabbitmq_url"),
+        )
+
     return {
         "status": "ok",
-        "message": "WhatsApp Gateway configuration saved successfully!",
+        "message": "WhatsApp Gateway & Queue configuration saved successfully!",
         "config": {
             "gateway_url": wa_client.base_url,
             "session_id": wa_client.default_session_id,
             "has_api_key": bool(wa_client.api_key),
             "simulation_mode": wa_client.simulation_mode,
+            "queue_enabled": saved.get("queue_enabled", False),
+            "rabbitmq_url": saved.get("rabbitmq_url"),
         },
     }
+
+
+@router.post("/api/whatsapp/queue/toggle")
+async def api_toggle_wa_queue(request: Request):
+    """Toggles WhatsApp task queue mode on/off at runtime."""
+    require_admin(request)
+    from whatsapp_gateway.queue.manager import queue_manager
+    new_state = not queue_manager.is_enabled
+    res = await queue_manager.set_enabled(new_state)
+    return {
+        "status": "ok",
+        "queue": res,
+        "message": f"WhatsApp RabbitMQ Queue {'enabled' if new_state else 'disabled (direct mode)'}.",
+    }
+
+
+@router.post("/api/whatsapp/queue/ping")
+async def api_ping_rabbitmq(request: Request):
+    """Tests connectivity to the configured RabbitMQ broker."""
+    require_admin(request)
+    from whatsapp_gateway.queue.manager import queue_manager
+    from whatsapp_gateway.config import config
+    from whatsapp_gateway.queue.connection import RabbitMQConnection, mask_amqp_url
+
+    test_conn = RabbitMQConnection(url=config.rabbitmq_url)
+    t0 = time.time()
+    try:
+        connected = await test_conn.connect(timeout=3.0)
+        latency = round((time.time() - t0) * 1000, 1)
+        await test_conn.close()
+        if connected:
+            return {
+                "status": "ok",
+                "latency_ms": latency,
+                "message": f"RabbitMQ broker connected at {mask_amqp_url(config.rabbitmq_url)} ({latency}ms)",
+            }
+        else:
+            return {
+                "status": "warning",
+                "latency_ms": latency,
+                "message": f"RabbitMQ broker offline or unreachable at {mask_amqp_url(config.rabbitmq_url)} (fallback direct mode active)",
+            }
+    except Exception as exc:
+        latency = round((time.time() - t0) * 1000, 1)
+        return {
+            "status": "error",
+            "latency_ms": latency,
+            "message": f"RabbitMQ connection failed: {exc}",
+        }
 
 
 @router.post("/api/whatsapp/toggle-simulation")
