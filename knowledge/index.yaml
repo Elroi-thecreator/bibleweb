@@ -1,7 +1,7 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/bible"
-knowledge_units_count: 19
+knowledge_units_count: 20
 last_updated: "2026-10-22"
 
 knowledge_units:
@@ -69,3 +69,6 @@ knowledge_units:
     - id: ADR-005
       file: "knowledge/decisions/ADR-005.yaml"
       title: "External Supabase PostgreSQL & Persistent JSON Hydration for WA-AKG WhatsApp Multi-Device Gateway"
+    - id: ADR-006
+      file: "knowledge/decisions/ADR-006.yaml"
+      title: "Asynchronous RabbitMQ Task Queue Option for Decoupled WhatsApp Message Ingestion & Devotional Dispatching"

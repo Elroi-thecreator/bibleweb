@@ -17,6 +17,7 @@ from whatsapp_gateway.bot.session_store import InMemorySessionStore
 from whatsapp_gateway.adapters.bible_adapter import register_bible_handlers
 from whatsapp_gateway.subscribers import get_active_subscribers, get_subscriber_count
 from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
+from whatsapp_gateway.queue.manager import queue_manager
 
 logger = logging.getLogger("whatsapp_gateway.routes")
 
@@ -35,6 +36,9 @@ _dispatcher = BotDispatcher(command_prefix=config.command_prefix)
 
 # Automatically register domain handlers
 register_bible_handlers(_dispatcher)
+
+# Initialize queue manager with bot dependencies
+queue_manager.initialize(dispatcher=_dispatcher, client=_client, session_store=_session_store)
 
 
 def get_client() -> WAClient:
@@ -130,20 +134,16 @@ async def receive_webhook(
     if not sender or not text:
         return {"status": "ignored", "reason": "no text or sender"}
 
-    ctx = MessageContext(
+    # Enqueue via RabbitMQ (if enabled & connected) or execute via direct in-memory dispatcher
+    dispatch_res = await queue_manager.enqueue_incoming(
         payload=payload,
-        client=_client,
-        session_store=_session_store,
         session_id=payload.session_id or _client.default_session_id,
     )
 
-    dispatched = await _dispatcher.dispatch(ctx)
-
     return {
-        "status": "success" if dispatched else "unhandled",
+        **dispatch_res,
         "sender": sender,
         "text_preview": text[:40],
-        "dispatched": dispatched,
     }
 
 
@@ -193,7 +193,33 @@ async def get_gateway_status() -> Dict[str, Any]:
         "session_status": session_info,
         "active_dialogue_sessions": len(_session_store._store),
         "subscriber_count": sub_count,
+        "queue": queue_manager.get_status(),
     }
+
+
+class QueueConfigRequest(BaseModel):
+    enabled: Optional[bool] = None
+    rabbitmq_url: Optional[str] = None
+
+
+@router.get("/queue/status")
+async def get_queue_status_endpoint() -> Dict[str, Any]:
+    """Returns real-time RabbitMQ queue status, connection health, and telemetry."""
+    return queue_manager.get_status()
+
+
+@router.post("/queue/toggle")
+async def toggle_queue_mode_endpoint() -> Dict[str, Any]:
+    """Toggles WhatsApp task queue mode on/off at runtime."""
+    new_state = not queue_manager.is_enabled
+    return await queue_manager.set_enabled(new_state)
+
+
+@router.post("/queue/config")
+async def update_queue_config_endpoint(req: QueueConfigRequest) -> Dict[str, Any]:
+    """Updates RabbitMQ connection configuration and enabled state."""
+    enabled = req.enabled if req.enabled is not None else queue_manager.is_enabled
+    return await queue_manager.set_enabled(enabled=enabled, rabbitmq_url=req.rabbitmq_url)
 
 
 @router.post("/toggle-simulation")

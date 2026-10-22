@@ -298,6 +298,13 @@ async def lifespan(app: FastAPI):
     # Fast startup verification (pings read-only databases)
     await asyncio.to_thread(check_database_health)
 
+    # Initialize and start WhatsApp RabbitMQ queue manager (if enabled)
+    try:
+        from whatsapp_gateway.queue.manager import queue_manager
+        await queue_manager.start()
+    except Exception as q_err:
+        print(f"[WhatsAppQueue] Lifespan start warning: {q_err}", flush=True)
+
     # Windows Process Registry & Telemetry Registration
     try:
         import psutil
@@ -315,6 +322,11 @@ async def lifespan(app: FastAPI):
 
     # Graceful shutdown: close cached thread-local connections
     await asyncio.to_thread(close_thread_connections)
+    try:
+        from whatsapp_gateway.queue.manager import queue_manager
+        await queue_manager.stop()
+    except Exception:
+        pass
     try:
         import psutil
         proc = psutil.Process()

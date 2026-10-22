@@ -58,6 +58,21 @@ class WhatsAppGatewayConfig(BaseModel):
     enable_simulation_mode: bool = Field(
         default_factory=lambda: getenv("WA_SIMULATION_MODE", "true").lower() in ("true", "1", "yes")
     )
+    queue_enabled: bool = Field(
+        default_factory=lambda: getenv("WA_QUEUE_ENABLED", "false").lower() in ("true", "1", "yes")
+    )
+    rabbitmq_url: str = Field(
+        default_factory=lambda: getenv("WA_RABBITMQ_URL", getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"))
+    )
+    queue_incoming_name: str = Field(
+        default_factory=lambda: getenv("WA_QUEUE_INCOMING_NAME", "whatsapp_incoming_messages")
+    )
+    queue_outgoing_name: str = Field(
+        default_factory=lambda: getenv("WA_QUEUE_OUTGOING_NAME", "whatsapp_outgoing_messages")
+    )
+    queue_prefetch: int = Field(
+        default_factory=lambda: int(getenv("WA_QUEUE_PREFETCH", "10"))
+    )
 
 
 # Load initial config with persistent overrides
@@ -70,6 +85,14 @@ config = WhatsAppGatewayConfig(
         "enable_simulation_mode",
         getenv("WA_SIMULATION_MODE", "true").lower() in ("true", "1", "yes"),
     ),
+    queue_enabled=_persisted.get(
+        "queue_enabled",
+        getenv("WA_QUEUE_ENABLED", "false").lower() in ("true", "1", "yes"),
+    ),
+    rabbitmq_url=_persisted.get(
+        "rabbitmq_url",
+        getenv("WA_RABBITMQ_URL", getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")),
+    ),
 )
 
 
@@ -78,6 +101,8 @@ def save_persisted_config(
     session_id: Optional[str] = None,
     api_key: Optional[str] = None,
     enable_simulation_mode: Optional[bool] = None,
+    queue_enabled: Optional[bool] = None,
+    rabbitmq_url: Optional[str] = None,
 ) -> dict:
     """Updates the live singleton and writes overrides to data/whatsapp_config.json."""
     CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -101,6 +126,15 @@ def save_persisted_config(
     if enable_simulation_mode is not None:
         current["enable_simulation_mode"] = bool(enable_simulation_mode)
         config.enable_simulation_mode = current["enable_simulation_mode"]
+
+    if queue_enabled is not None:
+        current["queue_enabled"] = bool(queue_enabled)
+        config.queue_enabled = current["queue_enabled"]
+
+    if rabbitmq_url is not None:
+        clean_rmq = rabbitmq_url.strip()
+        current["rabbitmq_url"] = clean_rmq
+        config.rabbitmq_url = clean_rmq
 
     try:
         CONFIG_FILE.write_text(json.dumps(current, indent=2), encoding="utf-8")

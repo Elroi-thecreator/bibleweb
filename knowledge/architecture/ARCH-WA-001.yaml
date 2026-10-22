@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.13.0
+version: 1.14.0
 authority:
   level: official
   confidence: high
@@ -40,6 +40,7 @@ do:
   - "Parse incoming webhooks via `IncomingWebhookPayload` supporting both simplified REST wrapper fields (`sender`, `from`, `body`, `text`, `caption`, `content`) and raw Baileys multi-device schemas (`conversation`, `extendedTextMessage.text`, `buttonsResponseMessage`, `listResponseMessage`)."
   - "Normalize gateway session status responses in `WAClient.get_session_status()` to standardized top-level statuses (`CONNECTED`, `DISCONNECTED`, `INITIALIZING`, `UNKNOWN`, `UNREACHABLE`) for frontend UI consumers."
   - "Implement dual-storage subscriber persistence: store active subscriptions in SQLite (`data/whatsapp_subscribers.sqlite.db`) and mirror active records to `data/whatsapp_subscribers.json` on every change; auto-hydrate the SQLite database from JSON upon cold container startup."
+  - "Support an optional, pluggable asynchronous task queue layer powered by RabbitMQ (`whatsapp_gateway/queue/` via `aio-pika`), providing durable task queuing for incoming webhook ingestion (`whatsapp_incoming_messages`) and outgoing broadcasts (`whatsapp_outgoing_messages`) with automatic, transparent fallback to direct in-memory execution when RabbitMQ is disabled or the broker is unreachable."
   - "Support dynamic runtime gateway reconfiguration via `data/whatsapp_config.json` and `wa_client.update_config(...)` to hot-swap endpoint URLs, session IDs, and simulation modes with zero downtime."
   - "Provide an interactive CLI message dispatcher and diagnostic tool (`scripts/send_whatsapp_message.py`) with `--audio` support for live session verification, manual alert dispatch, and terminal testing."
   - "Mount the controller into `app/main.py` using standard FastAPI router patterns: `app.include_router(whatsapp_router, prefix='/api/whatsapp')`."
@@ -70,3 +71,4 @@ related_items:
   - DEV-TEST-001
   - PROD-AUDIO-001
   - ADR-005
+  - ADR-006

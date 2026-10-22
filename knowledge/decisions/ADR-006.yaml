@@ -1,0 +1,47 @@
+id: ADR-006
+type: architecture_decision_record
+title: Asynchronous RabbitMQ Task Queue Option for Decoupled WhatsApp Message Ingestion & Devotional Dispatching
+domain: architecture
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+applies_to:
+  - backend
+  - whatsapp_gateway
+  - queue
+  - rabbitmq
+  - routes
+
+rule:
+  "The WhatsApp gateway provides an optional, pluggable asynchronous task queue layer powered by RabbitMQ (using `aio-pika`) to decouple incoming webhook ingestion from heavy message processing (such as Edge-TTS audio synthesis, chapter queries, and multi-subscriber devotional broadcasts). The queue engine must operate with zero-loss transparent fallback: if RabbitMQ is disabled (`WA_QUEUE_ENABLED=false`) or the broker is unreachable, all ingestion and dispatch operations must gracefully and automatically execute directly in-memory, ensuring continuous availability across lightweight desktop deployments and offline development environments without throwing exceptions."
+
+do:
+  - "Implement the RabbitMQ queue abstraction inside `whatsapp_gateway/queue/` containing distinct `connection.py`, `publisher.py`, `consumer.py`, and `manager.py` modules."
+  - "Decouple incoming webhook ingestion (`whatsapp_incoming_messages`) so that FastAPI endpoints return immediate HTTP 200/202 responses (< 5ms) to WA-AKG while background workers asynchronously synthesize audio and dispatch bot answers."
+  - "Queue outgoing messages and broadcasts (`whatsapp_outgoing_messages`) to enable controlled concurrency, prefetch throttling (`WA_QUEUE_PREFETCH=10`), and rate-limited dispatching without flooding WhatsApp multi-device sockets."
+  - "Implement durable queues with persistent delivery mode (`delivery_mode=PERSISTENT`) to safeguard message tasks across worker restarts."
+  - "Mask user credentials and passwords in AMQP URLs (`amqp://user:••••••••@host:5672/`) across all log streams, exception traces, and telemetry API responses."
+  - "Provide a transparent fallback mechanism: if `queue_enabled=True` but the broker is unreachable, catch connection errors, log a clear warning, and immediately fall back to direct in-memory execution so zero incoming messages are lost."
+  - "Support dynamic runtime queue toggling and configuration via `/api/whatsapp/queue/toggle` and `/api/whatsapp/queue/config` with persistence in `data/whatsapp_config.json`."
+  - "Expose comprehensive queue telemetry (`enabled`, `backend`, `connected`, `queues`, `metrics` for enqueued/processed/failed tasks) under `/api/whatsapp/status` and `/api/whatsapp/queue/status`."
+  - "Hook queue startup (`queue_manager.start()`) and shutdown (`queue_manager.stop()`) cleanly into FastAPI's `lifespan` context manager in `app/main.py`."
+
+dont:
+  - "Do not make RabbitMQ a hard dependency that blocks server boot or crashes the application if port 5672 is closed or unreachable."
+  - "Do not expose plaintext passwords in RabbitMQ connection URLs in API status outputs or log messages."
+  - "Do not block the FastAPI event loop with synchronous AMQP operations; use non-blocking `aio-pika` async channels exclusively."
+  - "Do not drop or silently ignore incoming webhook messages when RabbitMQ encounters transport errors; immediately fallback to direct in-memory dispatch."
+
+reason:
+  "Decoupling webhook ingestion from computationally intensive speech synthesis (Edge-TTS + FFmpeg M4A transcoding) and bulk devotional broadcasts prevents HTTP request timeouts on upstream WA-AKG webhooks and eliminates worker congestion. Retaining an automatic direct fallback mode guarantees zero breakage for local testing, desktop packaging, and environments operating without an active RabbitMQ message broker."
+
+related_items:
+  - ARCH-WA-001
+  - ARCH-SYS-001
+  - DEV-PY-001
+  - ADR-005
