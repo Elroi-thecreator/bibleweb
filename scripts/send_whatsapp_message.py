@@ -100,8 +100,8 @@ async def send_message_cli(
                 media_type="audio",
                 file_bytes=audio_bytes,
                 caption=f"🎧 Audio Bible: {audio_passage}",
-                file_name=f"{audio_passage.replace(' ', '_')}.mp3",
-                ptt=True,
+                file_name=f"{audio_passage.replace(' ', '_')}.m4a",
+                ptt=False,
                 session_id=session_id,
             )
             latency = round((time.time() - t0) * 1000, 1)

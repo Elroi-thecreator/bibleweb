@@ -593,12 +593,12 @@ async def handle_audio_command(ctx: MessageContext) -> None:
             )
             return
 
-    safe_file_name = f"{book_meta['name_en'].replace(' ', '_')}_{chapter}.mp3"
+    safe_file_name = f"{book_meta['name_en'].replace(' ', '_')}_{chapter}.m4a"
     try:
         res = await ctx.reply_audio(
             file_path_or_bytes=audio_bytes,
             caption=caption,
-            ptt=True,
+            ptt=False,
             file_name=safe_file_name,
         )
         if not res or not res.success:

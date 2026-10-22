@@ -6,3 +6,4 @@ edge-tts>=7.3.1
 brotli-asgi>=1.4.0
 psutil>=7.2.0
 httpx>=0.28.0
+imageio-ffmpeg>=0.6.0

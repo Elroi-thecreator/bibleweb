@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.12.0
+version: 1.13.0
 authority:
   level: official
   confidence: high
@@ -30,6 +30,8 @@ do:
   - "Provide a simulation mode in `WAClient` (`simulation_mode=True`) enabling automated end-to-end verification without live WhatsApp hardware."
   - "Format outgoing text messages for WA-AKG Baileys engine with native payload structures `{'message': {'text': text}}` at `/messages/{sessionId}/{jid}/send`, falling back gracefully to `/messages/send-text`."
   - "Dispatch voice notes and media to WA-AKG via `POST /api/messages/{sessionId}/{encodedJid}/media` using `multipart/form-data` with `file`, `type` ('voice' for push-to-talk waveforms or 'audio' for standard playback), and optional `caption`."
+  - "Transcode Edge-TTS / gTTS synthesized MP3 audio into WhatsApp-compliant ISO MP4 containers (AAC-LC audio, `.m4a`, `audio/mp4`) with `+faststart` atom via `whatsapp_gateway/audio_converter.py` using bundled `imageio-ffmpeg` or system FFmpeg before dispatching to WA-AKG, preventing ExoPlayer `UnrecognizedInputFormatException` on mobile devices caused by WA-AKG's hardcoded `mimetype: audio/mp4`."
+  - "If FFmpeg transcoding is unavailable or fails, automatically fallback to dispatching the MP3 payload with `type: document` and `mimetype: audio/mpeg` so WA-AKG preserves native MP3 MIME types without triggering mobile decoder crashes."
   - "Avoid setting static `Content-Type: application/json` on the underlying `httpx.AsyncClient` session to permit `httpx` to dynamically calculate multipart boundaries for file uploads."
   - "Parse audio commands using robust regex patterns matching single chapters (`audio John 1`), numbered books (`audio 1 John 1`), verse ranges (`audio John 1:1-5`), and Tamil scripture requests (`audio யோவான் 1`, `கேட்க யோவான் 1`)."
   - "Synthesize audio voice notes using Microsoft Edge Neural TTS (`en-US-ChristopherNeural` for English, `ta-LK-KumarNeural` for Tamil) with deep bass modulation (`pitch='-8Hz'`), stripping editorial brackets/braces, with automatic `gTTS` fallback."
@@ -45,6 +47,7 @@ do:
   - "In `render.yaml`, adapt WA-AKG's Prisma datasource provider during build (`sed -i 's/\"mysql\"/\"postgresql\"/g' prisma/schema.prisma`) to seamlessly bind with Supabase PostgreSQL."
 
 dont:
+  - "Do not dispatch raw MP3 bytes under `type: audio` or `type: voice` to WA-AKG without transcoding to an ISO MP4 container (`.m4a`), because WA-AKG forces `mimetype: audio/mp4` which triggers 'audio not available' demuxer errors on mobile WhatsApp."
   - "Do not post JSON payloads to non-existent endpoints like `/messages/send-media`; WA-AKG expects multipart/form-data at `/messages/{sessionId}/{jid}/media`."
   - "Do not lock the `httpx.AsyncClient` default headers to `application/json` which corrupts multipart boundaries."
   - "Do not use simplistic `.split(maxsplit=2)` string parsing for audio references, which fails on numbered books like 1 John or verse ranges."

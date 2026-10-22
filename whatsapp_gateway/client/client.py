@@ -226,6 +226,17 @@ class WAClient:
                 raw=record,
             )
 
+        # Auto-transcode audio payloads for WhatsApp compatibility (ISO MP4 container with AAC)
+        # WA-AKG hardcodes 'audio/mp4' for audio/voice types; sending raw MP3 causes mobile player decoder errors.
+        if m_type == "audio" and not self.simulation_mode:
+            try:
+                from whatsapp_gateway.audio_converter import prepare_whatsapp_audio_payload
+                raw_bytes, resolved_name, m_type, _ = prepare_whatsapp_audio_payload(
+                    raw_bytes, preferred_name=resolved_name, ptt=ptt
+                )
+            except Exception as conv_err:
+                logger.warning("WhatsApp audio transcoding pre-flight check failed (%s); sending original payload", conv_err)
+
         # Map mediaType for WA-AKG ChatService (expects "voice" for PTT voice notes, "audio" for audio files)
         if m_type == "audio":
             type_param = "voice" if ptt else "audio"
@@ -233,10 +244,10 @@ class WAClient:
             type_param = m_type
 
         # Determine file extension and MIME type
-        ext = Path(resolved_name or ("voice.mp3" if ptt else "audio.mp3")).suffix.lower()
+        ext = Path(resolved_name or ("voice.m4a" if ptt else "audio.m4a")).suffix.lower()
         mime_map = {
-            ".mp3": "audio/mpeg",
             ".m4a": "audio/mp4",
+            ".mp3": "audio/mpeg",
             ".ogg": "audio/ogg",
             ".wav": "audio/wav",
             ".jpg": "image/jpeg",
@@ -244,9 +255,9 @@ class WAClient:
             ".png": "image/png",
             ".pdf": "application/pdf",
         }
-        mime_type = mime_map.get(ext, "audio/mpeg" if m_type == "audio" else "application/octet-stream")
+        mime_type = mime_map.get(ext, "audio/mp4" if m_type == "audio" else "application/octet-stream")
 
-        file_tuple_name = resolved_name or ("voice.mp3" if ptt else "audio.mp3")
+        file_tuple_name = resolved_name or ("voice.m4a" if ptt else "audio.m4a")
         files = {
             "file": (file_tuple_name, raw_bytes, mime_type)
         }

@@ -48,8 +48,8 @@ class MessageContext:
         self,
         file_path_or_bytes: Union[str, Path, bytes],
         caption: Optional[str] = None,
-        ptt: bool = True,
-        file_name: Optional[str] = "audio.mp3",
+        ptt: bool = False,
+        file_name: Optional[str] = "audio.m4a",
     ) -> SendMessageResponse:
         """Reply to the sender with an audio clip or voice note (push-to-talk)."""
         if isinstance(file_path_or_bytes, bytes):

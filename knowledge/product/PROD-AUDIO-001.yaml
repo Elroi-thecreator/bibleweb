@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation, Concurrent Chapter Prefetching & Persistent Audio Cache Standard
 domain: product
 status: approved
-version: 1.16.0
+version: 1.17.0
 authority:
   level: official
   confidence: high
@@ -57,6 +57,7 @@ do:
   - "Safely pause `<audio>` elements before revoking blob object URLs (`URL.revokeObjectURL`) inside `clearAllBlobs()` to prevent browser audio decoder abort exceptions."
   - "Centralize voice engine selection exclusively in the Settings Page/Modal (`#setting-voice-ta`, `#setting-voice-en`) to keep audio player docks lightweight, uncluttered, and mobile-friendly."
   - "Display real-time audio playback progress prominently across mobile and desktop views using interactive seek tracks (`#audio-progress-bar`, `#readalong-mobile-progress-bar`), verse counters (`#audio-progress-count`, `#mobile-progress-count`, e.g. `1/51`), and time indicators (`#audio-time-label`)."
+  - "When relaying TTS audio over external messaging platforms (WhatsApp Gateway), transcode the raw MP3 output to an ISO MP4 container (.m4a, AAC-LC) with +faststart atom via `whatsapp_gateway/audio_converter.py` to ensure mobile audio decoder compatibility."
   - "Execute complete end-to-end flow verification (`test_audio_flow_e2e.py`, `test_audio_deduplication.py`, `test_audio_concurrency_and_cache.py`, `test_audio.py`, `test_robustness.py`) prior to pushing code to source control."
 
 dont:
@@ -85,4 +86,5 @@ reason:
 
 related_items:
   - ARCH-SYS-001
+  - ARCH-WA-001
   - PROD-CANON-001
