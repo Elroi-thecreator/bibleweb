@@ -22,6 +22,8 @@ import httpx
 from app.main import app
 from whatsapp_gateway.routes.webhook import get_client, get_session_store
 from whatsapp_gateway.subscribers import get_subscriber_count, is_subscribed
+from whatsapp_gateway.rate_limiter import get_rate_limiter
+from whatsapp_gateway.config import config as wa_config, load_persisted_config
 
 
 async def run_tests():
@@ -29,9 +31,14 @@ async def run_tests():
     print("🧪 Running Decoupled WhatsApp Gateway Enhanced Verification Suite")
     print("=" * 70)
 
+    load_persisted_config()
     client = get_client()
     client.simulation_mode = True
     session_store = get_session_store()
+    rate_limiter = get_rate_limiter()
+    rate_limiter.clear_all()
+    if "919876543210" not in wa_config.rate_limit_whitelist:
+        wa_config.rate_limit_whitelist.append("919876543210")
 
     sender_jid = "919876543210@s.whatsapp.net"
     transport = httpx.ASGITransport(app=app)

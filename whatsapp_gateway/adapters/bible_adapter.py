@@ -33,6 +33,11 @@ from whatsapp_gateway.subscribers import (
     update_subscriber_plan,
     get_subscriber,
 )
+from whatsapp_gateway.rate_limiter import (
+    rate_limiter,
+    build_cooldown_message,
+    build_audio_quota_message,
+)
 
 logger = logging.getLogger("whatsapp_gateway.bible_adapter")
 
@@ -801,6 +806,13 @@ async def handle_audio_command(ctx: MessageContext) -> None:
     caption_title = f"வேத ஆடியோ: {book_name} {range_label}" if is_ta else f"Audio Bible: {book_name} {range_label}"
     caption = f"🎧 {caption_title}\n\n_Reply '{book_name} {chapter}' to read full text._"
 
+    # Check daily audio request quota (protects Edge-TTS and FFmpeg transcoding resources)
+    allowed, usage, max_limit = rate_limiter.check_audio_quota_allowed(ctx.sender)
+    if not allowed:
+        quota_msg = build_audio_quota_message(max_limit, is_tamil=is_ta)
+        await ctx.reply_text(quota_msg)
+        return
+
     # Send immediate notification that the audio request is processing
     processing_notice = (
         f"⏳ *உங்கள் ஆடியோ பதிவு தயாராகிறது...* ({caption_title})\n_சிறிது நேரம் காத்திருக்கவும்._"
@@ -1001,6 +1013,17 @@ async def handle_fallback(ctx: MessageContext) -> None:
 
 def register_bible_handlers(dispatcher: BotDispatcher) -> None:
     """Registers all Holy Bible domain handlers with the decoupled BotDispatcher."""
+    # 0. Global Rate Limiter Pre-Dispatch Middleware
+    async def rate_limit_guard(ctx: MessageContext) -> bool:
+        allowed, cooldown, reason = rate_limiter.check_request_allowed(ctx.sender)
+        if not allowed:
+            cooldown_msg = build_cooldown_message(cooldown, is_tamil=is_tamil_text(ctx.text))
+            await ctx.reply_text(cooldown_msg)
+            return False
+        return True
+
+    dispatcher.middleware(rate_limit_guard)
+
     # 1. Menu, Greeting & Help Commands
     dispatcher.command("help", aliases=["start", "menu", "info", "உதவி", "hi", "hello", "hey", "options", "வணக்கம்", "vanakkam"], description="Show greeting and available options")(handle_help_menu)
 

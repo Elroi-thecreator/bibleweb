@@ -25,6 +25,7 @@ from whatsapp_gateway.config import config as wa_config, save_persisted_config
 from whatsapp_gateway.routes.webhook import get_client
 from whatsapp_gateway.subscribers import get_active_subscribers, get_subscriber_count
 from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
+from whatsapp_gateway.rate_limiter import rate_limiter
 from app.db import DB_PATH, SONGS_DB_PATH
 
 router = APIRouter()
@@ -217,6 +218,7 @@ async def admin_settings_page(request: Request):
             "wa_subscribers_count": subscribers_count,
             "db_stats": db_stats,
             "queue_status": queue_status,
+            "rate_limiter_stats": rate_limiter.get_stats(),
         },
     )
 
@@ -262,6 +264,11 @@ async def api_update_wa_config(request: Request):
     enable_simulation_mode = body.get("enable_simulation_mode")
     queue_enabled = body.get("queue_enabled")
     rabbitmq_url = body.get("rabbitmq_url")
+    rate_limit_enabled = body.get("rate_limit_enabled")
+    rate_limit_requests_per_minute = body.get("rate_limit_requests_per_minute")
+    rate_limit_audio_per_day = body.get("rate_limit_audio_per_day")
+    rate_limit_cooldown_seconds = body.get("rate_limit_cooldown_seconds")
+    rate_limit_whitelist = body.get("rate_limit_whitelist")
 
     if enable_simulation_mode is not None:
         if isinstance(enable_simulation_mode, str):
@@ -274,6 +281,15 @@ async def api_update_wa_config(request: Request):
             queue_enabled = queue_enabled.lower() in ("true", "1", "yes", "on")
         else:
             queue_enabled = bool(queue_enabled)
+
+    if rate_limit_enabled is not None:
+        if isinstance(rate_limit_enabled, str):
+            rate_limit_enabled = rate_limit_enabled.lower() in ("true", "1", "yes", "on")
+        else:
+            rate_limit_enabled = bool(rate_limit_enabled)
+
+    if rate_limit_whitelist is not None and isinstance(rate_limit_whitelist, str):
+        rate_limit_whitelist = [x.strip() for x in rate_limit_whitelist.split(",") if x.strip()]
 
     if gateway_url is not None:
         gateway_url = gateway_url.strip()
@@ -288,6 +304,11 @@ async def api_update_wa_config(request: Request):
         enable_simulation_mode=enable_simulation_mode,
         queue_enabled=queue_enabled,
         rabbitmq_url=rabbitmq_url,
+        rate_limit_enabled=rate_limit_enabled,
+        rate_limit_requests_per_minute=rate_limit_requests_per_minute,
+        rate_limit_audio_per_day=rate_limit_audio_per_day,
+        rate_limit_cooldown_seconds=rate_limit_cooldown_seconds,
+        rate_limit_whitelist=rate_limit_whitelist,
     )
 
     # Dynamically update the active WAClient runtime singleton
@@ -309,7 +330,7 @@ async def api_update_wa_config(request: Request):
 
     return {
         "status": "ok",
-        "message": "WhatsApp Gateway & Queue configuration saved successfully!",
+        "message": "WhatsApp Gateway & Rate Limiter configuration saved successfully!",
         "config": {
             "gateway_url": wa_client.base_url,
             "session_id": wa_client.default_session_id,
@@ -317,6 +338,11 @@ async def api_update_wa_config(request: Request):
             "simulation_mode": wa_client.simulation_mode,
             "queue_enabled": saved.get("queue_enabled", False),
             "rabbitmq_url": saved.get("rabbitmq_url"),
+            "rate_limit_enabled": saved.get("rate_limit_enabled", True),
+            "rate_limit_requests_per_minute": saved.get("rate_limit_requests_per_minute", 20),
+            "rate_limit_audio_per_day": saved.get("rate_limit_audio_per_day", 15),
+            "rate_limit_cooldown_seconds": saved.get("rate_limit_cooldown_seconds", 30),
+            "rate_limit_whitelist": saved.get("rate_limit_whitelist", []),
         },
     }
 
@@ -428,3 +454,72 @@ async def api_ping_wa_gateway(request: Request):
             "latency_ms": latency,
             "message": f"Could not reach {target_url} ({str(e)})",
         }
+
+
+@router.post("/api/whatsapp/rate-limiter/toggle")
+async def api_toggle_wa_rate_limiter(request: Request):
+    """Toggles WhatsApp rate limiting and quota enforcement on/off at runtime."""
+    require_admin(request)
+    new_state = not wa_config.rate_limit_enabled
+    save_persisted_config(rate_limit_enabled=new_state)
+    return {
+        "status": "ok",
+        "enabled": new_state,
+        "message": f"WhatsApp Rate Limiter {'enabled' if new_state else 'disabled'}.",
+        "rate_limiter": rate_limiter.get_stats(),
+    }
+
+
+@router.post("/api/whatsapp/rate-limiter/config")
+async def api_update_wa_rate_limiter_config(request: Request):
+    """Updates WhatsApp rate limiter thresholds and whitelist numbers."""
+    require_admin(request)
+    try:
+        body = await request.json()
+    except Exception:
+        body = await _parse_form_data(request)
+
+    enabled = body.get("enabled")
+    if enabled is not None:
+        if isinstance(enabled, str):
+            enabled = enabled.lower() in ("true", "1", "yes", "on")
+        else:
+            enabled = bool(enabled)
+
+    rpm = body.get("requests_per_minute")
+    daily_audio = body.get("daily_audio_limit")
+    cooldown = body.get("cooldown_seconds")
+    whitelist_raw = body.get("whitelist")
+
+    whitelist = None
+    if whitelist_raw is not None:
+        if isinstance(whitelist_raw, str):
+            whitelist = [x.strip() for x in whitelist_raw.split(",") if x.strip()]
+        elif isinstance(whitelist_raw, list):
+            whitelist = [str(x).strip() for x in whitelist_raw if str(x).strip()]
+
+    save_persisted_config(
+        rate_limit_enabled=enabled,
+        rate_limit_requests_per_minute=rpm,
+        rate_limit_audio_per_day=daily_audio,
+        rate_limit_cooldown_seconds=cooldown,
+        rate_limit_whitelist=whitelist,
+    )
+
+    return {
+        "status": "ok",
+        "message": "WhatsApp Rate Limiter settings updated successfully!",
+        "rate_limiter": rate_limiter.get_stats(),
+    }
+
+
+@router.post("/api/whatsapp/rate-limiter/reset")
+async def api_reset_wa_rate_limiter(request: Request):
+    """Resets all active rate limiter windows and daily audio counters."""
+    require_admin(request)
+    rate_limiter.clear_all()
+    return {
+        "status": "ok",
+        "message": "WhatsApp Rate Limiter tracking and daily quotas have been reset.",
+        "rate_limiter": rate_limiter.get_stats(),
+    }

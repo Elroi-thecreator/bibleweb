@@ -43,6 +43,7 @@
                 <div class="text-xs text-stone-500 dark:text-stone-400 mt-2 space-y-1">
                     <div>Endpoint: <code id="gateway-url" class="bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded text-[11px]">Loading...</code></div>
                     <div>Mode: <span id="gateway-mode" class="font-semibold">Loading...</span></div>
+                    <div>Rate Limiter: <span id="rate-limiter-badge" class="font-semibold text-stone-400">Loading...</span></div>
                 </div>
                 <div class="mt-3">
                     <button onclick="toggleSimulationMode()" id="btn-toggle-sim" class="w-full text-xs py-1.5 px-3 rounded-xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition font-medium cursor-pointer">
@@ -274,6 +275,19 @@
 
             if (typeof data.subscriber_count !== "undefined") {
                 document.getElementById("subscriber-count").textContent = data.subscriber_count;
+            }
+
+            if (data.rate_limiter) {
+                var rlElem = document.getElementById("rate-limiter-badge");
+                if (rlElem) {
+                    if (data.rate_limiter.enabled) {
+                        rlElem.className = "font-semibold text-emerald-600 dark:text-emerald-400";
+                        rlElem.textContent = "Active (" + data.rate_limiter.requests_per_minute + " rpm / " + data.rate_limiter.daily_audio_limit + " audio/day)";
+                    } else {
+                        rlElem.className = "font-semibold text-stone-400";
+                        rlElem.textContent = "Disabled";
+                    }
+                }
             }
 
             var banner = document.getElementById("offline-guidance-banner");

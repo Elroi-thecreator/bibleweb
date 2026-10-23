@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.16.0
+version: 1.17.0
 authority:
   level: official
   confidence: high
@@ -21,7 +21,7 @@ applies_to:
   - scheduler
 
 rule:
-  "The WhatsApp gateway integration uses an isolated 5-layer decoupled architecture based on WA-AKG (Next.js + Baileys). Core gateway communication, conversational session storage, and command dispatching in `whatsapp_gateway/client/` and `whatsapp_gateway/bot/` maintain zero dependencies on application databases or schemas, isolating all domain behaviors into `whatsapp_gateway/adapters/` and exposing a mountable FastAPI router in `whatsapp_gateway/routes/`. On cloud platforms (Render.com), the application orchestrates the `elroi-bible` Python web service and the `wa-akg-gateway` Node.js service, while delegating persistent multi-device WhatsApp authentication and session storage to an external Supabase PostgreSQL database (`DATABASE_URL`), eliminating Render's 30-day database expiration and preserving Render resource quotas. Python-side subscriber state uses dual-persistence with thread-safe SQLite (`data/whatsapp_subscribers.sqlite.db`) and automatic JSON backup hydration (`data/whatsapp_subscribers.json`) to guarantee zero-loss recovery across ephemeral dyno/container restarts. Subscribers feature configurable reminder dispatch times (defaulting strictly to morning 5:00 AM / '05:00') and active reading plan selection (Full Bible in 365 Days, New Testament in 90 Days, Proverbs in 31 Days, Psalms of Comfort, and Deuterocanonical Books) with background scheduler execution."
+  "The WhatsApp gateway integration uses an isolated 5-layer decoupled architecture based on WA-AKG (Next.js + Baileys). Core gateway communication, conversational session storage, and command dispatching in `whatsapp_gateway/client/` and `whatsapp_gateway/bot/` maintain zero dependencies on application databases or schemas, isolating all domain behaviors into `whatsapp_gateway/adapters/` and exposing a mountable FastAPI router in `whatsapp_gateway/routes/`. On cloud platforms (Render.com), the application orchestrates the `elroi-bible` Python web service and the `wa-akg-gateway` Node.js service, while delegating persistent multi-device WhatsApp authentication and session storage to an external Supabase PostgreSQL database (`DATABASE_URL`), eliminating Render's 30-day database expiration and preserving Render resource quotas. Python-side subscriber state uses dual-persistence with thread-safe SQLite (`data/whatsapp_subscribers.sqlite.db`) and automatic JSON backup hydration (`data/whatsapp_subscribers.json`) to guarantee zero-loss recovery across ephemeral dyno/container restarts. Subscribers feature configurable reminder dispatch times (defaulting strictly to morning 5:00 AM / '05:00') and active reading plan selection (Full Bible in 365 Days, New Testament in 90 Days, Proverbs in 31 Days, Psalms of Comfort, and Deuterocanonical Books) with background scheduler execution. Incoming traffic is governed by a thread-safe sliding-window rate limiter and quota controller (`WhatsAppRateLimiter` in `whatsapp_gateway/rate_limiter.py`), throttling rapid bursts (configurable `requests_per_minute`, default 20), enforcing daily audio synthesis quotas (`daily_audio_limit`, default 15) to shield Edge-TTS and FFmpeg, delivering automatic bilingual cooldown notices in Tamil and English, and permitting unrestricted bypass for whitelisted phone numbers."
 
 do:
   - "Keep Layer 1 (`whatsapp_gateway/client/`) and Layer 2 (`whatsapp_gateway/bot/`) strictly domain-agnostic so the package can be dropped into any other FastAPI or Python project without modification."
@@ -49,7 +49,11 @@ do:
   - "Store subscriber reminder times in the `reminder_time TEXT DEFAULT '05:00'` column with automatic migration, defaulting morning 5:00 AM ('05:00') for all daily devotional and verse reminders."
   - "Expose multi-format reminder configuration commands (`remind 5 AM`, `remind 6:30 AM`, `remind 18:30`, `remind off`, `நேரம் காலை 5`) with intelligent 12-hour/24-hour parsing in `parse_reminder_time` and 12-hour friendly confirmation formatting."
   - "Run a non-blocking background scheduler (`DevotionalScheduler` in `whatsapp_gateway/scheduler/runner.py`) integrated into FastAPI lifespan, evaluating target-time subscribers and broadcasting assigned reading checkpoints without thread saturation."
-  - "Support dynamic runtime gateway reconfiguration via `data/whatsapp_config.json` and `wa_client.update_config(...)` to hot-swap endpoint URLs, session IDs, and simulation modes with zero downtime."
+  - "Protect bot availability and upstream resources with `WhatsAppRateLimiter` sliding-window evaluation across a 60-second window per normalized sender JID/phone, throttling excessive message rates with bilingual cooldown messages ('⏳ *Too Many Requests!*' / '⏳ *அதிக கோரிக்கைகள்*')."
+  - "Enforce a distinct daily audio synthesis quota per user (`daily_audio_limit`, default 15) before initiating Edge-TTS neural speech synthesis and FFmpeg transcoding, gracefully declining requests with bilingual reset notices while allowing text scripture reading to continue unhindered."
+  - "Permit designated administrator phone numbers (`rate_limit_whitelist`) to bypass both sliding-window rate limits and daily audio quotas, with robust normalization handling spaces, country codes (`+91`), and WhatsApp JID domain suffixes (`@s.whatsapp.net`)."
+  - "Expose real-time rate limiter diagnostics and controls via `/api/whatsapp/rate-limiter/status`, `/api/whatsapp/rate-limiter/config`, and `/api/whatsapp/rate-limiter/reset`, backing thresholds in `data/whatsapp_config.json`."
+  - "Support dynamic runtime gateway reconfiguration via `data/whatsapp_config.json` and `wa_client.update_config(...)` to hot-swap endpoint URLs, session IDs, rate limiter thresholds, and simulation modes with zero downtime."
   - "Provide an interactive CLI message dispatcher and diagnostic tool (`scripts/send_whatsapp_message.py`) with `--audio` support for live session verification, manual alert dispatch, and terminal testing."
   - "Mount the controller into `app/main.py` using standard FastAPI router patterns: `app.include_router(whatsapp_router, prefix='/api/whatsapp')`."
   - "Orchestrate `elroi-bible` and `wa-akg-gateway` in `render.yaml` utilizing Render's `repo: https://github.com/mrifqidaffaaditya/WA-AKG.git` and connecting to external Supabase PostgreSQL via `DATABASE_URL` (`sync: false`)."
@@ -61,6 +65,8 @@ dont:
   - "Do not lock the `httpx.AsyncClient` default headers to `application/json` which corrupts multipart boundaries."
   - "Do not use simplistic `.split(maxsplit=2)` string parsing for audio references, which fails on numbered books like 1 John or verse ranges."
   - "Do not fail silently when audio dispatch encounters network issues; always reply with fallback scripture text."
+  - "Do not block text reading requests when a user exhausts their daily audio voice note quota; audio quotas must only guard heavy speech synthesis pipelines."
+  - "Do not evaluate rate limits before verifying sender whitelists; whitelisted numbers must bypass timestamp recording entirely."
   - "Do not import `app.db`, `app.quiz_data`, or `app.plans_data` inside `whatsapp_gateway/client/` or `whatsapp_gateway/bot/`."
   - "Do not block the main asyncio event loop with synchronous audio synthesis or database reads."
   - "Do not process webhook messages where `payload.is_from_me()` is True, preventing recursive bot message loops."
@@ -69,7 +75,17 @@ dont:
   - "Do not hardcode gateway session IDs or API keys in code; load from environment variables with admin runtime overrides."
 
 reason:
-  "Strict layer separation ensures full reusability across future software projects, keeps the codebase maintainable, and guarantees that external messaging failures cannot destabilize core desktop or web scripture reading services. Offloading multi-device session auth to Supabase prevents 30-day database teardown, while JSON hydration shields subscriber subscriptions against ephemeral dyno cycling. Proper multipart media routing guarantees seamless delivery of devotional voice notes to mobile WhatsApp users."
+  "Strict layer separation ensures full reusability across future software projects, keeps the codebase maintainable, and guarantees that external messaging failures cannot destabilize core desktop or web scripture reading services. Offloading multi-device session auth to Supabase prevents 30-day database teardown, while JSON hydration shields subscriber subscriptions against ephemeral dyno cycling. Proper multipart media routing guarantees seamless delivery of devotional voice notes to mobile WhatsApp users. Sliding-window rate limiting and daily audio quotas protect backend infrastructure and neural TTS quotas against denial-of-service and runaway spam loops."
+
+related_items:
+  - ARCH-SYS-001
+  - ARCH-DATA-001
+  - ARCH-ADMIN-001
+  - DEV-PY-001
+  - DEV-TEST-001
+  - PROD-AUDIO-001
+  - ADR-005
+  - ADR-006
 
 related_items:
   - ARCH-SYS-001

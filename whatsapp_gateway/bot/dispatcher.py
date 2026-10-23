@@ -28,6 +28,7 @@ class BotDispatcher:
         self._regex_handlers: List[Dict[str, Any]] = []
         self._state_handlers: Dict[str, Callable] = {}
         self._fallback_handler: Optional[Callable] = None
+        self._middlewares: List[Callable] = []
 
     def command(
         self,
@@ -78,6 +79,11 @@ class BotDispatcher:
         self._fallback_handler = func
         return func
 
+    def middleware(self, func: Callable):
+        """Decorator or method to register pre-dispatch middleware."""
+        self._middlewares.append(func)
+        return func
+
     def generate_help_text(self, header: str = "*📖 WhatsApp Assistant Menu:*") -> str:
         """Dynamically builds a WhatsApp-formatted help menu from registered commands."""
         lines = [header, ""]
@@ -108,6 +114,16 @@ class BotDispatcher:
         text = ctx.text.strip()
         if not text:
             return False
+
+        # 0. Execute Pre-Dispatch Middlewares (e.g. Rate Limiting, Logging, Filtering)
+        for mw in self._middlewares:
+            try:
+                allowed = await mw(ctx) if inspect.iscoroutinefunction(mw) else mw(ctx)
+                if allowed is False:
+                    logger.debug("Dispatch halted by middleware %s for sender %s", getattr(mw, '__name__', str(mw)), ctx.sender)
+                    return True
+            except Exception as mw_err:
+                logger.warning("Middleware error in %s: %s", getattr(mw, '__name__', str(mw)), mw_err)
 
         # 1. Check for Active Conversational State
         session = await ctx.get_state()

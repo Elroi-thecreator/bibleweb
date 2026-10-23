@@ -1,0 +1,50 @@
+id: ADR-007
+type: architecture_decision_record
+title: Thread-Safe Tiered Sliding-Window Rate Limiting, Daily Audio Synthesis Quotas & Admin Whitelisting for WhatsApp Bot
+domain: architecture
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+applies_to:
+  - backend
+  - whatsapp_gateway
+  - rate_limiter
+  - routes
+  - admin
+  - security
+
+rule:
+  "The WhatsApp Gateway incorporates a thread-safe, memory-efficient tiered rate limiter (`WhatsAppRateLimiter`) that enforces a rolling 60-second sliding-window request cap (default 20 req/min) across all incoming webhook commands, alongside a distinct daily calendar-day quota (default 15 voice notes/day) for compute-intensive Edge-TTS audio synthesis and FFmpeg transcoding. Throttled users receive bilingual cooldown warnings and midnight reset notices without server failure. Designated administrative phone numbers in `rate_limit_whitelist` bypass all limits. Telemetry metrics and live configuration controls are exposed via `/api/whatsapp/rate-limiter/*` and the administrative control dashboard (`/admin/settings`), backed by persistent storage in `data/whatsapp_config.json`."
+
+do:
+  - "Implement `WhatsAppRateLimiter` in `whatsapp_gateway/rate_limiter.py` with thread synchronization (`threading.Lock`) protecting rolling timestamp deques and daily audio quotas."
+  - "Normalize incoming sender JIDs, international prefixes (`+91`), and raw phone strings with `normalize_phone_number` to guarantee consistent sender tracking and whitelist matches."
+  - "Intercept rapid bursts in `whatsapp_gateway/bot/dispatcher.py` prior to command execution, returning bilingual cooldown notices ('⏳ *Too Many Requests!*' / '⏳ *அதிக கோரிக்கைகள்*') with the dynamic remaining cooldown duration."
+  - "Enforce daily audio synthesis quotas in `whatsapp_gateway/adapters/bible_adapter.py` before invoking Edge-TTS or FFmpeg audio pipelines, replying with a friendly midnight-reset notice while keeping text chapter queries unhindered."
+  - "Allow administrator phone numbers in `rate_limit_whitelist` to bypass rate limits and audio quotas entirely, skipping timestamp recording."
+  - "Persist rate limiter configuration (`rate_limit_enabled`, `rate_limit_requests_per_minute`, `rate_limit_audio_per_day`, `rate_limit_cooldown_seconds`, `rate_limit_whitelist`) in `data/whatsapp_config.json`."
+  - "Provide dedicated rate limiter telemetry and management endpoints (`GET /api/whatsapp/rate-limiter/status`, `POST /api/whatsapp/rate-limiter/config`, `POST /api/whatsapp/rate-limiter/reset`, `POST /admin/api/whatsapp/rate-limiter/toggle`, `POST /admin/api/whatsapp/rate-limiter/config`, `POST /admin/api/whatsapp/rate-limiter/reset`)."
+  - "Expose real-time telemetry metrics in the admin settings dashboard (`/admin/settings`): active 60-second window users, total evaluated requests, throttled requests, and daily audio quota blocks."
+  - "Provide a full automated verification test suite in `scripts/test_whatsapp_rate_limiter.py` covering unit sliding window calculations, whitelist bypass, daily quotas, webhook middleware, and admin APIs."
+
+dont:
+  - "Do not lock out text scripture reading when a user exceeds their daily audio quota."
+  - "Do not record timestamps or increment counters for whitelisted numbers."
+  - "Do not block the asyncio event loop with synchronous sleep or lock contention during rate limit evaluation."
+  - "Do not hardcode rate limit thresholds or whitelist numbers without providing administrative runtime overrides."
+
+reason:
+  "Unrestricted messaging endpoints are vulnerable to message flooding, accidental bot loops, and denial-of-service through resource-intensive neural audio synthesis (Edge-TTS) and FFmpeg transcoding. A tiered sliding-window rate limiter prevents socket exhaustion and upstream bans while preserving high availability for standard scripture reading. Dual-language warnings provide immediate clarity to both Tamil and English speaking believers."
+
+related_items:
+  - ARCH-WA-001
+  - ARCH-ADMIN-001
+  - DEV-TEST-001
+  - PROD-AUDIO-001
+  - ADR-005
+  - ADR-006

@@ -9,7 +9,7 @@ import json
 from os import getenv
 from pathlib import Path
 import sys
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 # Cross-platform root directory resolution
@@ -73,6 +73,21 @@ class WhatsAppGatewayConfig(BaseModel):
     queue_prefetch: int = Field(
         default_factory=lambda: int(getenv("WA_QUEUE_PREFETCH", "10"))
     )
+    rate_limit_enabled: bool = Field(
+        default_factory=lambda: getenv("WA_RATE_LIMIT_ENABLED", "true").lower() in ("true", "1", "yes")
+    )
+    rate_limit_requests_per_minute: int = Field(
+        default_factory=lambda: int(getenv("WA_RATE_LIMIT_RPM", "20"))
+    )
+    rate_limit_audio_per_day: int = Field(
+        default_factory=lambda: int(getenv("WA_RATE_LIMIT_AUDIO_PER_DAY", "15"))
+    )
+    rate_limit_cooldown_seconds: int = Field(
+        default_factory=lambda: int(getenv("WA_RATE_LIMIT_COOLDOWN_SECONDS", "30"))
+    )
+    rate_limit_whitelist: List[str] = Field(
+        default_factory=list
+    )
 
 
 # Load initial config with persistent overrides
@@ -93,6 +108,26 @@ config = WhatsAppGatewayConfig(
         "rabbitmq_url",
         getenv("WA_RABBITMQ_URL") or getenv("CLOUDAMQP_URL") or getenv("RABBITMQ_URL") or "amqp://guest:guest@localhost:5672/",
     ),
+    rate_limit_enabled=_persisted.get(
+        "rate_limit_enabled",
+        getenv("WA_RATE_LIMIT_ENABLED", "true").lower() in ("true", "1", "yes"),
+    ),
+    rate_limit_requests_per_minute=int(_persisted.get(
+        "rate_limit_requests_per_minute",
+        getenv("WA_RATE_LIMIT_RPM", "20"),
+    )),
+    rate_limit_audio_per_day=int(_persisted.get(
+        "rate_limit_audio_per_day",
+        getenv("WA_RATE_LIMIT_AUDIO_PER_DAY", "15"),
+    )),
+    rate_limit_cooldown_seconds=int(_persisted.get(
+        "rate_limit_cooldown_seconds",
+        getenv("WA_RATE_LIMIT_COOLDOWN_SECONDS", "30"),
+    )),
+    rate_limit_whitelist=list(_persisted.get(
+        "rate_limit_whitelist",
+        [],
+    )),
 )
 
 
@@ -103,6 +138,11 @@ def save_persisted_config(
     enable_simulation_mode: Optional[bool] = None,
     queue_enabled: Optional[bool] = None,
     rabbitmq_url: Optional[str] = None,
+    rate_limit_enabled: Optional[bool] = None,
+    rate_limit_requests_per_minute: Optional[int] = None,
+    rate_limit_audio_per_day: Optional[int] = None,
+    rate_limit_cooldown_seconds: Optional[int] = None,
+    rate_limit_whitelist: Optional[List[str]] = None,
 ) -> dict:
     """Updates the live singleton and writes overrides to data/whatsapp_config.json."""
     CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -135,6 +175,26 @@ def save_persisted_config(
         clean_rmq = rabbitmq_url.strip()
         current["rabbitmq_url"] = clean_rmq
         config.rabbitmq_url = clean_rmq
+
+    if rate_limit_enabled is not None:
+        current["rate_limit_enabled"] = bool(rate_limit_enabled)
+        config.rate_limit_enabled = current["rate_limit_enabled"]
+
+    if rate_limit_requests_per_minute is not None:
+        current["rate_limit_requests_per_minute"] = max(1, int(rate_limit_requests_per_minute))
+        config.rate_limit_requests_per_minute = current["rate_limit_requests_per_minute"]
+
+    if rate_limit_audio_per_day is not None:
+        current["rate_limit_audio_per_day"] = max(1, int(rate_limit_audio_per_day))
+        config.rate_limit_audio_per_day = current["rate_limit_audio_per_day"]
+
+    if rate_limit_cooldown_seconds is not None:
+        current["rate_limit_cooldown_seconds"] = max(1, int(rate_limit_cooldown_seconds))
+        config.rate_limit_cooldown_seconds = current["rate_limit_cooldown_seconds"]
+
+    if rate_limit_whitelist is not None:
+        current["rate_limit_whitelist"] = [str(x).strip() for x in rate_limit_whitelist if str(x).strip()]
+        config.rate_limit_whitelist = current["rate_limit_whitelist"]
 
     try:
         CONFIG_FILE.write_text(json.dumps(current, indent=2), encoding="utf-8")

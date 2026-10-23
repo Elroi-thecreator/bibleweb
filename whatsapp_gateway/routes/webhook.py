@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from whatsapp_gateway.config import config
+from whatsapp_gateway.config import config, save_persisted_config
 from whatsapp_gateway.client.client import WAClient
 from whatsapp_gateway.client.models import IncomingWebhookPayload, MediaType, SendMessageResponse
 from whatsapp_gateway.bot.context import MessageContext
@@ -18,6 +18,7 @@ from whatsapp_gateway.adapters.bible_adapter import register_bible_handlers
 from whatsapp_gateway.subscribers import get_active_subscribers, get_subscriber_count
 from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
 from whatsapp_gateway.queue.manager import queue_manager
+from whatsapp_gateway.rate_limiter import rate_limiter
 
 logger = logging.getLogger("whatsapp_gateway.routes")
 
@@ -194,12 +195,47 @@ async def get_gateway_status() -> Dict[str, Any]:
         "active_dialogue_sessions": len(_session_store._store),
         "subscriber_count": sub_count,
         "queue": queue_manager.get_status(),
+        "rate_limiter": rate_limiter.get_stats(),
     }
 
 
 class QueueConfigRequest(BaseModel):
     enabled: Optional[bool] = None
     rabbitmq_url: Optional[str] = None
+
+
+class RateLimiterConfigRequest(BaseModel):
+    enabled: Optional[bool] = None
+    requests_per_minute: Optional[int] = None
+    daily_audio_limit: Optional[int] = None
+    cooldown_seconds: Optional[int] = None
+    whitelist: Optional[List[str]] = None
+
+
+@router.get("/rate-limiter/status")
+async def get_rate_limiter_status_endpoint() -> Dict[str, Any]:
+    """Returns real-time WhatsApp rate limiter configuration and telemetry."""
+    return {"status": "ok", "rate_limiter": rate_limiter.get_stats()}
+
+
+@router.post("/rate-limiter/config")
+async def update_rate_limiter_config_endpoint(req: RateLimiterConfigRequest) -> Dict[str, Any]:
+    """Updates WhatsApp rate limiter settings and persists to config."""
+    save_persisted_config(
+        rate_limit_enabled=req.enabled,
+        rate_limit_requests_per_minute=req.requests_per_minute,
+        rate_limit_audio_per_day=req.daily_audio_limit,
+        rate_limit_cooldown_seconds=req.cooldown_seconds,
+        rate_limit_whitelist=req.whitelist,
+    )
+    return {"status": "ok", "rate_limiter": rate_limiter.get_stats()}
+
+
+@router.post("/rate-limiter/reset")
+async def reset_rate_limiter_endpoint() -> Dict[str, Any]:
+    """Resets all active rate limiter windows and daily quotas."""
+    rate_limiter.clear_all()
+    return {"status": "ok", "message": "Rate limiter tracking and quotas reset.", "rate_limiter": rate_limiter.get_stats()}
 
 
 @router.get("/queue/status")

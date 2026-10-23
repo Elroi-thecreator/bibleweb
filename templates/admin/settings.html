@@ -392,6 +392,102 @@
                 </div>
             </div>
 
+            <!-- Card: WhatsApp User Rate Limiter & Quotas -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">🛡️</span>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">WhatsApp Rate Limiting & Quotas</h2>
+                    </div>
+                    <span id="rl-status-badge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {% if rate_limiter_stats.enabled %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300{% else %}bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-400{% endif %}">
+                        {% if rate_limiter_stats.enabled %}Active (Enforcing){% else %}Disabled (Unrestricted){% endif %}
+                    </span>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <p class="text-stone-500 dark:text-stone-400 text-[11px] leading-relaxed">
+                        Sliding window request throttling and daily resource quotas per WhatsApp phone number to protect audio synthesis (Edge-TTS) and database capacity.
+                    </p>
+
+                    <!-- Rate Limiter Telemetry Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                        <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700/60">
+                            <div class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Active Users (60s)</div>
+                            <div id="rl-stat-active-users" class="text-sm font-bold font-mono text-stone-900 dark:text-stone-100 mt-0.5">{{ rate_limiter_stats.active_window_users }}</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700/60">
+                            <div class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Requests Checked</div>
+                            <div id="rl-stat-checked" class="text-sm font-bold font-mono text-stone-900 dark:text-stone-100 mt-0.5">{{ rate_limiter_stats.total_requests_evaluated }}</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700/60">
+                            <div class="text-[10px] uppercase font-bold text-rose-500 tracking-wider">Rate Throttled</div>
+                            <div id="rl-stat-throttled" class="text-sm font-bold font-mono text-rose-600 dark:text-rose-400 mt-0.5">{{ rate_limiter_stats.total_throttled_requests }}</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700/60">
+                            <div class="text-[10px] uppercase font-bold text-amber-500 tracking-wider">Audio Quota Blocks</div>
+                            <div id="rl-stat-audio-blocks" class="text-sm font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">{{ rate_limiter_stats.total_audio_quota_blocks }}</div>
+                        </div>
+                    </div>
+
+                    <form id="rate-limiter-config-form" onsubmit="saveRateLimiterConfig(event)" class="space-y-3 pt-1">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div>
+                                <label for="rl_requests_per_minute" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                    Max Req / Min
+                                </label>
+                                <input type="number" id="rl_requests_per_minute" name="requests_per_minute" min="1" max="300"
+                                       value="{{ rate_limiter_stats.requests_per_minute }}"
+                                       class="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                            </div>
+                            <div>
+                                <label for="rl_daily_audio_limit" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                    Daily Audio Quota
+                                </label>
+                                <input type="number" id="rl_daily_audio_limit" name="daily_audio_limit" min="1" max="500"
+                                       value="{{ rate_limiter_stats.daily_audio_limit }}"
+                                       class="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                            </div>
+                            <div>
+                                <label for="rl_cooldown_seconds" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                    Cooldown (Sec)
+                                </label>
+                                <input type="number" id="rl_cooldown_seconds" name="cooldown_seconds" min="1" max="3600"
+                                       value="{{ rate_limiter_stats.cooldown_seconds }}"
+                                       class="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="rl_whitelist" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                Whitelisted Numbers / JIDs (Bypasses Limits)
+                            </label>
+                            <input type="text" id="rl_whitelist" name="whitelist"
+                                   value="{{ rate_limiter_stats.whitelist | join(', ') }}"
+                                   placeholder="e.g. 919876543210, 919988776655"
+                                   class="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                            <span class="text-[10px] text-stone-400 mt-0.5 block">Comma-separated phone numbers that have unrestricted access.</span>
+                        </div>
+
+                        <div class="pt-2 flex flex-col sm:flex-row gap-2">
+                            <button type="submit" id="rl-save-btn"
+                                    class="flex-1 py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                                <span>💾</span>
+                                <span>Save Limits</span>
+                            </button>
+                            <button type="button" onclick="toggleWaRateLimiter()"
+                                    class="py-2 px-3 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <span>⚡</span>
+                                <span id="rl-toggle-label">{% if rate_limiter_stats.enabled %}Disable Limiter{% else %}Enable Limiter{% endif %}</span>
+                            </button>
+                            <button type="button" onclick="resetWaRateLimiter()"
+                                    class="py-2 px-3 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <span>🔄</span> Reset Quotas
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Card: Dual Embedded SQLite Databases -->
             <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
                 <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
@@ -767,6 +863,74 @@
                 }
             } catch (err) {
                 showToast('❌ Network error sending devotionals', true);
+            }
+        }
+
+        async function saveRateLimiterConfig(event) {
+            event.preventDefault();
+            const btn = document.getElementById('rl-save-btn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span>⏳</span><span>Saving...</span>';
+            btn.disabled = true;
+
+            const payload = {
+                requests_per_minute: parseInt(document.getElementById('rl_requests_per_minute').value, 10),
+                daily_audio_limit: parseInt(document.getElementById('rl_daily_audio_limit').value, 10),
+                cooldown_seconds: parseInt(document.getElementById('rl_cooldown_seconds').value, 10),
+                whitelist: document.getElementById('rl_whitelist').value.trim()
+            };
+
+            try {
+                const res = await fetch('/admin/api/whatsapp/rate-limiter/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to update rate limiter settings'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error saving rate limiter configuration', true);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        async function toggleWaRateLimiter() {
+            try {
+                const res = await fetch('/admin/api/whatsapp/rate-limiter/toggle', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to toggle rate limiter'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error toggling rate limiter', true);
+            }
+        }
+
+        async function resetWaRateLimiter() {
+            if (!confirm('Are you sure you want to reset all active rate limiter windows and daily quotas?')) {
+                return;
+            }
+            try {
+                const res = await fetch('/admin/api/whatsapp/rate-limiter/reset', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ ' + data.message);
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('❌ Error: ' + (data.detail || 'Failed to reset rate limiter'), true);
+                }
+            } catch (err) {
+                showToast('❌ Network error resetting rate limiter', true);
             }
         }
     </script>
