@@ -305,6 +305,13 @@ async def lifespan(app: FastAPI):
     except Exception as q_err:
         print(f"[WhatsAppQueue] Lifespan start warning: {q_err}", flush=True)
 
+    # Initialize and start WhatsApp Devotional Scheduler (checks reminder times, e.g. default 05:00 AM)
+    try:
+        from whatsapp_gateway.scheduler.runner import devotional_scheduler
+        await devotional_scheduler.start()
+    except Exception as s_err:
+        print(f"[DevotionalScheduler] Lifespan start warning: {s_err}", flush=True)
+
     # Windows Process Registry & Telemetry Registration
     try:
         import psutil
@@ -325,6 +332,11 @@ async def lifespan(app: FastAPI):
     try:
         from whatsapp_gateway.queue.manager import queue_manager
         await queue_manager.stop()
+    except Exception:
+        pass
+    try:
+        from whatsapp_gateway.scheduler.runner import devotional_scheduler
+        await devotional_scheduler.stop()
     except Exception:
         pass
     try:

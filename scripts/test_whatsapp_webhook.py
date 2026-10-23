@@ -189,12 +189,39 @@ async def run_tests():
         assert "🎵" in outbox[0]["text"]
         print("  ✅ Song lyrics successfully retrieved.")
 
-        # 13. Test Reading Plan Command
-        print("\n[13] Testing Reading Plan 'plan'...")
+        # 13. Test Reading Plan Command & Plan Switching
+        print("\n[13] Testing Reading Plans in WhatsApp (Full Bible 365, NT 90, Switching)...")
         outbox = await send_simulated_msg("plan")
         assert len(outbox) == 1
         assert "Daily Scripture Reading Plan" in outbox[0]["text"]
-        print("  ✅ Reading plan information successfully displayed.")
+        assert "Full Bible in 365 Days" in outbox[0]["text"]
+        assert "New Testament in 90 Days" in outbox[0]["text"]
+        print("  ✅ Default 365-day reading plan and options displayed successfully.")
+
+        # Test switching to New Testament 90 days plan
+        outbox_switch_nt = await send_simulated_msg("plan nt")
+        assert len(outbox_switch_nt) == 1
+        assert "New Testament in 90 Days" in outbox_switch_nt[0]["text"]
+        assert "Switched Successfully" in outbox_switch_nt[0]["text"]
+        print("  ✅ Switched reading plan to 'plan nt' successfully.")
+
+        # Test switching back to Full Bible in 365 days
+        outbox_switch_full = await send_simulated_msg("plan full")
+        assert len(outbox_switch_full) == 1
+        assert "Full Bible in 365 Days" in outbox_switch_full[0]["text"]
+        print("  ✅ Switched reading plan to 'plan full' (365 days) successfully.")
+
+        # Test inspecting specific day reading
+        outbox_day50 = await send_simulated_msg("plan 50")
+        assert len(outbox_day50) == 1
+        assert "Day 50" in outbox_day50[0]["text"]
+        print("  ✅ Inspected specific day reading ('plan 50') successfully.")
+
+        # Test Tamil plan command
+        outbox_plan_ta = await send_simulated_msg("திட்டம்")
+        assert len(outbox_plan_ta) == 1
+        assert "வாசிப்புத் திட்டம்" in outbox_plan_ta[0]["text"]
+        print("  ✅ Tamil reading plan command ('திட்டம்') verified.")
 
         # 14. Test Audio Bible Generation across English, Tamil & Numbered Books with Processing Notice
         print("\n[14] Testing Audio Bible 'audio John 1' with processing notice...")
@@ -239,8 +266,57 @@ async def run_tests():
         assert b_data["total"] == 2
         print(f"  ✅ Broadcast delivered to {b_data['total']} simulated recipients.")
 
+        # 16. Test WhatsApp Reminder Setting (Default morning 5 AM) & Time Customization
+        print("\n[16] Testing Daily Reminder Command & Configurable Dispatch Time (Default: 5:00 AM)...")
+        # Check current status
+        outbox_remind_status = await send_simulated_msg("remind")
+        assert len(outbox_remind_status) == 1
+        assert "5:00 AM" in outbox_remind_status[0]["text"]
+        print("  ✅ Default 5:00 AM reminder status displayed successfully.")
+
+        # Set reminder to 5:00 AM explicitly
+        outbox_set_5am = await send_simulated_msg("remind 5 AM")
+        assert len(outbox_set_5am) == 1
+        assert "5:00 AM" in outbox_set_5am[0]["text"]
+        assert "05:00" in outbox_set_5am[0]["text"]
+        print("  ✅ Configured reminder to morning 5 AM ('remind 5 AM').")
+
+        # Set custom reminder to 6:30 AM
+        outbox_set_630am = await send_simulated_msg("remind 6:30 AM")
+        assert len(outbox_set_630am) == 1
+        assert "6:30 AM" in outbox_set_630am[0]["text"]
+        assert "06:30" in outbox_set_630am[0]["text"]
+        print("  ✅ Updated reminder time to 6:30 AM ('remind 6:30 AM').")
+
+        # Set evening reminder 6:30 PM (18:30)
+        outbox_set_1830 = await send_simulated_msg("remind 18:30")
+        assert len(outbox_set_1830) == 1
+        assert "6:30 PM" in outbox_set_1830[0]["text"]
+        assert "18:30" in outbox_set_1830[0]["text"]
+        print("  ✅ Updated reminder time to 24-hr format ('remind 18:30' -> 6:30 PM).")
+
+        # Set reminder via Tamil command
+        outbox_remind_ta = await send_simulated_msg("நேரம் காலை 5")
+        assert len(outbox_remind_ta) == 1
+        assert "05:00" in outbox_remind_ta[0]["text"]
+        print("  ✅ Configured reminder in Tamil ('நேரம் காலை 5').")
+
+        # 17. Test Target-Time Devotional Push Filtering
+        print("\n[17] Testing Target-Time Devotional Push (5:00 AM)...")
+        from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
+        # With target_time="05:00", sender who just set 05:00 will receive devotional
+        push_res = await push_daily_devotional(client=client, target_time="05:00")
+        assert push_res["delivered"] >= 1
+        print(f"  ✅ Time-targeted devotional push successfully delivered to {push_res['delivered']} subscriber(s) due at 05:00.")
+
+        # Test disabling reminders
+        outbox_off = await send_simulated_msg("remind off")
+        assert len(outbox_off) == 1
+        assert "stopped" in outbox_off[0]["text"].lower() or "நிறுத்தப்பட்டது" in outbox_off[0]["text"]
+        print("  ✅ Successfully stopped reminders via 'remind off'.")
+
     print("\n" + "=" * 70)
-    print("🎉 ALL 15 VERIFICATION & ENHANCEMENT TESTS PASSED WITH 100% SUCCESS!")
+    print("🎉 ALL 17 VERIFICATION & ENHANCEMENT TESTS PASSED WITH 100% SUCCESS!")
     print("=" * 70)
 
 

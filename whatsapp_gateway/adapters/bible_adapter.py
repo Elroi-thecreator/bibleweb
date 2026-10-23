@@ -21,11 +21,18 @@ from app.db import (
     get_songs_list,
     search_verses,
 )
-from app.plans_data import READING_PLANS
+from app.plans_data import READING_PLANS, get_plan, get_today_plan_reading
 from app.quiz_data import QUIZ_QUESTIONS
 from whatsapp_gateway.bot.context import MessageContext
 from whatsapp_gateway.bot.dispatcher import BotDispatcher
-from whatsapp_gateway.subscribers import add_subscriber, remove_subscriber, is_subscribed
+from whatsapp_gateway.subscribers import (
+    add_subscriber,
+    remove_subscriber,
+    is_subscribed,
+    update_subscriber_reminder_time,
+    update_subscriber_plan,
+    get_subscriber,
+)
 
 logger = logging.getLogger("whatsapp_gateway.bible_adapter")
 
@@ -423,54 +430,282 @@ async def handle_songs_command(ctx: MessageContext) -> None:
     await ctx.reply_text("\n\n".join(lines))
 
 
+def parse_reminder_time(text: str) -> Optional[str]:
+    """
+    Parses user input string into standardized 24-hour 'HH:MM' format.
+    Supports: '5 AM', '5am', '5:00 AM', '05:00', '6:30 PM', '18:30', '5', 'காலை 5', 'மாலை 6:30', 'status', 'off'.
+    """
+    clean = text.strip().lower()
+    if not clean:
+        return None
+    if clean in ("status", "current", "check", "show", "நிலவரம்"):
+        return "status"
+    if clean in ("off", "stop", "cancel", "disable", "நிறுத்து", "முடக்கு"):
+        return "off"
+
+    is_pm = False
+    is_am = False
+    if any(k in clean for k in ("மாலை", "இரவு", "pm", "p.m.")):
+        is_pm = True
+    elif any(k in clean for k in ("காலை", "am", "a.m.")):
+        is_am = True
+
+    num_part = re.sub(r"[^\d:.]", " ", clean).strip()
+    tokens = num_part.split()
+    if not tokens:
+        return None
+    time_str = tokens[0]
+
+    hour = 0
+    minute = 0
+    if ":" in time_str or "." in time_str:
+        sep = ":" if ":" in time_str else "."
+        parts = time_str.split(sep)
+        try:
+            hour = int(parts[0])
+            minute = int(parts[1]) if len(parts) > 1 else 0
+        except ValueError:
+            return None
+    else:
+        try:
+            hour = int(time_str)
+            minute = 0
+        except ValueError:
+            return None
+
+    if is_pm and hour < 12:
+        hour += 12
+    elif is_am and hour == 12:
+        hour = 0
+
+    if 0 <= hour <= 23 and 0 <= minute <= 59:
+        return f"{hour:02d}:{minute:02d}"
+    return None
+
+
+def format_time_display(time_24: str) -> str:
+    """Formats 'HH:MM' into friendly 12-hour string (e.g. '05:00' -> '5:00 AM')."""
+    try:
+        dt = datetime.strptime(time_24, "%H:%M")
+        return dt.strftime("%I:%M %p").lstrip("0")
+    except Exception:
+        return time_24
+
+
 async def handle_plan_command(ctx: MessageContext) -> None:
-    """View today's reading plan or explore available plans."""
-    today_day_of_month = datetime.now().day
+    """View today's reading plan, explore available plans, or switch plan."""
+    text = ctx.text.strip()
+    is_ta = is_tamil_text(text)
 
-    prov_plan = READING_PLANS.get("proverbs-31", {})
-    prov_days = prov_plan.get("days", [])
-    today_prov = prov_days[today_day_of_month - 1] if today_day_of_month <= len(prov_days) else None
+    # Strip command prefix
+    clean = re.sub(r"^(?:plan|plans|reading|திட்டம்)\s*", "", text, flags=re.IGNORECASE).strip()
 
-    lines = [
-        "📅 *Daily Scripture Reading Plan:*",
-        f"Today is Day {today_day_of_month} of the month.",
-        "",
-    ]
+    sub = await get_subscriber(ctx.sender)
+    active_plan_id = sub.get("plan_id", "full-bible-365") if sub else "full-bible-365"
 
-    if today_prov:
-        lines.append(f"✨ *Today's Wisdom Reading:* {today_prov['ref']}")
-        lines.append(f"_Reply 'Proverbs {today_day_of_month}' to read today's chapter!_")
-        lines.append("")
+    target_plan = get_plan(clean) if clean else None
+    day_match = re.match(r"^(?:day\s*)?(\d+)$", clean, re.IGNORECASE)
+    day_num = int(day_match.group(1)) if day_match else None
 
-    lines.append("*Available Reading Plans:*")
-    for p_id, p_meta in READING_PLANS.items():
-        lines.append(f"• *{p_meta.get('title_en')}* ({p_meta.get('total_days')} Days)")
+    # Switching active plan
+    if target_plan and not day_num:
+        new_plan_id = target_plan["id"]
+        await update_subscriber_plan(ctx.sender, new_plan_id)
+        reading = get_today_plan_reading(new_plan_id)
+        curr_day = reading.get("current_day", 1)
+        tot_days = reading.get("total_days", 365)
+        ref_text = reading.get("ref_ta" if is_ta else "ref_en") or reading.get("ref")
+        plan_name = target_plan.get("title_ta" if is_ta else "title_en")
 
-    await ctx.reply_text("\n\n".join(lines))
+        b_id = reading.get("book_id", 1)
+        ch_num = reading.get("chapter", 1)
+        b_meta = CATHOLIC_BOOK_MAP.get(b_id, BOOK_MAP.get(b_id, {"name_en": "Genesis", "name_ta": "ஆதியாகமம்"}))
+        book_name = b_meta.get("name_ta" if is_ta else "name_en", "Genesis")
+
+        if is_ta:
+            reply = (
+                f"✅ *உங்கள் வாசிப்புத் திட்டம் மாற்றப்பட்டது!*\n\n"
+                f"📜 *திட்டம்:* {plan_name} ({tot_days} நாட்கள்)\n"
+                f"📅 *இன்றைய வாசிப்பு (நாள் {curr_day}):* {ref_text}\n\n"
+                f"• முழு அதிகாரத்தை வாசிக்க *{book_name} {ch_num}* என அனுப்பவும்.\n"
+                f"• ஆடியோ கேட்க *audio {book_name} {ch_num}* என அனுப்பவும்.\n"
+                f"• அனைத்து திட்டங்களை பார்க்க *plan* என அனுப்பவும்."
+            )
+        else:
+            reply = (
+                f"✅ *Reading Plan Switched Successfully!*\n\n"
+                f"📜 *Plan:* {plan_name} ({tot_days} Days)\n"
+                f"📅 *Today's Reading (Day {curr_day}):* {ref_text}\n\n"
+                f"• Reply *{book_name} {ch_num}* to read full chapter.\n"
+                f"• Reply *audio {book_name} {ch_num}* for instant voice note.\n"
+                f"• Reply *plan* to see all plans or switch anytime."
+            )
+        await ctx.reply_text(reply)
+        return
+
+    # Reading display
+    target_plan_id = active_plan_id
+    reading = get_today_plan_reading(target_plan_id, day_number=day_num)
+    if not reading:
+        reading = get_today_plan_reading("full-bible-365", day_number=day_num)
+
+    curr_day = reading.get("current_day", 1)
+    tot_days = reading.get("total_days", 365)
+    ref_text = reading.get("ref_ta" if is_ta else "ref_en") or reading.get("ref")
+    plan_name = reading.get("plan_title_ta" if is_ta else "plan_title_en", "Full Bible in 365 Days")
+
+    b_id = reading.get("book_id", 1)
+    ch_num = reading.get("chapter", 1)
+    b_meta = CATHOLIC_BOOK_MAP.get(b_id, BOOK_MAP.get(b_id, {"name_en": "Genesis", "name_ta": "ஆதியாகமம்"}))
+    book_name = b_meta.get("name_ta" if is_ta else "name_en", "Genesis")
+
+    if is_ta:
+        lines = [
+            "📅 *தினசரி வேதாகம வாசிப்புத் திட்டம்* 📅",
+            f"📜 *நடப்பு திட்டம்:* {plan_name}",
+            f"✨ *இன்றைய வாசிப்பு (நாள் {curr_day}/{tot_days}):*",
+            f"📖 *{ref_text}*",
+            "",
+            f"• வாசிக்க: *{book_name} {ch_num}*",
+            f"• ஆடியோ கேட்க: *audio {book_name} {ch_num}*",
+            "",
+            "*கிடைக்கும் வாசிப்புத் திட்டங்கள்:*",
+            "1. *முழு வேதாகமம் (365 நாட்கள்)* - மாற்ற: `plan full`",
+            "2. *புதிய ஏற்பாடு (90 நாட்கள்)* - மாற்ற: `plan nt`",
+            "3. *நீதிமொழிகள் (31 நாட்கள்)* - மாற்ற: `plan proverbs`",
+            "4. *தேறுதலின் சங்கீதங்கள் (30 நாட்கள்)* - மாற்ற: `plan psalms`",
+            "5. *இரண்டாம் திருமுறை (30 நாட்கள்)* - மாற்ற: `plan deuterocanon`",
+            "",
+            "_குறிப்பிட்ட நாளின் பகுதியை பார்க்க: `plan <நாள்>` (எ.கா. `plan 50`)_"
+        ]
+    else:
+        lines = [
+            "📅 *Daily Scripture Reading Plan* 📅",
+            f"📜 *Current Plan:* {plan_name}",
+            f"✨ *Today's Assigned Reading (Day {curr_day}/{tot_days}):*",
+            f"📖 *{ref_text}*",
+            "",
+            f"• Read chapter: *{book_name} {ch_num}*",
+            f"• Audio voice note: *audio {book_name} {ch_num}*",
+            "",
+            "*Available Reading Plans:*",
+            "1. *Full Bible in 365 Days* (~3.2 ch/day) - `plan full`",
+            "2. *New Testament in 90 Days* (~2.9 ch/day) - `plan nt`",
+            "3. *Proverbs in 31 Days* (1 ch/day) - `plan proverbs`",
+            "4. *Psalms of Peace & Comfort* (30 Days) - `plan psalms`",
+            "5. *Deuterocanonical Books* (30 Days) - `plan deuterocanon`",
+            "",
+            "_To switch plan, reply e.g. `plan full` or `plan nt`._\n_To view a specific day, reply `plan <day>` (e.g. `plan 50`)._"
+        ]
+    await ctx.reply_text("\n".join(lines))
+
+
+async def handle_reminder_command(ctx: MessageContext) -> None:
+    """View or set daily reminder dispatch time (default: 5:00 AM)."""
+    text = ctx.text.strip()
+    is_ta = is_tamil_text(text)
+
+    clean_arg = re.sub(r"^(?:remind|reminder|time|alarm|நேரம்|நினைவூட்டல்)\s*", "", text, flags=re.IGNORECASE).strip()
+
+    sub = await get_subscriber(ctx.sender)
+    current_time_24 = sub.get("reminder_time", "05:00") if sub else "05:00"
+    current_time_display = format_time_display(current_time_24)
+
+    if not clean_arg or clean_arg.lower() in ("status", "current", "check", "நிலவரம்"):
+        if is_ta:
+            reply = (
+                f"⏰ *தினசரி வேத நினைவூட்டல் நேரம்: {current_time_display} ({current_time_24})* ☀️\n\n"
+                f"இயல்புநிலை நேரம்: *காலை 5:00 மணி (05:00)*.\n\n"
+                f"*நேரத்தை மாற்ற கீழ்கண்டவாறு அனுப்பவும்:*\n"
+                f"• `remind 5 AM` (காலை 5:00 மணி - இயல்புநிலை)\n"
+                f"• `remind 6:00 AM` (காலை 6:00 மணி)\n"
+                f"• `remind 6:30 AM` (காலை 6:30 மணி)\n"
+                f"• `remind 9:00 PM` (இரவு 9:00 மணி)\n"
+                f"• `remind off` (நினைவூட்டலை நிறுத்த)"
+            )
+        else:
+            reply = (
+                f"⏰ *Your Daily Scripture Reminder: {current_time_display} ({current_time_24})* ☀️\n\n"
+                f"System default reminder time is *5:00 AM (05:00)*.\n\n"
+                f"*To set or change your reminder time:*\n"
+                f"• `remind 5 AM` (Default morning 5:00 AM)\n"
+                f"• `remind 6:00 AM`\n"
+                f"• `remind 6:30 AM`\n"
+                f"• `remind 9:00 PM`\n"
+                f"• `remind 05:00` (24-hour format)\n"
+                f"• `remind off` (disable daily reminder)"
+            )
+        await ctx.reply_text(reply)
+        return
+
+    parsed = parse_reminder_time(clean_arg)
+    if parsed == "off":
+        await remove_subscriber(ctx.sender)
+        if is_ta:
+            await ctx.reply_text("👋 *உங்கள் தினசரி நினைவூட்டல் நிறுத்தப்பட்டது.* மீண்டும் தொடங்க *remind 5 AM* அல்லது *subscribe* என அனுப்பவும்.")
+        else:
+            await ctx.reply_text("👋 *Your daily reminders have been stopped.* Reply *remind 5 AM* or *subscribe* anytime to re-enable.")
+        return
+
+    if not parsed or parsed == "status":
+        if is_ta:
+            await ctx.reply_text(
+                "❌ *நேர வடிவம் தவறானது.*\n"
+                "சரியான வடிவங்கள்: `remind 5 AM`, `remind 6:30 AM`, `remind 05:00`, `remind காலை 5`"
+            )
+        else:
+            await ctx.reply_text(
+                "❌ *Invalid time format.*\n"
+                "Please use formats like: `remind 5 AM`, `remind 6:30 AM`, `remind 05:00`, or `remind 9 PM`."
+            )
+        return
+
+    success = await update_subscriber_reminder_time(ctx.sender, parsed)
+    disp = format_time_display(parsed)
+    if success:
+        if is_ta:
+            await ctx.reply_text(
+                f"⏰ *தினசரி வேத நினைவூட்டல் நேரம் மாற்றப்பட்டது: {disp} ({parsed})!* ☀️\n\n"
+                f"ஒவ்வொரு நாளும் இந்த நேரத்தில் இன்றைய வேத வாசிப்பு மற்றும் வசனம் உங்கள் வாட்ஸ்அப்பிற்கு வந்து சேரும்.\n\n"
+                f"_நேரத்தை மீண்டும் மாற்ற `remind <நேரம்>` (எ.கா. `remind 5 AM`) என அனுப்பவும்._"
+            )
+        else:
+            await ctx.reply_text(
+                f"⏰ *Daily Scripture Reminder Set to: {disp} ({parsed})!* ☀️\n\n"
+                f"You will receive your daily Scripture verse and reading checkpoint every morning at {disp}.\n\n"
+                f"_To change time, reply `remind <time>` (e.g. `remind 5 AM`)._"
+            )
+    else:
+        await ctx.reply_text("⚠️ Could not update reminder time. Please try again.")
 
 
 async def handle_subscribe(ctx: MessageContext) -> None:
-    """Subscribes the user to daily scripture devotionals."""
+    """Subscribes the user to daily scripture devotionals (default: 5:00 AM, Full Bible plan)."""
     is_ta = is_tamil_text(ctx.text)
     lang = "ta" if is_ta else "en"
     success = await add_subscriber(
         phone=ctx.sender,
         name=ctx.sender_name,
         language=lang,
-        plan_id="proverbs-31",
+        plan_id="full-bible-365",
+        reminder_time="05:00",
     )
     if success:
         if is_ta:
             await ctx.reply_text(
-                "✅ *தினசரி வேதாகம பகிர்வில் இணைந்ததற்கு நன்றி!*\n\n"
-                "ஒவ்வொரு நாளும் உங்கள் வாட்ஸ்அப்பிற்கு தினசரி வசனம் மற்றும் வாசிப்புத் திட்டம் அனுப்பப்படும்.\n"
-                "விலக விரும்பினால் *stop* என அனுப்பவும்."
+                "✅ *தினசரி வேதாகம பகிர்வில் இணைந்ததற்கு நன்றி!* ☀️\n\n"
+                "ஒவ்வொரு நாளும் *காலை 5:00 மணிக்கு (05:00)* உங்கள் வாட்ஸ்அப்பிற்கு தினசரி வசனம் மற்றும் வாசிப்புத் திட்டம் அனுப்பப்படும்.\n\n"
+                "• நினைவூட்டல் நேரத்தை மாற்ற: *remind <நேரம்>* (எ.கா. `remind 6 AM`)\n"
+                "• வாசிப்புத் திட்டத்தை மாற்ற: *plan*\n"
+                "• விலக விரும்பினால் *stop* என அனுப்பவும்."
             )
         else:
             await ctx.reply_text(
-                "✅ *Subscribed to Daily Scripture Devotionals!*\n\n"
-                "You will receive each day's scripture reading directly on WhatsApp.\n"
-                "Reply *stop* anytime to unsubscribe."
+                "✅ *Subscribed to Daily Scripture Devotionals!* ☀️\n\n"
+                "You will receive each day's scripture reading directly on WhatsApp *every morning at 5:00 AM (05:00)*.\n\n"
+                "• To change reminder time: reply *remind <time>* (e.g. `remind 6 AM`)\n"
+                "• To customize reading plan: reply *plan*\n"
+                "• Reply *stop* anytime to unsubscribe."
             )
     else:
         await ctx.reply_text("⚠️ Could not complete subscription. Please try again.")
@@ -646,13 +881,16 @@ async def handle_help_menu(ctx: MessageContext) -> None:
             "• `search <வார்த்தை>` (எ.கா. `search விசுவாசம்`, `search அன்பு`)\n\n"
             "4️⃣ *வேதாகம வினாடி வினா* ❓\n"
             "• `quiz` (4-விடைகள் கொண்ட வேதாகம வினாடி வினா விளையாட)\n\n"
-            "5️⃣ *தினசரி வசன பகிர்வு* 🔔\n"
-            "• `subscribe` (தினசரி காலை வேத வசனங்களை பெற)\n"
+            "5️⃣ *தினசரி வசனம் & நினைவூட்டல்* 🔔\n"
+            "• `subscribe` (தினசரி காலை 5:00 மணிக்கு வசனம் பெற)\n"
+            "• `remind <நேரம்>` (எ.கா. `remind 5 AM` அல்லது `remind 6 AM`)\n"
             "• `stop` (விலக)\n\n"
             "6️⃣ *கிறிஸ்தவ பாடல்கள்* 🎵\n"
             "• `song <எண்/தலைப்பு>` (எ.கா. `song 2281`, `song என்ன என் ஆனந்தம்`)\n\n"
-            "7️⃣ *வாசிப்புத் திட்டம்* 📅\n"
-            "• `plan` (இன்றைய வாசிப்புப் பகுதியை அறிய)\n\n"
+            "7️⃣ *முழு வேதாகம வாசிப்புத் திட்டங்கள்* 📅\n"
+            "• `plan` (இன்றைய வாசிப்புப் பகுதி & அட்டவணை)\n"
+            "• `plan full` (365 நாட்கள் முழு வேதாகமம்)\n"
+            "• `plan nt` (90 நாட்கள் புதிய ஏற்பாடு)\n\n"
             "👉 _தொடங்க மேலே உள்ள ஏதேனும் ஒரு எண் (1-7) அல்லது கட்டளையை அனுப்பவும்!_"
         )
     else:
@@ -671,13 +909,16 @@ async def handle_help_menu(ctx: MessageContext) -> None:
             "• `search <keyword>` (e.g. `search love`, `search grace`, `search faith`)\n\n"
             "4️⃣ *Daily Bible Quiz* ❓\n"
             "• `quiz` (interactive 4-choice trivia to test your knowledge)\n\n"
-            "5️⃣ *Daily Devotional Subscription* 🔔\n"
-            "• `subscribe` (receive daily morning verse & reading checkpoints)\n"
+            "5️⃣ *Daily Devotional & Reminder* 🔔\n"
+            "• `subscribe` (daily morning verses, default 5:00 AM)\n"
+            "• `remind <time>` (e.g. `remind 5 AM` or `remind 6:30 AM`)\n"
             "• `stop` (unsubscribe anytime)\n\n"
             "6️⃣ *Hymns & Song Lyrics* 🎵\n"
             "• `song <title/ID>` (e.g. `song Amazing Grace` or `song 2281`)\n\n"
-            "7️⃣ *Daily Reading Plans* 📅\n"
-            "• `plan` (view today's assigned chapter & schedule)\n\n"
+            "7️⃣ *Full Bible Reading Plans* 📅\n"
+            "• `plan` (view today's assigned chapters & schedule)\n"
+            "• `plan full` (Full Bible in 365 Days)\n"
+            "• `plan nt` (New Testament in 90 Days)\n\n"
             "👉 _Reply with any option number (1-7) or type a command/scripture reference to begin!_"
         )
     await ctx.reply_text(menu)
@@ -722,7 +963,15 @@ async def handle_fallback(ctx: MessageContext) -> None:
         await handle_quiz_start(ctx)
         return
     elif clean_text in ("5", "option 5", "opt 5", "விருப்பம் 5"):
-        await handle_subscribe(ctx)
+        await ctx.reply_text(
+            "🔔 *Option 5: Daily Devotional & Reminder*\n\n"
+            "Receive daily verses and reading checkpoints directly on WhatsApp!\n"
+            "• Default reminder time: *5:00 AM (05:00)*\n"
+            "• Type `subscribe` to join\n"
+            "• Type `remind 5 AM` (or `remind 6:30 AM`, `remind 9 PM`) to set reminder time\n"
+            "• Type `remind` to check your current reminder time\n"
+            "• Type `stop` to unsubscribe anytime"
+        )
         return
     elif clean_text in ("6", "option 6", "opt 6", "விருப்பம் 6"):
         await ctx.reply_text(
@@ -733,7 +982,15 @@ async def handle_fallback(ctx: MessageContext) -> None:
         )
         return
     elif clean_text in ("7", "option 7", "opt 7", "விருப்பம் 7"):
-        await handle_plan_command(ctx)
+        await ctx.reply_text(
+            "📅 *Option 7: Full Bible Reading Plans*\n\n"
+            "Follow structured reading plans right inside WhatsApp!\n"
+            "• Type `plan` to view today's assigned reading\n"
+            "• Type `plan full` for Full Bible in 365 Days (~3.2 ch/day)\n"
+            "• Type `plan nt` for New Testament in 90 Days (~2.9 ch/day)\n"
+            "• Type `plan proverbs` for Proverbs in 31 Days (1 ch/day)\n"
+            "• Type `plan <day>` (e.g. `plan 50`) for a specific day's reading"
+        )
         return
 
     await ctx.reply_text(
@@ -763,7 +1020,10 @@ def register_bible_handlers(dispatcher: BotDispatcher) -> None:
     # 6. Reading Plans
     dispatcher.command("plan", aliases=["plans", "reading", "திட்டம்"], description="View reading plans and today's reading")(handle_plan_command)
 
-    # 7. Subscriptions
+    # 7. Daily Reminders (Configurable dispatch time, default 5:00 AM)
+    dispatcher.command("remind", aliases=["reminder", "time", "alarm", "நேரம்", "நினைவூட்டல்"], description="Set or view daily reminder time (default: 5 AM)")(handle_reminder_command)
+
+    # 8. Subscriptions
     dispatcher.command("subscribe", aliases=["join", "இணை", "பதிவு"], description="Subscribe to daily scripture devotionals")(handle_subscribe)
     dispatcher.command("unsubscribe", aliases=["stop", "cancel", "நிறுத்து"], description="Unsubscribe from daily devotionals")(handle_unsubscribe)
 
