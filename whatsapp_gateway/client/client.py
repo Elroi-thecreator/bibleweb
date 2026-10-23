@@ -3,6 +3,7 @@ Asynchronous HTTP Client for WA-AKG WhatsApp Gateway.
 Provides clean methods for sending messages, audio clips, and checking session statuses.
 """
 
+import asyncio
 import base64
 import logging
 from pathlib import Path
@@ -45,16 +46,22 @@ class WAClient:
             else default_config.enable_simulation_mode
         )
 
-        headers = {}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-            headers["x-api-key"] = self.api_key
-
-        self._client = httpx.AsyncClient(
-            headers=headers,
-            timeout=httpx.Timeout(self.timeout),
-        )
+        self._client: Optional[httpx.AsyncClient] = None
         self.simulated_outbox: List[Dict[str, Any]] = []
+
+    @property
+    def http_client(self) -> httpx.AsyncClient:
+        """Returns active AsyncClient, recreating if closed or loop changed."""
+        if self._client is None or getattr(self._client, "is_closed", False) is True:
+            headers = {}
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+                headers["x-api-key"] = self.api_key
+            self._client = httpx.AsyncClient(
+                headers=headers,
+                timeout=httpx.Timeout(self.timeout),
+            )
+        return self._client
 
     def update_config(
         self,
@@ -74,14 +81,14 @@ class WAClient:
         if simulation_mode is not None:
             self.simulation_mode = bool(simulation_mode)
 
-        headers = {}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-            headers["x-api-key"] = self.api_key
-        # Clean any stale Content-Type header to allow httpx to set multipart boundaries dynamically
-        if "Content-Type" in self._client.headers:
-            del self._client.headers["Content-Type"]
-        self._client.headers.update(headers)
+        if self._client and not self._client.is_closed:
+            headers = {}
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+                headers["x-api-key"] = self.api_key
+            if "Content-Type" in self._client.headers:
+                del self._client.headers["Content-Type"]
+            self._client.headers.update(headers)
 
     def toggle_simulation(self, enable: Optional[bool] = None) -> bool:
         """Toggles or sets simulation mode."""
@@ -93,7 +100,9 @@ class WAClient:
 
     async def close(self) -> None:
         """Close the underlying HTTP client session."""
-        await self._client.aclose()
+        if self._client and not self._client.is_closed:
+            await self._client.aclose()
+        self._client = None
 
     async def __aenter__(self):
         return self
@@ -108,17 +117,97 @@ class WAClient:
             clean = f"{clean}@s.whatsapp.net"
         return clean
 
+    async def is_gateway_running(self, timeout: float = 5.0) -> bool:
+        """
+        Checks if the remote WA-AKG gateway is alive, awake, and responding.
+        Returns True if the server process responds (200, 201, 204, 301, 302, 401).
+        Returns False on connection refused, timeouts, or Render 502/503 cold-start errors.
+        """
+        if self.simulation_mode:
+            return True
+
+        # First, attempt targeted check on session endpoint (validates both server and session)
+        sess = self.default_session_id
+        session_endpoint = f"{self.base_url}/sessions/{sess}"
+        try:
+            res = await self.http_client.get(session_endpoint, timeout=timeout)
+            if res.status_code in (200, 201, 204, 401):
+                return True
+            if res.status_code in (502, 503, 504):
+                return False
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.RemoteProtocolError):
+            pass
+        except Exception:
+            pass
+
+        # Second, fallback to origin root ping (wakes up sleeping Render web service instance)
+        try:
+            parsed = urllib.parse.urlparse(self.base_url)
+            origin = f"{parsed.scheme}://{parsed.netloc}/"
+            res = await self.http_client.get(origin, timeout=timeout)
+            return res.status_code in (200, 201, 204, 301, 302, 307, 308, 401)
+        except Exception:
+            return False
+
+    async def wait_until_gateway_running(
+        self,
+        poll_interval: float = 5.0,
+        timeout: Optional[float] = None,
+    ) -> bool:
+        """
+        Polls the gateway periodically until it is awake, running, and accepting requests.
+        Sends lightweight pings that trigger Render's cold-start spin-up sequence.
+        """
+        if self.simulation_mode:
+            return True
+
+        start_time = asyncio.get_event_loop().time()
+        while True:
+            try:
+                if await self.is_gateway_running(timeout=poll_interval):
+                    return True
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                logger.debug("Gateway health check ping error: %s", exc)
+
+            if timeout is not None:
+                elapsed = asyncio.get_event_loop().time() - start_time
+                if elapsed >= timeout:
+                    return False
+
+            await asyncio.sleep(poll_interval)
+
     async def send_text(
         self,
         to: str,
         text: str,
         session_id: Optional[str] = None,
+        direct_http: bool = False,
     ) -> SendMessageResponse:
         """
         Send a plain text message to a user or group.
+        If RabbitMQ is enabled and connected (and direct_http=False), automatically
+        pushes the request into the RabbitMQ outgoing queue for reliable dispatch.
         """
         target = self._normalize_recipient(to)
         sess = session_id or self.default_session_id
+
+        # Transparently push to RabbitMQ outgoing queue when queue mode is ready
+        if not direct_http:
+            try:
+                from whatsapp_gateway.queue.manager import queue_manager
+                if queue_manager.is_ready:
+                    res = await queue_manager.enqueue_outgoing_text(to=target, text=text, session_id=sess)
+                    if res.get("backend") == "rabbitmq":
+                        return SendMessageResponse(
+                            success=True,
+                            message_id=res.get("task_id", "queued"),
+                            to=target,
+                            raw=res,
+                        )
+            except Exception as q_err:
+                logger.debug("RabbitMQ queue enqueue bypassed (%s); using direct dispatch", q_err)
 
         if self.simulation_mode:
             logger.info("[SIMULATION] Dispatching WhatsApp Text to %s: %s", target, text[:60])
@@ -136,7 +225,7 @@ class WAClient:
         payload_native = {"message": {"text": text}}
 
         try:
-            response = await self._client.post(endpoint_native, json=payload_native)
+            response = await self.http_client.post(endpoint_native, json=payload_native)
             if response.status_code == 404:
                 # Fallback to generic endpoint: POST /api/messages/send-text
                 endpoint_fallback = f"{self.base_url}/messages/send-text"
@@ -145,10 +234,10 @@ class WAClient:
                     "to": target,
                     "text": text,
                 }
-                response = await self._client.post(endpoint_fallback, json=payload_fallback)
+                response = await self.http_client.post(endpoint_fallback, json=payload_fallback)
             elif response.status_code >= 400 and "Invalid media type" in response.text:
                 # In case an older version expected a raw string:
-                response = await self._client.post(endpoint_native, json={"message": text})
+                response = await self.http_client.post(endpoint_native, json={"message": text})
 
             if response.status_code >= 400:
                 logger.error("WA-AKG error %s: %s", response.status_code, response.text)
@@ -185,13 +274,41 @@ class WAClient:
         file_name: Optional[str] = None,
         ptt: bool = False,
         session_id: Optional[str] = None,
+        direct_http: bool = False,
     ) -> SendMessageResponse:
         """
         Send media (voice notes, audio clips, images, docs) to a WhatsApp recipient.
+        If RabbitMQ is enabled and connected (and direct_http=False), automatically
+        pushes the request into the RabbitMQ outgoing queue for reliable dispatch.
         """
         target = self._normalize_recipient(to)
         sess = session_id or self.default_session_id
         m_type = media_type.value if isinstance(media_type, MediaType) else str(media_type)
+
+        # Transparently push to RabbitMQ outgoing queue when queue mode is ready
+        if not direct_http:
+            try:
+                from whatsapp_gateway.queue.manager import queue_manager
+                if queue_manager.is_ready:
+                    res = await queue_manager.enqueue_outgoing_media(
+                        to=target,
+                        media_type=m_type,
+                        file_path=file_path,
+                        file_bytes=file_bytes,
+                        caption=caption,
+                        file_name=file_name,
+                        ptt=ptt,
+                        session_id=sess,
+                    )
+                    if res.get("backend") == "rabbitmq":
+                        return SendMessageResponse(
+                            success=True,
+                            message_id=res.get("task_id", "queued"),
+                            to=target,
+                            raw=res,
+                        )
+            except Exception as q_err:
+                logger.debug("RabbitMQ queue media enqueue bypassed (%s); using direct dispatch", q_err)
 
         # Read bytes if path provided
         raw_bytes = file_bytes
@@ -271,11 +388,11 @@ class WAClient:
         endpoint_native = f"{self.base_url}/messages/{sess}/{encoded_target}/media"
 
         try:
-            response = await self._client.post(endpoint_native, files=files, data=form_data)
+            response = await self.http_client.post(endpoint_native, files=files, data=form_data)
             if response.status_code == 404:
                 # Fallback to unencoded JID in path
                 endpoint_unencoded = f"{self.base_url}/messages/{sess}/{target}/media"
-                response = await self._client.post(endpoint_unencoded, files=files, data=form_data)
+                response = await self.http_client.post(endpoint_unencoded, files=files, data=form_data)
 
             if response.status_code >= 400:
                 logger.error("WA-AKG media error %s: %s", response.status_code, response.text)
@@ -310,7 +427,7 @@ class WAClient:
 
         endpoint = f"{self.base_url}/sessions/{sess}"
         try:
-            res = await self._client.get(endpoint)
+            res = await self.http_client.get(endpoint)
             if res.status_code == 200:
                 raw_json = res.json()
                 inner_data = raw_json.get("data", {}) if isinstance(raw_json, dict) else {}

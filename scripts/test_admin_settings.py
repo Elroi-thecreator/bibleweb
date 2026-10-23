@@ -25,6 +25,13 @@ async def run_admin_tests():
     print("🛡️  Running Admin Settings & Role-Based Access Control Test Suite")
     print("=" * 70)
 
+    # Save original whatsapp_config.json to restore after test
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "whatsapp_config.json")
+    orig_config_content = None
+    if os.path.exists(config_path):
+        with open(config_path, "r", encoding="utf-8") as f:
+            orig_config_content = f.read()
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver", follow_redirects=False) as client:
 
@@ -224,6 +231,19 @@ async def run_admin_tests():
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
         print("  ✅ Verified admin settings is strictly unreachable after logout.")
+
+    if orig_config_content is not None:
+        with open(config_path, "w", encoding="utf-8") as f:
+            f.write(orig_config_content)
+        # Re-read into live config
+        from whatsapp_gateway.config import load_persisted_config, config
+        p = load_persisted_config()
+        config.gateway_url = p.get("gateway_url", config.gateway_url)
+        config.session_id = p.get("session_id", config.session_id)
+        config.api_key = p.get("api_key", config.api_key)
+        config.enable_simulation_mode = p.get("enable_simulation_mode", config.enable_simulation_mode)
+        config.queue_enabled = p.get("queue_enabled", config.queue_enabled)
+        config.rabbitmq_url = p.get("rabbitmq_url", config.rabbitmq_url)
 
     print("\n" + "=" * 70)
     print("🎉 ALL 18 ADMIN SECURITY, SETTINGS & CONFIG TESTS PASSED WITH 100% SUCCESS!")

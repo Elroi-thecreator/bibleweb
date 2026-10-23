@@ -35,7 +35,7 @@ class WhatsAppGatewayConfig(BaseModel):
     """Configuration settings for WA-AKG WhatsApp Gateway."""
 
     gateway_url: str = Field(
-        default_factory=lambda: getenv("WA_GATEWAY_URL", "http://localhost:3000/api")
+        default_factory=lambda: getenv("WA_GATEWAY_URL", "https://wa-akg-gateway-ub6a.onrender.com/api")
     )
     session_id: str = Field(
         default_factory=lambda: getenv("WA_SESSION_ID", "default")
@@ -62,7 +62,7 @@ class WhatsAppGatewayConfig(BaseModel):
         default_factory=lambda: getenv("WA_QUEUE_ENABLED", "false").lower() in ("true", "1", "yes")
     )
     rabbitmq_url: str = Field(
-        default_factory=lambda: getenv("WA_RABBITMQ_URL", getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"))
+        default_factory=lambda: getenv("WA_RABBITMQ_URL") or getenv("CLOUDAMQP_URL") or getenv("RABBITMQ_URL") or "amqp://guest:guest@localhost:5672/"
     )
     queue_incoming_name: str = Field(
         default_factory=lambda: getenv("WA_QUEUE_INCOMING_NAME", "whatsapp_incoming_messages")
@@ -78,7 +78,7 @@ class WhatsAppGatewayConfig(BaseModel):
 # Load initial config with persistent overrides
 _persisted = load_persisted_config()
 config = WhatsAppGatewayConfig(
-    gateway_url=_persisted.get("gateway_url", getenv("WA_GATEWAY_URL", "http://localhost:3000/api")),
+    gateway_url=_persisted.get("gateway_url", getenv("WA_GATEWAY_URL", "https://wa-akg-gateway-ub6a.onrender.com/api")),
     session_id=_persisted.get("session_id", getenv("WA_SESSION_ID", "default")),
     api_key=_persisted.get("api_key", getenv("WA_API_KEY", None)),
     enable_simulation_mode=_persisted.get(
@@ -91,7 +91,7 @@ config = WhatsAppGatewayConfig(
     ),
     rabbitmq_url=_persisted.get(
         "rabbitmq_url",
-        getenv("WA_RABBITMQ_URL", getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")),
+        getenv("WA_RABBITMQ_URL") or getenv("CLOUDAMQP_URL") or getenv("RABBITMQ_URL") or "amqp://guest:guest@localhost:5672/",
     ),
 )
 

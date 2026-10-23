@@ -3,7 +3,7 @@ type: architecture_decision_record
 title: Asynchronous RabbitMQ Task Queue Option for Decoupled WhatsApp Message Ingestion & Devotional Dispatching
 domain: architecture
 status: approved
-version: 1.0.0
+version: 1.1.0
 authority:
   level: official
   confidence: high
@@ -18,17 +18,21 @@ applies_to:
   - routes
 
 rule:
-  "The WhatsApp gateway provides an optional, pluggable asynchronous task queue layer powered by RabbitMQ (using `aio-pika`) to decouple incoming webhook ingestion from heavy message processing (such as Edge-TTS audio synthesis, chapter queries, and multi-subscriber devotional broadcasts). The queue engine must operate with zero-loss transparent fallback: if RabbitMQ is disabled (`WA_QUEUE_ENABLED=false`) or the broker is unreachable, all ingestion and dispatch operations must gracefully and automatically execute directly in-memory, ensuring continuous availability across lightweight desktop deployments and offline development environments without throwing exceptions."
+  "The WhatsApp gateway provides an asynchronous task queue layer powered by RabbitMQ (using `aio-pika`) to decouple incoming webhook ingestion from heavy message processing and to buffer all outgoing requests from the web bible to the remote WA-AKG gateway (`https://wa-akg-gateway-ub6a.onrender.com/`). Because the remote gateway on Render can spin down due to inactivity, all outgoing requests are queued as persistent RabbitMQ messages and only dispatched when the gateway is verified to be actively running. The consumer holds messages and periodically pings the gateway to trigger container spin-up during cold starts. If RabbitMQ is disabled (`WA_QUEUE_ENABLED=false`) or the broker is unreachable, operations gracefully and automatically execute directly in-memory, ensuring continuous availability across lightweight desktop deployments and offline development environments."
 
 do:
   - "Implement the RabbitMQ queue abstraction inside `whatsapp_gateway/queue/` containing distinct `connection.py`, `publisher.py`, `consumer.py`, and `manager.py` modules."
+  - "Push all requests from web bible (text, audio media, devotional broadcasts, and bot replies) as persistent RabbitMQ messages (`whatsapp_outgoing_messages`) via `WAClient` and `QueueManager`."
+  - "Check gateway availability via `client.is_gateway_running()` in the outgoing task consumer before dispatching, and pause/poll via `client.wait_until_gateway_running()` while the gateway is cold-starting or offline on Render."
+  - "Ensure `direct_http=True` is passed by queue consumers when executing actual HTTP calls to the gateway to prevent recursive re-enqueueing."
+  - "Support Base64-encoded media serialization in `QueueTask` for audio scripture and voice notes (`TaskType.OUTGOING_MEDIA`)."
   - "Decouple incoming webhook ingestion (`whatsapp_incoming_messages`) so that FastAPI endpoints return immediate HTTP 200/202 responses (< 5ms) to WA-AKG while background workers asynchronously synthesize audio and dispatch bot answers."
   - "Queue outgoing messages and broadcasts (`whatsapp_outgoing_messages`) to enable controlled concurrency, prefetch throttling (`WA_QUEUE_PREFETCH=10`), and rate-limited dispatching without flooding WhatsApp multi-device sockets."
   - "Implement durable queues with persistent delivery mode (`delivery_mode=PERSISTENT`) to safeguard message tasks across worker restarts."
   - "Mask user credentials and passwords in AMQP URLs (`amqp://user:••••••••@host:5672/`) across all log streams, exception traces, and telemetry API responses."
   - "Provide a transparent fallback mechanism: if `queue_enabled=True` but the broker is unreachable, catch connection errors, log a clear warning, and immediately fall back to direct in-memory execution so zero incoming messages are lost."
   - "Support dynamic runtime queue toggling and configuration via `/api/whatsapp/queue/toggle` and `/api/whatsapp/queue/config` with persistence in `data/whatsapp_config.json`."
-  - "Expose comprehensive queue telemetry (`enabled`, `backend`, `connected`, `queues`, `metrics` for enqueued/processed/failed tasks) under `/api/whatsapp/status` and `/api/whatsapp/queue/status`."
+  - "Expose comprehensive queue telemetry (`enabled`, `backend`, `connected`, `gateway_url`, `queues`, `metrics` for enqueued/processed/failed tasks) under `/api/whatsapp/status` and `/api/whatsapp/queue/status`."
   - "Hook queue startup (`queue_manager.start()`) and shutdown (`queue_manager.stop()`) cleanly into FastAPI's `lifespan` context manager in `app/main.py`."
 
 dont:

@@ -30,6 +30,10 @@ services:
         value: https://wa-akg-gateway-ub6a.onrender.com/api
       - key: WA_API_KEY
         value: wag_2pZzmuoPsbGzjCWZDoSfeCRoDaeAXJy3
+      - key: WA_QUEUE_ENABLED
+        value: "true"
+      - key: WA_RABBITMQ_URL
+        sync: false
 
   # =========================================================
   # 2. WA-AKG WhatsApp Gateway (Next.js + Baileys + Prisma)

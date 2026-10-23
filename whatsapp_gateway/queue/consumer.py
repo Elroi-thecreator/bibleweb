@@ -3,6 +3,7 @@ RabbitMQ Task Consumer & Worker Engine for WhatsApp Gateway.
 """
 
 import asyncio
+import base64
 import json
 import logging
 from typing import Any, Callable, Dict, Optional
@@ -100,7 +101,7 @@ class QueueConsumer:
                         if not self._running:
                             break
 
-                        async with message.process(requeue=False):
+                        async with message.process(requeue=True):
                             try:
                                 raw_body = message.body.decode("utf-8")
                                 task_dict = json.loads(raw_body)
@@ -109,6 +110,8 @@ class QueueConsumer:
                                 await handler(task)
                                 self.processed_count += 1
 
+                            except asyncio.CancelledError:
+                                raise
                             except Exception as task_err:
                                 self.failed_count += 1
                                 logger.error(
@@ -144,23 +147,89 @@ class QueueConsumer:
         await self.dispatcher.dispatch(ctx)
 
     async def _handle_outgoing_task(self, task: QueueTask) -> None:
-        """Processes an outgoing text or media task consumed from queue."""
+        """
+        Processes an outgoing text or media task consumed from RabbitMQ.
+        Guarantees dispatch only when the WA-AKG gateway is actively running,
+        automatically polling and waiting if the gateway is sleeping (Render cold start) or restarting.
+        """
         logger.debug("Executing outgoing task %s (%s) from queue", task.task_id, task.task_type.value)
         data = task.payload
 
-        if task.task_type == TaskType.OUTGOING_TEXT:
-            await self.client.send_text(
-                to=data["to"],
-                text=data["text"],
-                session_id=task.session_id,
-            )
-        elif task.task_type == TaskType.OUTGOING_MEDIA:
-            await self.client.send_media(
-                to=data["to"],
-                media_type=data.get("media_type", "audio"),
-                file_bytes=bytes.fromhex(data["bytes_hex"]) if "bytes_hex" in data else None,
-                caption=data.get("caption"),
-                file_name=data.get("file_name"),
-                ptt=data.get("ptt", False),
-                session_id=task.session_id,
-            )
+        # In live gateway mode, ensure gateway is actively running before attempting dispatch
+        if not self.client.simulation_mode:
+            is_running = await self.client.is_gateway_running()
+            if not is_running:
+                logger.warning(
+                    "WA-AKG Gateway (%s) is offline/sleeping. "
+                    "Holding task %s until gateway is awake and running...",
+                    self.client.base_url,
+                    task.task_id,
+                )
+                is_running = await self.client.wait_until_gateway_running(poll_interval=5.0)
+                if not is_running and not self._running:
+                    raise asyncio.CancelledError()
+                logger.info(
+                    "WA-AKG Gateway (%s) is now RUNNING! Resuming dispatch for task %s...",
+                    self.client.base_url,
+                    task.task_id,
+                )
+
+        # Attempt dispatch with automatic retry if gateway drops connection during dispatch
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            try:
+                if task.task_type == TaskType.OUTGOING_TEXT:
+                    res = await self.client.send_text(
+                        to=data["to"],
+                        text=data["text"],
+                        session_id=task.session_id,
+                        direct_http=True,
+                    )
+                elif task.task_type == TaskType.OUTGOING_MEDIA:
+                    file_bytes = None
+                    if "bytes_b64" in data and data["bytes_b64"]:
+                        file_bytes = base64.b64decode(data["bytes_b64"])
+                    elif "bytes_hex" in data and data["bytes_hex"]:
+                        file_bytes = bytes.fromhex(data["bytes_hex"])
+
+                    res = await self.client.send_media(
+                        to=data["to"],
+                        media_type=data.get("media_type", "audio"),
+                        file_bytes=file_bytes,
+                        caption=data.get("caption"),
+                        file_name=data.get("file_name"),
+                        ptt=data.get("ptt", False),
+                        session_id=task.session_id,
+                        direct_http=True,
+                    )
+                else:
+                    logger.warning("Unrecognized outgoing task type %s for task %s", task.task_type, task.task_id)
+                    return
+
+                if res.success:
+                    logger.info("Successfully dispatched task %s (message_id=%s)", task.task_id, res.message_id)
+                    return
+
+                # If connection error occurs mid-dispatch, wait for gateway recovery
+                if not self.client.simulation_mode and attempt < max_attempts:
+                    err_text = str(res.error or "").lower()
+                    if any(x in err_text for x in ("connect", "timeout", "502", "503", "504", "refused", "unreachable")):
+                        logger.warning(
+                            "Gateway connection error on task %s (attempt %d/%d): %s. Waiting for gateway...",
+                            task.task_id, attempt, max_attempts, res.error,
+                        )
+                        await self.client.wait_until_gateway_running(poll_interval=5.0)
+                        continue
+
+                logger.error("Failed to dispatch task %s: %s", task.task_id, res.error)
+                return
+
+            except Exception as exc:
+                if not self.client.simulation_mode and attempt < max_attempts:
+                    logger.warning(
+                        "Exception during dispatch of task %s (attempt %d/%d): %s. Waiting for gateway...",
+                        task.task_id, attempt, max_attempts, exc,
+                    )
+                    await self.client.wait_until_gateway_running(poll_interval=5.0)
+                    continue
+                raise

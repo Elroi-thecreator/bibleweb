@@ -32,6 +32,13 @@ class TestWhatsAppRabbitMQQueue(unittest.TestCase):
 
     def setUp(self):
         self.client = TestClient(app)
+        from whatsapp_gateway.routes.webhook import get_client
+        self._orig_sim = get_client().simulation_mode
+        get_client().simulation_mode = True
+
+    def tearDown(self):
+        from whatsapp_gateway.routes.webhook import get_client
+        get_client().simulation_mode = self._orig_sim
 
     def test_01_url_masking(self):
         """Verifies credentials in AMQP URLs are masked for safe logging and status."""
@@ -218,6 +225,235 @@ class TestWhatsAppRabbitMQQueue(unittest.TestCase):
         data = resp.json()
         self.assertIn("status", data)
         self.assertIn(data["status"], ("success", "queued"))
+
+    def test_08_client_auto_enqueues_outgoing_when_queue_ready(self):
+        """
+        Verifies that any request from web bible via client.send_text or client.send_media
+        is automatically pushed as a RabbitMQ message when the queue is ready.
+        """
+        async def run_client_queue_test():
+            from whatsapp_gateway.client.client import WAClient
+            from whatsapp_gateway.client.models import SendMessageResponse
+            from whatsapp_gateway.queue.publisher import QueuePublisher
+
+            client = WAClient(base_url="https://wa-akg-gateway-ub6a.onrender.com/api", default_session_id="test_sess")
+
+            mock_channel = AsyncMock()
+            mock_queue = AsyncMock()
+            mock_channel.declare_queue.return_value = mock_queue
+
+            mock_conn = MagicMock()
+            mock_conn.is_connected = True
+            mock_conn.get_channel = AsyncMock(return_value=mock_channel)
+
+            mgr = QueueManager()
+            mock_dispatcher = MagicMock()
+            mock_session = MagicMock()
+            mgr.initialize(mock_dispatcher, client, mock_session)
+            mgr._conn = mock_conn
+            mgr._publisher = QueuePublisher(mock_conn)
+            config.queue_enabled = True
+
+            # Patch global queue_manager to our ready mgr
+            with patch("whatsapp_gateway.queue.manager.queue_manager", mgr):
+                # Outgoing text from web bible
+                resp_text = await client.send_text(to="919876543210", text="Psalm 23:1 The Lord is my shepherd")
+                self.assertTrue(resp_text.success)
+                self.assertTrue(resp_text.message_id)
+                self.assertEqual(resp_text.raw.get("backend"), "rabbitmq")
+                self.assertEqual(resp_text.raw.get("status"), "queued")
+
+                # Outgoing media (audio verse) from web bible
+                dummy_audio = b"\x00\x01\x02\x03RIFFWAVEfmt"
+                resp_media = await client.send_media(
+                    to="919876543210",
+                    media_type="audio",
+                    file_bytes=dummy_audio,
+                    caption="Audio Bible",
+                    file_name="psalm_23.m4a",
+                    ptt=True,
+                )
+                self.assertTrue(resp_media.success)
+                self.assertEqual(resp_media.raw.get("backend"), "rabbitmq")
+                self.assertEqual(resp_media.raw.get("status"), "queued")
+
+                # Verify direct_http=True bypasses re-enqueueing
+                client.simulation_mode = True
+                resp_direct = await client.send_text(to="919876543210", text="Direct dispatch", direct_http=True)
+                self.assertTrue(resp_direct.success)
+                self.assertEqual(resp_direct.message_id, "sim-msg-id-123")
+
+            config.queue_enabled = False
+
+        asyncio.run(run_client_queue_test())
+
+    def test_09_gateway_health_checks_and_cold_start_detection(self):
+        """
+        Verifies client.is_gateway_running accurately detects whether the remote gateway
+        is alive or down/sleeping, and wait_until_gateway_running polls until ready.
+        """
+        async def run_gateway_health_test():
+            from whatsapp_gateway.client.client import WAClient
+            import httpx
+
+            client = WAClient(base_url="https://wa-akg-gateway-ub6a.onrender.com/api", default_session_id="1lxijr")
+            client.simulation_mode = False
+
+            mock_http = AsyncMock()
+            mock_http.is_closed = False
+            client._client = mock_http
+
+            # Test 1: Remote gateway returns 200 -> running
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_http.get.return_value = mock_resp
+            self.assertTrue(await client.is_gateway_running())
+
+            # Test 2: Remote gateway returns 502 Bad Gateway (Render sleeping) -> False
+            mock_resp.status_code = 502
+            mock_http.get.return_value = mock_resp
+            self.assertFalse(await client.is_gateway_running())
+
+            # Test 3: Remote gateway throws ConnectTimeout -> False
+            mock_http.get.side_effect = httpx.ConnectTimeout("Connection timed out")
+            self.assertFalse(await client.is_gateway_running())
+
+            # Test 4: wait_until_gateway_running polls until gateway recovers
+            poll_count = 0
+
+            async def mock_is_running(timeout=5.0):
+                nonlocal poll_count
+                poll_count += 1
+                return poll_count >= 3  # Becomes True on 3rd poll
+
+            with patch.object(client, "is_gateway_running", side_effect=mock_is_running):
+                with patch("asyncio.sleep", new_callable=AsyncMock):
+                    ready = await client.wait_until_gateway_running(poll_interval=0.01, timeout=5.0)
+                    self.assertTrue(ready)
+                    self.assertEqual(poll_count, 3)
+
+        asyncio.run(run_gateway_health_test())
+
+    def test_10_outgoing_consumer_waits_for_gateway_to_be_running(self):
+        """
+        Verifies that when an outgoing task is consumed from RabbitMQ,
+        if the gateway is currently sleeping/down, it holds the message until
+        the gateway is actively running, and then dispatches without message loss.
+        """
+        async def run_consumer_wait_test():
+            from whatsapp_gateway.client.client import WAClient
+            from whatsapp_gateway.client.models import SendMessageResponse
+            from whatsapp_gateway.queue.consumer import QueueConsumer
+
+            mock_conn = MagicMock()
+            mock_dispatcher = MagicMock()
+            mock_session = MagicMock()
+
+            client = WAClient(base_url="https://wa-akg-gateway-ub6a.onrender.com/api", default_session_id="1lxijr")
+            client.simulation_mode = False
+
+            consumer = QueueConsumer(
+                connection_manager=mock_conn,
+                dispatcher=mock_dispatcher,
+                client=client,
+                session_store=mock_session,
+            )
+
+            # Mock gateway status: initially not running, then wait_until_gateway_running succeeds
+            with patch.object(client, "is_gateway_running", new_callable=AsyncMock) as mock_is_running:
+                mock_is_running.return_value = False
+
+                with patch.object(client, "wait_until_gateway_running", new_callable=AsyncMock) as mock_wait:
+                    mock_wait.return_value = True
+
+                    with patch.object(client, "send_text", new_callable=AsyncMock) as mock_send:
+                        mock_send.return_value = SendMessageResponse(
+                            success=True,
+                            message_id="msg_live_789",
+                            to="919876543210@s.whatsapp.net",
+                        )
+
+                        task = QueueTask(
+                            task_type=TaskType.OUTGOING_TEXT,
+                            payload={"to": "919876543210", "text": "Proverbs 3:5"},
+                            session_id="1lxijr",
+                        )
+
+                        await consumer._handle_outgoing_task(task)
+
+                        # Verifications
+                        mock_wait.assert_awaited_once()
+                        mock_send.assert_awaited_once_with(
+                            to="919876543210",
+                            text="Proverbs 3:5",
+                            session_id="1lxijr",
+                            direct_http=True,
+                        )
+
+        asyncio.run(run_consumer_wait_test())
+
+    def test_11_outgoing_media_task_consumption_and_base64_decoding(self):
+        """
+        Verifies that outgoing media tasks (audio verses, voice notes) are correctly
+        consumed, base64 payload decoded back to bytes, and passed to client.send_media.
+        """
+        async def run_media_consumer_test():
+            import base64
+            from whatsapp_gateway.client.client import WAClient
+            from whatsapp_gateway.client.models import SendMessageResponse
+            from whatsapp_gateway.queue.consumer import QueueConsumer
+
+            mock_conn = MagicMock()
+            mock_dispatcher = MagicMock()
+            mock_session = MagicMock()
+
+            client = WAClient(base_url="https://wa-akg-gateway-ub6a.onrender.com/api", default_session_id="1lxijr")
+            client.simulation_mode = True
+
+            consumer = QueueConsumer(
+                connection_manager=mock_conn,
+                dispatcher=mock_dispatcher,
+                client=client,
+                session_store=mock_session,
+            )
+
+            raw_bytes = b"AUDIO_SAMPLE_DATA_BYTES_12345"
+            b64_str = base64.b64encode(raw_bytes).decode("ascii")
+
+            with patch.object(client, "send_media", new_callable=AsyncMock) as mock_send_media:
+                mock_send_media.return_value = SendMessageResponse(
+                    success=True,
+                    message_id="media_test_msg_001",
+                    to="919876543210@s.whatsapp.net",
+                )
+
+                task = QueueTask(
+                    task_type=TaskType.OUTGOING_MEDIA,
+                    payload={
+                        "to": "919876543210",
+                        "media_type": "audio",
+                        "bytes_b64": b64_str,
+                        "caption": "John 1:1 Audio",
+                        "file_name": "john_1.m4a",
+                        "ptt": True,
+                    },
+                    session_id="1lxijr",
+                )
+
+                await consumer._handle_outgoing_task(task)
+
+                mock_send_media.assert_awaited_once_with(
+                    to="919876543210",
+                    media_type="audio",
+                    file_bytes=raw_bytes,
+                    caption="John 1:1 Audio",
+                    file_name="john_1.m4a",
+                    ptt=True,
+                    session_id="1lxijr",
+                    direct_http=True,
+                )
+
+        asyncio.run(run_media_consumer_test())
 
 
 if __name__ == "__main__":

@@ -5,7 +5,9 @@ fallback to direct in-memory execution when the queue is disabled or unreachable
 """
 
 import asyncio
+import base64
 import logging
+from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 from whatsapp_gateway.config import config, save_persisted_config
@@ -211,7 +213,83 @@ class QueueManager:
         # Direct fallback
         if not self._client:
             raise RuntimeError("QueueManager has not been initialized with client.")
-        res = await self._client.send_text(to=to, text=text, session_id=sess)
+        res = await self._client.send_text(to=to, text=text, session_id=sess, direct_http=True)
+        return {
+            "status": "dispatched",
+            "backend": "direct",
+            "success": res.success,
+            "message_id": res.message_id,
+            "error": res.error,
+        }
+
+    async def enqueue_outgoing_media(
+        self,
+        to: str,
+        media_type: Union[MediaType, str] = MediaType.AUDIO,
+        file_path: Optional[Union[str, Path]] = None,
+        file_bytes: Optional[bytes] = None,
+        caption: Optional[str] = None,
+        file_name: Optional[str] = None,
+        ptt: bool = False,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Enqueues an outgoing media message (audio clip, voice note) to RabbitMQ
+        or dispatches directly in-memory if queue is offline.
+        """
+        sess = session_id or (self._client.default_session_id if self._client else "default")
+        m_type = media_type.value if hasattr(media_type, "value") else str(media_type)
+
+        raw_bytes = file_bytes
+        resolved_name = file_name
+        if file_path:
+            p = Path(file_path)
+            if not resolved_name:
+                resolved_name = p.name
+            if not raw_bytes and p.is_file():
+                raw_bytes = p.read_bytes()
+
+        bytes_b64 = base64.b64encode(raw_bytes).decode("ascii") if raw_bytes else None
+
+        if self.is_ready and self._publisher:
+            task = QueueTask(
+                task_type=TaskType.OUTGOING_MEDIA,
+                payload={
+                    "to": to,
+                    "media_type": m_type,
+                    "bytes_b64": bytes_b64,
+                    "caption": caption,
+                    "file_name": resolved_name,
+                    "ptt": ptt,
+                },
+                session_id=sess,
+            )
+            outgoing_q = config.queue_outgoing_name or DEFAULT_OUTGOING_QUEUE
+            success = await self._publisher.publish_task(task, queue_name=outgoing_q)
+
+            if success:
+                self.enqueued_outgoing += 1
+                return {
+                    "status": "queued",
+                    "task_id": task.task_id,
+                    "queue": outgoing_q,
+                    "backend": "rabbitmq",
+                }
+
+        # Direct fallback
+        if not self._client:
+            raise RuntimeError("QueueManager has not been initialized with client.")
+        res = await self._client.send_media(
+            to=to,
+            media_type=media_type,
+            file_path=file_path,
+            file_bytes=raw_bytes,
+            caption=caption,
+            file_name=resolved_name,
+            ptt=ptt,
+            session_id=sess,
+            direct_http=True,
+        )
         return {
             "status": "dispatched",
             "backend": "direct",
@@ -267,6 +345,7 @@ class QueueManager:
             "backend": self.backend_name,
             "connected": self.is_connected,
             "rabbitmq_url": mask_amqp_url(config.rabbitmq_url),
+            "gateway_url": self._client.base_url if self._client else config.gateway_url,
             "queues": {
                 "incoming": config.queue_incoming_name or DEFAULT_INCOMING_QUEUE,
                 "outgoing": config.queue_outgoing_name or DEFAULT_OUTGOING_QUEUE,
