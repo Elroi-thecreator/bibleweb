@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.14.0
+version: 1.15.0
 authority:
   level: official
   confidence: high
@@ -42,6 +42,8 @@ do:
   - "Implement dual-storage subscriber persistence: store active subscriptions in SQLite (`data/whatsapp_subscribers.sqlite.db`) and mirror active records to `data/whatsapp_subscribers.json` on every change; auto-hydrate the SQLite database from JSON upon cold container startup."
   - "Support an optional, pluggable asynchronous task queue layer powered by RabbitMQ (`whatsapp_gateway/queue/` via `aio-pika`), providing durable task queuing for incoming webhook ingestion (`whatsapp_incoming_messages`) and outgoing broadcasts (`whatsapp_outgoing_messages`) with automatic, transparent fallback to direct in-memory execution when RabbitMQ is disabled or the broker is unreachable."
   - "Automatically buffer all outbound requests from the web bible to the WA-AKG gateway (`https://wa-akg-gateway-ub6a.onrender.com/`) as durable RabbitMQ messages when queue mode is active. The consumer actively verifies whether the gateway is running (`client.is_gateway_running()`), holding tasks and polling with lightweight wake-up pings during Render cold starts until the gateway is active before dispatching."
+  - "Automatically auto-reply to greetings ('Hi', 'Hello', 'Hey', 'வணக்கம்') with a structured bilingual menu showcasing all 7 available bot options (Scripture Reading, Audio Bible, Scripture Search, Daily Bible Quiz, Devotional Subscription, Hymns, and Reading Plans), with direct 1-7 numeric selection routing."
+  - "Immediately dispatch a progress notice ('⏳ *Processing your audio request...*' / '⏳ *உங்கள் ஆடியோ பதிவு தயாராகிறது...*') upon validating an audio request before initiating Edge-TTS synthesis and FFmpeg transcoding, providing instant visual feedback so users know their audio is being prepared."
   - "Support dynamic runtime gateway reconfiguration via `data/whatsapp_config.json` and `wa_client.update_config(...)` to hot-swap endpoint URLs, session IDs, and simulation modes with zero downtime."
   - "Provide an interactive CLI message dispatcher and diagnostic tool (`scripts/send_whatsapp_message.py`) with `--audio` support for live session verification, manual alert dispatch, and terminal testing."
   - "Mount the controller into `app/main.py` using standard FastAPI router patterns: `app.include_router(whatsapp_router, prefix='/api/whatsapp')`."

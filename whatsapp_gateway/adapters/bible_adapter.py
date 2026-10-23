@@ -566,6 +566,14 @@ async def handle_audio_command(ctx: MessageContext) -> None:
     caption_title = f"வேத ஆடியோ: {book_name} {range_label}" if is_ta else f"Audio Bible: {book_name} {range_label}"
     caption = f"🎧 {caption_title}\n\n_Reply '{book_name} {chapter}' to read full text._"
 
+    # Send immediate notification that the audio request is processing
+    processing_notice = (
+        f"⏳ *உங்கள் ஆடியோ பதிவு தயாராகிறது...* ({caption_title})\n_சிறிது நேரம் காத்திருக்கவும்._"
+        if is_ta
+        else f"⏳ *Processing your audio request...* ({caption_title})\n_Please wait a moment while the audio is prepared._"
+    )
+    await ctx.reply_text(processing_notice)
+
     # Neural speech synthesis with -8Hz deep bass
     voice_name = "ta-LK-KumarNeural" if is_ta else "en-US-ChristopherNeural"
     audio_bytes = b""
@@ -620,46 +628,57 @@ async def handle_audio_command(ctx: MessageContext) -> None:
 
 
 async def handle_help_menu(ctx: MessageContext) -> None:
-    """Displays the branded Holy Bible WhatsApp Assistant menu."""
+    """Displays the branded Holy Bible WhatsApp Assistant menu with available options."""
     is_ta = is_tamil_text(ctx.text)
     if is_ta:
         menu = (
-            "🕊️ *வேதாகம வாட்ஸ்அப் உதவியாளருக்கு வரவேற்கிறோம்!* 🕊️\n\n"
-            "📖 *வேத வாசிப்பு:*\n"
-            "• `யோவான் 3:16`, `சங்கீதம் 23`, `ஆதியாகமம் 1:1-5`\n"
+            "🕊️ *வேதாகம வாட்ஸ்அப் உதவியாளருக்கு வரவேற்கிறோம்!* 🕊️\n"
+            "வணக்கம்! உங்களுக்கு உதவ மகிழ்ச்சி அடைகிறோம். இதோ உங்களுக்குக் கிடைக்கக்கூடிய *விருப்பங்கள்* (Options Available):\n\n"
+            "1️⃣ *வேத வாசிப்பு* 📖\n"
+            "• ஏதேனும் ஒரு வேத வசனத்தை அனுப்பவும்:\n"
+            "  `யோவான் 3:16`, `சங்கீதம் 23`, `ஆதியாகமம் 1:1-5`\n"
             "• கத்தோலிக்க திருமுறை: `தோபித்து 4:7`, `சீராக் 2:1`\n\n"
-            "🔍 *தேடுதல்:*\n"
-            "• `search <வார்த்தை>` (எ.கா. `search விசுவாசம்`)\n\n"
-            "❓ *வினாடி வினா:*\n"
-            "• `quiz` (வேதாகம வினாடி வினா விளையாட)\n\n"
-            "🔔 *தினசரி பகிர்வு:*\n"
-            "• `subscribe` (தினசரி வசனங்களை வாட்ஸ்அப்பில் பெற)\n"
+            "2️⃣ *வேத ஆடியோ* 🎧\n"
+            "• `audio <நூல்> <அதிகாரம்>` (எ.கா. `audio யோவான் 1`)\n"
+            "• ஆடியோ வசன பகுதி: `audio யோவான் 1:1-5`\n"
+            "  _(தெளிவான குரல் பதிவு ஆடியோ உடனே அனுப்பப்படும்)_\n\n"
+            "3️⃣ *வசனம் தேடுதல்* 🔍\n"
+            "• `search <வார்த்தை>` (எ.கா. `search விசுவாசம்`, `search அன்பு`)\n\n"
+            "4️⃣ *வேதாகம வினாடி வினா* ❓\n"
+            "• `quiz` (4-விடைகள் கொண்ட வேதாகம வினாடி வினா விளையாட)\n\n"
+            "5️⃣ *தினசரி வசன பகிர்வு* 🔔\n"
+            "• `subscribe` (தினசரி காலை வேத வசனங்களை பெற)\n"
             "• `stop` (விலக)\n\n"
-            "🎵 *பாடல்கள்:*\n"
-            "• `song <எண்/தலைப்பு>` (எ.கா. `song 2281`)\n\n"
-            "_தொடங்க மேலே உள்ள ஏதேனும் ஒரு கட்டளையை அனுப்பவும்!_"
+            "6️⃣ *கிறிஸ்தவ பாடல்கள்* 🎵\n"
+            "• `song <எண்/தலைப்பு>` (எ.கா. `song 2281`, `song என்ன என் ஆனந்தம்`)\n\n"
+            "7️⃣ *வாசிப்புத் திட்டம்* 📅\n"
+            "• `plan` (இன்றைய வாசிப்புப் பகுதியை அறிய)\n\n"
+            "👉 _தொடங்க மேலே உள்ள ஏதேனும் ஒரு எண் (1-7) அல்லது கட்டளையை அனுப்பவும்!_"
         )
     else:
         menu = (
-            "🕊️ *Welcome to Holy Bible WhatsApp Assistant!* 🕊️\n\n"
-            "Here is what you can do:\n\n"
-            "📖 *Scripture Lookup:*\n"
-            "• Text any passage: `John 3:16`, `Genesis 1:1-5`, `Psalm 23`\n"
+            "🕊️ *Welcome to Holy Bible WhatsApp Assistant!* 🕊️\n"
+            "Hello! Here are the *options available* for you:\n\n"
+            "1️⃣ *Scripture Reading* 📖\n"
+            "• Send any Bible passage to read immediately:\n"
+            "  `John 3:16`, `Psalm 23`, `Genesis 1:1-5`\n"
             "• Catholic canon included: `Tobit 4:7`, `Sirach 2:1`\n\n"
-            "🔍 *Scripture Search:*\n"
-            "• `search <keyword>` (e.g. `search love`, `search grace`)\n\n"
-            "🎧 *Audio Bible Clips:*\n"
-            "• `audio <book> <chapter>` (e.g. `audio John 3`)\n\n"
-            "❓ *Bible Trivia / Quiz:*\n"
-            "• `quiz` (test your scripture knowledge)\n\n"
-            "🔔 *Daily Devotional Subscription:*\n"
-            "• `subscribe` (receive daily scripture & reading plan)\n"
+            "2️⃣ *Audio Bible Voice Notes* 🎧\n"
+            "• `audio <book> <chapter>` (e.g. `audio John 1`, `audio Psalm 23`)\n"
+            "• Verse range: `audio John 1:1-5`\n"
+            "  _(Listen to spoken chapter audio clips)_\n\n"
+            "3️⃣ *Scripture Search* 🔍\n"
+            "• `search <keyword>` (e.g. `search love`, `search grace`, `search faith`)\n\n"
+            "4️⃣ *Daily Bible Quiz* ❓\n"
+            "• `quiz` (interactive 4-choice trivia to test your knowledge)\n\n"
+            "5️⃣ *Daily Devotional Subscription* 🔔\n"
+            "• `subscribe` (receive daily morning verse & reading checkpoints)\n"
             "• `stop` (unsubscribe anytime)\n\n"
-            "🎵 *Hymns & Lyrics:*\n"
-            "• `song <title/ID>` (e.g. `song Amazing Grace`)\n\n"
-            "📅 *Reading Plans:*\n"
-            "• `plan` (view today's assigned chapter)\n\n"
-            "_Send any command or scripture citation above to begin!_"
+            "6️⃣ *Hymns & Song Lyrics* 🎵\n"
+            "• `song <title/ID>` (e.g. `song Amazing Grace` or `song 2281`)\n\n"
+            "7️⃣ *Daily Reading Plans* 📅\n"
+            "• `plan` (view today's assigned chapter & schedule)\n\n"
+            "👉 _Reply with any option number (1-7) or type a command/scripture reference to begin!_"
         )
     await ctx.reply_text(menu)
 
@@ -667,20 +686,66 @@ async def handle_help_menu(ctx: MessageContext) -> None:
 async def handle_fallback(ctx: MessageContext) -> None:
     """Graceful fallback when input does not match commands or scripture citations."""
     text = ctx.text.strip()
-    if text.lower() in ("hi", "hello", "hey", "vanakkam", "வணக்கம்", "praise the lord", "shalom"):
+    clean_text = re.sub(r"[^\w\s\u0B80-\u0BFF]", "", text).strip().lower()
+
+    # Greetings matching (e.g. "hi", "hello", "hey", "hi there", "vanakkam", "வணக்கம்")
+    greeting_tokens = ("hi", "hello", "hey", "vanakkam", "வணக்கம்", "praise the lord", "shalom", "good morning", "good evening", "namaste")
+    if clean_text in greeting_tokens or any(clean_text.startswith(g + " ") for g in ("hi", "hello", "hey", "வணக்கம்", "vanakkam")):
         await handle_help_menu(ctx)
+        return
+
+    # Direct selection by menu option numbers 1 to 7
+    if clean_text in ("1", "option 1", "opt 1", "விருப்பம் 1"):
+        await ctx.reply_text(
+            "📖 *Option 1: Scripture Reading*\n\n"
+            "Send any Bible reference to read scripture immediately!\n"
+            "• Examples: `John 3:16`, `Psalm 23`, `Genesis 1:1-5`, `Tobit 4:7`"
+        )
+        return
+    elif clean_text in ("2", "option 2", "opt 2", "விருப்பம் 2"):
+        await ctx.reply_text(
+            "🎧 *Option 2: Audio Bible*\n\n"
+            "Listen to high-quality audio chapter voice notes!\n"
+            "• Type: `audio <book> <chapter>` (e.g. `audio John 3` or `audio Psalm 23`)\n"
+            "• Verse range: `audio John 1:1-5`\n"
+            "• Tamil audio: `audio யோவான் 1`"
+        )
+        return
+    elif clean_text in ("3", "option 3", "opt 3", "விருப்பம் 3"):
+        await ctx.reply_text(
+            "🔍 *Option 3: Scripture Search*\n\n"
+            "Search verses across the Old and New Testaments by keyword!\n"
+            "• Type: `search <keyword>` (e.g. `search love`, `search grace`, `search peace`)"
+        )
+        return
+    elif clean_text in ("4", "option 4", "opt 4", "விருப்பம் 4"):
+        await handle_quiz_start(ctx)
+        return
+    elif clean_text in ("5", "option 5", "opt 5", "விருப்பம் 5"):
+        await handle_subscribe(ctx)
+        return
+    elif clean_text in ("6", "option 6", "opt 6", "விருப்பம் 6"):
+        await ctx.reply_text(
+            "🎵 *Option 6: Christian Songs & Hymns*\n\n"
+            "Look up lyrics from Christian songbooks and hymnals!\n"
+            "• Type: `song <title>` (e.g. `song Amazing Grace`)\n"
+            "• Type: `song <number>` (e.g. `song 2281`)"
+        )
+        return
+    elif clean_text in ("7", "option 7", "opt 7", "விருப்பம் 7"):
+        await handle_plan_command(ctx)
         return
 
     await ctx.reply_text(
         f"🤔 I didn't recognize: *\"{text[:40]}\"*\n\n"
-        "Try sending a scripture reference like *John 3:16* or type *help* to see all available commands!"
+        "Try sending a scripture reference like *John 3:16*, type *Hi* to see all available options, or type *help*!"
     )
 
 
 def register_bible_handlers(dispatcher: BotDispatcher) -> None:
     """Registers all Holy Bible domain handlers with the decoupled BotDispatcher."""
-    # 1. Menu & Help Commands
-    dispatcher.command("help", aliases=["start", "menu", "info", "உதவி"], description="Show available features and instructions")(handle_help_menu)
+    # 1. Menu, Greeting & Help Commands
+    dispatcher.command("help", aliases=["start", "menu", "info", "உதவி", "hi", "hello", "hey", "options", "வணக்கம்", "vanakkam"], description="Show greeting and available options")(handle_help_menu)
 
     # 2. Daily Quiz & Trivia
     dispatcher.command("quiz", aliases=["trivia", "game", "வினாடி"], description="Play interactive Bible trivia")(handle_quiz_start)

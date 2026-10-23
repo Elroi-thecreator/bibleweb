@@ -75,12 +75,25 @@ async def run_tests():
             assert res.status_code == 200, f"Webhook failed: {res.text}"
             return client.simulated_outbox
 
-        # 3. Test Help / Menu Command
-        print("\n[3] Testing 'help' command...")
+        # 3. Test Help, Hi & Menu Auto-Reply Commands
+        print("\n[3] Testing 'help' and 'Hi' auto-reply with available options...")
         outbox = await send_simulated_msg("help")
         assert len(outbox) == 1
         assert "Welcome to Holy Bible WhatsApp Assistant" in outbox[0]["text"]
-        print("  ✅ Help Menu successfully returned.")
+        assert "options available" in outbox[0]["text"].lower()
+
+        # Test "Hi" greeting auto-reply
+        outbox_hi = await send_simulated_msg("Hi")
+        assert len(outbox_hi) == 1
+        assert "Welcome to Holy Bible WhatsApp Assistant" in outbox_hi[0]["text"]
+        assert "options available" in outbox_hi[0]["text"].lower()
+        assert "1️⃣" in outbox_hi[0]["text"]
+
+        # Test selecting option "1"
+        outbox_opt1 = await send_simulated_msg("1")
+        assert len(outbox_opt1) == 1
+        assert "Option 1: Scripture Reading" in outbox_opt1[0]["text"]
+        print("  ✅ 'Hi' auto-reply and available options menu verified.")
 
         # 4. Test Scripture Citation: John 3:16
         print("\n[4] Testing Scripture Citation 'John 3:16'...")
@@ -183,30 +196,34 @@ async def run_tests():
         assert "Daily Scripture Reading Plan" in outbox[0]["text"]
         print("  ✅ Reading plan information successfully displayed.")
 
-        # 14. Test Audio Bible Generation across English, Tamil & Numbered Books
-        print("\n[14] Testing Audio Bible 'audio John 1'...")
+        # 14. Test Audio Bible Generation across English, Tamil & Numbered Books with Processing Notice
+        print("\n[14] Testing Audio Bible 'audio John 1' with processing notice...")
         outbox = await send_simulated_msg("audio John 1")
-        assert len(outbox) == 1
-        assert outbox[0].get("media_type") == "audio" or "Audio" in outbox[0].get("caption", "") or "Audio" in outbox[0].get("text", "")
-        print("  ✅ 'audio John 1' processed successfully.")
+        assert len(outbox) == 2, f"Expected 2 messages (processing + audio), got {len(outbox)}"
+        assert "processing" in outbox[0]["text"].lower(), f"Expected processing message, got: {outbox[0]['text']}"
+        assert outbox[1].get("media_type") == "audio" or "Audio" in outbox[1].get("caption", "") or "Audio" in outbox[1].get("text", "")
+        print("  ✅ 'audio John 1' sent processing notice and audio payload successfully.")
 
         print("     Testing Audio Bible with Numbered Book 'audio 1 John 1'...")
         outbox_num = await send_simulated_msg("audio 1 John 1")
-        assert len(outbox_num) == 1
-        assert outbox_num[0].get("media_type") == "audio" or "1 John" in outbox_num[0].get("caption", "")
-        print("  ✅ 'audio 1 John 1' (numbered book) processed successfully.")
+        assert len(outbox_num) == 2
+        assert "processing" in outbox_num[0]["text"].lower()
+        assert outbox_num[1].get("media_type") == "audio" or "1 John" in outbox_num[1].get("caption", "")
+        print("  ✅ 'audio 1 John 1' (numbered book) sent processing notice and audio successfully.")
 
         print("     Testing Audio Bible with Verse Range 'audio John 1:1-5'...")
         outbox_range = await send_simulated_msg("audio John 1:1-5")
-        assert len(outbox_range) == 1
-        assert outbox_range[0].get("media_type") == "audio" or "1:1-5" in outbox_range[0].get("caption", "")
-        print("  ✅ 'audio John 1:1-5' (verse range) processed successfully.")
+        assert len(outbox_range) == 2
+        assert "processing" in outbox_range[0]["text"].lower()
+        assert outbox_range[1].get("media_type") == "audio" or "1:1-5" in outbox_range[1].get("caption", "")
+        print("  ✅ 'audio John 1:1-5' (verse range) sent processing notice and audio successfully.")
 
         print("     Testing Audio Bible in Tamil 'audio யோவான் 1'...")
         outbox_ta = await send_simulated_msg("audio யோவான் 1")
-        assert len(outbox_ta) == 1
-        assert outbox_ta[0].get("media_type") == "audio" or "வேத ஆடியோ" in outbox_ta[0].get("caption", "")
-        print("  ✅ 'audio யோவான் 1' (Tamil scripture audio) processed successfully.")
+        assert len(outbox_ta) == 2
+        assert "தயாராகிறது" in outbox_ta[0]["text"] or "ஆடியோ" in outbox_ta[0]["text"]
+        assert outbox_ta[1].get("media_type") == "audio" or "வேத ஆடியோ" in outbox_ta[1].get("caption", "")
+        print("  ✅ 'audio யோவான் 1' (Tamil scripture audio) sent processing notice and audio successfully.")
 
         # 15. Test Administrative Broadcast Endpoint
         print("\n[15] Testing POST /api/whatsapp/broadcast...")
