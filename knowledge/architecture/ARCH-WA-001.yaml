@@ -86,13 +86,4 @@ related_items:
   - PROD-AUDIO-001
   - ADR-005
   - ADR-006
-
-related_items:
-  - ARCH-SYS-001
-  - ARCH-DATA-001
-  - ARCH-ADMIN-001
-  - DEV-PY-001
-  - DEV-TEST-001
-  - PROD-AUDIO-001
-  - ADR-005
-  - ADR-006
+  - ADR-007

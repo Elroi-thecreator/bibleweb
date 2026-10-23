@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation, Concurrent Chapter Prefetching & Persistent Audio Cache Standard
 domain: product
 status: approved
-version: 1.17.0
+version: 1.18.0
 authority:
   level: official
   confidence: high
@@ -58,7 +58,8 @@ do:
   - "Centralize voice engine selection exclusively in the Settings Page/Modal (`#setting-voice-ta`, `#setting-voice-en`) to keep audio player docks lightweight, uncluttered, and mobile-friendly."
   - "Display real-time audio playback progress prominently across mobile and desktop views using interactive seek tracks (`#audio-progress-bar`, `#readalong-mobile-progress-bar`), verse counters (`#audio-progress-count`, `#mobile-progress-count`, e.g. `1/51`), and time indicators (`#audio-time-label`)."
   - "When relaying TTS audio over external messaging platforms (WhatsApp Gateway), transcode the raw MP3 output to an ISO MP4 container (.m4a, AAC-LC) with +faststart atom via `whatsapp_gateway/audio_converter.py` to ensure mobile audio decoder compatibility."
-  - "Execute complete end-to-end flow verification (`test_audio_flow_e2e.py`, `test_audio_deduplication.py`, `test_audio_concurrency_and_cache.py`, `test_audio.py`, `test_robustness.py`) prior to pushing code to source control."
+  - "Enforce user-level daily voice note quotas (default 15 audio requests per day via `WhatsAppRateLimiter.check_audio_quota_allowed`) on WhatsApp Gateway audio commands before initiating Edge-TTS synthesis and FFmpeg transcoding, gracefully declining requests with bilingual reset notices while keeping text scripture chapter reading completely unblocked."
+  - "Execute complete end-to-end flow verification (`test_audio_flow_e2e.py`, `test_audio_deduplication.py`, `test_audio_concurrency_and_cache.py`, `test_audio.py`, `test_robustness.py`, `test_whatsapp_rate_limiter.py`) prior to pushing code to source control."
 
 dont:
   - "Do not pin or run older edge-tts versions (< 7.3.1) which cause WSServerHandshakeError: 403 on Microsoft's Bing platform."
@@ -80,11 +81,13 @@ dont:
   - "Do not allow asynchronous promise completions (such as verse download resolution or `.play().then(...)`) to override or bypass a user's pause command."
   - "Do not call `clearAllBlobs()` or re-download audio files when the user adjusts audio playback speed; speed is a presentation property of the client player, not a synthesis attribute."
   - "Do not include playback rate or speed in client-side audio cache keys (`getVerseCacheKey`, `itemKey`)."
+  - "Do not block text reading requests when a user exhausts their daily audio voice note quota on WhatsApp."
 
 reason:
-  "Showing real-time download status on each verse gives readers instant visual confirmation of audio availability. Coupling immediate parallel 4-worker prefetching with two-tier in-memory and persistent disk caching drops chapter verse prefetch times by over 3.5x and provides sub-millisecond instant audio playback for subsequent listens, all while preventing duplicate requests."
+  "Showing real-time download status on each verse gives readers instant visual confirmation of audio availability. Coupling immediate parallel 4-worker prefetching with two-tier in-memory and persistent disk caching drops chapter verse prefetch times by over 3.5x and provides sub-millisecond instant audio playback for subsequent listens, all while preventing duplicate requests. Enforcing daily quotas on heavy audio synthesis protects backend compute and upstream TTS quotas from exhaustion."
 
 related_items:
   - ARCH-SYS-001
   - ARCH-WA-001
   - PROD-CANON-001
+  - ADR-007

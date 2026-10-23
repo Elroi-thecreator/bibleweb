@@ -1,7 +1,7 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/bible"
-knowledge_units_count: 20
+knowledge_units_count: 21
 last_updated: "2026-10-23"
 
 knowledge_units:
@@ -72,3 +72,6 @@ knowledge_units:
     - id: ADR-006
       file: "knowledge/decisions/ADR-006.yaml"
       title: "Asynchronous RabbitMQ Task Queue Option for Decoupled WhatsApp Message Ingestion & Devotional Dispatching"
+    - id: ADR-007
+      file: "knowledge/decisions/ADR-007.yaml"
+      title: "Thread-Safe Tiered Sliding-Window Rate Limiting, Daily Audio Synthesis Quotas & Admin Whitelisting for WhatsApp Bot"
