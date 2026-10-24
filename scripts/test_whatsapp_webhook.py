@@ -197,26 +197,29 @@ async def run_tests():
         print("  ✅ Song lyrics successfully retrieved.")
 
         # 13. Test Reading Plan Command & Plan Switching
-        print("\n[13] Testing Reading Plans in WhatsApp (Full Bible 365, NT 90, Switching)...")
+        print("\n[13] Testing Reading Plans in WhatsApp (Full Bible 365, NT 90, Switching, Starting at Day 1)...")
         outbox = await send_simulated_msg("plan")
         assert len(outbox) == 1
         assert "Daily Scripture Reading Plan" in outbox[0]["text"]
         assert "Full Bible in 365 Days" in outbox[0]["text"]
         assert "New Testament in 90 Days" in outbox[0]["text"]
-        print("  ✅ Default 365-day reading plan and options displayed successfully.")
+        assert "Day 1" in outbox[0]["text"]
+        print("  ✅ Default 365-day reading plan starts at Day 1 and options displayed successfully.")
 
         # Test switching to New Testament 90 days plan
         outbox_switch_nt = await send_simulated_msg("plan nt")
         assert len(outbox_switch_nt) == 1
         assert "New Testament in 90 Days" in outbox_switch_nt[0]["text"]
         assert "Switched Successfully" in outbox_switch_nt[0]["text"]
-        print("  ✅ Switched reading plan to 'plan nt' successfully.")
+        assert "Day 1" in outbox_switch_nt[0]["text"]
+        print("  ✅ Switched reading plan to 'plan nt' successfully (starts at Day 1).")
 
         # Test switching back to Full Bible in 365 days
         outbox_switch_full = await send_simulated_msg("plan full")
         assert len(outbox_switch_full) == 1
         assert "Full Bible in 365 Days" in outbox_switch_full[0]["text"]
-        print("  ✅ Switched reading plan to 'plan full' (365 days) successfully.")
+        assert "Day 1" in outbox_switch_full[0]["text"]
+        print("  ✅ Switched reading plan to 'plan full' (365 days) successfully (starts at Day 1).")
 
         # Test inspecting specific day reading
         outbox_day50 = await send_simulated_msg("plan 50")

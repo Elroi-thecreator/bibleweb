@@ -39,7 +39,15 @@ async def push_daily_devotional(
 
     targets: List[Dict[str, Any]] = []
     if recipients:
-        targets = [{"phone_number": r, "language": "en", "plan_id": plan_id or "full-bible-365"} for r in recipients]
+        targets = [
+            {
+                "phone_number": r,
+                "language": "en",
+                "plan_id": plan_id or "full-bible-365",
+                "plan_start_date": datetime.now().strftime("%Y-%m-%d"),
+            }
+            for r in recipients
+        ]
     elif target_time:
         targets = await get_subscribers_due(target_time)
     else:
@@ -56,12 +64,13 @@ async def push_daily_devotional(
         phone = target["phone_number"]
         lang = target.get("language", "en")
         sub_plan = plan_id or target.get("plan_id") or "full-bible-365"
-        reading = get_today_plan_reading(sub_plan)
+        sub_start = target.get("plan_start_date")
+        reading = get_today_plan_reading(sub_plan, start_date=sub_start)
 
         if not reading:
-            reading = get_today_plan_reading("full-bible-365")
+            reading = get_today_plan_reading("full-bible-365", start_date=sub_start)
 
-        curr_day = reading.get("current_day", datetime.now().day)
+        curr_day = reading.get("current_day", 1)
         total_days = reading.get("total_days", 365)
         ref_text = reading.get("ref_ta" if lang == "ta" else "ref_en") or reading.get("ref")
         plan_title = reading.get("plan_title_ta" if lang == "ta" else "plan_title_en", "Holy Bible Reading Plan")

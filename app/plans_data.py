@@ -8,8 +8,8 @@ Provides complete, canonical reading schedules:
 5. Deuterocanonical Books in 30 Days (137 chapters, ~4.5 ch/day)
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from datetime import date, datetime
+from typing import Any, Dict, List, Optional, Union
 from app.db import BIBLE_BOOKS, DEUTEROCANONICAL_BOOKS
 
 
@@ -183,8 +183,20 @@ def get_plan(plan_id: str) -> Optional[Dict[str, Any]]:
     return READING_PLANS.get(resolved_id)
 
 
-def get_today_plan_reading(plan_id: str = "full-bible-365", day_number: Optional[int] = None) -> Optional[Dict[str, Any]]:
-    """Returns the reading item for the specified plan and day (or today's calculated day)."""
+def get_today_plan_reading(
+    plan_id: str = "full-bible-365",
+    day_number: Optional[int] = None,
+    start_date: Optional[Union[str, date, datetime]] = None,
+    use_calendar_day: bool = False,
+) -> Optional[Dict[str, Any]]:
+    """Returns the reading item for the specified plan and day.
+
+    - If day_number is provided, returns that specific day.
+    - If start_date is provided, calculates the day relative to the user's personal
+      start date: Day 1 on start_date, advancing daily thereafter.
+    - If use_calendar_day is True, calculates relative to the day of the year (Julian day).
+    - By default, returns Day 1 so new readers start from the beginning of the plan.
+    """
     plan = get_plan(plan_id)
     if not plan:
         plan = READING_PLANS["full-bible-365"]
@@ -196,7 +208,22 @@ def get_today_plan_reading(plan_id: str = "full-bible-365", day_number: Optional
 
     if day_number is not None:
         calc_day = max(1, min(day_number, total_days))
-    else:
+    elif start_date:
+        if isinstance(start_date, datetime):
+            s_date = start_date.date()
+        elif isinstance(start_date, date):
+            s_date = start_date
+        elif isinstance(start_date, str):
+            try:
+                clean_str = start_date.split("T")[0].split(" ")[0].strip()
+                s_date = datetime.strptime(clean_str, "%Y-%m-%d").date()
+            except Exception:
+                s_date = datetime.now().date()
+        else:
+            s_date = datetime.now().date()
+        elapsed_days = max(0, (datetime.now().date() - s_date).days)
+        calc_day = ((elapsed_days) % total_days) + 1
+    elif use_calendar_day:
         now = datetime.now()
         if total_days == 365:
             calc_day = ((now.timetuple().tm_yday - 1) % 365) + 1
@@ -208,6 +235,8 @@ def get_today_plan_reading(plan_id: str = "full-bible-365", day_number: Optional
             calc_day = min(now.day, 30)
         else:
             calc_day = ((now.timetuple().tm_yday - 1) % total_days) + 1
+    else:
+        calc_day = 1
 
     idx = max(0, min(calc_day - 1, len(days) - 1))
     reading = dict(days[idx])

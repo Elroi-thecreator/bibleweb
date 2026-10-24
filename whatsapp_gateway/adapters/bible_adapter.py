@@ -507,6 +507,7 @@ async def handle_plan_command(ctx: MessageContext) -> None:
 
     sub = await get_subscriber(ctx.sender)
     active_plan_id = sub.get("plan_id", "full-bible-365") if sub else "full-bible-365"
+    plan_start = sub.get("plan_start_date") if sub else None
 
     target_plan = get_plan(clean) if clean else None
     day_match = re.match(r"^(?:day\s*)?(\d+)$", clean, re.IGNORECASE)
@@ -515,8 +516,9 @@ async def handle_plan_command(ctx: MessageContext) -> None:
     # Switching active plan
     if target_plan and not day_num:
         new_plan_id = target_plan["id"]
-        await update_subscriber_plan(ctx.sender, new_plan_id)
-        reading = get_today_plan_reading(new_plan_id)
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        await update_subscriber_plan(ctx.sender, new_plan_id, plan_start_date=today_str)
+        reading = get_today_plan_reading(new_plan_id, start_date=today_str)
         curr_day = reading.get("current_day", 1)
         tot_days = reading.get("total_days", 365)
         ref_text = reading.get("ref_ta" if is_ta else "ref_en") or reading.get("ref")
@@ -550,9 +552,13 @@ async def handle_plan_command(ctx: MessageContext) -> None:
 
     # Reading display
     target_plan_id = active_plan_id
-    reading = get_today_plan_reading(target_plan_id, day_number=day_num)
+    if day_num:
+        reading = get_today_plan_reading(target_plan_id, day_number=day_num)
+    else:
+        reading = get_today_plan_reading(target_plan_id, start_date=plan_start)
+
     if not reading:
-        reading = get_today_plan_reading("full-bible-365", day_number=day_num)
+        reading = get_today_plan_reading("full-bible-365", day_number=day_num, start_date=plan_start)
 
     curr_day = reading.get("current_day", 1)
     tot_days = reading.get("total_days", 365)
@@ -688,12 +694,14 @@ async def handle_subscribe(ctx: MessageContext) -> None:
     """Subscribes the user to daily scripture devotionals (default: 5:00 AM, Full Bible plan)."""
     is_ta = is_tamil_text(ctx.text)
     lang = "ta" if is_ta else "en"
+    today_str = datetime.now().strftime("%Y-%m-%d")
     success = await add_subscriber(
         phone=ctx.sender,
         name=ctx.sender_name,
         language=lang,
         plan_id="full-bible-365",
         reminder_time="05:00",
+        plan_start_date=today_str,
     )
     if success:
         if is_ta:
