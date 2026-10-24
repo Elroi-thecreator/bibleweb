@@ -15,7 +15,14 @@ from whatsapp_gateway.bot.context import MessageContext
 from whatsapp_gateway.bot.dispatcher import BotDispatcher
 from whatsapp_gateway.bot.session_store import InMemorySessionStore
 from whatsapp_gateway.adapters.bible_adapter import register_bible_handlers
-from whatsapp_gateway.subscribers import get_active_subscribers, get_subscriber_count
+from whatsapp_gateway.subscribers import (
+    get_active_subscribers,
+    get_subscriber_count,
+    get_subscriber,
+    get_subscriber_streak,
+    mark_subscriber_day_done,
+)
+from whatsapp_gateway.sync_store import generate_sync_code, verify_sync_code
 from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
 from whatsapp_gateway.queue.manager import queue_manager
 from whatsapp_gateway.rate_limiter import rate_limiter
@@ -334,3 +341,84 @@ async def broadcast_message(req: BroadcastRequest) -> Dict[str, Any]:
         "total": len(req.recipients),
         "results": results,
     }
+
+
+class SyncRequestCode(BaseModel):
+    phone_number: str
+
+
+class SyncVerifyRequest(BaseModel):
+    code: str
+
+
+class SyncPushProgressRequest(BaseModel):
+    phone_number: str
+    day: Optional[int] = None
+
+
+@router.post("/sync/request-code")
+async def request_sync_code(req: SyncRequestCode) -> Dict[str, Any]:
+    """
+    Generates a 15-minute sync code and dispatches it via WhatsApp to the user's phone.
+    """
+    phone = req.phone_number.strip()
+    if not phone:
+        raise HTTPException(status_code=400, detail="Phone number is required.")
+
+    code = generate_sync_code(phone)
+    msg = (
+        "🔐 *Web Bible Sync Code*\n\n"
+        f"Your one-time 15-minute connection code is:\n"
+        f"👉 *{code}*\n\n"
+        "Enter this code on the Web Bible (/sync) to connect your streaks and reading plan!"
+    )
+    res = await _client.send_text(to=phone, text=msg)
+    return {
+        "success": True,
+        "message": "Sync code generated and dispatched.",
+        "code_preview": code if _client.simulation_mode else None,
+        "dispatch_status": res.success,
+    }
+
+
+@router.post("/sync/verify")
+async def verify_sync_endpoint(req: SyncVerifyRequest) -> Dict[str, Any]:
+    """
+    Validates a 15-minute magic sync code and links the Web session with WhatsApp subscriber profile.
+    """
+    phone = verify_sync_code(req.code)
+    if not phone:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired sync code. Type 'sync' in WhatsApp or request a new code.",
+        )
+
+    sub = await get_subscriber(phone)
+    streak = await get_subscriber_streak(phone)
+
+    return {
+        "success": True,
+        "phone_number": phone,
+        "push_name": sub.get("push_name", "") if sub else "",
+        "language": sub.get("language", "ta") if sub else "ta",
+        "plan_id": sub.get("plan_id", "full-bible-365") if sub else "full-bible-365",
+        "plan_start_date": sub.get("plan_start_date", "") if sub else "",
+        "streak_count": streak.get("streak_count", 0),
+        "completed_days": streak.get("completed_days", []),
+        "last_read_date": streak.get("last_read_date", ""),
+        "total_completed": streak.get("completed_count", 0),
+    }
+
+
+@router.post("/sync/push-progress")
+async def push_progress_endpoint(req: SyncPushProgressRequest) -> Dict[str, Any]:
+    """
+    Synchronizes reading progress made on the Web Bible back to WhatsApp streak tracking.
+    """
+    phone = req.phone_number.strip()
+    if not phone:
+        raise HTTPException(status_code=400, detail="Phone number is required.")
+
+    result = await mark_subscriber_day_done(phone=phone, day=req.day)
+    return result
+

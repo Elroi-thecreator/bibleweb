@@ -8,3 +8,4 @@ psutil>=7.2.0
 httpx>=0.28.0
 imageio-ffmpeg>=0.6.0
 aio-pika>=10.0.0
+pillow>=10.0.0

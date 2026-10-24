@@ -1622,6 +1622,21 @@ async def whatsapp_hub_page(request: Request):
     )
 
 
+@app.get("/sync", response_class=HTMLResponse)
+async def whatsapp_sync_page(request: Request):
+    """Web Bible & WhatsApp Habit Streak and Reading Plan Sync Portal."""
+    active_canon = resolve_canon(request)
+    canon_ctx = get_canon_context(active_canon)
+    return templates.TemplateResponse(
+        request=request,
+        name="sync.html",
+        context={
+            **canon_ctx,
+            "page_title": "WhatsApp & Web Bible Sync",
+        },
+    )
+
+
 # ---------------------------------------------------------
 # Admin Control Center & Protected Settings Routes
 # ---------------------------------------------------------

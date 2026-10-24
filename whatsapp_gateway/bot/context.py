@@ -73,6 +73,32 @@ class MessageContext:
                 session_id=self.session_id,
             )
 
+    async def reply_image(
+        self,
+        file_path_or_bytes: Union[str, Path, bytes],
+        caption: Optional[str] = None,
+        file_name: Optional[str] = "verse_card.jpg",
+    ) -> SendMessageResponse:
+        """Reply to the sender with an image card."""
+        if isinstance(file_path_or_bytes, bytes):
+            return await self.client.send_media(
+                to=self.sender,
+                media_type=MediaType.IMAGE,
+                file_bytes=file_path_or_bytes,
+                caption=caption,
+                file_name=file_name,
+                session_id=self.session_id,
+            )
+        else:
+            return await self.client.send_media(
+                to=self.sender,
+                media_type=MediaType.IMAGE,
+                file_path=Path(file_path_or_bytes),
+                caption=caption,
+                file_name=file_name,
+                session_id=self.session_id,
+            )
+
     async def get_state(self) -> Optional[Dict[str, Any]]:
         """Retrieve active multi-turn conversational state for this sender."""
         return await self.session_store.get_session(self.sender)

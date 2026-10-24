@@ -325,8 +325,101 @@ async def run_tests():
         assert "stopped" in outbox_off[0]["text"].lower() or "நிறுத்தப்பட்டது" in outbox_off[0]["text"]
         print("  ✅ Successfully stopped reminders via 'remind off'.")
 
+        # 18. Feature 1: Reading Plan "Mark as Done" & Habit Streak Tracker
+        print("\n[18] Testing Feature 1: Reading Plan 'done' and 'streak' commands...")
+        outbox_done = await send_simulated_msg("done")
+        assert len(outbox_done) == 1
+        assert "🔥" in outbox_done[0]["text"]
+        assert "streak" in outbox_done[0]["text"].lower() or "தொடர்" in outbox_done[0]["text"]
+        print(f"  ✅ 'done' command successfully recorded progress: {outbox_done[0]['text'][:60]}...")
+
+        outbox_streak = await send_simulated_msg("streak")
+        assert len(outbox_streak) == 1
+        assert "🔥" in outbox_streak[0]["text"]
+        assert "Streak" in outbox_streak[0]["text"] or "தொடர்" in outbox_streak[0]["text"]
+        print(f"  ✅ 'streak' command returned habit dashboard: {outbox_streak[0]['text'][:60]}...")
+
+        # 19. Feature 3: Shareable "Verse of the Day" WhatsApp Status Image Card Generator
+        print("\n[19] Testing Feature 3: Verse of the Day Status Card Generator ('card')...")
+        outbox_card = await send_simulated_msg("card")
+        assert len(outbox_card) == 1
+        assert outbox_card[0].get("media_type") == "image"
+        assert "Status Card" in outbox_card[0].get("caption", "") or "படம்" in outbox_card[0].get("caption", "")
+        card_bytes_len = outbox_card[0].get("bytes_len") or len(outbox_card[0].get("file_bytes") or b"")
+        assert card_bytes_len > 5000
+        print(f"  ✅ 'card' command generated {card_bytes_len} bytes JPEG image card with caption: {outbox_card[0]['caption'][:40]}...")
+
+        # 20. Feature 4: Bilingual Parallel Mode
+        print("\n[20] Testing Feature 4: Bilingual Parallel Mode ('lang both')...")
+        outbox_lang_both = await send_simulated_msg("lang both")
+        assert len(outbox_lang_both) == 1
+        assert "Bilingual Parallel" in outbox_lang_both[0]["text"]
+        print("  ✅ 'lang both' updated language preference to bilingual parallel.")
+
+        # Test scripture lookup under bilingual parallel mode
+        outbox_parallel_scripture = await send_simulated_msg("John 3:16")
+        assert len(outbox_parallel_scripture) == 1
+        parallel_text = outbox_parallel_scripture[0]["text"]
+        assert "யோவான்" in parallel_text or "John" in parallel_text
+        # Both Tamil and English scriptures should be present
+        assert "Tamil" in parallel_text or "தமிழ்" in parallel_text or "தேவன்" in parallel_text
+        assert "English" in parallel_text or "God" in parallel_text or "world" in parallel_text
+        print("  ✅ Scripture lookup under 'lang both' output bilingual parallel text successfully.")
+
+        # 21. Feature 6: Web Bible & WhatsApp 15-Minute Magic Linking Sync
+        print("\n[21] Testing Feature 6: Web Bible Sync ('sync' command & verification)...")
+        outbox_sync = await send_simulated_msg("sync")
+        assert len(outbox_sync) == 1
+        sync_text = outbox_sync[0]["text"]
+        assert "BIBLE-" in sync_text
+        assert "/sync" in sync_text
+        print(f"  ✅ 'sync' command produced magic link code: {sync_text[:60]}...")
+
+        # Extract the code from the response (BIBLE-XXXX)
+        import re
+        code_match = re.search(r"BIBLE-\d{4}", sync_text)
+        assert code_match, f"Could not find BIBLE-XXXX in {sync_text}"
+        sync_code = code_match.group(0)
+
+        # Test GET /sync HTML page
+        sync_page_res = await http.get("/sync")
+        assert sync_page_res.status_code == 200
+        assert "WhatsApp & Web Bible Sync" in sync_page_res.text or "WhatsApp &amp; Web Bible Sync" in sync_page_res.text
+        print("  ✅ GET /sync rendered HTML successfully.")
+
+        # Test POST /api/whatsapp/sync/verify with extracted code
+        verify_res = await http.post("/api/whatsapp/sync/verify", json={"code": sync_code})
+        assert verify_res.status_code == 200
+        verify_data = verify_res.json()
+        assert verify_data["success"] is True
+        assert verify_data["phone_number"] == "919876543210"
+        assert verify_data["streak_count"] >= 1
+        print(f"  ✅ /api/whatsapp/sync/verify linked user {verify_data['phone_number']} with streak {verify_data['streak_count']}.")
+
+        # Test POST /api/whatsapp/sync/push-progress
+        progress_res = await http.post(
+            "/api/whatsapp/sync/push-progress",
+            json={"phone_number": "919876543210", "day": 10},
+        )
+        assert progress_res.status_code == 200
+        prog_data = progress_res.json()
+        assert prog_data["success"] is True
+        print(f"  ✅ /api/whatsapp/sync/push-progress updated streak: {prog_data}.")
+
+        # 22. Feature 6: Web requesting a sync code dispatched to WhatsApp
+        print("\n[22] Testing Feature 6: POST /api/whatsapp/sync/request-code...")
+        req_code_res = await http.post(
+            "/api/whatsapp/sync/request-code",
+            json={"phone_number": "919876543210"},
+        )
+        assert req_code_res.status_code == 200
+        req_data = req_code_res.json()
+        assert req_data["success"] is True
+        assert req_data.get("code_preview") is not None
+        print(f"  ✅ Web requested sync code generated and sent: {req_data.get('code_preview')}.")
+
     print("\n" + "=" * 70)
-    print("🎉 ALL 17 VERIFICATION & ENHANCEMENT TESTS PASSED WITH 100% SUCCESS!")
+    print("🎉 ALL 22 VERIFICATION & ENHANCEMENT TESTS PASSED WITH 100% SUCCESS!")
     print("=" * 70)
 
 

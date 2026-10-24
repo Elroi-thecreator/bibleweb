@@ -6,6 +6,9 @@
     "plan_id": "proverbs-31",
     "reminder_time": "05:00",
     "plan_start_date": "2026-10-21",
+    "streak_count": 0,
+    "last_read_date": "",
+    "completed_days": "[]",
     "is_active": 1,
     "subscribed_at": "2026-10-21 17:14:57",
     "updated_at": "2026-10-21 17:22:39"

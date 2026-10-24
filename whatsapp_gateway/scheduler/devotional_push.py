@@ -80,7 +80,26 @@ async def push_daily_devotional(
         b_meta = CATHOLIC_BOOK_MAP.get(b_id, BOOK_MAP.get(b_id, {"name_en": "Genesis", "name_ta": "ஆதியாகமம்"}))
         book_name = b_meta.get("name_ta" if lang == "ta" else "name_en", "Genesis")
 
-        if lang == "ta":
+        if lang == "both":
+            ref_ta = reading.get("ref_ta") or reading.get("ref", "")
+            ref_en = reading.get("ref_en") or reading.get("ref", "")
+            plan_ta = reading.get("plan_title_ta", "வேதாகம வாசிப்பு")
+            plan_en = reading.get("plan_title_en", "Bible Plan")
+            b_ta = b_meta.get("name_ta", "Genesis")
+            b_en = b_meta.get("name_en", "Genesis")
+            message = (
+                f"☀️ *Daily Scripture Devotional • தினசரி தியானம்* ☀️\n\n"
+                f"🇮🇳 📖 *இன்றைய வாசிப்பு:* {ref_ta}\n"
+                f"🇬🇧 📖 *Today's Portion:* {ref_en}\n"
+                f"📅 *Day {curr_day} of {total_days}* • _{plan_en} / {plan_ta}_\n\n"
+                f"✨ _Meditate on God's Word today! • இறைவார்த்தையை தியானியுங்கள்!_\n\n"
+                f"• Read chapter: reply *{b_en} {ch_num}* or *{b_ta} {ch_num}*\n"
+                f"• Audio voice note: reply *audio {b_en} {ch_num}*\n"
+                f"• Mark completed: reply *done*\n"
+                f"• Change reminder: reply *remind <time>*\n"
+                f"• Unsubscribe: reply *stop*"
+            )
+        elif lang == "ta":
             message = (
                 f"☀️ *தினசரி வேதாகம தியானம் & வாசிப்பு* ☀️\n\n"
                 f"📖 *இன்றைய வாசிப்பு:* {ref_text}\n"
@@ -88,6 +107,7 @@ async def push_daily_devotional(
                 f"✨ _இன்றைய நாளில் இறைவார்த்தையை தியானித்து ஆசீர்வதிக்கப்படுங்கள்!_\n\n"
                 f"• முழு அதிகாரத்தை வாசிக்க *{book_name} {ch_num}* என அனுப்பவும்.\n"
                 f"• ஆடியோ கேட்க *audio {book_name} {ch_num}* என அனுப்பவும்.\n"
+                f"• பகுதியை முடித்த பின் குறிக்க *done* என அனுப்பவும்.\n"
                 f"• நினைவூட்டல் நேரத்தை மாற்ற *remind <நேரம்>* (எ.கா. `remind 5 AM`) என அனுப்பவும்.\n"
                 f"• விலக *stop* என அனுப்பவும்."
             )
@@ -99,6 +119,7 @@ async def push_daily_devotional(
                 f"✨ _Take a quiet moment today to reflect on this passage. Have a blessed day!_\n\n"
                 f"• Reply *{book_name} {ch_num}* to read full chapter.\n"
                 f"• Reply *audio {book_name} {ch_num}* for instant audio voice note.\n"
+                f"• Mark reading completed: reply *done*\n"
                 f"• Change reminder time: reply *remind <time>* (e.g. `remind 5 AM`).\n"
                 f"• Reply *stop* anytime to unsubscribe."
             )

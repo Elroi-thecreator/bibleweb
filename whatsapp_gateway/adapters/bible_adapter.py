@@ -31,8 +31,13 @@ from whatsapp_gateway.subscribers import (
     is_subscribed,
     update_subscriber_reminder_time,
     update_subscriber_plan,
+    update_subscriber_language,
+    mark_subscriber_day_done,
+    get_subscriber_streak,
     get_subscriber,
 )
+from whatsapp_gateway.adapters.card_generator import generate_verse_card
+from whatsapp_gateway.sync_store import generate_sync_code
 from whatsapp_gateway.rate_limiter import (
     rate_limiter,
     build_cooldown_message,
@@ -191,6 +196,9 @@ async def handle_scripture_lookup(ctx: MessageContext) -> None:
     book_en = book_meta["name_en"]
     book_ta = book_meta["name_ta"]
     is_tamil = is_tamil_text(ctx.text)
+    sub = await get_subscriber(ctx.sender)
+    pref_lang = sub.get("language") if sub else None
+    is_parallel = (pref_lang == "both")
 
     if verse_start is not None:
         # Verse range filter
@@ -213,12 +221,17 @@ async def handle_scripture_lookup(ctx: MessageContext) -> None:
 
         for v in selected:
             num = v["verse_display"] or v["verse"]
-            primary_text = v.get("text_ta") if is_tamil else v.get("text_en")
-            secondary_text = v.get("text_en") if is_tamil else v.get("text_ta")
-            if secondary_text and secondary_text != primary_text:
-                lines.append(f"*{num}* {primary_text}\n_{secondary_text}_")
+            t_ta = v.get("text_ta") or ""
+            t_en = v.get("text_en") or ""
+            if is_parallel and t_ta and t_en:
+                lines.append(f"*{num}* 🇮🇳 {t_ta}\n🇬🇧 _{t_en}_")
             else:
-                lines.append(f"*{num}* {primary_text}")
+                primary_text = t_ta if (is_tamil or pref_lang == "ta") else t_en
+                secondary_text = t_en if (is_tamil or pref_lang == "ta") else t_ta
+                if secondary_text and secondary_text != primary_text:
+                    lines.append(f"*{num}* {primary_text}\n_{secondary_text}_")
+                else:
+                    lines.append(f"*{num}* {primary_text}")
 
         await ctx.reply_text("\n\n".join(lines))
     else:
@@ -232,8 +245,13 @@ async def handle_scripture_lookup(ctx: MessageContext) -> None:
         ]
         for v in verses[:preview_count]:
             num = v["verse_display"] or v["verse"]
-            txt = v.get("text_ta") if is_tamil else v.get("text_en")
-            lines.append(f"*{num}* {txt}")
+            t_ta = v.get("text_ta") or ""
+            t_en = v.get("text_en") or ""
+            if is_parallel and t_ta and t_en:
+                lines.append(f"*{num}* {t_ta}\n_{t_en}_")
+            else:
+                txt = t_ta if (is_tamil or pref_lang == "ta") else t_en
+                lines.append(f"*{num}* {txt}")
 
         if total_verses > preview_count:
             lines.append("")
@@ -609,6 +627,239 @@ async def handle_plan_command(ctx: MessageContext) -> None:
             "_To switch plan, reply e.g. `plan full` or `plan nt`._\n_To view a specific day, reply `plan <day>` (e.g. `plan 50`)._"
         ]
     await ctx.reply_text("\n".join(lines))
+
+
+async def handle_done_command(ctx: MessageContext) -> None:
+    """Marks today's reading plan portion as completed, updating consecutive reading streak."""
+    text = ctx.text.strip()
+    is_ta = is_tamil_text(text)
+
+    # Optional explicit day specified (e.g. 'done 5')
+    day_match = re.search(r"\b(\d+)\b", text)
+    explicit_day = int(day_match.group(1)) if day_match else None
+
+    sub = await get_subscriber(ctx.sender)
+    active_plan_id = sub.get("plan_id", "full-bible-365") if sub else "full-bible-365"
+    plan_meta = get_plan(active_plan_id) or READING_PLANS["full-bible-365"]
+    total_days = plan_meta.get("total_days", 365)
+    plan_title = plan_meta.get("title_ta" if is_ta else "title_en", "Bible Reading Plan")
+
+    res = await mark_subscriber_day_done(ctx.sender, day=explicit_day)
+    curr_day = res.get("day", 1)
+    streak = res.get("streak_count", 1)
+    completed_count = res.get("completed_count", 1)
+    pct = min(100, int((completed_count / total_days) * 100))
+
+    next_day_num = curr_day + 1 if curr_day < total_days else 1
+    next_item = get_today_plan_reading(active_plan_id, day_number=next_day_num)
+    next_ref = (next_item.get("ref_ta" if is_ta else "ref_en") or next_item.get("ref", "")) if next_item else ""
+
+    filled = min(10, max(0, pct // 10))
+    bar = "▓" * filled + "░" * (10 - filled)
+
+    if is_ta:
+        reply = (
+            f"🎉 *வாசிப்பு நிறைவடைந்தது! நாள் {curr_day} குறிக்கப்பட்டது!* ✅\n\n"
+            f"🔥 *தொடர் வாசிப்பு (Streak):* *{streak} நாட்கள்* 🚀\n"
+            f"📊 *திட்டம்:* {plan_title}\n"
+            f"📈 *முன்னேற்றம்:* [{bar}] *{pct}%* ({completed_count}/{total_days} நாட்கள்)\n\n"
+            f"📖 *அடுத்த பகுதி (நாள் {next_day_num}):* {next_ref}\n"
+            f"✨ _உங்களின் அர்ப்பணிப்பான வேத வாசிப்பு தொடரட்டும்!_"
+        )
+    else:
+        reply = (
+            f"🎉 *Reading Completed! Day {curr_day} Marked as Done!* ✅\n\n"
+            f"🔥 *Current Streak:* *{streak} Days* 🚀\n"
+            f"📊 *Plan:* {plan_title}\n"
+            f"📈 *Progress:* [{bar}] *{pct}%* ({completed_count}/{total_days} Days)\n\n"
+            f"📖 *Next Portion (Day {next_day_num}):* {next_ref}\n"
+            f"✨ _Keep up the faithful reading journey!_"
+        )
+    await ctx.reply_text(reply)
+
+
+async def handle_streak_command(ctx: MessageContext) -> None:
+    """Displays current reading streak, progress bar, and completion summary."""
+    is_ta = is_tamil_text(ctx.text)
+    sub = await get_subscriber(ctx.sender)
+    active_plan_id = sub.get("plan_id", "full-bible-365") if sub else "full-bible-365"
+    plan_meta = get_plan(active_plan_id) or READING_PLANS["full-bible-365"]
+    total_days = plan_meta.get("total_days", 365)
+    plan_title = plan_meta.get("title_ta" if is_ta else "title_en", "Bible Reading Plan")
+
+    stats = await get_subscriber_streak(ctx.sender)
+    streak = stats.get("streak_count", 0)
+    completed_count = stats.get("completed_count", 0)
+    pct = min(100, int((completed_count / total_days) * 100)) if total_days > 0 else 0
+    last_date = stats.get("last_read_date") or "None"
+
+    filled = min(10, max(0, pct // 10))
+    bar = "▓" * filled + "░" * (10 - filled)
+
+    if is_ta:
+        reply = (
+            f"🏆 *உங்கள் வேத வாசிப்பு நிலை & சாதனை* 🏆\n\n"
+            f"🔥 *நடப்பு தொடர் (Streak):* *{streak} நாட்கள்*\n"
+            f"📜 *நடப்பு திட்டம்:* {plan_title}\n"
+            f"📊 *நிறைவு:* [{bar}] *{pct}%* ({completed_count}/{total_days} நாட்கள்)\n"
+            f"📅 *கடைசி வாசிப்பு:* {last_date}\n\n"
+            f"• இன்றைய பகுதியை முடிக்க: *done*\n"
+            f"• வாசிப்புப் பகுதியை பார்க்க: *plan*"
+        )
+    else:
+        reply = (
+            f"🏆 *Your Bible Reading Streak & Progress* 🏆\n\n"
+            f"🔥 *Current Streak:* *{streak} Days*\n"
+            f"📜 *Current Plan:* {plan_title}\n"
+            f"📊 *Progress:* [{bar}] *{pct}%* ({completed_count}/{total_days} Days)\n"
+            f"📅 *Last Completed:* {last_date}\n\n"
+            f"• Mark today's reading done: reply *done*\n"
+            f"• View today's portion: reply *plan*"
+        )
+    await ctx.reply_text(reply)
+
+
+async def handle_card_command(ctx: MessageContext) -> None:
+    """Generates an aesthetic, shareable 1080x1080 Scripture Status Card image."""
+    text = ctx.text.strip()
+    is_ta = is_tamil_text(text)
+    clean_arg = re.sub(r"^(?:card|image|pic|photo|status|படம்)\s*", "", text, flags=re.IGNORECASE).strip()
+
+    book_meta = None
+    selected_verses = []
+    ref_display = ""
+
+    if clean_arg:
+        # User specified a scripture reference (e.g. 'card John 3:16' or 'image Psalm 23:1')
+        ref_match = re.match(r"^([1-3]?\s*[a-zA-Z\u0B80-\u0BFF\s]+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$", clean_arg, re.IGNORECASE)
+        if ref_match:
+            raw_book = ref_match.group(1).strip()
+            chapter = int(ref_match.group(2))
+            v_start = int(ref_match.group(3)) if ref_match.group(3) else 1
+            v_end = int(ref_match.group(4)) if ref_match.group(4) else v_start
+
+            b_id = resolve_book_id(raw_book)
+            if b_id:
+                book_meta = CATHOLIC_BOOK_MAP.get(b_id, BOOK_MAP.get(b_id))
+                all_verses = await asyncio.to_thread(get_chapter_verses, b_id, chapter)
+                if all_verses:
+                    selected_verses = [v for v in all_verses if v_start <= v["verse"] <= v_end][:3]
+                    b_en = book_meta.get("name_en", raw_book)
+                    b_ta = book_meta.get("name_ta", "")
+                    ref_display = f"{b_en} {chapter}:{v_start}" if v_start == v_end else f"{b_en} {chapter}:{v_start}-{v_end}"
+                    if b_ta:
+                        ref_display += f" • {b_ta}"
+
+    if not selected_verses:
+        # Default to today's assigned reading or popular verse (John 3:16)
+        sub = await get_subscriber(ctx.sender)
+        active_plan = sub.get("plan_id", "full-bible-365") if sub else "full-bible-365"
+        plan_start = sub.get("plan_start_date") if sub else None
+        reading = get_today_plan_reading(active_plan, start_date=plan_start) or get_today_plan_reading("full-bible-365")
+        b_id = reading.get("book_id", 43)  # default to John if not found
+        ch_num = reading.get("chapter", 3)
+        book_meta = CATHOLIC_BOOK_MAP.get(b_id, BOOK_MAP.get(b_id, {"name_en": "John", "name_ta": "யோவான்"}))
+        all_verses = await asyncio.to_thread(get_chapter_verses, b_id, ch_num)
+        selected_verses = all_verses[:1] if all_verses else []
+        b_en = book_meta.get("name_en", "John")
+        b_ta = book_meta.get("name_ta", "யோவான்")
+        ref_display = f"{b_en} {ch_num}:1 • {b_ta} {ch_num}:1"
+
+    if not selected_verses:
+        await ctx.reply_text("⚠️ Could not generate card: scripture text unavailable.")
+        return
+
+    en_texts = [v.get("text_en") or "" for v in selected_verses if v.get("text_en")]
+    ta_texts = [v.get("text_ta") or "" for v in selected_verses if v.get("text_ta")]
+    combined_en = " ".join(en_texts)
+    combined_ta = " ".join(ta_texts)
+
+    try:
+        card_bytes = await asyncio.to_thread(
+            generate_verse_card,
+            ref_text=ref_display,
+            scripture_en=combined_en,
+            scripture_ta=combined_ta,
+        )
+        caption = (
+            f"🖼️ *வேத வசனப் படம்:* {ref_display}\n"
+            f"✨ _வாட்ஸ்அப் ஸ்டேட்டஸ் அல்லது நண்பர்களுடன் பகிரவும்!_"
+            if is_ta else
+            f"🖼️ *Scripture Status Card:* {ref_display}\n"
+            f"✨ _Share this blessing with your family or WhatsApp Status!_"
+        )
+        await ctx.reply_image(card_bytes, caption=caption, file_name="verse_card.jpg")
+    except Exception as exc:
+        logger.error("Failed to generate verse card: %s", exc)
+        await ctx.reply_text(
+            f"📖 *{ref_display}*\n\n{combined_ta}\n\n_{combined_en}_\n\n"
+            f"⚠️ _(Image card generation encountered an error: {exc})_"
+        )
+
+
+async def handle_language_command(ctx: MessageContext) -> None:
+    """Configures language delivery preference: 'en', 'ta', or 'both' (bilingual parallel)."""
+    text = ctx.text.strip()
+    is_ta = is_tamil_text(text)
+    clean_arg = re.sub(r"^(?:lang|language|parallel|bilingual|மொழி)\s*", "", text, flags=re.IGNORECASE).strip().lower()
+
+    if clean_arg in ("both", "parallel", "bilingual", "இரண்டும்", "இருமொழி"):
+        await update_subscriber_language(ctx.sender, "both")
+        reply = (
+            "✅ *இருமொழி இணையான முறை (Bilingual Parallel Mode) தேர்வு செய்யப்பட்டது!* 📖\n\n"
+            "இனி வேத வசனங்கள் மற்றும் தினசரி தியானங்கள் தமிழ் மற்றும் ஆங்கிலம் இரண்டிலும் இணையாக அனுப்பப்படும்.\n\n"
+            "• மாற்ற: `lang ta` (தமிழ்) அல்லது `lang en` (ஆங்கிலம்)"
+            if is_ta else
+            "✅ *Bilingual Parallel Mode Enabled!* 📖\n\n"
+            "All scripture lookups and daily devotionals will now be delivered in both Tamil and English side-by-side.\n\n"
+            "• Switch anytime: reply *lang ta* (Tamil) or *lang en* (English)."
+        )
+        await ctx.reply_text(reply)
+    elif clean_arg in ("ta", "tamil", "தமிழ்"):
+        await update_subscriber_language(ctx.sender, "ta")
+        await ctx.reply_text("✅ *மொழி தமிழுக்கு மாற்றப்பட்டது!* (பரிசுத்த வேதாகமம்) 📖\n\nமாற்ற: `lang both` அல்லது `lang en`.")
+    elif clean_arg in ("en", "english", "ஆங்கிலம்"):
+        await update_subscriber_language(ctx.sender, "en")
+        await ctx.reply_text("✅ *Language set to English!* (KJV Holy Bible) 📖\n\nSwitch anytime: reply *lang both* or *lang ta*.")
+    else:
+        sub = await get_subscriber(ctx.sender)
+        curr = (sub.get("language") or "en") if sub else "en"
+        curr_label = "Bilingual Parallel (🇮🇳 Tamil + 🇬🇧 English)" if curr == "both" else ("Tamil (தமிழ்)" if curr == "ta" else "English")
+        reply = (
+            f"🌐 *மொழி அமைப்புகள் (Language Settings)* 🌐\n\n"
+            f"நடப்பு மொழி: *{curr_label}*\n\n"
+            "• `lang both` — இருமொழி இணையாக (Tamil + English Parallel)\n"
+            "• `lang ta` — தமிழ் மட்டும் (Tamil Only)\n"
+            "• `lang en` — ஆங்கிலம் மட்டும் (English Only)"
+            if is_ta else
+            f"🌐 *Language Settings* 🌐\n\n"
+            f"Current Preference: *{curr_label}*\n\n"
+            "• *lang both* — Bilingual Parallel (Tamil + English side-by-side)\n"
+            "• *lang ta* — Tamil Only (தமிழ்)\n"
+            "• *lang en* — English Only (KJV)"
+        )
+        await ctx.reply_text(reply)
+
+
+async def handle_sync_command(ctx: MessageContext) -> None:
+    """Generates an ephemeral 15-minute sync code to connect WhatsApp with the Web App."""
+    is_ta = is_tamil_text(ctx.text)
+    code = generate_sync_code(ctx.sender)
+    if is_ta:
+        reply = (
+            "🔗 *இணையதள இணைப்பு & ஒத்திசைவு (Web Bible Sync)* 🔗\n\n"
+            f"உங்களின் 15 நிமிட இணைப்பு குறியீடு: *{code}*\n\n"
+            "இக்குறியீட்டை இணையதளத்தில் (*https://webbible.app/sync* அல்லது Plans பக்கத்தில்) உள்ளீடு செய்து, "
+            "உங்கள் வாட்ஸ்அப் தொடர் வாசிப்பு (Streak), திட்ட முன்னேற்றம் மற்றும் அமைப்புகளை உடனடியாக இணையதளத்துடன் இணைத்துக் கொள்ளலாம்!"
+        )
+    else:
+        reply = (
+            "🔗 *Web Bible & WhatsApp Account Sync* 🔗\n\n"
+            f"Your 15-minute Linking Code is: *{code}*\n\n"
+            "Enter this code on the website at *https://webbible.app/sync* (or on your Web Plans page) to instantly "
+            "synchronize your reading streak, plan progress, and preferences with your browser reader!"
+        )
+    await ctx.reply_text(reply)
 
 
 async def handle_reminder_command(ctx: MessageContext) -> None:
@@ -1048,17 +1299,28 @@ def register_bible_handlers(dispatcher: BotDispatcher) -> None:
     # 5. Audio Bible Voice Notes
     dispatcher.command("audio", aliases=["listen", "voice", "கேட்க"], description="Listen to chapter audio notes")(handle_audio_command)
 
-    # 6. Reading Plans
+    # 6. Reading Plans, Streak Tracking & Done Checkoffs
     dispatcher.command("plan", aliases=["plans", "reading", "திட்டம்"], description="View reading plans and today's reading")(handle_plan_command)
+    dispatcher.command("done", aliases=["read", "check", "முடித்தேன்", "வாசித்துவிட்டேன்"], description="Mark reading portion completed and advance streak")(handle_done_command)
+    dispatcher.command("streak", aliases=["progress", "stats", "முன்னேற்றம்", "தொடர்"], description="View reading streak and progress")(handle_streak_command)
 
-    # 7. Daily Reminders (Configurable dispatch time, default 5:00 AM)
+    # 7. Shareable Scripture Status Image Cards
+    dispatcher.command("card", aliases=["image", "pic", "photo", "status", "படம்"], description="Generate shareable scripture image card for status")(handle_card_command)
+
+    # 8. Language Preference & Bilingual Parallel Mode
+    dispatcher.command("lang", aliases=["language", "parallel", "bilingual", "மொழி"], description="Set language (en, ta, or both for parallel)")(handle_language_command)
+
+    # 9. Web Bible Sync Code
+    dispatcher.command("sync", aliases=["link", "connect", "இணைப்பு"], description="Generate 15-minute Web Bible sync code")(handle_sync_command)
+
+    # 10. Daily Reminders (Configurable dispatch time, default 5:00 AM)
     dispatcher.command("remind", aliases=["reminder", "time", "alarm", "நேரம்", "நினைவூட்டல்"], description="Set or view daily reminder time (default: 5 AM)")(handle_reminder_command)
 
-    # 8. Subscriptions
+    # 11. Subscriptions
     dispatcher.command("subscribe", aliases=["join", "இணை", "பதிவு"], description="Subscribe to daily scripture devotionals")(handle_subscribe)
     dispatcher.command("unsubscribe", aliases=["stop", "cancel", "நிறுத்து"], description="Unsubscribe from daily devotionals")(handle_unsubscribe)
 
-    # 8. Regex Scripture Reference Lookup (e.g., 'John 3:16', 'Genesis 1:1-5', 'Psalm 23', 'யோவான் 3:16')
+    # 12. Regex Scripture Reference Lookup (e.g., 'John 3:16', 'Genesis 1:1-5', 'Psalm 23', 'யோவான் 3:16')
     scripture_pattern = r"^([1-3]?\s*[a-zA-Z\u0B80-\u0BFF\s]+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$"
     dispatcher.regex(
         pattern=scripture_pattern,
