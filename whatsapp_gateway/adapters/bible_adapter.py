@@ -1162,7 +1162,18 @@ async def handle_help_menu(ctx: MessageContext) -> None:
             "• `plan` (இன்றைய வாசிப்புப் பகுதி & அட்டவணை)\n"
             "• `plan full` (365 நாட்கள் முழு வேதாகமம்)\n"
             "• `plan nt` (90 நாட்கள் புதிய ஏற்பாடு)\n\n"
-            "👉 _தொடங்க மேலே உள்ள ஏதேனும் ஒரு எண் (1-7) அல்லது கட்டளையை அனுப்பவும்!_"
+            "8️⃣ *வாசிப்புத் தொடர் சாதனை (Habit Streak)* 🔥\n"
+            "• `done` அல்லது `முடித்தேன்` (இன்றைய வாசிப்பை முடித்து தொடரை அதிகரிக்க)\n"
+            "• `streak` அல்லது `progress` (உங்கள் தொடர் நாட்கள் & சதவீதத்தை அறிய)\n\n"
+            "9️⃣ *வசன ஸ்டேட்டஸ் படம் (Status Card)* 🖼️\n"
+            "• `card` அல்லது `image` அல்லது `படம்` (இன்றைய வசனத்தின் அழகிய 1080x1080 வாட்ஸ்அப் ஸ்டேட்டஸ் படம்)\n"
+            "• தனிப்பயன் வசன படம்: `card யோவான் 3:16` அல்லது `card சங்கீதம் 23`\n\n"
+            "🔟 *இருமொழி ஒப்புநோக்கு (Parallel Scripture)* 🌐\n"
+            "• `lang both` அல்லது `parallel` (தமிழ் + ஆங்கிலம் அருகருகே வாசிக்க)\n"
+            "• `lang ta` (தமிழ் மட்டும்), `lang en` (ஆங்கிலம் மட்டும்)\n\n"
+            "1️⃣1️⃣ *இணையதள இணைப்பு (Web Bible Sync)* 📱\n"
+            "• `sync` அல்லது `link` அல்லது `இணைப்பு` (15 நிமிட குறியீட்டைப் பெற்று இணையதளத்தில் /sync பக்கத்தில் உங்கள் தொடரை இணைக்க)\n\n"
+            "👉 _தொடங்க மேலே உள்ள ஏதேனும் ஒரு எண் (1-11) அல்லது கட்டளையை அனுப்பவும்!_"
         )
     else:
         menu = (
@@ -1190,7 +1201,18 @@ async def handle_help_menu(ctx: MessageContext) -> None:
             "• `plan` (view today's assigned chapters & schedule)\n"
             "• `plan full` (Full Bible in 365 Days)\n"
             "• `plan nt` (New Testament in 90 Days)\n\n"
-            "👉 _Reply with any option number (1-7) or type a command/scripture reference to begin!_"
+            "8️⃣ *Habit Streak & Mark as Done* 🔥\n"
+            "• `done` (mark today's reading complete and advance your daily streak)\n"
+            "• `streak` or `progress` (view streak count, progress bar, and completion stats)\n\n"
+            "9️⃣ *Status Image Card Generator* 🖼️\n"
+            "• `card` or `image` or `status` (generate 1080x1080 gold-bordered status image card)\n"
+            "• Custom scripture card: `card John 3:16` or `card Psalm 23`\n\n"
+            "🔟 *Bilingual Parallel Mode* 🌐\n"
+            "• `lang both` or `parallel` (side-by-side Tamil + English verses)\n"
+            "• `lang en` (English only), `lang ta` (Tamil only)\n\n"
+            "1️⃣1️⃣ *Web Bible Magic Sync* 📱\n"
+            "• `sync` or `link` (get 15-minute code to link reading streak with Web Bible at `/sync`)\n\n"
+            "👉 _Reply with any option number (1-11) or type a command/scripture reference to begin!_"
         )
     await ctx.reply_text(menu)
 
@@ -1206,7 +1228,7 @@ async def handle_fallback(ctx: MessageContext) -> None:
         await handle_help_menu(ctx)
         return
 
-    # Direct selection by menu option numbers 1 to 7
+    # Direct selection by menu option numbers 1 to 11
     if clean_text in ("1", "option 1", "opt 1", "விருப்பம் 1"):
         await ctx.reply_text(
             "📖 *Option 1: Scripture Reading*\n\n"
@@ -1261,6 +1283,39 @@ async def handle_fallback(ctx: MessageContext) -> None:
             "• Type `plan nt` for New Testament in 90 Days (~2.9 ch/day)\n"
             "• Type `plan proverbs` for Proverbs in 31 Days (1 ch/day)\n"
             "• Type `plan <day>` (e.g. `plan 50`) for a specific day's reading"
+        )
+        return
+    elif clean_text in ("8", "option 8", "opt 8", "விருப்பம் 8"):
+        await ctx.reply_text(
+            "🔥 *Option 8: Habit Streak & Mark as Done*\n\n"
+            "Build a continuous daily Bible reading habit!\n"
+            "• Reply *done* (or *read*, *முடித்தேன்*) to mark today's reading complete and advance your streak.\n"
+            "• Reply *streak* (or *progress*, *தொடர்*) to view your current streak, progress bar, and completion summary."
+        )
+        return
+    elif clean_text in ("9", "option 9", "opt 9", "விருப்பம் 9"):
+        await ctx.reply_text(
+            "🖼️ *Option 9: Status Image Card Generator*\n\n"
+            "Generate beautiful 1080x1080 graphic cards for your WhatsApp Status or friends!\n"
+            "• Type *card* (or *image*, *status*, *படம்*) to receive today's verse card with gold borders.\n"
+            "• Or specify any passage: *card John 3:16* or *card Psalm 23*."
+        )
+        return
+    elif clean_text in ("10", "option 10", "opt 10", "விருப்பம் 10"):
+        await ctx.reply_text(
+            "🌐 *Option 10: Bilingual Parallel Mode*\n\n"
+            "Read Tamil and English verses side-by-side in all lookups and devotionals!\n"
+            "• Type *lang both* (or *parallel*) for Tamil + English side-by-side.\n"
+            "• Type *lang ta* for Tamil only.\n"
+            "• Type *lang en* for English only."
+        )
+        return
+    elif clean_text in ("11", "option 11", "opt 11", "விருப்பம் 11"):
+        await ctx.reply_text(
+            "📱 *Option 11: Web Bible 15-Minute Magic Sync*\n\n"
+            "Connect your WhatsApp reading streak with the Web Bible reader!\n"
+            "• Type *sync* (or *link*, *இணைப்பு*) to get your 15-minute linking code.\n"
+            "• Enter the code on the website at */sync* to sync your streaks and reading progress with zero passwords."
         )
         return
 

@@ -100,7 +100,24 @@ async def run_tests():
         outbox_opt1 = await send_simulated_msg("1")
         assert len(outbox_opt1) == 1
         assert "Option 1: Scripture Reading" in outbox_opt1[0]["text"]
-        print("  ✅ 'Hi' auto-reply and available options menu verified.")
+
+        # Test selecting new options 8, 9, 10, 11
+        outbox_opt8 = await send_simulated_msg("8")
+        assert len(outbox_opt8) == 1
+        assert "Option 8: Habit Streak" in outbox_opt8[0]["text"]
+
+        outbox_opt9 = await send_simulated_msg("9")
+        assert len(outbox_opt9) == 1
+        assert "Option 9: Status Image Card" in outbox_opt9[0]["text"]
+
+        outbox_opt10 = await send_simulated_msg("10")
+        assert len(outbox_opt10) == 1
+        assert "Option 10: Bilingual Parallel" in outbox_opt10[0]["text"]
+
+        outbox_opt11 = await send_simulated_msg("11")
+        assert len(outbox_opt11) == 1
+        assert "Option 11: Web Bible" in outbox_opt11[0]["text"]
+        print("  ✅ 'Hi' auto-reply and available options menu (1-11) verified.")
 
         # 4. Test Scripture Citation: John 3:16
         print("\n[4] Testing Scripture Citation 'John 3:16'...")
