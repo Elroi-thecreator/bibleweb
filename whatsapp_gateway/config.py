@@ -1,6 +1,9 @@
 """
 WhatsApp Gateway Configuration Module.
-Loads environment variables or defaults for connecting to the WA-AKG gateway,
+Loads environment variables or defaults for connecting to WhatsApp providers:
+- Meta WhatsApp Business Cloud API (Official Cloud API & Developer Sandbox)
+- WA-AKG (Baileys Multi-Device REST Gateway)
+- Simulation Mode (Virtual In-Browser Assistant)
 with persistent disk override support via data/whatsapp_config.json.
 Completely standalone with zero dependencies on external application domains.
 """
@@ -32,8 +35,14 @@ def load_persisted_config() -> dict:
 
 
 class WhatsAppGatewayConfig(BaseModel):
-    """Configuration settings for WA-AKG WhatsApp Gateway."""
+    """Configuration settings for WhatsApp Gateway and Providers."""
 
+    # Provider selection: 'wa_akg', 'meta_cloud_api', 'simulation'
+    provider: str = Field(
+        default_factory=lambda: getenv("WA_PROVIDER", "wa_akg")
+    )
+
+    # WA-AKG Settings
     gateway_url: str = Field(
         default_factory=lambda: getenv("WA_GATEWAY_URL", "https://wa-akg-gateway-ub6a.onrender.com/api")
     )
@@ -46,6 +55,28 @@ class WhatsAppGatewayConfig(BaseModel):
     webhook_secret: Optional[str] = Field(
         default_factory=lambda: getenv("WA_WEBHOOK_SECRET", None)
     )
+
+    # Meta WhatsApp Business Cloud API Settings
+    meta_phone_number_id: Optional[str] = Field(
+        default_factory=lambda: getenv("WA_META_PHONE_NUMBER_ID", None)
+    )
+    meta_waba_id: Optional[str] = Field(
+        default_factory=lambda: getenv("WA_META_WABA_ID", None)
+    )
+    meta_access_token: Optional[str] = Field(
+        default_factory=lambda: getenv("WA_META_ACCESS_TOKEN", None)
+    )
+    meta_verify_token: str = Field(
+        default_factory=lambda: getenv("WA_META_VERIFY_TOKEN", "elroi_bible_verify_token")
+    )
+    meta_app_secret: Optional[str] = Field(
+        default_factory=lambda: getenv("WA_META_APP_SECRET", None)
+    )
+    meta_api_version: str = Field(
+        default_factory=lambda: getenv("WA_META_API_VERSION", "v21.0")
+    )
+
+    # General bot settings
     command_prefix: str = Field(
         default_factory=lambda: getenv("WA_COMMAND_PREFIX", "")
     )
@@ -58,6 +89,8 @@ class WhatsAppGatewayConfig(BaseModel):
     enable_simulation_mode: bool = Field(
         default_factory=lambda: getenv("WA_SIMULATION_MODE", "true").lower() in ("true", "1", "yes")
     )
+
+    # RabbitMQ Queue Settings
     queue_enabled: bool = Field(
         default_factory=lambda: getenv("WA_QUEUE_ENABLED", "false").lower() in ("true", "1", "yes")
     )
@@ -73,6 +106,8 @@ class WhatsAppGatewayConfig(BaseModel):
     queue_prefetch: int = Field(
         default_factory=lambda: int(getenv("WA_QUEUE_PREFETCH", "10"))
     )
+
+    # Rate Limiting & User Quotas
     rate_limit_enabled: bool = Field(
         default_factory=lambda: getenv("WA_RATE_LIMIT_ENABLED", "true").lower() in ("true", "1", "yes")
     )
@@ -92,14 +127,29 @@ class WhatsAppGatewayConfig(BaseModel):
 
 # Load initial config with persistent overrides
 _persisted = load_persisted_config()
+
+# Derive initial provider
+_initial_sim_mode = _persisted.get(
+    "enable_simulation_mode",
+    getenv("WA_SIMULATION_MODE", "true").lower() in ("true", "1", "yes"),
+)
+_initial_provider = _persisted.get(
+    "provider",
+    getenv("WA_PROVIDER", "simulation" if _initial_sim_mode else "wa_akg"),
+)
+
 config = WhatsAppGatewayConfig(
+    provider=_initial_provider,
     gateway_url=_persisted.get("gateway_url", getenv("WA_GATEWAY_URL", "https://wa-akg-gateway-ub6a.onrender.com/api")),
     session_id=_persisted.get("session_id", getenv("WA_SESSION_ID", "default")),
     api_key=_persisted.get("api_key", getenv("WA_API_KEY", None)),
-    enable_simulation_mode=_persisted.get(
-        "enable_simulation_mode",
-        getenv("WA_SIMULATION_MODE", "true").lower() in ("true", "1", "yes"),
-    ),
+    enable_simulation_mode=_initial_sim_mode,
+    meta_phone_number_id=_persisted.get("meta_phone_number_id", getenv("WA_META_PHONE_NUMBER_ID", None)),
+    meta_waba_id=_persisted.get("meta_waba_id", getenv("WA_META_WABA_ID", None)),
+    meta_access_token=_persisted.get("meta_access_token", getenv("WA_META_ACCESS_TOKEN", None)),
+    meta_verify_token=_persisted.get("meta_verify_token", getenv("WA_META_VERIFY_TOKEN", "elroi_bible_verify_token")),
+    meta_app_secret=_persisted.get("meta_app_secret", getenv("WA_META_APP_SECRET", None)),
+    meta_api_version=_persisted.get("meta_api_version", getenv("WA_META_API_VERSION", "v21.0")),
     queue_enabled=_persisted.get(
         "queue_enabled",
         getenv("WA_QUEUE_ENABLED", "false").lower() in ("true", "1", "yes"),
@@ -132,10 +182,17 @@ config = WhatsAppGatewayConfig(
 
 
 def save_persisted_config(
+    provider: Optional[str] = None,
     gateway_url: Optional[str] = None,
     session_id: Optional[str] = None,
     api_key: Optional[str] = None,
     enable_simulation_mode: Optional[bool] = None,
+    meta_phone_number_id: Optional[str] = None,
+    meta_waba_id: Optional[str] = None,
+    meta_access_token: Optional[str] = None,
+    meta_verify_token: Optional[str] = None,
+    meta_app_secret: Optional[str] = None,
+    meta_api_version: Optional[str] = None,
     queue_enabled: Optional[bool] = None,
     rabbitmq_url: Optional[str] = None,
     rate_limit_enabled: Optional[bool] = None,
@@ -147,6 +204,17 @@ def save_persisted_config(
     """Updates the live singleton and writes overrides to data/whatsapp_config.json."""
     CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
     current = load_persisted_config()
+
+    if provider is not None:
+        clean_prov = provider.strip().lower()
+        current["provider"] = clean_prov
+        config.provider = clean_prov
+        if clean_prov == "simulation":
+            current["enable_simulation_mode"] = True
+            config.enable_simulation_mode = True
+        elif clean_prov in ("wa_akg", "meta_cloud_api"):
+            current["enable_simulation_mode"] = False
+            config.enable_simulation_mode = False
 
     if gateway_url is not None:
         clean_url = gateway_url.strip().rstrip("/")
@@ -166,6 +234,42 @@ def save_persisted_config(
     if enable_simulation_mode is not None:
         current["enable_simulation_mode"] = bool(enable_simulation_mode)
         config.enable_simulation_mode = current["enable_simulation_mode"]
+        if current["enable_simulation_mode"] and config.provider != "simulation":
+            current["provider"] = "simulation"
+            config.provider = "simulation"
+        elif not current["enable_simulation_mode"] and config.provider == "simulation":
+            current["provider"] = "wa_akg"
+            config.provider = "wa_akg"
+
+    if meta_phone_number_id is not None:
+        clean_val = meta_phone_number_id.strip()
+        current["meta_phone_number_id"] = clean_val if clean_val else None
+        config.meta_phone_number_id = current["meta_phone_number_id"]
+
+    if meta_waba_id is not None:
+        clean_val = meta_waba_id.strip()
+        current["meta_waba_id"] = clean_val if clean_val else None
+        config.meta_waba_id = current["meta_waba_id"]
+
+    if meta_access_token is not None:
+        clean_val = meta_access_token.strip()
+        current["meta_access_token"] = clean_val if clean_val else None
+        config.meta_access_token = current["meta_access_token"]
+
+    if meta_verify_token is not None:
+        clean_val = meta_verify_token.strip()
+        current["meta_verify_token"] = clean_val if clean_val else "elroi_bible_verify_token"
+        config.meta_verify_token = current["meta_verify_token"]
+
+    if meta_app_secret is not None:
+        clean_val = meta_app_secret.strip()
+        current["meta_app_secret"] = clean_val if clean_val else None
+        config.meta_app_secret = current["meta_app_secret"]
+
+    if meta_api_version is not None:
+        clean_val = meta_api_version.strip().lstrip("v")
+        current["meta_api_version"] = f"v{clean_val}" if clean_val else "v21.0"
+        config.meta_api_version = current["meta_api_version"]
 
     if queue_enabled is not None:
         current["queue_enabled"] = bool(queue_enabled)

@@ -224,7 +224,7 @@
                 <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
                     <div class="flex items-center gap-2">
                         <span class="text-lg">💬</span>
-                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">WhatsApp Gateway & Bot Setup</h2>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">WhatsApp Gateway & Provider Plugins</h2>
                     </div>
                     <div class="flex items-center gap-2">
                         <!-- Gateway Live Connection Status Pill -->
@@ -232,79 +232,208 @@
                             <span id="gateway-status-dot" class="w-2 h-2 rounded-full bg-stone-400"></span>
                             <span id="gateway-status-text">Checking Gateway...</span>
                         </span>
-                        <span id="wa-mode-badge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {% if wa_simulation %}bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300{% else %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300{% endif %}">
-                            {% if wa_simulation %}Simulation Mode{% else %}Live Gateway{% endif %}
+                        <span id="wa-mode-badge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {% if wa_simulation %}bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300{% elif wa_provider == 'meta_cloud_api' %}bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300{% else %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300{% endif %}">
+                            {% if wa_simulation %}Simulation{% elif wa_provider == 'meta_cloud_api' %}Meta Cloud API{% else %}WA-AKG Gateway{% endif %}
                         </span>
                     </div>
                 </div>
 
+                <!-- Provider Plugin Selector Tabs -->
+                <div>
+                    <label class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1.5 text-[11px]">
+                        Active WhatsApp Provider Plugin
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <button type="button" onclick="switchWaProvider('meta_cloud_api')" id="tab-btn-meta_cloud_api"
+                                class="py-2.5 px-3 rounded-xl border text-left transition flex items-start gap-2.5 cursor-pointer {% if wa_provider == 'meta_cloud_api' and not wa_simulation %}bg-sky-50 dark:bg-sky-950/40 border-sky-400 dark:border-sky-700 text-sky-900 dark:text-sky-200 shadow-xs{% else %}bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-stone-300{% endif %}">
+                            <span class="text-base">📱</span>
+                            <div>
+                                <div class="font-bold text-xs">Meta Cloud API</div>
+                                <div class="text-[10px] text-stone-500 dark:text-stone-400">Official API & Free Demo Sandbox</div>
+                            </div>
+                        </button>
+                        <button type="button" onclick="switchWaProvider('wa_akg')" id="tab-btn-wa_akg"
+                                class="py-2.5 px-3 rounded-xl border text-left transition flex items-start gap-2.5 cursor-pointer {% if wa_provider == 'wa_akg' and not wa_simulation %}bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 shadow-xs{% else %}bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-stone-300{% endif %}">
+                            <span class="text-base">⚡</span>
+                            <div>
+                                <div class="font-bold text-xs">WA-AKG Gateway</div>
+                                <div class="text-[10px] text-stone-500 dark:text-stone-400">Baileys QR Multi-Device</div>
+                            </div>
+                        </button>
+                        <button type="button" onclick="switchWaProvider('simulation')" id="tab-btn-simulation"
+                                class="py-2.5 px-3 rounded-xl border text-left transition flex items-start gap-2.5 cursor-pointer {% if wa_simulation %}bg-purple-50 dark:bg-purple-950/40 border-purple-400 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-xs{% else %}bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-stone-300{% endif %}">
+                            <span class="text-base">🧪</span>
+                            <div>
+                                <div class="font-bold text-xs">Simulation Mode</div>
+                                <div class="text-[10px] text-stone-500 dark:text-stone-400">In-Browser Virtual Assistant</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
                 <form id="wa-config-form" onsubmit="saveWaConfig(event)" class="space-y-3 text-xs">
-                    <div>
-                        <label for="wa_gateway_url" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
-                            Gateway Base URL (WA-AKG Endpoint)
-                        </label>
-                        <input type="url" id="wa_gateway_url" name="gateway_url" required
-                               value="{{ wa_config.gateway_url }}"
-                               placeholder="e.g. http://localhost:3000/api or https://my-wa-gateway.up.railway.app/api"
-                               class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
-                        <span class="text-[10px] text-stone-400 mt-0.5 block">Points to your WA-AKG REST API service. Updates apply live immediately.</span>
-                    </div>
+                    <input type="hidden" id="wa_selected_provider" name="provider" value="{{ wa_provider or 'wa_akg' }}">
+                    <input type="hidden" id="wa_simulation_flag" name="enable_simulation_mode" value="{% if wa_simulation %}true{% else %}false{% endif %}">
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label for="wa_session_id" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
-                                Session ID
-                            </label>
-                            <input type="text" id="wa_session_id" name="session_id" required
-                                   value="{{ wa_config.session_id }}"
-                                   placeholder="default"
-                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                    <!-- Panel 1: Meta WhatsApp Business Cloud API -->
+                    <div id="panel-meta_cloud_api" class="space-y-3 {% if wa_provider != 'meta_cloud_api' or wa_simulation %}hidden{% endif %}">
+                        <div class="p-3 bg-sky-50 dark:bg-sky-950/40 rounded-xl border border-sky-200 dark:border-sky-800 text-[11px] text-sky-900 dark:text-sky-300 space-y-1">
+                            <div class="font-bold flex items-center gap-1.5">
+                                <span>💡</span> Meta WhatsApp Business Cloud API & Free Demo Sandbox
+                            </div>
+                            <p class="leading-relaxed text-sky-800 dark:text-sky-300/90 text-[10px]">
+                                Meta provides a <strong>Free Developer Test Phone Number</strong> with 1,000 free monthly service conversations!
+                                Get your <em>Phone Number ID</em> and <em>Access Token</em> from 
+                                <a href="https://developers.facebook.com/" target="_blank" class="underline font-semibold hover:text-sky-600">developers.facebook.com</a>
+                                &gt; My Apps &gt; WhatsApp &gt; API Setup.
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="wa_meta_phone_number_id" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                    Phone Number ID *
+                                </label>
+                                <input type="text" id="wa_meta_phone_number_id" name="meta_phone_number_id"
+                                       value="{{ wa_config.meta_phone_number_id or '' }}"
+                                       placeholder="e.g. 104928372819283"
+                                       class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-sky-600 focus:outline-none transition">
+                                <span class="text-[10px] text-stone-400 mt-0.5 block">Unique ID of the WhatsApp sender phone or sandbox number.</span>
+                            </div>
+
+                            <div>
+                                <label for="wa_meta_waba_id" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                    WhatsApp Business Account (WABA) ID
+                                </label>
+                                <input type="text" id="wa_meta_waba_id" name="meta_waba_id"
+                                       value="{{ wa_config.meta_waba_id or '' }}"
+                                       placeholder="e.g. 192837465019283"
+                                       class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-sky-600 focus:outline-none transition">
+                                <span class="text-[10px] text-stone-400 mt-0.5 block">Found in Meta App Dashboard > WhatsApp > API Setup.</span>
+                            </div>
                         </div>
 
                         <div>
-                            <label for="wa_api_key" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
-                                API Key / Gateway Secret (Optional)
+                            <label for="wa_meta_access_token" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                System User / Access Token *
                             </label>
-                            <input type="password" id="wa_api_key" name="api_key"
-                                   value="{{ wa_config.api_key or '' }}"
-                                   placeholder="Leave blank if no key required"
+                            <input type="password" id="wa_meta_access_token" name="meta_access_token"
+                                   value="{{ wa_config.meta_access_token or '' }}"
+                                   placeholder="Temporary 24h Token or Permanent System User Token (starts with EAAG...)"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-sky-600 focus:outline-none transition">
+                            <span class="text-[10px] text-stone-400 mt-0.5 block">Used to authenticate outbound messages with Meta Graph API.</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="wa_meta_verify_token" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                    Webhook Verification Token
+                                </label>
+                                <div class="flex items-center gap-1.5">
+                                    <input type="text" id="wa_meta_verify_token" name="meta_verify_token"
+                                           value="{{ wa_config.meta_verify_token or 'elroi_bible_verify_token' }}"
+                                           class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-sky-600 focus:outline-none transition">
+                                    <button type="button" onclick="copyMetaVerifyToken()" class="px-2.5 py-2 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl text-[11px] font-semibold transition shrink-0 cursor-pointer">
+                                        📋 Copy
+                                    </button>
+                                </div>
+                                <span class="text-[10px] text-stone-400 mt-0.5 block">Enter this exact token in Meta Developer Portal Webhook Verification.</span>
+                            </div>
+
+                            <div>
+                                <label for="wa_meta_api_version" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                    Graph API Version
+                                </label>
+                                <input type="text" id="wa_meta_api_version" name="meta_api_version"
+                                       value="{{ wa_config.meta_api_version or 'v21.0' }}"
+                                       placeholder="v21.0"
+                                       class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-sky-600 focus:outline-none transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                Meta Webhook Callback URL (Paste into Meta App > WhatsApp > Configuration > Callback URL)
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <input type="text" id="wa_meta_webhook_full_url" readonly
+                                       class="w-full px-3 py-1.5 bg-stone-100 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl font-mono text-[11px] text-sky-700 dark:text-sky-400 select-all">
+                                <button type="button" onclick="copyMetaWebhookUrl()" class="px-2.5 py-1.5 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl text-[11px] font-semibold transition shrink-0 cursor-pointer">
+                                    📋 Copy
+                                </button>
+                            </div>
+                            <span class="text-[10px] text-stone-400 mt-0.5 block">Subscribe to <code>messages</code> field in the Meta Webhook setup.</span>
+                        </div>
+                    </div>
+
+                    <!-- Panel 2: WA-AKG Baileys Gateway -->
+                    <div id="panel-wa_akg" class="space-y-3 {% if wa_provider != 'wa_akg' or wa_simulation %}hidden{% endif %}">
+                        <div>
+                            <label for="wa_gateway_url" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                Gateway Base URL (WA-AKG Endpoint)
+                            </label>
+                            <input type="url" id="wa_gateway_url" name="gateway_url"
+                                   value="{{ wa_config.gateway_url }}"
+                                   placeholder="e.g. http://localhost:3000/api or https://my-wa-gateway.up.railway.app/api"
                                    class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                            <span class="text-[10px] text-stone-400 mt-0.5 block">Points to your WA-AKG REST API service. Updates apply live immediately.</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="wa_session_id" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                    Session ID
+                                </label>
+                                <input type="text" id="wa_session_id" name="session_id"
+                                       value="{{ wa_config.session_id }}"
+                                       placeholder="default"
+                                       class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                            </div>
+
+                            <div>
+                                <label for="wa_api_key" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                    API Key / Gateway Secret (Optional)
+                                </label>
+                                <input type="password" id="wa_api_key" name="api_key"
+                                       value="{{ wa_config.api_key or '' }}"
+                                       placeholder="Leave blank if no key required"
+                                       class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
+                                Webhook Receiver URL (Paste into WA-AKG Session Webhook)
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <input type="text" id="wa_webhook_full_url" readonly
+                                       class="w-full px-3 py-1.5 bg-stone-100 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl font-mono text-[11px] text-amber-700 dark:text-amber-400 select-all">
+                                <button type="button" onclick="copyWebhookUrl()" class="px-2.5 py-1.5 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl text-[11px] font-semibold transition shrink-0 cursor-pointer">
+                                    📋 Copy
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label for="wa_simulation_select" class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
-                            Operating Mode
-                        </label>
-                        <select id="wa_simulation_select" name="enable_simulation_mode"
-                                class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl text-xs focus:ring-2 focus:ring-amber-600 focus:outline-none transition">
-                            <option value="true" {% if wa_simulation %}selected{% endif %}>🧪 Simulation Mode (In-Browser Virtual Assistant & Simulator - No Phone Required)</option>
-                            <option value="false" {% if not wa_simulation %}selected{% endif %}>🟢 Live Gateway Mode (Connects to WA-AKG Baileys & Real WhatsApp Phone)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1 text-[11px]">
-                            Webhook Receiver URL (Paste into WA-AKG Session Webhook)
-                        </label>
-                        <div class="flex items-center gap-1.5">
-                            <input type="text" id="wa_webhook_full_url" readonly
-                                   class="w-full px-3 py-1.5 bg-stone-100 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl font-mono text-[11px] text-amber-700 dark:text-amber-400 select-all">
-                            <button type="button" onclick="copyWebhookUrl()" class="px-2.5 py-1.5 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl text-[11px] font-semibold transition shrink-0 cursor-pointer">
-                                📋 Copy
-                            </button>
+                    <!-- Panel 3: In-Browser Virtual Simulation Mode -->
+                    <div id="panel-simulation" class="p-4 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800 text-[11px] text-purple-900 dark:text-purple-300 space-y-2 {% if not wa_simulation %}hidden{% endif %}">
+                        <div class="font-bold flex items-center gap-1.5">
+                            <span>🧪</span> Virtual Assistant & Browser Chat Simulator Active
                         </div>
+                        <p class="leading-relaxed text-purple-800 dark:text-purple-300/90 text-[10px]">
+                            In simulation mode, all WhatsApp commands (scripture citations, audio notes, quizzes, reading plans, and devotionals) run purely in-memory. You can test the assistant end-to-end on the <a href="/whatsapp" class="underline font-bold hover:text-purple-600">WhatsApp Guide & Chat Simulator</a> page without requiring any phone number or external API keys.
+                        </p>
                     </div>
 
                     <div class="pt-2 flex flex-col sm:flex-row gap-2">
                         <button type="submit" id="wa-save-btn"
                                 class="flex-1 py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
                             <span>💾</span>
-                            <span>Save & Apply Configuration</span>
+                            <span>Save & Apply Provider Configuration</span>
                         </button>
                         <button type="button" onclick="pingWaGateway()"
                                 class="py-2 px-3 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer">
-                            <span>📡</span> Ping Gateway
+                            <span>📡</span> Ping Active Provider
                         </button>
                     </div>
                 </form>
@@ -675,6 +804,10 @@
             if (hookInput) {
                 hookInput.value = window.location.origin + '/api/whatsapp/webhook';
             }
+            const metaHookInput = document.getElementById('wa_meta_webhook_full_url');
+            if (metaHookInput) {
+                metaHookInput.value = window.location.origin + '/api/whatsapp/meta-webhook';
+            }
             const queueInput = document.getElementById('wa_queue_status_full_url');
             if (queueInput) {
                 queueInput.value = window.location.origin + '/api/whatsapp/queue/status';
@@ -756,15 +889,71 @@
             }
         }
 
+        function switchWaProvider(provName) {
+            document.getElementById('wa_selected_provider').value = provName;
+            document.getElementById('wa_simulation_flag').value = (provName === 'simulation') ? 'true' : 'false';
+
+            ['meta_cloud_api', 'wa_akg', 'simulation'].forEach(p => {
+                const panel = document.getElementById('panel-' + p);
+                const btn = document.getElementById('tab-btn-' + p);
+                if (panel) {
+                    if (p === provName) {
+                        panel.classList.remove('hidden');
+                    } else {
+                        panel.classList.add('hidden');
+                    }
+                }
+                if (btn) {
+                    if (p === provName) {
+                        if (p === 'meta_cloud_api') {
+                            btn.className = 'py-2.5 px-3 rounded-xl border text-left transition flex items-start gap-2.5 cursor-pointer bg-sky-50 dark:bg-sky-950/40 border-sky-400 dark:border-sky-700 text-sky-900 dark:text-sky-200 shadow-xs';
+                        } else if (p === 'wa_akg') {
+                            btn.className = 'py-2.5 px-3 rounded-xl border text-left transition flex items-start gap-2.5 cursor-pointer bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 shadow-xs';
+                        } else {
+                            btn.className = 'py-2.5 px-3 rounded-xl border text-left transition flex items-start gap-2.5 cursor-pointer bg-purple-50 dark:bg-purple-950/40 border-purple-400 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-xs';
+                        }
+                    } else {
+                        btn.className = 'py-2.5 px-3 rounded-xl border text-left transition flex items-start gap-2.5 cursor-pointer bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-stone-300';
+                    }
+                }
+            });
+        }
+
         function copyWebhookUrl() {
             const hookInput = document.getElementById('wa_webhook_full_url');
             if (hookInput) {
                 navigator.clipboard.writeText(hookInput.value).then(() => {
-                    showToast('📋 Webhook URL copied to clipboard!');
+                    showToast('📋 WA-AKG Webhook URL copied to clipboard!');
                 }).catch(() => {
                     hookInput.select();
                     document.execCommand('copy');
-                    showToast('📋 Webhook URL copied!');
+                    showToast('📋 WA-AKG Webhook URL copied!');
+                });
+            }
+        }
+
+        function copyMetaWebhookUrl() {
+            const hookInput = document.getElementById('wa_meta_webhook_full_url');
+            if (hookInput) {
+                navigator.clipboard.writeText(hookInput.value).then(() => {
+                    showToast('📋 Meta Webhook URL copied to clipboard!');
+                }).catch(() => {
+                    hookInput.select();
+                    document.execCommand('copy');
+                    showToast('📋 Meta Webhook URL copied!');
+                });
+            }
+        }
+
+        function copyMetaVerifyToken() {
+            const tokInput = document.getElementById('wa_meta_verify_token');
+            if (tokInput) {
+                navigator.clipboard.writeText(tokInput.value).then(() => {
+                    showToast('📋 Webhook Verification Token copied!');
+                }).catch(() => {
+                    tokInput.select();
+                    document.execCommand('copy');
+                    showToast('📋 Verification Token copied!');
                 });
             }
         }
@@ -773,14 +962,23 @@
             event.preventDefault();
             const btn = document.getElementById('wa-save-btn');
             const originalContent = btn.innerHTML;
-            btn.innerHTML = '<span>⏳</span><span>Saving...</span>';
+            btn.innerHTML = '<span>⏳</span><span>Saving Provider...</span>';
             btn.disabled = true;
 
+            const selectedProvider = document.getElementById('wa_selected_provider').value;
+            const isSim = selectedProvider === 'simulation';
+
             const payload = {
-                gateway_url: document.getElementById('wa_gateway_url').value.trim(),
-                session_id: document.getElementById('wa_session_id').value.trim(),
-                api_key: document.getElementById('wa_api_key').value.trim(),
-                enable_simulation_mode: document.getElementById('wa_simulation_select').value === 'true'
+                provider: selectedProvider,
+                enable_simulation_mode: isSim,
+                gateway_url: document.getElementById('wa_gateway_url') ? document.getElementById('wa_gateway_url').value.trim() : undefined,
+                session_id: document.getElementById('wa_session_id') ? document.getElementById('wa_session_id').value.trim() : undefined,
+                api_key: document.getElementById('wa_api_key') ? document.getElementById('wa_api_key').value.trim() : undefined,
+                meta_phone_number_id: document.getElementById('wa_meta_phone_number_id') ? document.getElementById('wa_meta_phone_number_id').value.trim() : undefined,
+                meta_waba_id: document.getElementById('wa_meta_waba_id') ? document.getElementById('wa_meta_waba_id').value.trim() : undefined,
+                meta_access_token: document.getElementById('wa_meta_access_token') ? document.getElementById('wa_meta_access_token').value.trim() : undefined,
+                meta_verify_token: document.getElementById('wa_meta_verify_token') ? document.getElementById('wa_meta_verify_token').value.trim() : undefined,
+                meta_api_version: document.getElementById('wa_meta_api_version') ? document.getElementById('wa_meta_api_version').value.trim() : undefined,
             };
 
             try {
@@ -963,8 +1161,24 @@
                 const metricPill = document.getElementById('wa-metric-status-pill');
                 const metricDot = document.getElementById('wa-metric-dot');
                 const metricText = document.getElementById('wa-metric-text');
+                const modeBadge = document.getElementById('wa-mode-badge');
 
+                const activeProv = data.provider || 'wa_akg';
+                const isMeta = activeProv === 'meta_cloud_api';
                 const isConnected = !!(data.session_status && (data.session_status.status === "CONNECTED" || (data.session_status.data && data.session_status.data.status === "CONNECTED")));
+
+                if (modeBadge) {
+                    if (data.simulation_mode) {
+                        modeBadge.textContent = 'Simulation';
+                        modeBadge.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300';
+                    } else if (isMeta) {
+                        modeBadge.textContent = 'Meta Cloud API';
+                        modeBadge.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300';
+                    } else {
+                        modeBadge.textContent = 'WA-AKG Gateway';
+                        modeBadge.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300';
+                    }
+                }
 
                 if (data.simulation_mode) {
                     if (pill) {
@@ -976,12 +1190,34 @@
                     if (metricPill) metricPill.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300";
                     if (metricDot) metricDot.className = "w-1.5 h-1.5 rounded-full bg-purple-500";
                     if (metricText) metricText.textContent = "Simulation";
+                } else if (isMeta && isConnected) {
+                    const verifiedName = (data.session_status && data.session_status.verified_name) || "Meta Cloud";
+                    if (pill) {
+                        pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 border border-sky-300 dark:border-sky-800";
+                    }
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-sky-500 animate-pulse";
+                    if (text) text.textContent = "Meta Cloud Connected (" + verifiedName + ")";
+
+                    if (metricPill) metricPill.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300";
+                    if (metricDot) metricDot.className = "w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse";
+                    if (metricText) metricText.textContent = "Meta Cloud";
+                } else if (isMeta && !isConnected) {
+                    const isConfigured = data.session_status && data.session_status.configured;
+                    if (pill) {
+                        pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800";
+                    }
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-amber-500";
+                    if (text) text.textContent = isConfigured ? "Meta Cloud API (Pending Connection)" : "Meta Cloud API (Not Configured)";
+
+                    if (metricPill) metricPill.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300";
+                    if (metricDot) metricDot.className = "w-1.5 h-1.5 rounded-full bg-amber-500";
+                    if (metricText) metricText.textContent = "Pending Setup";
                 } else if (isConnected) {
                     if (pill) {
                         pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800";
                     }
                     if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
-                    if (text) text.textContent = "Connected (Live Phone)";
+                    if (text) text.textContent = "Connected (WA-AKG Live Phone)";
 
                     if (metricPill) metricPill.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300";
                     if (metricDot) metricDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
@@ -1000,6 +1236,12 @@
             } catch (err) {
                 console.warn('Could not fetch WhatsApp gateway status:', err);
             }
+        }
+
+        // Initialize Webhook URLs
+        const metaHookInput = document.getElementById('wa_meta_webhook_full_url');
+        if (metaHookInput) {
+            metaHookInput.value = `${window.location.origin}/api/whatsapp/meta-webhook`;
         }
 
         // Initialize WhatsApp Gateway Live Status

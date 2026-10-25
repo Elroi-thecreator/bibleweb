@@ -25,7 +25,7 @@ sys.path.insert(0, PROJECT_ROOT)
 
 import httpx
 from app.main import app
-from app.admin.auth import COOKIE_NAME, DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD
+from app.admin.auth import COOKIE_NAME, DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD, create_session_token
 from whatsapp_gateway.config import config as wa_config, save_persisted_config, load_persisted_config
 from whatsapp_gateway.rate_limiter import (
     WhatsAppRateLimiter,
@@ -278,10 +278,12 @@ async def run_rate_limiter_tests():
             assert "rate_limiter" in data
             print(f"  ✅ GET /api/whatsapp/rate-limiter/status returned: {data['rate_limiter']['total_requests_evaluated']} requests evaluated.")
 
-            # POST /api/whatsapp/rate-limiter/config
+            # POST /api/whatsapp/rate-limiter/config (Protected by require_admin)
+            admin_cookie = {COOKIE_NAME: create_session_token(DEFAULT_ADMIN_USERNAME)}
             res = await http.post(
                 "/api/whatsapp/rate-limiter/config",
                 json={"requests_per_minute": 30, "daily_audio_limit": 20, "cooldown_seconds": 45},
+                cookies=admin_cookie,
             )
             assert res.status_code == 200
             cfg_res = res.json()
@@ -289,8 +291,8 @@ async def run_rate_limiter_tests():
             assert cfg_res["rate_limiter"]["daily_audio_limit"] == 20
             print("  ✅ POST /api/whatsapp/rate-limiter/config updated thresholds live.")
 
-            # POST /api/whatsapp/rate-limiter/reset
-            res = await http.post("/api/whatsapp/rate-limiter/reset")
+            # POST /api/whatsapp/rate-limiter/reset (Protected by require_admin)
+            res = await http.post("/api/whatsapp/rate-limiter/reset", cookies=admin_cookie)
             assert res.status_code == 200
             assert res.json()["rate_limiter"]["active_window_users"] == 0
             print("  ✅ POST /api/whatsapp/rate-limiter/reset cleared telemetry.")

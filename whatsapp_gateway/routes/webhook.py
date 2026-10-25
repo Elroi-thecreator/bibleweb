@@ -111,28 +111,65 @@ class SimulatorClient(WAClient):
         return SendMessageResponse(success=True, message_id="sim-media-456", to=to)
 
 
+@router.get("/webhook")
+@router.get("/meta-webhook")
+async def verify_meta_webhook(request: Request) -> Response:
+    """
+    Meta Webhook Verification endpoint (hub.mode, hub.verify_token, hub.challenge).
+    Meta invokes this GET endpoint when configuring or saving the Webhook URL in Meta Developer Portal.
+    """
+    params = request.query_params
+    mode = params.get("hub.mode")
+    token = params.get("hub.verify_token")
+    challenge = params.get("hub.challenge")
+
+    expected_token = getattr(config, "meta_verify_token", "elroi_bible_verify_token") or "elroi_bible_verify_token"
+    if mode == "subscribe" and token == expected_token and challenge is not None:
+        logger.info("[MetaWebhook] Verification successful for token '%s'", token)
+        return Response(content=str(challenge), media_type="text/plain", status_code=200)
+
+    logger.warning("[MetaWebhook] Verification rejected. Received token: '%s', Expected: '%s'", token, expected_token)
+    return Response(content="Forbidden: verification token mismatch", media_type="text/plain", status_code=403)
+
+
 @router.post("/webhook")
+@router.post("/meta-webhook")
 async def receive_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
     x_webhook_secret: Optional[str] = Header(None, alias="X-Webhook-Secret"),
 ) -> Dict[str, Any]:
     """
-    Webhook endpoint to ingest real-time events from WA-AKG / Baileys.
+    Unified Webhook endpoint supporting both Meta WhatsApp Business Cloud API
+    and WA-AKG / Baileys multi-device event schemas.
     """
-    if config.webhook_secret and x_webhook_secret != config.webhook_secret:
-        raise HTTPException(status_code=401, detail="Invalid webhook secret")
-
     try:
         raw_json = await request.json()
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {exc}")
 
-    try:
-        payload = IncomingWebhookPayload.model_validate(raw_json)
-    except Exception as exc:
-        logger.warning("Unrecognized webhook schema: %s", exc)
-        return {"status": "ignored", "reason": "unrecognized schema"}
+    # 1. Autodetect Meta Cloud API payload schema
+    is_meta = (
+        isinstance(raw_json, dict)
+        and (raw_json.get("object") == "whatsapp_business_account" or "entry" in raw_json)
+    )
+
+    if is_meta:
+        meta_payload = _client.meta_provider.parse_webhook_payload(raw_json)
+        if not meta_payload:
+            # Acknowledge delivery receipts and non-message event webhooks from Meta
+            return {"status": "ok", "provider": "meta_cloud_api", "type": "status_update_or_unsupported"}
+        payload = meta_payload
+    else:
+        # 2. WA-AKG / Baileys format
+        if config.webhook_secret and x_webhook_secret != config.webhook_secret:
+            raise HTTPException(status_code=401, detail="Invalid webhook secret")
+
+        try:
+            payload = IncomingWebhookPayload.model_validate(raw_json)
+        except Exception as exc:
+            logger.warning("Unrecognized webhook schema: %s", exc)
+            return {"status": "ignored", "reason": "unrecognized schema"}
 
     if payload.is_from_me():
         return {"status": "ignored", "reason": "from_me"}
@@ -191,11 +228,14 @@ async def simulate_chat(req: SimulateRequest) -> Dict[str, Any]:
 @router.get("/status")
 async def get_gateway_status() -> Dict[str, Any]:
     """
-    Health check, session status, and subscriber metrics endpoint.
+    Health check, session status, provider info, and subscriber metrics endpoint.
     """
     session_info = await _client.get_session_status()
     sub_count = await get_subscriber_count()
+    from whatsapp_gateway.providers.registry import provider_registry
     return {
+        "provider": _client.provider,
+        "providers": provider_registry.list_providers(),
         "gateway_url": _client.base_url,
         "session_id": _client.default_session_id,
         "simulation_mode": _client.simulation_mode,
@@ -204,6 +244,18 @@ async def get_gateway_status() -> Dict[str, Any]:
         "subscriber_count": sub_count,
         "queue": queue_manager.get_status(),
         "rate_limiter": rate_limiter.get_stats(),
+    }
+
+
+@router.get("/providers")
+async def list_available_providers() -> Dict[str, Any]:
+    """Returns list of all registered WhatsApp provider plugins and active selection."""
+    from whatsapp_gateway.providers.registry import provider_registry
+    return {
+        "status": "ok",
+        "active_provider": _client.provider,
+        "simulation_mode": _client.simulation_mode,
+        "providers": provider_registry.list_providers(),
     }
 
 

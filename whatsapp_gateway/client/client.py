@@ -1,6 +1,7 @@
 """
-Asynchronous HTTP Client for WA-AKG WhatsApp Gateway.
-Provides clean methods for sending messages, audio clips, and checking session statuses.
+Asynchronous HTTP Client for WA-AKG & Meta Cloud WhatsApp Gateways.
+Provides clean methods for sending messages, audio clips, and checking session statuses
+with pluggable provider delegation across Meta WhatsApp Business Cloud API, WA-AKG, and Simulation.
 """
 
 import asyncio
@@ -21,12 +22,15 @@ from whatsapp_gateway.client.models import (
     MediaType,
     SendMessageResponse,
 )
+from whatsapp_gateway.providers.meta_cloud_provider import MetaCloudApiProvider
 
 logger = logging.getLogger("whatsapp_gateway.client")
 
 
 class WAClient:
-    """Async Client to interact with WA-AKG REST API."""
+    """
+    Async Client to interact with WhatsApp Providers (WA-AKG, Meta Cloud API, Simulator).
+    """
 
     def __init__(
         self,
@@ -35,6 +39,7 @@ class WAClient:
         api_key: Optional[str] = None,
         timeout: Optional[float] = None,
         simulation_mode: Optional[bool] = None,
+        provider: Optional[str] = None,
     ):
         self.base_url = (base_url or default_config.gateway_url).rstrip("/")
         self.default_session_id = default_session_id or default_config.session_id
@@ -45,9 +50,21 @@ class WAClient:
             if simulation_mode is not None
             else default_config.enable_simulation_mode
         )
+        self.provider = (provider or default_config.provider or "wa_akg").lower()
 
         self._client: Optional[httpx.AsyncClient] = None
         self.simulated_outbox: List[Dict[str, Any]] = []
+
+        # Built-in Meta Cloud API Provider delegator
+        self.meta_provider = MetaCloudApiProvider(
+            phone_number_id=default_config.meta_phone_number_id,
+            waba_id=default_config.meta_waba_id,
+            access_token=default_config.meta_access_token,
+            verify_token=default_config.meta_verify_token,
+            app_secret=default_config.meta_app_secret,
+            api_version=default_config.meta_api_version,
+            timeout=self.timeout,
+        )
 
     @property
     def http_client(self) -> httpx.AsyncClient:
@@ -69,8 +86,15 @@ class WAClient:
         default_session_id: Optional[str] = None,
         api_key: Optional[str] = None,
         simulation_mode: Optional[bool] = None,
+        provider: Optional[str] = None,
+        meta_phone_number_id: Optional[str] = None,
+        meta_waba_id: Optional[str] = None,
+        meta_access_token: Optional[str] = None,
+        meta_verify_token: Optional[str] = None,
+        meta_app_secret: Optional[str] = None,
+        meta_api_version: Optional[str] = None,
     ) -> None:
-        """Dynamically update client endpoint, credentials, and simulation mode."""
+        """Dynamically update client endpoint, credentials, provider, and simulation mode."""
         if base_url is not None:
             self.base_url = base_url.strip().rstrip("/")
         if default_session_id is not None:
@@ -80,6 +104,27 @@ class WAClient:
             self.api_key = clean_key if clean_key else None
         if simulation_mode is not None:
             self.simulation_mode = bool(simulation_mode)
+        if provider is not None:
+            self.provider = provider.strip().lower()
+
+        # Update Meta credentials
+        self.meta_provider.update_credentials(
+            phone_number_id=meta_phone_number_id,
+            waba_id=meta_waba_id,
+            access_token=meta_access_token,
+            verify_token=meta_verify_token,
+            app_secret=meta_app_secret,
+            api_version=meta_api_version,
+        )
+
+        # Sync provider registry
+        try:
+            from whatsapp_gateway.providers.registry import provider_registry
+            target_prov = "simulation" if self.simulation_mode else (self.provider or "wa_akg")
+            if target_prov in provider_registry._providers:
+                provider_registry.set_active_provider(target_prov)
+        except Exception:
+            pass
 
         if self._client and not self._client.is_closed:
             headers = {}
@@ -96,6 +141,14 @@ class WAClient:
             self.simulation_mode = not self.simulation_mode
         else:
             self.simulation_mode = bool(enable)
+
+        try:
+            from whatsapp_gateway.providers.registry import provider_registry
+            target = "simulation" if self.simulation_mode else (self.provider or "wa_akg")
+            provider_registry.set_active_provider(target)
+        except Exception:
+            pass
+
         return self.simulation_mode
 
     async def close(self) -> None:
@@ -103,6 +156,7 @@ class WAClient:
         if self._client and not self._client.is_closed:
             await self._client.aclose()
         self._client = None
+        await self.meta_provider.close()
 
     async def __aenter__(self):
         return self
@@ -119,14 +173,16 @@ class WAClient:
 
     async def is_gateway_running(self, timeout: float = 5.0) -> bool:
         """
-        Checks if the remote WA-AKG gateway is alive, awake, and responding.
-        Returns True if the server process responds (200, 201, 204, 301, 302, 401).
-        Returns False on connection refused, timeouts, or Render 502/503 cold-start errors.
+        Checks if the active gateway is alive, awake, and responding.
         """
         if self.simulation_mode:
             return True
 
-        # First, attempt targeted check on session endpoint (validates both server and session)
+        if self.provider == "meta_cloud_api":
+            st = await self.meta_provider.get_status()
+            return st.get("status") == "CONNECTED"
+
+        # Targeted check on WA-AKG session endpoint
         sess = self.default_session_id
         session_endpoint = f"{self.base_url}/sessions/{sess}"
         try:
@@ -140,7 +196,7 @@ class WAClient:
         except Exception:
             pass
 
-        # Second, fallback to origin root ping (wakes up sleeping Render web service instance)
+        # Fallback to origin root ping for Render cold-starts
         try:
             parsed = urllib.parse.urlparse(self.base_url)
             origin = f"{parsed.scheme}://{parsed.netloc}/"
@@ -156,7 +212,6 @@ class WAClient:
     ) -> bool:
         """
         Polls the gateway periodically until it is awake, running, and accepting requests.
-        Sends lightweight pings that trigger Render's cold-start spin-up sequence.
         """
         if self.simulation_mode:
             return True
@@ -186,14 +241,12 @@ class WAClient:
         direct_http: bool = False,
     ) -> SendMessageResponse:
         """
-        Send a plain text message to a user or group.
-        If RabbitMQ is enabled and connected (and direct_http=False), automatically
-        pushes the request into the RabbitMQ outgoing queue for reliable dispatch.
+        Send a plain text message to a user or group across active provider.
         """
         target = self._normalize_recipient(to)
         sess = session_id or self.default_session_id
 
-        # Transparently push to RabbitMQ outgoing queue when queue mode is ready
+        # Push to RabbitMQ outgoing queue when enabled and ready
         if not direct_http:
             try:
                 from whatsapp_gateway.queue.manager import queue_manager
@@ -220,14 +273,17 @@ class WAClient:
                 raw=record,
             )
 
-        # WA-AKG native endpoint: POST /api/messages/{sessionId}/{jid}/send with {"message": {"text": text}}
+        # Provider: Meta WhatsApp Business Cloud API
+        if self.provider == "meta_cloud_api":
+            return await self.meta_provider.send_text(to=target, text=text, session_id=sess)
+
+        # Provider: WA-AKG Baileys
         endpoint_native = f"{self.base_url}/messages/{sess}/{target}/send"
         payload_native = {"message": {"text": text}}
 
         try:
             response = await self.http_client.post(endpoint_native, json=payload_native)
             if response.status_code == 404:
-                # Fallback to generic endpoint: POST /api/messages/send-text
                 endpoint_fallback = f"{self.base_url}/messages/send-text"
                 payload_fallback = {
                     "sessionId": sess,
@@ -236,7 +292,6 @@ class WAClient:
                 }
                 response = await self.http_client.post(endpoint_fallback, json=payload_fallback)
             elif response.status_code >= 400 and "Invalid media type" in response.text:
-                # In case an older version expected a raw string:
                 response = await self.http_client.post(endpoint_native, json={"message": text})
 
             if response.status_code >= 400:
@@ -277,15 +332,13 @@ class WAClient:
         direct_http: bool = False,
     ) -> SendMessageResponse:
         """
-        Send media (voice notes, audio clips, images, docs) to a WhatsApp recipient.
-        If RabbitMQ is enabled and connected (and direct_http=False), automatically
-        pushes the request into the RabbitMQ outgoing queue for reliable dispatch.
+        Send media (voice notes, audio clips, images, docs) to a recipient.
         """
         target = self._normalize_recipient(to)
         sess = session_id or self.default_session_id
         m_type = media_type.value if isinstance(media_type, MediaType) else str(media_type)
 
-        # Transparently push to RabbitMQ outgoing queue when queue mode is ready
+        # Push to RabbitMQ outgoing queue when enabled and ready
         if not direct_http:
             try:
                 from whatsapp_gateway.queue.manager import queue_manager
@@ -343,8 +396,20 @@ class WAClient:
                 raw=record,
             )
 
+        # Provider: Meta WhatsApp Business Cloud API
+        if self.provider == "meta_cloud_api":
+            return await self.meta_provider.send_media(
+                to=target,
+                media_type=media_type,
+                file_bytes=raw_bytes,
+                caption=caption,
+                file_name=resolved_name,
+                ptt=ptt,
+                session_id=sess,
+            )
+
+        # Provider: WA-AKG Baileys
         # Auto-transcode audio payloads for WhatsApp compatibility (ISO MP4 container with AAC)
-        # WA-AKG hardcodes 'audio/mp4' for audio/voice types; sending raw MP3 causes mobile player decoder errors.
         if m_type == "audio" and not self.simulation_mode:
             try:
                 from whatsapp_gateway.audio_converter import prepare_whatsapp_audio_payload
@@ -354,13 +419,7 @@ class WAClient:
             except Exception as conv_err:
                 logger.warning("WhatsApp audio transcoding pre-flight check failed (%s); sending original payload", conv_err)
 
-        # Map mediaType for WA-AKG ChatService (expects "voice" for PTT voice notes, "audio" for audio files)
-        if m_type == "audio":
-            type_param = "voice" if ptt else "audio"
-        else:
-            type_param = m_type
-
-        # Determine file extension and MIME type
+        type_param = "voice" if (m_type == "audio" and ptt) else m_type
         ext = Path(resolved_name or ("voice.m4a" if ptt else "audio.m4a")).suffix.lower()
         mime_map = {
             ".m4a": "audio/mp4",
@@ -383,14 +442,12 @@ class WAClient:
             "caption": caption or "",
         }
 
-        # WA-AKG native endpoint: POST /api/messages/{sessionId}/{encodedJid}/media
         encoded_target = urllib.parse.quote(target, safe="")
         endpoint_native = f"{self.base_url}/messages/{sess}/{encoded_target}/media"
 
         try:
             response = await self.http_client.post(endpoint_native, files=files, data=form_data)
             if response.status_code == 404:
-                # Fallback to unencoded JID in path
                 endpoint_unencoded = f"{self.base_url}/messages/{sess}/{target}/media"
                 response = await self.http_client.post(endpoint_unencoded, files=files, data=form_data)
 
@@ -420,10 +477,18 @@ class WAClient:
             raise WAGatewayConnectionError(f"Could not reach WA-AKG: {exc}") from exc
 
     async def get_session_status(self, session_id: Optional[str] = None) -> Dict[str, Any]:
-        """Query connection status for the given WhatsApp session."""
+        """Query connection status for the active WhatsApp session or provider."""
         sess = session_id or self.default_session_id
         if self.simulation_mode:
-            return {"sessionId": sess, "status": "CONNECTED", "simulation": True}
+            return {
+                "sessionId": sess,
+                "status": "CONNECTED",
+                "simulation": True,
+                "provider": "simulation",
+            }
+
+        if self.provider == "meta_cloud_api":
+            return await self.meta_provider.get_status()
 
         endpoint = f"{self.base_url}/sessions/{sess}"
         try:
@@ -432,13 +497,42 @@ class WAClient:
                 raw_json = res.json()
                 inner_data = raw_json.get("data", {}) if isinstance(raw_json, dict) else {}
                 conn_status = inner_data.get("status") if isinstance(inner_data, dict) else None
-                # Normalize top-level status string for UI compatibility
                 return {
+                    "provider": "wa_akg",
                     "status": conn_status or ("CONNECTED" if raw_json.get("status") is True else "UNKNOWN"),
                     "is_connected": conn_status == "CONNECTED",
                     "data": inner_data,
                     "raw": raw_json,
                 }
-            return {"status": "UNKNOWN", "http_status": res.status_code, "detail": res.text}
+            return {"provider": "wa_akg", "status": "UNKNOWN", "http_status": res.status_code, "detail": res.text}
         except Exception as exc:
-            return {"status": "UNREACHABLE", "error": str(exc)}
+            return {"provider": "wa_akg", "status": "UNREACHABLE", "error": str(exc)}
+
+    async def ping(self) -> Dict[str, Any]:
+        """Probes the active WhatsApp provider."""
+        if self.simulation_mode:
+            return {
+                "provider": "simulation",
+                "status": "ok",
+                "message": "Virtual Simulator active (no phone required).",
+            }
+
+        if self.provider == "meta_cloud_api":
+            return await self.meta_provider.ping()
+
+        # WA-AKG
+        is_alive = await self.is_gateway_running()
+        if is_alive:
+            status_info = await self.get_session_status()
+            return {
+                "provider": "wa_akg",
+                "status": "ok",
+                "message": f"Connected to WA-AKG Gateway! Session: {self.default_session_id} ({status_info.get('status')})",
+                "details": status_info,
+            }
+        return {
+            "provider": "wa_akg",
+            "status": "error",
+            "message": f"WA-AKG Gateway at {self.base_url} is unreachable or offline.",
+            "details": {"base_url": self.base_url, "session_id": self.default_session_id},
+        }

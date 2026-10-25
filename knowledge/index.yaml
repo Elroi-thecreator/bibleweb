@@ -1,7 +1,7 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/bible"
-knowledge_units_count: 21
+knowledge_units_count: 22
 last_updated: "2026-10-25"
 
 knowledge_units:
@@ -75,3 +75,6 @@ knowledge_units:
     - id: ADR-007
       file: "knowledge/decisions/ADR-007.yaml"
       title: "Thread-Safe Tiered Sliding-Window Rate Limiting, Daily Audio Synthesis Quotas & Admin Whitelisting for WhatsApp Bot"
+    - id: ADR-008
+      file: "knowledge/decisions/ADR-008.yaml"
+      title: "Pluggable WhatsApp Gateway Provider Plugin Architecture Supporting Meta WhatsApp Business Cloud API and WA-AKG Multi-Device Gateway"

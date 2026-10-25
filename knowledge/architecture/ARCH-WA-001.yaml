@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.20.0
+version: 1.21.0
 authority:
   level: official
   confidence: high
@@ -63,6 +63,10 @@ do:
   - "Permit designated administrator phone numbers (`rate_limit_whitelist`) to bypass both sliding-window rate limits and daily audio quotas, with robust normalization handling spaces, country codes (`+91`), and WhatsApp JID domain suffixes (`@s.whatsapp.net`)."
   - "Expose real-time rate limiter diagnostics and controls via `/api/whatsapp/rate-limiter/status`, `/api/whatsapp/rate-limiter/config`, and `/api/whatsapp/rate-limiter/reset`, backing thresholds in `data/whatsapp_config.json`."
   - "Support dynamic runtime gateway reconfiguration via `data/whatsapp_config.json` and `wa_client.update_config(...)` to hot-swap endpoint URLs, session IDs, rate limiter thresholds, and simulation modes with zero downtime."
+  - "Implement a pluggable provider plugin architecture in `whatsapp_gateway/providers/` (`BaseWhatsAppProvider`, `MetaCloudApiProvider`, `WaAkgProvider`, `SimulationProvider`, `ProviderRegistry`), enabling dynamic hot-swapping between official Meta WhatsApp Business Cloud API (including Free Developer Sandbox), WA-AKG Baileys, and In-Browser Simulator."
+  - "Support Meta Webhook GET verification on `/api/whatsapp/webhook` and `/api/whatsapp/meta-webhook` validating `hub.mode == 'subscribe'` and `hub.verify_token`, returning plain text `hub.challenge` with HTTP 200 (or HTTP 403 on mismatch)."
+  - "Autodetect and normalize incoming Meta Cloud API POST webhook payloads (`object: 'whatsapp_business_account'`) into `IncomingWebhookPayload`, transparently routing to bot dispatcher and acknowledging delivery receipts (`statuses`) with HTTP 200."
+  - "Expose `/api/whatsapp/providers` endpoint returning metadata for all registered provider plugins and currently active provider selection."
   - "Provide an interactive CLI message dispatcher and diagnostic tool (`scripts/send_whatsapp_message.py`) with `--audio` support for live session verification, manual alert dispatch, and terminal testing."
   - "Mount the controller into `app/main.py` using standard FastAPI router patterns: `app.include_router(whatsapp_router, prefix='/api/whatsapp')`."
   - "Orchestrate `elroi-bible` and `wa-akg-gateway` in `render.yaml` utilizing Render's `repo: https://github.com/mrifqidaffaaditya/WA-AKG.git` and connecting to external Supabase PostgreSQL via `DATABASE_URL` (`sync: false`)."
@@ -96,3 +100,4 @@ related_items:
   - ADR-005
   - ADR-006
   - ADR-007
+  - ADR-008

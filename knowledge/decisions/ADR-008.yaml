@@ -1,0 +1,58 @@
+id: ADR-008
+type: decision_record
+title: Pluggable WhatsApp Gateway Provider Plugin Architecture Supporting Meta WhatsApp Business Cloud API and WA-AKG Multi-Device Gateway
+domain: decisions
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+applies_to:
+  - backend
+  - whatsapp_gateway
+  - admin
+  - routes
+
+rule:
+  "The Holy Bible system implements a pluggable provider plugin architecture in `whatsapp_gateway/providers/` governed by `BaseWhatsAppProvider` and `ProviderRegistry`. The gateway seamlessly supports official Meta WhatsApp Business Cloud API (including Developer Sandbox free test numbers), WA-AKG Baileys multi-device QR gateway, and in-memory simulation mode. Administrators can select the active provider, update API credentials (Phone Number ID, WABA ID, System User Access Token, Webhook Verification Token), and probe connectivity directly from `/admin/settings` with immediate runtime application and zero downtime."
+
+context:
+  "Previously, the WhatsApp gateway was hardcoded strictly to WA-AKG (Baileys multi-device protocol). While WA-AKG permits connecting personal/business mobile numbers via QR code without Meta conversation fees, users also require the ability to connect official Meta WhatsApp Business Cloud API accounts (or Meta's free developer sandbox demo accounts offering 1,000 free monthly service conversations) without code changes or server redeployments."
+
+decision:
+  "1. Created `whatsapp_gateway/providers/` containing `BaseWhatsAppProvider`, `MetaCloudApiProvider`, `WaAkgProvider`, `SimulationProvider`, and `ProviderRegistry`.
+   2. Implemented Meta Graph API integration (`https://graph.facebook.com/{version}/{phone_number_id}/messages`) for text, audio, and status image cards with automatic phone number normalization.
+   3. Added Meta Webhook GET verification (`hub.challenge` / `hub.verify_token`) and POST schema normalization on `/api/whatsapp/webhook` and `/api/whatsapp/meta-webhook`.
+   4. Enhanced `WAClient` runtime singleton to dynamically route outbound messages, status checks, and connectivity pings to the active provider plugin.
+   5. Updated `/admin/settings` dashboard with a 3-way provider selector, dynamic fieldsets for Meta Cloud API credentials, 1-click copy buttons for Webhook Callback URLs, and active provider ping telemetry."
+
+consequences:
+  positive:
+    - "Users can seamlessly switch between Meta WhatsApp Business Cloud API (official sandbox/production), WA-AKG Baileys, and In-Browser Simulator at runtime."
+    - "Zero downtime hot-swapping through `POST /admin/api/whatsapp/config`."
+    - "Unified incoming webhook routing ensures all existing bot features (scripture reading, TTS audio notes, quizzes, reading plans, streaks, status cards) function identically across all providers."
+  negative:
+    - "Meta Cloud API requires users to provision credentials via Meta for Developers (Phone Number ID and System User Access Token)."
+
+do:
+  - "Implement all future messaging backends (e.g. Twilio, Gupshup) as subclasses of `BaseWhatsAppProvider` registered in `ProviderRegistry`."
+  - "Support both `/api/whatsapp/webhook` and `/api/whatsapp/meta-webhook` for Meta webhook subscription verification."
+  - "Normalize incoming international phone numbers to raw digits for Meta Graph API dispatch and JID notation (`{phone}@s.whatsapp.net`) for internal subscribers."
+
+dont:
+  - "Do not break existing `WAClient` or `get_client()` references across the codebase; always delegate through active provider plugins."
+  - "Do not require server restarts when administrators switch WhatsApp providers in the admin dashboard."
+
+reason:
+  "A pluggable provider architecture decouples the core scripture bot engine from transport specifics, giving administrators maximum flexibility to use free official Meta Developer Sandbox accounts, production WhatsApp Business Accounts, or self-hosted Baileys gateways."
+
+related_items:
+  - ARCH-WA-001
+  - ARCH-ADMIN-001
+  - DEV-PY-001
+  - ADR-005
+  - ADR-006
+  - ADR-007

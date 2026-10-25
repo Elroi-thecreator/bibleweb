@@ -22,6 +22,7 @@ from app.admin.auth import (
     require_admin,
 )
 from whatsapp_gateway.config import config as wa_config, save_persisted_config
+from whatsapp_gateway.providers.registry import provider_registry
 def _get_wa_client():
     from whatsapp_gateway.routes.webhook import get_client
     return get_client()
@@ -216,6 +217,8 @@ async def admin_settings_page(request: Request):
             "audio_stats": audio_stats,
             "wa_config": wa_config,
             "wa_simulation": wa_simulation,
+            "wa_provider": getattr(wa_client, "provider", "wa_akg"),
+            "wa_providers": provider_registry.list_providers(),
             "wa_subscribers": subscribers,
             "wa_subscribers_count": subscribers_count,
             "db_stats": db_stats,
@@ -264,6 +267,13 @@ async def api_update_wa_config(request: Request):
     session_id = body.get("session_id")
     api_key = body.get("api_key")
     enable_simulation_mode = body.get("enable_simulation_mode")
+    provider = body.get("provider")
+    meta_phone_number_id = body.get("meta_phone_number_id")
+    meta_waba_id = body.get("meta_waba_id")
+    meta_access_token = body.get("meta_access_token")
+    meta_verify_token = body.get("meta_verify_token")
+    meta_app_secret = body.get("meta_app_secret")
+    meta_api_version = body.get("meta_api_version")
     queue_enabled = body.get("queue_enabled")
     rabbitmq_url = body.get("rabbitmq_url")
     rate_limit_enabled = body.get("rate_limit_enabled")
@@ -300,10 +310,17 @@ async def api_update_wa_config(request: Request):
 
     # Persist configuration overrides to data/whatsapp_config.json
     saved = save_persisted_config(
+        provider=provider,
         gateway_url=gateway_url,
         session_id=session_id,
         api_key=api_key,
         enable_simulation_mode=enable_simulation_mode,
+        meta_phone_number_id=meta_phone_number_id,
+        meta_waba_id=meta_waba_id,
+        meta_access_token=meta_access_token,
+        meta_verify_token=meta_verify_token,
+        meta_app_secret=meta_app_secret,
+        meta_api_version=meta_api_version,
         queue_enabled=queue_enabled,
         rabbitmq_url=rabbitmq_url,
         rate_limit_enabled=rate_limit_enabled,
@@ -320,6 +337,13 @@ async def api_update_wa_config(request: Request):
         default_session_id=saved.get("session_id"),
         api_key=saved.get("api_key"),
         simulation_mode=saved.get("enable_simulation_mode"),
+        provider=saved.get("provider"),
+        meta_phone_number_id=saved.get("meta_phone_number_id"),
+        meta_waba_id=saved.get("meta_waba_id"),
+        meta_access_token=saved.get("meta_access_token"),
+        meta_verify_token=saved.get("meta_verify_token"),
+        meta_app_secret=saved.get("meta_app_secret"),
+        meta_api_version=saved.get("meta_api_version"),
     )
 
     # Dynamically update QueueManager if queue settings changed
@@ -332,12 +356,18 @@ async def api_update_wa_config(request: Request):
 
     return {
         "status": "ok",
-        "message": "WhatsApp Gateway & Rate Limiter configuration saved successfully!",
+        "message": "WhatsApp Provider & Rate Limiter configuration saved successfully!",
         "config": {
+            "provider": getattr(wa_client, "provider", "wa_akg"),
             "gateway_url": wa_client.base_url,
             "session_id": wa_client.default_session_id,
             "has_api_key": bool(wa_client.api_key),
             "simulation_mode": wa_client.simulation_mode,
+            "meta_phone_number_id": saved.get("meta_phone_number_id"),
+            "meta_waba_id": saved.get("meta_waba_id"),
+            "has_meta_access_token": bool(saved.get("meta_access_token")),
+            "meta_verify_token": saved.get("meta_verify_token"),
+            "meta_api_version": saved.get("meta_api_version"),
             "queue_enabled": saved.get("queue_enabled", False),
             "rabbitmq_url": saved.get("rabbitmq_url"),
             "rate_limit_enabled": saved.get("rate_limit_enabled", True),
@@ -428,33 +458,29 @@ async def api_broadcast_devotional(request: Request):
 
 @router.post("/api/whatsapp/ping-gateway")
 async def api_ping_wa_gateway(request: Request):
-    """Tests HTTP reachability and latency of the configured WA-AKG gateway."""
+    """Tests connectivity, reachability and latency of the active WhatsApp gateway or Meta Cloud API."""
     require_admin(request)
     wa_client = _get_wa_client()
 
-    target_url = f"{wa_client.base_url.rstrip('/')}/sessions/{wa_client.default_session_id}"
     t0 = time.time()
     try:
-        import httpx
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            headers = {}
-            if wa_client.api_key:
-                headers["Authorization"] = f"Bearer {wa_client.api_key}"
-                headers["x-api-key"] = wa_client.api_key
-            resp = await client.get(target_url, headers=headers)
-            latency = round((time.time() - t0) * 1000, 1)
-            return {
-                "status": "ok" if resp.is_success else "warning",
-                "http_status": resp.status_code,
-                "latency_ms": latency,
-                "message": f"Gateway reached at {target_url} (HTTP {resp.status_code})",
-            }
+        ping_res = await wa_client.ping()
+        latency = round((time.time() - t0) * 1000, 1)
+        status_str = ping_res.get("status", "ok")
+        return {
+            "status": status_str,
+            "latency_ms": latency,
+            "provider": getattr(wa_client, "provider", "wa_akg"),
+            "message": ping_res.get("message", "Ping successful"),
+            "details": ping_res.get("details", {}),
+        }
     except Exception as e:
         latency = round((time.time() - t0) * 1000, 1)
         return {
             "status": "error",
             "latency_ms": latency,
-            "message": f"Could not reach {target_url} ({str(e)})",
+            "provider": getattr(wa_client, "provider", "wa_akg"),
+            "message": f"Gateway probe failed: {str(e)}",
         }
 
 
