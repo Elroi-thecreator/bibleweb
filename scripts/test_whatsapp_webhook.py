@@ -421,6 +421,8 @@ async def run_tests():
         sync_text = outbox_sync[0]["text"]
         assert "BIBLE-" in sync_text
         assert "/sync" in sync_text
+        assert "elroi-bible" in sync_text
+        assert "webbible.app" not in sync_text
         print(f"  ✅ 'sync' command produced magic link code: {sync_text[:60]}...")
 
         # Extract the code from the response (BIBLE-XXXX)

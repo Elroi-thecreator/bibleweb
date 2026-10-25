@@ -190,7 +190,7 @@ def generate_verse_card(
     draw.text(((width - rw) // 2, height - margin - 110), ref_display, fill=gold, font=font_ref)
 
     font_sub = _get_font("sans", 20)
-    footer_text = "Daily Bread • Scripture Status Card • webbible.app"
+    footer_text = "Daily Bread • Scripture Status Card • elroi-bible.vercel.app"
     f_bbox = draw.textbbox((0, 0), footer_text, font=font_sub)
     fw = f_bbox[2] - f_bbox[0]
     draw.text(((width - fw) // 2, height - margin - 50), footer_text, fill=(160, 175, 195), font=font_sub)

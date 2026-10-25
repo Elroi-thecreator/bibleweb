@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.21.0
+version: 1.22.0
 authority:
   level: official
   confidence: high
@@ -54,7 +54,7 @@ do:
   - "Track daily reading habit streaks (`done`, `streak`, `progress`, `முடித்தேன்`), automatically calculating consecutive day milestones, managing `streak_count`, `last_read_date`, and JSON-encoded `completed_days` in subscriber records, and rendering visual text progress bars (`[▓▓▓░░░░░░░] 30%`)."
   - "Generate aesthetic, high-resolution 1080x1080 graphic status cards (`card`, `image`, `status`, `படம்`) via Pillow (`whatsapp_gateway/adapters/card_generator.py`) with radial midnight gradients, dual gold borders, citation banners, and dual-language typography (Nirmala UI / Georgia / Arial) formatted for WhatsApp Status sharing."
   - "Support bilingual parallel scripture mode (`lang both`, `parallel`, `lang en`, `lang ta`), presenting side-by-side Tamil and English verses for scripture citations and daily devotional dispatches."
-  - "Provide zero-password magic linking synchronization between WhatsApp and the Web Bible app (`sync`, `link`, `/sync`) using ephemeral 15-minute codes (`whatsapp_gateway/sync_store.py`) and REST endpoints (`/api/whatsapp/sync/verify`, `/api/whatsapp/sync/push-progress`, `/api/whatsapp/sync/request-code`)."
+  - "Provide zero-password magic linking synchronization between WhatsApp and the Web Bible app (`sync`, `link`, `/sync`) using ephemeral 15-minute codes (`whatsapp_gateway/sync_store.py`) and REST endpoints (`/api/whatsapp/sync/verify`, `/api/whatsapp/sync/push-progress`, `/api/whatsapp/sync/request-code`), dynamically targeting active portal URLs (`https://elroi-bible.vercel.app/sync` and `https://elroi-bible.onrender.com/sync` via `web_app_url`)."
   - "Store subscriber reminder times in the `reminder_time TEXT DEFAULT '05:00'` column with automatic migration, defaulting morning 5:00 AM ('05:00') for all daily devotional and verse reminders."
   - "Expose multi-format reminder configuration commands (`remind 5 AM`, `remind 6:30 AM`, `remind 18:30`, `remind off`, `நேரம் காலை 5`) with intelligent 12-hour/24-hour parsing in `parse_reminder_time` and 12-hour friendly confirmation formatting."
   - "Run a non-blocking background scheduler (`DevotionalScheduler` in `whatsapp_gateway/scheduler/runner.py`) integrated into FastAPI lifespan, evaluating target-time subscribers and broadcasting assigned reading checkpoints without thread saturation."

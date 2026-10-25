@@ -124,6 +124,11 @@ class WhatsAppGatewayConfig(BaseModel):
         default_factory=list
     )
 
+    # Web Bible Application URL (for sync and links)
+    web_app_url: str = Field(
+        default_factory=lambda: getenv("WEB_APP_URL", "https://elroi-bible.vercel.app")
+    )
+
 
 # Load initial config with persistent overrides
 _persisted = load_persisted_config()
@@ -178,6 +183,7 @@ config = WhatsAppGatewayConfig(
         "rate_limit_whitelist",
         [],
     )),
+    web_app_url=_persisted.get("web_app_url", getenv("WEB_APP_URL", "https://elroi-bible.vercel.app")),
 )
 
 
@@ -200,6 +206,7 @@ def save_persisted_config(
     rate_limit_audio_per_day: Optional[int] = None,
     rate_limit_cooldown_seconds: Optional[int] = None,
     rate_limit_whitelist: Optional[List[str]] = None,
+    web_app_url: Optional[str] = None,
 ) -> dict:
     """Updates the live singleton and writes overrides to data/whatsapp_config.json."""
     CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -299,6 +306,11 @@ def save_persisted_config(
     if rate_limit_whitelist is not None:
         current["rate_limit_whitelist"] = [str(x).strip() for x in rate_limit_whitelist if str(x).strip()]
         config.rate_limit_whitelist = current["rate_limit_whitelist"]
+
+    if web_app_url is not None:
+        clean_web = web_app_url.strip().rstrip("/")
+        current["web_app_url"] = clean_web
+        config.web_app_url = clean_web
 
     try:
         CONFIG_FILE.write_text(json.dumps(current, indent=2), encoding="utf-8")

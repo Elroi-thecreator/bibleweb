@@ -38,6 +38,7 @@ from whatsapp_gateway.subscribers import (
 )
 from whatsapp_gateway.adapters.card_generator import generate_verse_card
 from whatsapp_gateway.sync_store import generate_sync_code
+from whatsapp_gateway.config import config as wa_config
 from whatsapp_gateway.rate_limiter import (
     rate_limiter,
     build_cooldown_message,
@@ -845,19 +846,26 @@ async def handle_sync_command(ctx: MessageContext) -> None:
     """Generates an ephemeral 15-minute sync code to connect WhatsApp with the Web App."""
     is_ta = is_tamil_text(ctx.text)
     code = generate_sync_code(ctx.sender)
+    primary_url = (getattr(wa_config, "web_app_url", None) or "https://elroi-bible.vercel.app").rstrip("/")
+    sync_url = f"{primary_url}/sync"
+    mirror_sync_url = "https://elroi-bible.onrender.com/sync"
     if is_ta:
         reply = (
             "🔗 *இணையதள இணைப்பு & ஒத்திசைவு (Web Bible Sync)* 🔗\n\n"
             f"உங்களின் 15 நிமிட இணைப்பு குறியீடு: *{code}*\n\n"
-            "இக்குறியீட்டை இணையதளத்தில் (*https://webbible.app/sync* அல்லது Plans பக்கத்தில்) உள்ளீடு செய்து, "
-            "உங்கள் வாட்ஸ்அப் தொடர் வாசிப்பு (Streak), திட்ட முன்னேற்றம் மற்றும் அமைப்புகளை உடனடியாக இணையதளத்துடன் இணைத்துக் கொள்ளலாம்!"
+            f"இக்குறியீட்டை இணையதளத்தில் (*{sync_url}* அல்லது Plans பக்கத்தில்) உள்ளீடு செய்து, "
+            "உங்கள் வாட்ஸ்அப் தொடர் வாசிப்பு (Streak), திட்ட முன்னேற்றம் மற்றும் அமைப்புகளை உடனடியாக இணையதளத்துடன் இணைத்துக் கொள்ளலாம்!\n\n"
+            f"🌐 நேரடி இணைப்பு: {sync_url}\n"
+            f"🌐 மாற்று இணைப்பு (Render): {mirror_sync_url}"
         )
     else:
         reply = (
             "🔗 *Web Bible & WhatsApp Account Sync* 🔗\n\n"
             f"Your 15-minute Linking Code is: *{code}*\n\n"
-            "Enter this code on the website at *https://webbible.app/sync* (or on your Web Plans page) to instantly "
-            "synchronize your reading streak, plan progress, and preferences with your browser reader!"
+            f"Enter this code on the website at *{sync_url}* (or on your Web Plans page) to instantly "
+            "synchronize your reading streak, plan progress, and preferences with your browser reader!\n\n"
+            f"🌐 Web App: {sync_url}\n"
+            f"🌐 Mirror: {mirror_sync_url}"
         )
     await ctx.reply_text(reply)
 
