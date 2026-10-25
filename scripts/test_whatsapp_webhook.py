@@ -444,7 +444,25 @@ async def run_tests():
         assert verify_data["success"] is True
         assert verify_data["phone_number"] == "919876543210"
         assert verify_data["streak_count"] >= 1
-        print(f"  ✅ /api/whatsapp/sync/verify linked user {verify_data['phone_number']} with streak {verify_data['streak_count']}.")
+        assert "today_reading" in verify_data and verify_data["today_reading"] is not None
+        assert "read_url" in verify_data["today_reading"]
+        assert "ref_en" in verify_data["today_reading"]
+        print(f"  ✅ /api/whatsapp/sync/verify linked user {verify_data['phone_number']} with streak {verify_data['streak_count']} and today portion: {verify_data['today_reading']['ref_en']}.")
+
+        # Test GET /api/whatsapp/sync/status
+        status_res = await http.get("/api/whatsapp/sync/status?phone_number=919876543210")
+        assert status_res.status_code == 200
+        status_data = status_res.json()
+        assert status_data["success"] is True
+        assert status_data["today_reading"]["day"] == verify_data["today_reading"]["day"]
+        print(f"  ✅ GET /api/whatsapp/sync/status retrieved live reading: {status_data['today_reading']['ref_en']} ({status_data['today_reading']['read_url']}).")
+
+        # Test GET /plans HTML page for synced banner integration
+        plans_res = await http.get("/plans")
+        assert plans_res.status_code == 200
+        assert "wa-sync-container" in plans_res.text
+        assert "wa-sync-linked" in plans_res.text
+        print("  ✅ GET /plans contains dynamic WhatsApp sync reading portion container.")
 
         # Test POST /api/whatsapp/sync/push-progress
         progress_res = await http.post(
@@ -454,7 +472,8 @@ async def run_tests():
         assert progress_res.status_code == 200
         prog_data = progress_res.json()
         assert prog_data["success"] is True
-        print(f"  ✅ /api/whatsapp/sync/push-progress updated streak: {prog_data}.")
+        assert "today_reading" in prog_data
+        print(f"  ✅ /api/whatsapp/sync/push-progress updated streak and returned today portion: {prog_data['today_reading']['ref_en']}.")
 
         # 22. Feature 6: Web requesting a sync code dispatched to WhatsApp
         print("\n[22] Testing Feature 6: POST /api/whatsapp/sync/request-code...")

@@ -34,23 +34,95 @@
         </div>
     </div>
 
-    <!-- WhatsApp Streak Sync Banner -->
-    <div class="bg-gradient-to-r from-emerald-500/10 via-amber-500/10 to-transparent border border-emerald-500/20 dark:border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-        <div class="flex items-center gap-3">
-            <span class="text-2xl">🔥</span>
-            <div>
-                <h4 class="font-cinzel font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
-                    <span>Sync Reading Streak with WhatsApp</span>
-                    <span class="text-[10px] font-sans font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full">New</span>
-                </h4>
-                <p class="text-xs text-stone-500 dark:text-stone-400">
-                    Connect your WhatsApp account to keep daily habit streaks alive and check off completed days on mobile.
-                </p>
+    <!-- WhatsApp Streak Sync Banner (Dynamic: Unlinked Prompt vs. Linked Active Plan Card) -->
+    <div id="wa-sync-container">
+        <!-- Unlinked Default Banner -->
+        <div id="wa-sync-unlinked" class="bg-gradient-to-r from-emerald-500/10 via-amber-500/10 to-transparent border border-emerald-500/20 dark:border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🔥</span>
+                <div>
+                    <h4 class="font-cinzel font-bold text-xs sm:text-sm text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                        <span>Sync Reading Streak with WhatsApp</span>
+                        <span class="text-[10px] font-sans font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full">New</span>
+                    </h4>
+                    <p class="text-xs text-stone-500 dark:text-stone-400">
+                        Connect your WhatsApp account to keep daily habit streaks alive and check off completed days on mobile.
+                    </p>
+                </div>
+            </div>
+            <a href="/sync" class="shrink-0 px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs">
+                <span>📱</span> <span>Connect WhatsApp Streak →</span>
+            </a>
+        </div>
+
+        <!-- Linked Synced Active Plan Card -->
+        <div id="wa-sync-linked" class="hidden bg-gradient-to-r from-emerald-500/15 via-amber-500/10 to-transparent dark:from-emerald-950/40 dark:via-amber-950/25 dark:to-transparent border border-emerald-500/30 dark:border-emerald-500/40 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/60 dark:border-stone-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-2xl">🟢</span>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                                WhatsApp Synced Plan
+                            </span>
+                            <span id="wa-synced-phone" class="font-mono text-xs font-bold text-stone-700 dark:text-stone-300"></span>
+                        </div>
+                        <h3 class="font-cinzel font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100 mt-0.5">
+                            <span id="wa-synced-plan-name">Full Bible in 365 Days</span>
+                            <span id="wa-synced-plan-ta" class="font-tamil text-xs font-normal text-stone-500 dark:text-stone-400 ml-1.5">365 நாட்களில் முழு வேதாகமம்</span>
+                        </h3>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <span class="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-1">
+                        <span>🔥</span> <span id="wa-synced-streak">1</span> Streak
+                    </span>
+                    <span class="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-1">
+                        <span>🏆</span> <span id="wa-synced-completed">1</span> Done
+                    </span>
+                    <a href="/sync" class="p-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 text-xs transition" title="Sync Settings">
+                        ⚙️
+                    </a>
+                </div>
+            </div>
+
+            <!-- Today's Reading Details & Actions -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-0.5">
+                <div>
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1">
+                        <span>📖 Today's Portion:</span>
+                        <span class="font-mono text-stone-700 dark:text-stone-300">Day <span id="wa-reading-day">1</span> of <span id="wa-reading-total-days">365</span></span>
+                    </div>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span id="wa-reading-ref-en" class="font-cinzel text-base sm:text-lg font-bold text-stone-900 dark:text-stone-100">Genesis 1-3</span>
+                        <span id="wa-reading-ref-ta" class="font-tamil text-xs sm:text-sm text-stone-600 dark:text-stone-300">ஆதியாகமம் 1-3</span>
+                        <span id="wa-reading-count" class="text-xs text-stone-400 font-mono">(3 Ch)</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <a id="wa-read-today-btn" href="/read/1/1"
+                       class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+                        <span>📖 Read Chapter</span> <span>→</span>
+                    </a>
+                    <button id="wa-mark-today-btn" onclick="handleWaQuickMarkDone()"
+                            class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer">
+                        <span>✓ Check Off Today</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="space-y-1 pt-1">
+                <div class="flex justify-between text-[10px] text-stone-400 font-mono">
+                    <span id="wa-progress-label">Day 1 of 365</span>
+                    <span id="wa-progress-pct">0.3% Completed</span>
+                </div>
+                <div class="w-full bg-stone-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
+                    <div id="wa-progress-bar" class="bg-gradient-to-r from-amber-600 to-emerald-600 h-full rounded-full transition-all duration-500" style="width: 1%"></div>
+                </div>
             </div>
         </div>
-        <a href="/sync" class="shrink-0 px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs">
-            <span>📱</span> <span>Connect WhatsApp Streak →</span>
-        </a>
     </div>
 
     <!-- Featured Read-Along Challenges (1 Page Per Day) -->
@@ -670,6 +742,114 @@ function downloadPlanICS(planId) {
     showToast("Reminder file saved! Open to add to Calendar 📅");
 }
 
-document.addEventListener('DOMContentLoaded', renderAllPlans);
+function renderWhatsAppSyncBanner(data) {
+    const unlinked = document.getElementById('wa-sync-unlinked');
+    const linked = document.getElementById('wa-sync-linked');
+    if (!unlinked || !linked) return;
+
+    if (!data || !data.phone_number) {
+        unlinked.classList.remove('hidden');
+        linked.classList.add('hidden');
+        return;
+    }
+
+    unlinked.classList.add('hidden');
+    linked.classList.remove('hidden');
+
+    document.getElementById('wa-synced-phone').textContent = data.phone_number;
+    document.getElementById('wa-synced-streak').textContent = data.streak_count || 0;
+    document.getElementById('wa-synced-completed').textContent = data.total_completed || (data.completed_days ? data.completed_days.length : 0);
+
+    const r = data.today_reading;
+    if (r) {
+        document.getElementById('wa-synced-plan-name').textContent = r.plan_title_en || data.plan_id;
+        document.getElementById('wa-synced-plan-ta').textContent = r.plan_title_ta || '';
+        document.getElementById('wa-reading-day').textContent = r.day;
+        document.getElementById('wa-reading-total-days').textContent = r.total_days;
+        document.getElementById('wa-reading-ref-en').textContent = r.ref_en || r.ref || 'Today Reading';
+        document.getElementById('wa-reading-ref-ta').textContent = r.ref_ta || '';
+        document.getElementById('wa-reading-count').textContent = `(${r.chapters_count || 1} Ch)`;
+        document.getElementById('wa-read-today-btn').href = r.read_url || `/read/${r.book_id || 1}/${r.chapter || 1}`;
+
+        const pct = r.progress_pct || Math.round((r.day / r.total_days) * 100);
+        document.getElementById('wa-progress-bar').style.width = `${Math.min(100, Math.max(1, pct))}%`;
+        document.getElementById('wa-progress-label').textContent = `Day ${r.day} of ${r.total_days}`;
+        document.getElementById('wa-progress-pct').textContent = `${pct}% Completed`;
+
+        const markBtn = document.getElementById('wa-mark-today-btn');
+        if (r.already_marked) {
+            markBtn.className = "px-3.5 py-2 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-default";
+            markBtn.innerHTML = '<span>✅</span> <span>Completed Today</span>';
+        } else {
+            markBtn.className = "px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer";
+            markBtn.innerHTML = '<span>✓</span> <span>Check Off Today</span>';
+        }
+    }
+}
+
+async function handleWaQuickMarkDone() {
+    const phone = localStorage.getItem('whatsapp_sync_phone');
+    if (!phone) {
+        window.location.href = '/sync';
+        return;
+    }
+    const btn = document.getElementById('wa-mark-today-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Updating...';
+    }
+    try {
+        const res = await fetch('/api/whatsapp/sync/push-progress', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({phone_number: phone})
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+            localStorage.setItem('whatsapp_sync_data', JSON.stringify(result));
+            renderWhatsAppSyncBanner(result);
+            if (result.already_marked) {
+                showToast(`Already completed today! Streak: ${result.streak_count} days 🔥`);
+            } else {
+                showToast(`🎉 Day marked done! Streak: ${result.streak_count} days 🔥`);
+            }
+        } else {
+            showToast(result.detail || 'Failed to update progress.');
+        }
+    } catch (e) {
+        showToast('Error syncing with WhatsApp: ' + e.message);
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function initWhatsAppSyncBanner() {
+    const raw = localStorage.getItem('whatsapp_sync_data');
+    const phone = localStorage.getItem('whatsapp_sync_phone');
+    if (raw) {
+        try {
+            renderWhatsAppSyncBanner(JSON.parse(raw));
+        } catch(e) {}
+    }
+    if (phone) {
+        try {
+            const res = await fetch('/api/whatsapp/sync/status?phone_number=' + encodeURIComponent(phone));
+            if (res.ok) {
+                const latest = await res.json();
+                if (latest && latest.success) {
+                    localStorage.setItem('whatsapp_sync_data', JSON.stringify(latest));
+                    renderWhatsAppSyncBanner(latest);
+                }
+            }
+        } catch(e) {
+            console.warn('Could not fetch latest sync status for plans page:', e);
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderAllPlans();
+    initWhatsAppSyncBanner();
+});
 </script>
 {% endblock %}

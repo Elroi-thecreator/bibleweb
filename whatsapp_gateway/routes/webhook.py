@@ -3,9 +3,10 @@ FastAPI Router for WA-AKG Webhook reception, chat simulation, and devotional man
 Can be mounted on any FastAPI application with a single `app.include_router(...)`.
 """
 
+from datetime import datetime
 import logging
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request, Response
 from pydantic import BaseModel
 
 from whatsapp_gateway.config import config, save_persisted_config
@@ -27,6 +28,7 @@ from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
 from whatsapp_gateway.queue.manager import queue_manager
 from whatsapp_gateway.rate_limiter import rate_limiter
 from app.admin.auth import require_admin
+from app.plans_data import get_today_plan_reading, get_plan
 
 logger = logging.getLogger("whatsapp_gateway.routes")
 
@@ -442,6 +444,54 @@ async def request_sync_code(req: SyncRequestCode) -> Dict[str, Any]:
     }
 
 
+async def _build_sync_payload(phone: str) -> Dict[str, Any]:
+    """Builds a rich, real-time subscriber sync payload including active reading plan and today's assigned chapters."""
+    sub = await get_subscriber(phone)
+    streak = await get_subscriber_streak(phone)
+    plan_id = sub.get("plan_id", "full-bible-365") if sub else "full-bible-365"
+    plan_start = sub.get("plan_start_date", "") if sub else ""
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    already_marked = (streak.get("last_read_date") == today_str)
+
+    today_reading = get_today_plan_reading(plan_id, start_date=plan_start)
+    if today_reading:
+        b_id = today_reading.get("book_id", 1)
+        ch = today_reading.get("chapter", 1)
+        total_days = today_reading.get("total_days", 365)
+        cur_day = today_reading.get("current_day", 1)
+        reading_payload = {
+            "day": cur_day,
+            "total_days": total_days,
+            "plan_title_en": today_reading.get("plan_title_en", "Full Bible in 365 Days"),
+            "plan_title_ta": today_reading.get("plan_title_ta", "365 நாட்களில் முழு வேதாகமம்"),
+            "ref_en": today_reading.get("ref_en", ""),
+            "ref_ta": today_reading.get("ref_ta", ""),
+            "ref": today_reading.get("ref", ""),
+            "book_id": b_id,
+            "chapter": ch,
+            "chapters_count": today_reading.get("chapter_count", 1),
+            "read_url": f"/read/{b_id}/{ch}",
+            "already_marked": already_marked,
+            "progress_pct": round((cur_day / total_days) * 100, 1) if total_days else 0,
+        }
+    else:
+        reading_payload = None
+
+    return {
+        "success": True,
+        "phone_number": phone,
+        "push_name": sub.get("push_name", "") if sub else "",
+        "language": sub.get("language", "ta") if sub else "ta",
+        "plan_id": plan_id,
+        "plan_start_date": plan_start,
+        "streak_count": streak.get("streak_count", 0),
+        "completed_days": streak.get("completed_days", []),
+        "last_read_date": streak.get("last_read_date", ""),
+        "total_completed": streak.get("completed_count", 0),
+        "today_reading": reading_payload,
+    }
+
+
 @router.post("/sync/verify")
 async def verify_sync_endpoint(req: SyncVerifyRequest) -> Dict[str, Any]:
     """
@@ -454,21 +504,18 @@ async def verify_sync_endpoint(req: SyncVerifyRequest) -> Dict[str, Any]:
             detail="Invalid or expired sync code. Type 'sync' in WhatsApp or request a new code.",
         )
 
-    sub = await get_subscriber(phone)
-    streak = await get_subscriber_streak(phone)
+    return await _build_sync_payload(phone)
 
-    return {
-        "success": True,
-        "phone_number": phone,
-        "push_name": sub.get("push_name", "") if sub else "",
-        "language": sub.get("language", "ta") if sub else "ta",
-        "plan_id": sub.get("plan_id", "full-bible-365") if sub else "full-bible-365",
-        "plan_start_date": sub.get("plan_start_date", "") if sub else "",
-        "streak_count": streak.get("streak_count", 0),
-        "completed_days": streak.get("completed_days", []),
-        "last_read_date": streak.get("last_read_date", ""),
-        "total_completed": streak.get("completed_count", 0),
-    }
+
+@router.get("/sync/status")
+async def get_sync_status(phone_number: str = Query(...)) -> Dict[str, Any]:
+    """
+    Retrieves live subscriber profile, habit streak, and today's reading portion.
+    """
+    phone = phone_number.strip()
+    if not phone:
+        raise HTTPException(status_code=400, detail="Phone number is required.")
+    return await _build_sync_payload(phone)
 
 
 @router.post("/sync/push-progress")
@@ -481,5 +528,10 @@ async def push_progress_endpoint(req: SyncPushProgressRequest) -> Dict[str, Any]
         raise HTTPException(status_code=400, detail="Phone number is required.")
 
     result = await mark_subscriber_day_done(phone=phone, day=req.day)
-    return result
+    payload = await _build_sync_payload(phone)
+    payload["day"] = result.get("day", 1)
+    payload["marked_day"] = result.get("day", 1)
+    payload["completed_count"] = result.get("completed_count", payload.get("total_completed", 0))
+    payload["already_marked"] = result.get("already_marked", False)
+    return payload
 
