@@ -3,7 +3,7 @@ type: architecture_standard
 title: Administrator Authentication, Protected Settings & System Telemetry Architecture
 domain: architecture
 status: approved
-version: 1.4.0
+version: 1.5.0
 authority:
   level: official
   confidence: high
@@ -18,10 +18,14 @@ applies_to:
   - templates
 
 rule:
-  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, and all administrative management APIs (`/admin/api/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons. Administrators can dynamically update, test, and persist runtime settings—including the WhatsApp Gateway Base URL, Session ID, API Key, Simulation Mode, RabbitMQ Queue, and User Rate Limiter & Audio Quotas—via `POST /admin/api/whatsapp/*` with persistent backing in `data/whatsapp_config.json`."
+  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, all administrative management APIs (`/admin/api/*`), and administrative WhatsApp endpoints (`/api/whatsapp/toggle-simulation`, `/api/whatsapp/push-devotional`, `/api/whatsapp/broadcast*`, `/api/whatsapp/queue/*`, `/api/whatsapp/rate-limiter/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons. Administrators can dynamically update, test, and persist runtime settings—including the WhatsApp Gateway Base URL, Session ID, API Key, Simulation Mode, RabbitMQ Queue, and User Rate Limiter & Audio Quotas—via `POST /admin/api/whatsapp/*` with persistent backing in `data/whatsapp_config.json`. The public `/whatsapp` template and `/sync` navigation are completely sanitized of simulation controls, broadcast triggers, and internal network parameters."
 
 do:
   - "Mount all administrative routes under `/admin` with route-level security guards (`require_admin`)."
+  - "Protect all administrative operations in `whatsapp_gateway/routes/webhook.py` (`toggle-simulation`, `push-devotional`, `broadcast`, `broadcast-all`, `queue/*`, and `rate-limiter/*`) with `require_admin(request)` returning HTTP 401 Unauthorized for unauthenticated callers."
+  - "Ensure `require_admin` in `app/admin/auth.py` evaluates both `request.url.path.startswith('/admin/api')` and `request.url.path.startswith('/api/')` as API paths to prevent HTML redirects on JSON endpoints."
+  - "Sanitize the public `/whatsapp` page into a user-friendly assistant guide and chat simulator, completely removing simulation toggle buttons, devotional broadcast triggers, subscriber broadcast forms, and internal gateway network endpoints."
+  - "Update header navigation links in `/sync` from 'Open WhatsApp Bot Hub' to 'WhatsApp Guide & Chat Simulator'."
   - "Redirect public `/settings` to `/admin/settings` to ensure configuration controls are accessible exclusively to authorized administrators."
   - "Provide interactive runtime configuration on `/admin/settings` to view, edit, and persist the WhatsApp Gateway Base URL (`gateway_url`), Session ID (`session_id`), API Key (`api_key`), and Operating Mode (`enable_simulation_mode`)."
   - "Persist administrative configuration overrides to `data/whatsapp_config.json` while maintaining backward compatibility with environment variable fallbacks (`WA_GATEWAY_URL`, `WA_SESSION_ID`, `WA_API_KEY`)."

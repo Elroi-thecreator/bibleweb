@@ -138,7 +138,7 @@ def require_admin(request: Request):
     # Determine if client expects HTML or JSON
     path = request.url.path
     accept = request.headers.get("accept", "")
-    is_api = path.startswith("/admin/api") or "application/json" in accept
+    is_api = path.startswith("/admin/api") or path.startswith("/api/") or "application/json" in accept
 
     if is_api:
         raise HTTPException(

@@ -20,6 +20,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 import httpx
 from app.main import app
+from app.admin.auth import COOKIE_NAME, create_session_token
 from whatsapp_gateway.routes.webhook import get_client, get_session_store
 from whatsapp_gateway.subscribers import get_subscriber_count, is_subscribed
 from whatsapp_gateway.rate_limiter import get_rate_limiter
@@ -58,7 +59,11 @@ async def run_tests():
         assert hub_res.status_code == 200
         assert "WhatsApp Bible Assistant" in hub_res.text
         assert "Interactive WhatsApp Chat Simulator" in hub_res.text
-        print("  ✅ Web Hub UI rendered with 200 OK.")
+        assert "toggleSimulationMode" not in hub_res.text
+        assert "sendCustomBroadcast" not in hub_res.text
+        assert "triggerDevotionalPush" not in hub_res.text
+        assert "Admin Announcement Broadcast" not in hub_res.text
+        print("  ✅ Web Hub UI rendered with 200 OK and sanitized of all admin controls.")
 
         # Helper to simulate sending a WhatsApp message
         async def send_simulated_msg(text: str):
@@ -178,13 +183,25 @@ async def run_tests():
         assert await is_subscribed(sender_jid) is True
         print("  ✅ User successfully subscribed to daily devotionals.")
 
-        # Devotional Push to Subscribers
-        print("\n[10] Testing Devotional Broadcast Trigger...")
-        push_res = await http.post("/api/whatsapp/push-devotional")
+        # Devotional Push to Subscribers & RBAC Security
+        print("\n[10] Testing Devotional Broadcast Trigger RBAC Security & Execution...")
+        # 10a. Unauthenticated attempt MUST fail with 401
+        unauth_push = await http.post("/api/whatsapp/push-devotional")
+        assert unauth_push.status_code == 401, f"Expected 401 Unauthorized, got {unauth_push.status_code}"
+        print("  ✅ Unauthenticated call to /api/whatsapp/push-devotional blocked with 401 Unauthorized.")
+
+        # 10b. Unauthenticated call to toggle-simulation MUST fail with 401
+        unauth_sim = await http.post("/api/whatsapp/toggle-simulation")
+        assert unauth_sim.status_code == 401, f"Expected 401 Unauthorized, got {unauth_sim.status_code}"
+        print("  ✅ Unauthenticated call to /api/whatsapp/toggle-simulation blocked with 401 Unauthorized.")
+
+        # 10c. Authenticated admin call succeeds
+        admin_cookies = {COOKIE_NAME: create_session_token("admin")}
+        push_res = await http.post("/api/whatsapp/push-devotional", cookies=admin_cookies)
         assert push_res.status_code == 200
         p_data = push_res.json()
         assert p_data["success"] >= 1
-        print(f"  ✅ Devotional broadcast successfully delivered to {p_data['success']} subscribers.")
+        print(f"  ✅ Authenticated admin devotional broadcast successfully delivered to {p_data['success']} subscribers.")
 
         # Now Unsubscribe via 'stop'
         outbox = await send_simulated_msg("stop")
@@ -215,6 +232,9 @@ async def run_tests():
 
         # 13. Test Reading Plan Command & Plan Switching
         print("\n[13] Testing Reading Plans in WhatsApp (Full Bible 365, NT 90, Switching, Starting at Day 1)...")
+        from datetime import date
+        from whatsapp_gateway.subscribers import update_subscriber_plan
+        await update_subscriber_plan(sender_jid, "full-bible-365", plan_start_date=date.today().isoformat())
         outbox = await send_simulated_msg("plan")
         assert len(outbox) == 1
         assert "Daily Scripture Reading Plan" in outbox[0]["text"]
@@ -279,19 +299,29 @@ async def run_tests():
         assert outbox_ta[1].get("media_type") == "audio" or "வேத ஆடியோ" in outbox_ta[1].get("caption", "")
         print("  ✅ 'audio யோவான் 1' (Tamil scripture audio) sent processing notice and audio successfully.")
 
-        # 15. Test Administrative Broadcast Endpoint
-        print("\n[15] Testing POST /api/whatsapp/broadcast...")
+        # 15. Test Administrative Broadcast Endpoint RBAC Security & Execution
+        print("\n[15] Testing POST /api/whatsapp/broadcast RBAC Security & Execution...")
+        # 15a. Unauthenticated attempt MUST fail with 401
+        unauth_bc = await http.post(
+            "/api/whatsapp/broadcast",
+            json={"recipients": ["919876543210@s.whatsapp.net"], "message": "unauth test"},
+        )
+        assert unauth_bc.status_code == 401, f"Expected 401 Unauthorized, got {unauth_bc.status_code}"
+        print("  ✅ Unauthenticated call to /api/whatsapp/broadcast blocked with 401 Unauthorized.")
+
+        # 15b. Authenticated admin attempt succeeds
         broadcast_res = await http.post(
             "/api/whatsapp/broadcast",
             json={
                 "recipients": ["919876543210@s.whatsapp.net", "919988776655@s.whatsapp.net"],
                 "message": "🕊️ Blessed morning! Today's devotional is now available.",
             },
+            cookies=admin_cookies,
         )
         assert broadcast_res.status_code == 200
         b_data = broadcast_res.json()
         assert b_data["total"] == 2
-        print(f"  ✅ Broadcast delivered to {b_data['total']} simulated recipients.")
+        print(f"  ✅ Authenticated admin broadcast delivered to {b_data['total']} simulated recipients.")
 
         # 16. Test WhatsApp Reminder Setting (Default morning 5 AM) & Time Customization
         print("\n[16] Testing Daily Reminder Command & Configurable Dispatch Time (Default: 5:00 AM)...")

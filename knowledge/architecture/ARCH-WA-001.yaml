@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.19.0
+version: 1.20.0
 authority:
   level: official
   confidence: high
@@ -27,6 +27,9 @@ rule:
 
 do:
   - "Keep Layer 1 (`whatsapp_gateway/client/`) and Layer 2 (`whatsapp_gateway/bot/`) strictly domain-agnostic so the package can be dropped into any other FastAPI or Python project without modification."
+  - "Protect all administrative operations in WhatsApp webhook routes (`/api/whatsapp/toggle-simulation`, `/api/whatsapp/push-devotional`, `/api/whatsapp/broadcast`, `/api/whatsapp/broadcast-all`, queue toggle/config, rate limiter config/reset) with `require_admin(request)`."
+  - "Sanitize public-facing `/whatsapp` template and `/sync` navigation links to prevent regular end users from viewing internal gateway URLs, session IDs, triggering devotional push blasts, toggling simulation modes, or broadcasting messages."
+  - "Avoid circular imports between `whatsapp_gateway.routes.webhook` and `app.admin.routes` by importing `get_client` lazily inside administrative handlers via `_get_wa_client()`."
   - "Isolate application-specific interactions (scripture queries, hymn retrieval, quiz evaluation, audio clips, image cards, streaks, and sync) strictly within Layer 3 (`whatsapp_gateway/adapters/`)."
   - "Wrap all blocking SQLite queries in `await asyncio.to_thread(...)` within adapter handlers and subscriber managers as mandated by DEV-PY-001."
   - "Support multi-turn conversations (such as interactive quizzes) via an in-memory session store with automatic TTL expiration."

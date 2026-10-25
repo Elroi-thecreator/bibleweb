@@ -24,8 +24,8 @@
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Checking Gateway...</span>
             </span>
-            <a href="https://github.com/mrifqidaffaaditya/WA-AKG" target="_blank" rel="noopener" class="text-xs text-stone-500 hover:text-amber-700 dark:hover:text-amber-400 underline flex items-center gap-1">
-                WA-AKG Docs ↗
+            <a href="/plans" class="px-3 py-1 rounded-full text-xs font-semibold bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border border-stone-300 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700 transition flex items-center gap-1 shadow-xs">
+                <span>📅</span> <span>Reading Plans</span>
             </a>
         </div>
     </div>
@@ -33,51 +33,48 @@
     <!-- Top Grid: Connection Status & Subscribers & Actions -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        <!-- Card 1: Gateway Status -->
+        <!-- Card 1: Assistant Status & Availability -->
         <div class="bg-white dark:bg-stone-900 rounded-2xl p-5 border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between text-xs text-stone-500 mb-2">
-                    <span class="font-semibold uppercase tracking-wider">Gateway Configuration</span>
-                    <span>⚡ WA-AKG</span>
+                    <span class="font-semibold uppercase tracking-wider">Assistant Status</span>
+                    <span>🕊️ AI Bot</span>
                 </div>
                 <div class="text-xl font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                    <span id="session-name">default</span>
+                    <span>Active &amp; Ready</span>
                 </div>
-                <div class="text-xs text-stone-500 dark:text-stone-400 mt-2 space-y-1">
-                    <div>Endpoint: <code id="gateway-url" class="bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded text-[11px]">Loading...</code></div>
-                    <div>Mode: <span id="gateway-mode" class="font-semibold">Loading...</span></div>
-                    <div>Rate Limiter: <span id="rate-limiter-badge" class="font-semibold text-stone-400">Loading...</span></div>
-                </div>
-                <div class="mt-3">
-                    <button onclick="toggleSimulationMode()" id="btn-toggle-sim" class="w-full text-xs py-1.5 px-3 rounded-xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition font-medium cursor-pointer">
-                        🧪 Toggle Simulation Mode
-                    </button>
+                <p class="text-xs text-stone-600 dark:text-stone-400 mt-2 leading-relaxed">
+                    Instant scripture lookups, bilingual verses, reading streaks, and interactive trivia right on your messaging app or here in the simulator.
+                </p>
+                <div class="mt-3 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Bilingual: English &amp; தமிழ்</span>
                 </div>
             </div>
-            <div class="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 text-[11px] text-stone-400">
-                Webhook: <code class="bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded">/api/whatsapp/webhook</code>
+            <div class="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 text-[11px] text-stone-400 flex items-center justify-between">
+                <span>Response Time: &lt; 1s</span>
+                <span class="font-semibold text-stone-500">24/7 Available</span>
             </div>
         </div>
 
-        <!-- Card 2: Subscribers Count & Push Trigger -->
+        <!-- Card 2: Daily Morning Devotionals -->
         <div class="bg-white dark:bg-stone-900 rounded-2xl p-5 border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between text-xs text-stone-500 mb-2">
-                    <span class="font-semibold uppercase tracking-wider">Devotional Subscribers</span>
-                    <span>🔔 Alerts</span>
+                    <span class="font-semibold uppercase tracking-wider">Daily Devotionals</span>
+                    <span>🔔 5:00 AM IST</span>
                 </div>
                 <div class="flex items-baseline gap-2">
-                    <span id="subscriber-count" class="text-3xl font-extrabold text-amber-700 dark:text-amber-400 font-cinzel">0</span>
-                    <span class="text-xs text-stone-500">active recipients</span>
+                    <span id="subscriber-count" class="text-3xl font-extrabold text-amber-700 dark:text-amber-400 font-cinzel">--</span>
+                    <span class="text-xs text-stone-500">active community readers</span>
                 </div>
-                <p class="text-xs text-stone-500 dark:text-stone-400 mt-2">
-                    Subscribers receive today's scripture and reading plan checkpoint every morning.
+                <p class="text-xs text-stone-600 dark:text-stone-400 mt-2 leading-relaxed">
+                    Subscribers receive today's scripture portion, habit streaks, and reading plan checkpoints every morning automatically.
                 </p>
             </div>
-            <div class="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 flex gap-2">
-                <button onclick="triggerDevotionalPush()" id="btn-push-devotional" class="flex-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-700 hover:bg-amber-800 text-white transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
-                    <span>☀️</span> Push Today's Reading
-                </button>
+            <div class="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-[11px]">
+                <span class="text-stone-500">Send <code class="font-bold text-amber-700 dark:text-amber-400">subscribe</code> on WhatsApp</span>
+                <a href="/plans" class="text-amber-700 dark:text-amber-400 font-semibold hover:underline">View Plans &rarr;</a>
             </div>
         </div>
 
@@ -89,44 +86,16 @@
                     <span>📲 Mobile</span>
                 </div>
                 <h3 class="text-sm font-bold text-stone-900 dark:text-stone-100">Send any message to start</h3>
-                <p class="text-xs text-stone-600 dark:text-stone-400 mt-1">
-                    Send <code class="font-bold">John 3:16</code>, <code class="font-bold">quiz</code>, or <code class="font-bold">subscribe</code> to your linked WhatsApp number to interact instantly.
+                <p class="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
+                    Send <code class="font-bold">John 3:16</code>, <code class="font-bold">quiz</code>, <code class="font-bold">streak</code>, or <code class="font-bold">subscribe</code> to your linked WhatsApp number to interact instantly.
                 </p>
             </div>
             <div class="mt-4 pt-3 border-t border-emerald-200/50 dark:border-emerald-800/40 text-[11px] text-emerald-800 dark:text-emerald-400 flex items-center justify-between">
-                <span>Bilingual: English & தமிழ்</span>
-                <span class="font-bold">24/7 Available</span>
+                <span>Catholic &amp; Protestant Canons</span>
+                <span class="font-bold">Instant Sync</span>
             </div>
         </div>
 
-    </div>
-
-    <!-- Offline Help Guidance Banner (shown when WA-AKG is not running locally) -->
-    <div id="offline-guidance-banner" class="hidden p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 space-y-2">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span class="font-bold flex items-center gap-1.5 text-sm">
-                <span>⚠️</span> <span>WhatsApp Gateway Not Connected (Offline)</span>
-            </span>
-            <button onclick="toggleSimulationMode()" class="px-3 py-1 bg-amber-700 text-white rounded-lg hover:bg-amber-800 font-semibold cursor-pointer">
-                🧪 Switch to Simulation Mode
-            </button>
-        </div>
-        <p class="text-stone-600 dark:text-stone-400">
-            <strong>Why is it showing Offline?</strong> The WA-AKG gateway service is not currently running on <code class="bg-amber-100/50 dark:bg-amber-900/40 px-1 py-0.5 rounded">http://localhost:3000/api</code>.
-        </p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-            <div class="p-3 rounded-xl bg-white dark:bg-stone-900 border border-amber-200 dark:border-amber-900/50 space-y-1">
-                <div class="font-bold text-emerald-700 dark:text-emerald-400">Option 1: Test in Browser (Instant)</div>
-                <div class="text-stone-600 dark:text-stone-400">Click <strong>Switch to Simulation Mode</strong> above. You can immediately test scripture lookups, Bible trivia quizzes, hymn lyrics, and audio notes in the simulator below without needing a phone!</div>
-            </div>
-            <div class="p-3 rounded-xl bg-white dark:bg-stone-900 border border-amber-200 dark:border-amber-900/50 space-y-1">
-                <div class="font-bold text-amber-800 dark:text-amber-400">Option 2: Connect Live WhatsApp Phone</div>
-                <div class="text-stone-600 dark:text-stone-400">Run the WA-AKG Node.js service locally:
-                    <code class="block bg-stone-100 dark:bg-stone-800 p-1.5 rounded mt-1 font-mono text-[11px]">git clone https://github.com/mrifqidaffaaditya/WA-AKG<br>cd WA-AKG &amp;&amp; npm install &amp;&amp; npm run dev</code>
-                    Then scan the QR code via WhatsApp <em>Linked Devices</em>.
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Live Interactive Simulator & Command Reference -->
@@ -262,27 +231,13 @@
                 </div>
             </div>
 
-            <!-- Quick Broadcast Card -->
-            <div class="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-5 shadow-sm">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-stone-800 dark:text-stone-200 mb-2 flex items-center gap-1.5">
-                    <span>📢</span> Admin Announcement Broadcast
-                </h2>
-                <div class="space-y-2 text-xs">
-                    <textarea id="broadcast-msg" rows="3" placeholder="Enter broadcast message to send to all active subscribers..."
-                              class="w-full text-xs bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-amber-700"></textarea>
-                    <button onclick="sendCustomBroadcast()" class="w-full py-2 text-xs font-semibold rounded-xl bg-stone-800 dark:bg-stone-700 hover:bg-stone-900 text-white transition cursor-pointer">
-                        Broadcast to Active Subscribers
-                    </button>
-                </div>
-            </div>
-
         </div>
 
     </div>
 
 </div>
 
-<!-- Interactive Simulator & Management JavaScript -->
+<!-- Interactive Simulator JavaScript -->
 <script>
     var SIM_SENDER_JID = "web-simulator@s.whatsapp.net";
 
@@ -291,64 +246,29 @@
             var res = await fetch("/api/whatsapp/status");
             var data = await res.json();
             
-            document.getElementById("session-name").textContent = data.session_id || "default";
-            document.getElementById("gateway-url").textContent = data.gateway_url || "http://localhost:3000/api";
-            document.getElementById("gateway-mode").textContent = data.simulation_mode ? "🧪 Simulation (Mock Active)" : "🟢 Live Gateway";
-            
             var isConnected = !!(data.session_status && (data.session_status.status === "CONNECTED" || (data.session_status.data && data.session_status.data.status === "CONNECTED")));
             var pill = document.getElementById("gateway-status-pill");
-            if (isConnected) {
-                pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800";
-                pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Connected</span>';
-            } else if (data.simulation_mode) {
-                pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800";
-                pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Simulation Active</span>';
-            } else {
-                pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-300 dark:border-rose-800";
-                pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Offline</span>';
-            }
-
-            if (typeof data.subscriber_count !== "undefined") {
-                document.getElementById("subscriber-count").textContent = data.subscriber_count;
-            }
-
-            if (data.rate_limiter) {
-                var rlElem = document.getElementById("rate-limiter-badge");
-                if (rlElem) {
-                    if (data.rate_limiter.enabled) {
-                        rlElem.className = "font-semibold text-emerald-600 dark:text-emerald-400";
-                        rlElem.textContent = "Active (" + data.rate_limiter.requests_per_minute + " rpm / " + data.rate_limiter.daily_audio_limit + " audio/day)";
-                    } else {
-                        rlElem.className = "font-semibold text-stone-400";
-                        rlElem.textContent = "Disabled";
-                    }
+            if (pill) {
+                if (isConnected) {
+                    pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800";
+                    pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Connected</span>';
+                } else if (data.simulation_mode) {
+                    pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800";
+                    pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Online (Simulator)</span>';
+                } else {
+                    pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border border-stone-300 dark:border-stone-700";
+                    pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-stone-400"></span><span>Standby</span>';
                 }
             }
 
-            var banner = document.getElementById("offline-guidance-banner");
-            var btnToggle = document.getElementById("btn-toggle-sim");
-            if (btnToggle) {
-                btnToggle.textContent = data.simulation_mode ? "🟢 Switch to Live Gateway" : "🧪 Switch to Simulation Mode";
-            }
-            if (banner) {
-                if (!data.simulation_mode && !isConnected) {
-                    banner.classList.remove("hidden");
-                } else {
-                    banner.classList.add("hidden");
+            if (typeof data.subscriber_count !== "undefined") {
+                var subElem = document.getElementById("subscriber-count");
+                if (subElem) {
+                    subElem.textContent = data.subscriber_count;
                 }
             }
         } catch(e) {
             console.warn("Could not fetch gateway status:", e);
-        }
-    }
-
-    async function toggleSimulationMode() {
-        try {
-            var res = await fetch("/api/whatsapp/toggle-simulation", {method: "POST"});
-            var data = await res.json();
-            fetchGatewayStatus();
-        } catch(e) {
-            alert("Error toggling simulation: " + e.message);
         }
     }
 
@@ -449,45 +369,6 @@
             }
         } catch(e) {
             appendBotBubble("⚠️ Error communicating with simulator backend: " + e.message);
-        }
-    }
-
-    async function triggerDevotionalPush() {
-        var btn = document.getElementById("btn-push-devotional");
-        btn.disabled = true;
-        btn.textContent = "Broadcasting...";
-        try {
-            var res = await fetch("/api/whatsapp/push-devotional", {method: "POST"});
-            var data = await res.json();
-            alert("☀️ Devotional Push Complete!\nDelivered to: " + data.success + " subscribers.");
-            fetchGatewayStatus();
-        } catch(e) {
-            alert("Error broadcasting devotional: " + e.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = "<span>☀️</span> Push Today's Reading";
-        }
-    }
-
-    async function sendCustomBroadcast() {
-        var txt = document.getElementById("broadcast-msg").value.trim();
-        if (!txt) {
-            alert("Please enter a message to broadcast.");
-            return;
-        }
-        if (!confirm("Broadcast this message to all active WhatsApp subscribers?")) return;
-
-        try {
-            var res = await fetch("/api/whatsapp/broadcast-all", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({message: txt})
-            });
-            var data = await res.json();
-            alert("Broadcast completed! Sent to " + data.total + " recipients.");
-            document.getElementById("broadcast-msg").value = "";
-        } catch(e) {
-            alert("Error: " + e.message);
         }
     }
 

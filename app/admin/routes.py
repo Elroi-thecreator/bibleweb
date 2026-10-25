@@ -22,7 +22,9 @@ from app.admin.auth import (
     require_admin,
 )
 from whatsapp_gateway.config import config as wa_config, save_persisted_config
-from whatsapp_gateway.routes.webhook import get_client
+def _get_wa_client():
+    from whatsapp_gateway.routes.webhook import get_client
+    return get_client()
 from whatsapp_gateway.subscribers import get_active_subscribers, get_subscriber_count
 from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
 from whatsapp_gateway.rate_limiter import rate_limiter
@@ -143,7 +145,7 @@ async def admin_settings_page(request: Request):
         return RedirectResponse(url=f"/admin/login?next={request.url.path}", status_code=303)
 
     html_cache, audio_cache, start_time, templates = _get_app_context()
-    wa_client = get_client()
+    wa_client = _get_wa_client()
 
     # 1. System Telemetry & Process Info
     uptime_sec = time.time() - start_time
@@ -312,7 +314,7 @@ async def api_update_wa_config(request: Request):
     )
 
     # Dynamically update the active WAClient runtime singleton
-    wa_client = get_client()
+    wa_client = _get_wa_client()
     wa_client.update_config(
         base_url=saved.get("gateway_url"),
         default_session_id=saved.get("session_id"),
@@ -400,7 +402,7 @@ async def api_ping_rabbitmq(request: Request):
 async def api_toggle_wa_simulation(request: Request):
     """Toggles WhatsApp gateway between Live Gateway Mode and Simulation Mode."""
     require_admin(request)
-    wa_client = get_client()
+    wa_client = _get_wa_client()
     new_mode = not wa_client.simulation_mode
     wa_client.simulation_mode = new_mode
     save_persisted_config(enable_simulation_mode=new_mode)
@@ -428,7 +430,7 @@ async def api_broadcast_devotional(request: Request):
 async def api_ping_wa_gateway(request: Request):
     """Tests HTTP reachability and latency of the configured WA-AKG gateway."""
     require_admin(request)
-    wa_client = get_client()
+    wa_client = _get_wa_client()
 
     target_url = f"{wa_client.base_url.rstrip('/')}/sessions/{wa_client.default_session_id}"
     t0 = time.time()

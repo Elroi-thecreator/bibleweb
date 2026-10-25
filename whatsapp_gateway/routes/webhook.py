@@ -26,6 +26,7 @@ from whatsapp_gateway.sync_store import generate_sync_code, verify_sync_code
 from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
 from whatsapp_gateway.queue.manager import queue_manager
 from whatsapp_gateway.rate_limiter import rate_limiter
+from app.admin.auth import require_admin
 
 logger = logging.getLogger("whatsapp_gateway.routes")
 
@@ -226,8 +227,9 @@ async def get_rate_limiter_status_endpoint() -> Dict[str, Any]:
 
 
 @router.post("/rate-limiter/config")
-async def update_rate_limiter_config_endpoint(req: RateLimiterConfigRequest) -> Dict[str, Any]:
+async def update_rate_limiter_config_endpoint(req: RateLimiterConfigRequest, request: Request) -> Dict[str, Any]:
     """Updates WhatsApp rate limiter settings and persists to config."""
+    require_admin(request)
     save_persisted_config(
         rate_limit_enabled=req.enabled,
         rate_limit_requests_per_minute=req.requests_per_minute,
@@ -239,8 +241,9 @@ async def update_rate_limiter_config_endpoint(req: RateLimiterConfigRequest) -> 
 
 
 @router.post("/rate-limiter/reset")
-async def reset_rate_limiter_endpoint() -> Dict[str, Any]:
+async def reset_rate_limiter_endpoint(request: Request) -> Dict[str, Any]:
     """Resets all active rate limiter windows and daily quotas."""
+    require_admin(request)
     rate_limiter.clear_all()
     return {"status": "ok", "message": "Rate limiter tracking and quotas reset.", "rate_limiter": rate_limiter.get_stats()}
 
@@ -252,24 +255,27 @@ async def get_queue_status_endpoint() -> Dict[str, Any]:
 
 
 @router.post("/queue/toggle")
-async def toggle_queue_mode_endpoint() -> Dict[str, Any]:
+async def toggle_queue_mode_endpoint(request: Request) -> Dict[str, Any]:
     """Toggles WhatsApp task queue mode on/off at runtime."""
+    require_admin(request)
     new_state = not queue_manager.is_enabled
     return await queue_manager.set_enabled(new_state)
 
 
 @router.post("/queue/config")
-async def update_queue_config_endpoint(req: QueueConfigRequest) -> Dict[str, Any]:
+async def update_queue_config_endpoint(req: QueueConfigRequest, request: Request) -> Dict[str, Any]:
     """Updates RabbitMQ connection configuration and enabled state."""
+    require_admin(request)
     enabled = req.enabled if req.enabled is not None else queue_manager.is_enabled
     return await queue_manager.set_enabled(enabled=enabled, rabbitmq_url=req.rabbitmq_url)
 
 
 @router.post("/toggle-simulation")
-async def toggle_simulation_mode() -> Dict[str, Any]:
+async def toggle_simulation_mode(request: Request) -> Dict[str, Any]:
     """
     Toggles between Simulation Mode and Live WA-AKG Gateway mode.
     """
+    require_admin(request)
     _client.simulation_mode = not _client.simulation_mode
     return {
         "simulation_mode": _client.simulation_mode,
@@ -279,19 +285,21 @@ async def toggle_simulation_mode() -> Dict[str, Any]:
 
 
 @router.post("/push-devotional")
-async def trigger_push_devotional() -> Dict[str, Any]:
+async def trigger_push_devotional(request: Request) -> Dict[str, Any]:
     """
     Admin trigger to immediately broadcast today's devotional to all active subscribers.
     """
+    require_admin(request)
     result = await push_daily_devotional(client=_client)
     return result
 
 
 @router.post("/broadcast-all")
-async def broadcast_to_all_subscribers(req: BroadcastAllRequest) -> Dict[str, Any]:
+async def broadcast_to_all_subscribers(req: BroadcastAllRequest, request: Request) -> Dict[str, Any]:
     """
     Broadcasts custom message to all active subscribers.
     """
+    require_admin(request)
     subscribers = await get_active_subscribers()
     if not subscribers:
         return {"total": 0, "success": 0, "message": "No active subscribers found."}
@@ -313,10 +321,11 @@ async def broadcast_to_all_subscribers(req: BroadcastAllRequest) -> Dict[str, An
 
 
 @router.post("/broadcast")
-async def broadcast_message(req: BroadcastRequest) -> Dict[str, Any]:
+async def broadcast_message(req: BroadcastRequest, request: Request) -> Dict[str, Any]:
     """
     Admin endpoint to broadcast devotional messages to explicit recipient lists.
     """
+    require_admin(request)
     if not req.recipients:
         raise HTTPException(status_code=400, detail="Recipients list cannot be empty.")
 
