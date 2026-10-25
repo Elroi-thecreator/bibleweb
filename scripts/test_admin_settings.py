@@ -107,7 +107,9 @@ async def run_admin_tests():
         assert "Performance & Cache Control" in res.text
         assert "WhatsApp Gateway & Bot" in res.text
         assert "31,102" in res.text
-        print("  ✅ Admin Settings Dashboard rendered with full telemetry & controls.")
+        assert "gateway-status-pill" in res.text
+        assert "fetchAdminWaStatus" in res.text
+        print("  ✅ Admin Settings Dashboard rendered with full telemetry, controls & live connection pill.")
 
         # -------------------------------------------------------------
         # 7. Unauthenticated Protection on Admin API

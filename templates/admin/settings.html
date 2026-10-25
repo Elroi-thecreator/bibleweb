@@ -135,12 +135,21 @@
             <div class="bg-white dark:bg-stone-900 rounded-2xl p-4 sm:p-5 border border-stone-200 dark:border-stone-800 shadow-xs">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">WhatsApp Engine</span>
-                    <span class="text-xs">💬</span>
+                    <div class="flex items-center gap-1.5">
+                        <span id="wa-metric-status-pill" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold {% if wa_simulation %}bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300{% else %}bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400{% endif %}">
+                            <span id="wa-metric-dot" class="w-1.5 h-1.5 rounded-full {% if wa_simulation %}bg-purple-500{% else %}bg-stone-400{% endif %}"></span>
+                            <span id="wa-metric-text">{% if wa_simulation %}Simulation{% else %}Checking...{% endif %}</span>
+                        </span>
+                        <span class="text-xs">💬</span>
+                    </div>
                 </div>
                 <div class="text-lg sm:text-xl font-bold font-mono {% if wa_simulation %}text-purple-600 dark:text-purple-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
                     {% if wa_simulation %}SIMULATION{% else %}LIVE GATEWAY{% endif %}
                 </div>
-                <div class="text-[11px] text-stone-400 mt-1">Subscribers: <span class="font-medium text-stone-600 dark:text-stone-300">{{ wa_subscribers_count }} active</span></div>
+                <div class="text-[11px] text-stone-400 mt-1 flex items-center justify-between">
+                    <span>Subscribers: <strong class="text-stone-600 dark:text-stone-300">{{ wa_subscribers_count }} active</strong></span>
+                    <span class="font-mono text-[10px] text-stone-400">Session: {{ wa_config.session_id }}</span>
+                </div>
             </div>
         </div>
 
@@ -217,9 +226,16 @@
                         <span class="text-lg">💬</span>
                         <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">WhatsApp Gateway & Bot Setup</h2>
                     </div>
-                    <span id="wa-mode-badge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {% if wa_simulation %}bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300{% else %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300{% endif %}">
-                        {% if wa_simulation %}Simulation Mode{% else %}Live Gateway{% endif %}
-                    </span>
+                    <div class="flex items-center gap-2">
+                        <!-- Gateway Live Connection Status Pill -->
+                        <span id="gateway-status-pill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
+                            <span id="gateway-status-dot" class="w-2 h-2 rounded-full bg-stone-400"></span>
+                            <span id="gateway-status-text">Checking Gateway...</span>
+                        </span>
+                        <span id="wa-mode-badge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded {% if wa_simulation %}bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300{% else %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300{% endif %}">
+                            {% if wa_simulation %}Simulation Mode{% else %}Live Gateway{% endif %}
+                        </span>
+                    </div>
                 </div>
 
                 <form id="wa-config-form" onsubmit="saveWaConfig(event)" class="space-y-3 text-xs">
@@ -843,6 +859,7 @@
                 } else {
                     showToast('⚠️ Gateway Warning: ' + (data.message || 'Unavailable in simulation mode'), true);
                 }
+                fetchAdminWaStatus();
             } catch (err) {
                 showToast('❌ Gateway connection error', true);
             }
@@ -933,6 +950,60 @@
                 showToast('❌ Network error resetting rate limiter', true);
             }
         }
+    
+        async function fetchAdminWaStatus() {
+            try {
+                const res = await fetch('/api/whatsapp/status');
+                const data = await res.json();
+
+                const pill = document.getElementById('gateway-status-pill');
+                const dot = document.getElementById('gateway-status-dot');
+                const text = document.getElementById('gateway-status-text');
+
+                const metricPill = document.getElementById('wa-metric-status-pill');
+                const metricDot = document.getElementById('wa-metric-dot');
+                const metricText = document.getElementById('wa-metric-text');
+
+                const isConnected = !!(data.session_status && (data.session_status.status === "CONNECTED" || (data.session_status.data && data.session_status.data.status === "CONNECTED")));
+
+                if (data.simulation_mode) {
+                    if (pill) {
+                        pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60";
+                    }
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-purple-500";
+                    if (text) text.textContent = "Simulation Mode (Mocked)";
+
+                    if (metricPill) metricPill.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300";
+                    if (metricDot) metricDot.className = "w-1.5 h-1.5 rounded-full bg-purple-500";
+                    if (metricText) metricText.textContent = "Simulation";
+                } else if (isConnected) {
+                    if (pill) {
+                        pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800";
+                    }
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                    if (text) text.textContent = "Connected (Live Phone)";
+
+                    if (metricPill) metricPill.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300";
+                    if (metricDot) metricDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+                    if (metricText) metricText.textContent = "Connected";
+                } else {
+                    if (pill) {
+                        pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-800";
+                    }
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-rose-500";
+                    if (text) text.textContent = "Gateway Standby / Offline";
+
+                    if (metricPill) metricPill.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300";
+                    if (metricDot) metricDot.className = "w-1.5 h-1.5 rounded-full bg-rose-500";
+                    if (metricText) metricText.textContent = "Offline";
+                }
+            } catch (err) {
+                console.warn('Could not fetch WhatsApp gateway status:', err);
+            }
+        }
+
+        // Initialize WhatsApp Gateway Live Status
+        fetchAdminWaStatus();
     </script>
 </body>
 </html>

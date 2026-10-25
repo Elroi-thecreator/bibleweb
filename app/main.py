@@ -1612,12 +1612,15 @@ async def whatsapp_hub_page(request: Request):
     """Interactive WhatsApp Assistant Hub, Chat Simulator, and Devotional Broadcast Dashboard."""
     active_canon = resolve_canon(request)
     canon_ctx = get_canon_context(active_canon)
+    from whatsapp_gateway.subscribers import get_subscriber_count
+    sub_count = await get_subscriber_count()
     return templates.TemplateResponse(
         request=request,
         name="whatsapp.html",
         context={
             **canon_ctx,
             "page_title": "WhatsApp Bible Assistant",
+            "subscriber_count": sub_count,
         },
     )
 

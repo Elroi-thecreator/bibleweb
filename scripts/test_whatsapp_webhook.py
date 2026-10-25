@@ -63,7 +63,8 @@ async def run_tests():
         assert "sendCustomBroadcast" not in hub_res.text
         assert "triggerDevotionalPush" not in hub_res.text
         assert "Admin Announcement Broadcast" not in hub_res.text
-        print("  ✅ Web Hub UI rendered with 200 OK and sanitized of all admin controls.")
+        assert "gateway-status-pill" not in hub_res.text
+        print("  ✅ Web Hub UI rendered with 200 OK and sanitized of all admin controls & status pills.")
 
         # Helper to simulate sending a WhatsApp message
         async def send_simulated_msg(text: str):

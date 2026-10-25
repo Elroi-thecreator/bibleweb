@@ -17,14 +17,10 @@
             </p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="/sync" class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 transition flex items-center gap-1 shadow-xs">
+            <a href="/sync" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 transition flex items-center gap-1.5 shadow-xs">
                 <span>📱</span> <span>Web Sync</span>
             </a>
-            <span id="gateway-status-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Checking Gateway...</span>
-            </span>
-            <a href="/plans" class="px-3 py-1 rounded-full text-xs font-semibold bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border border-stone-300 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700 transition flex items-center gap-1 shadow-xs">
+            <a href="/plans" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border border-stone-300 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700 transition flex items-center gap-1.5 shadow-xs">
                 <span>📅</span> <span>Reading Plans</span>
             </a>
         </div>
@@ -65,7 +61,7 @@
                     <span>🔔 5:00 AM IST</span>
                 </div>
                 <div class="flex items-baseline gap-2">
-                    <span id="subscriber-count" class="text-3xl font-extrabold text-amber-700 dark:text-amber-400 font-cinzel">--</span>
+                    <span id="subscriber-count" class="text-3xl font-extrabold text-amber-700 dark:text-amber-400 font-cinzel">{{ subscriber_count | default(1) }}</span>
                     <span class="text-xs text-stone-500">active community readers</span>
                 </div>
                 <p class="text-xs text-stone-600 dark:text-stone-400 mt-2 leading-relaxed">
@@ -241,37 +237,6 @@
 <script>
     var SIM_SENDER_JID = "web-simulator@s.whatsapp.net";
 
-    async function fetchGatewayStatus() {
-        try {
-            var res = await fetch("/api/whatsapp/status");
-            var data = await res.json();
-            
-            var isConnected = !!(data.session_status && (data.session_status.status === "CONNECTED" || (data.session_status.data && data.session_status.data.status === "CONNECTED")));
-            var pill = document.getElementById("gateway-status-pill");
-            if (pill) {
-                if (isConnected) {
-                    pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800";
-                    pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Connected</span>';
-                } else if (data.simulation_mode) {
-                    pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800";
-                    pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Online (Simulator)</span>';
-                } else {
-                    pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border border-stone-300 dark:border-stone-700";
-                    pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-stone-400"></span><span>Standby</span>';
-                }
-            }
-
-            if (typeof data.subscriber_count !== "undefined") {
-                var subElem = document.getElementById("subscriber-count");
-                if (subElem) {
-                    subElem.textContent = data.subscriber_count;
-                }
-            }
-        } catch(e) {
-            console.warn("Could not fetch gateway status:", e);
-        }
-    }
-
     function setSimInput(cmd) {
         document.getElementById("sim-input").value = cmd;
         document.getElementById("sim-input").focus();
@@ -371,8 +336,5 @@
             appendBotBubble("⚠️ Error communicating with simulator backend: " + e.message);
         }
     }
-
-    // Initialize on load
-    fetchGatewayStatus();
 </script>
 {% endblock %}
