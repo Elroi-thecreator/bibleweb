@@ -1214,6 +1214,16 @@ async def quiz_page(request: Request, canon: str = Query(None)):
     """Interactive Bible Quiz / Trivia game page."""
     active_canon = resolve_canon(request, canon)
     canon_ctx = get_canon_context(active_canon)
+    try:
+        from ask_bible_ai.config import config as ai_config
+        quiz_ai_enabled = bool(ai_config.enabled and ai_config.quiz_ai_enabled)
+        quiz_ai_default_count = ai_config.quiz_ai_default_count
+        quiz_ai_difficulty = ai_config.quiz_ai_difficulty
+    except Exception:
+        quiz_ai_enabled = True
+        quiz_ai_default_count = 5
+        quiz_ai_difficulty = "medium"
+
     return templates.TemplateResponse(
         request=request,
         name="quiz.html",
@@ -1221,6 +1231,9 @@ async def quiz_page(request: Request, canon: str = Query(None)):
             **canon_ctx,
             "categories": QUIZ_CATEGORIES,
             "total_questions": len(QUIZ_QUESTIONS),
+            "quiz_ai_enabled": quiz_ai_enabled,
+            "quiz_ai_default_count": quiz_ai_default_count,
+            "quiz_ai_difficulty": quiz_ai_difficulty,
         },
     )
 
@@ -1251,6 +1264,80 @@ async def get_quiz_questions(
             "questions": results[:limit],
         }
     )
+
+
+@app.post("/api/quiz/generate-ai")
+async def api_generate_quiz_ai(request: Request):
+    """Generates dynamic topic-driven bilingual Bible quiz questions via Ask Bible AI."""
+    from ask_bible_ai.config import config as ai_config
+    if not (ai_config.enabled and ai_config.quiz_ai_enabled):
+        raise HTTPException(status_code=503, detail="AI in Scripture Quiz is currently disabled in Settings.")
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    topic = str(body.get("topic") or "Parables of Jesus").strip()
+    count = int(body.get("count") or ai_config.quiz_ai_default_count)
+    difficulty = str(body.get("difficulty") or ai_config.quiz_ai_difficulty).strip().lower()
+    language = str(body.get("language") or "bilingual").strip().lower()
+
+    from app.quiz_ai import generate_quiz_questions_ai
+    questions = await generate_quiz_questions_ai(
+        topic=topic,
+        count=count,
+        difficulty=difficulty,
+        language=language,
+    )
+
+    return JSONResponse(
+        content={
+            "status": "ok",
+            "topic": topic,
+            "count": len(questions),
+            "difficulty": difficulty,
+            "questions": questions,
+        }
+    )
+
+
+@app.post("/api/quiz/explain-ai")
+async def api_explain_quiz_ai(request: Request):
+    """Provides deep theological and spiritual tutor reflections on answered quiz questions."""
+    from ask_bible_ai.config import config as ai_config
+    if not ai_config.enabled:
+        raise HTTPException(status_code=503, detail="Ask Bible AI service is currently disabled.")
+
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid request body")
+
+    question_en = str(body.get("question_en") or "").strip()
+    question_ta = str(body.get("question_ta") or "").strip()
+    options_en = body.get("options_en") or []
+    options_ta = body.get("options_ta") or []
+    chosen_index = int(body.get("chosen_index", -1))
+    correct_index = int(body.get("correct_index", 0))
+    reference = str(body.get("reference") or "").strip()
+    base_explanation_en = str(body.get("explanation_en") or "").strip()
+    base_explanation_ta = str(body.get("explanation_ta") or "").strip()
+
+    from app.quiz_ai import explain_quiz_question_ai
+    result = await explain_quiz_question_ai(
+        question_en=question_en,
+        question_ta=question_ta,
+        options_en=options_en,
+        options_ta=options_ta,
+        chosen_index=chosen_index,
+        correct_index=correct_index,
+        reference=reference,
+        base_explanation_en=base_explanation_en,
+        base_explanation_ta=base_explanation_ta,
+    )
+
+    return JSONResponse(content=result)
 
 
 # ==========================================

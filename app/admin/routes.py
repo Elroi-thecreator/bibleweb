@@ -635,6 +635,23 @@ async def api_update_ai_config(request: Request):
             val = val.lower() in ("true", "1", "yes", "on")
         updates["simulation_mode"] = bool(val)
 
+    if "quiz_ai_enabled" in body:
+        val = body["quiz_ai_enabled"]
+        if isinstance(val, str):
+            val = val.lower() in ("true", "1", "yes", "on")
+        updates["quiz_ai_enabled"] = bool(val)
+
+    if "quiz_ai_default_count" in body and body["quiz_ai_default_count"] != "":
+        try:
+            updates["quiz_ai_default_count"] = max(1, min(30, int(body["quiz_ai_default_count"])))
+        except ValueError:
+            pass
+
+    if "quiz_ai_difficulty" in body and body["quiz_ai_difficulty"]:
+        diff = str(body["quiz_ai_difficulty"]).strip().lower()
+        if diff in ("easy", "medium", "hard", "mixed"):
+            updates["quiz_ai_difficulty"] = diff
+
     new_cfg = save_ai_config(updates)
     ai_service.config = new_cfg
     ai_service.client.config = new_cfg

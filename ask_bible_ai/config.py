@@ -123,6 +123,17 @@ class AskBibleAIConfig(BaseModel):
         default_factory=lambda: os.getenv("BIBLE_AI_SIMULATION", "false").lower() in ("true", "1", "yes")
     )
 
+    # AI in Scripture Quiz Settings
+    quiz_ai_enabled: bool = Field(
+        default_factory=lambda: os.getenv("BIBLE_QUIZ_AI_ENABLED", "true").lower() in ("true", "1", "yes")
+    )
+    quiz_ai_default_count: int = Field(
+        default_factory=lambda: int(os.getenv("BIBLE_QUIZ_AI_COUNT", "5"))
+    )
+    quiz_ai_difficulty: str = Field(
+        default_factory=lambda: os.getenv("BIBLE_QUIZ_AI_DIFFICULTY", "medium")
+    )
+
     def to_dict(self) -> Dict[str, Any]:
         """Returns safe dictionary representation masking sensitive keys."""
         d = self.model_dump()
@@ -158,7 +169,10 @@ def save_persisted_config(updates: Dict[str, Any]) -> AskBibleAIConfig:
             except Exception as e:
                 print(f"[AskBibleAIConfig] Failed to save config to {p}: {e}")
 
-    config = get_config()
+    new_cfg = get_config()
+    for field_name in config.model_fields.keys():
+        setattr(config, field_name, getattr(new_cfg, field_name))
+
     return config
 
 

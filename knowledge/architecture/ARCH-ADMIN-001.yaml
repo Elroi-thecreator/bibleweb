@@ -3,7 +3,7 @@ type: architecture_standard
 title: Administrator Authentication, Protected Settings & System Telemetry Architecture
 domain: architecture
 status: approved
-version: 1.9.0
+version: 1.9.1
 authority:
   level: official
   confidence: high
@@ -17,9 +17,10 @@ applies_to:
   - routes
   - templates
   - ask_bible_ai
+  - quiz
 
 rule:
-  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, all administrative management APIs (`/admin/api/*`), administrative WhatsApp endpoints (`/api/whatsapp/*`), and administrative Ask Bible AI endpoints (`/admin/api/ai/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons. Administrators can dynamically update, test, and persist runtime settings—including WhatsApp Gateway parameters and Ask Bible AI LLM Provider Settings (Base URL, API Key, Model, Presets, Grounding, and Simulation Mode)—via `POST /admin/api/*` backed by a two-tier persistence architecture: (1) client-side browser Local Memory (`localStorage`) with auto-save, 1-click restore banner, and JSON export/import, and (2) dual-layer server storage writing to project `data/` and mirroring to machine-level `%LOCALAPPDATA%/HolyBible/config` (or `~/.holybible/config`) so configurations never disappear across PyInstaller executable builds or container redeploys."
+  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, all administrative management APIs (`/admin/api/*`), administrative WhatsApp endpoints (`/api/whatsapp/*`), and administrative Ask Bible AI endpoints (`/admin/api/ai/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons. Administrators can dynamically update, test, and persist runtime settings—including WhatsApp Gateway parameters, Ask Bible AI LLM Provider Settings (Base URL, API Key, Model, Presets, Grounding, and Simulation Mode), and AI in Scripture Quiz parameters (`quiz_ai_enabled`, `quiz_ai_default_count`, `quiz_ai_difficulty`)—via `POST /admin/api/*` backed by a two-tier persistence architecture: (1) client-side browser Local Memory (`localStorage`) with auto-save, 1-click restore banner, and JSON export/import, and (2) dual-layer server storage writing to project `data/` and mirroring to machine-level `%LOCALAPPDATA%/HolyBible/config` (or `~/.holybible/config`) so configurations never disappear across PyInstaller executable builds or container redeploys."
 
 do:
   - "Mount all administrative routes under `/admin` with route-level security guards (`require_admin`)."
@@ -28,7 +29,7 @@ do:
   - "Provide client-side Local Memory (`localStorage`) auto-snapshotting in `templates/admin/settings.html` on form saves, offering 1-click restore, manual save, and JSON export/import."
   - "Display an automatic 1-click restore banner on `/admin/settings` if a fresh build or server reset is detected and previous custom settings exist in browser Local Memory."
   - "Expose protected administrative endpoints `GET /admin/api/settings/export` and `POST /admin/api/settings/import` for atomic backup and restore of system configurations."
-  - "Provide dedicated Ask Bible AI & LLM Provider Configuration on `/admin/settings`: display live health status pill, 1-click provider presets (FreeLLMAPI, Groq Cloud, Ollama, OpenAI, Simulation Mode), editable OpenAI-compatible Base URL (`/v1`), masked API key with secure storage, model selector, temperature, max grounding passages, and offline simulation mode toggle."
+  - "Provide dedicated Ask Bible AI & LLM Provider Configuration on `/admin/settings`: display live health status pill, 1-click provider presets (FreeLLMAPI, Groq Cloud, Ollama, OpenAI, Simulation Mode), editable OpenAI-compatible Base URL (`/v1`), masked API key with secure storage, model selector, temperature, max grounding passages, offline simulation mode toggle, and AI in Scripture Quiz controls (`quiz_ai_enabled`, `quiz_ai_default_count`, `quiz_ai_difficulty`)."
   - "Expose protected administrative endpoints `POST /admin/api/ai/config` for runtime AI configuration hot-swapping and `POST /admin/api/ai/test` for live provider reachability probing."
   - "Protect all administrative operations in `whatsapp_gateway/routes/webhook.py` (`toggle-simulation`, `push-devotional`, `broadcast`, `broadcast-all`, `queue/*`, and `rate-limiter/*`) with `require_admin(request)` returning HTTP 401 Unauthorized for unauthenticated callers."
   - "Ensure `require_admin` in `app/admin/auth.py` evaluates both `request.url.path.startswith('/admin/api')` and `request.url.path.startswith('/api/')` as API paths to prevent HTML redirects on JSON endpoints."

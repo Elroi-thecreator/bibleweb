@@ -227,6 +227,9 @@ async def run_admin_tests():
                 "base_url": "https://api.groq.com/openai/v1",
                 "model": "llama-3.3-70b-versatile",
                 "simulation_mode": True,
+                "quiz_ai_enabled": True,
+                "quiz_ai_default_count": 10,
+                "quiz_ai_difficulty": "hard",
             },
             cookies=cookies,
         )
@@ -235,7 +238,10 @@ async def run_admin_tests():
         assert ai_data["status"] == "ok"
         assert ai_data["config"]["provider_name"] == "groq"
         assert ai_data["config"]["simulation_mode"] is True
-        print("  ✅ Ask Bible AI configuration updated live via Admin API.")
+        assert ai_data["config"]["quiz_ai_enabled"] is True
+        assert ai_data["config"]["quiz_ai_default_count"] == 10
+        assert ai_data["config"]["quiz_ai_difficulty"] == "hard"
+        print("  ✅ Ask Bible AI & AI Quiz configuration updated live via Admin API.")
 
         # -------------------------------------------------------------
         # 18. Test Ask Bible AI Live Test Endpoint
@@ -257,6 +263,9 @@ async def run_admin_tests():
         export_data = res.json()
         assert "ai" in export_data
         assert "whatsapp" in export_data
+        assert export_data["ai"]["quiz_ai_enabled"] is True
+        assert export_data["ai"]["quiz_ai_default_count"] == 10
+        assert export_data["ai"]["quiz_ai_difficulty"] == "hard"
         print(f"  ✅ Admin settings exported successfully (version: {export_data.get('version')}).")
 
         # -------------------------------------------------------------
@@ -268,7 +277,10 @@ async def run_admin_tests():
                 "provider_name": "groq",
                 "model": "llama-3.3-70b-versatile",
                 "base_url": "https://api.groq.com/openai/v1",
-                "simulation_mode": True
+                "simulation_mode": True,
+                "quiz_ai_enabled": False,
+                "quiz_ai_default_count": 3,
+                "quiz_ai_difficulty": "easy",
             },
             "whatsapp": {
                 "provider": "simulation",
@@ -279,7 +291,14 @@ async def run_admin_tests():
         assert res.status_code == 200, f"Expected 200, got {res.status_code}"
         import_res = res.json()
         assert import_res["status"] == "ok"
+        assert import_res["ai"]["quiz_ai_enabled"] is False
+        assert import_res["ai"]["quiz_ai_default_count"] == 3
+        assert import_res["ai"]["quiz_ai_difficulty"] == "easy"
         print(f"  ✅ Admin settings restored and imported successfully from local payload.")
+
+        # Restore default enabled setting for test cleanliness
+        from ask_bible_ai.config import save_persisted_config as save_ai_config
+        save_ai_config({"quiz_ai_enabled": True, "quiz_ai_default_count": 5, "quiz_ai_difficulty": "medium"})
 
         # -------------------------------------------------------------
         # 21. Test Admin Logout

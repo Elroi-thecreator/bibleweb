@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled Ask Bible AI Plugin Architecture with Verified Scripture Grounding
 domain: architecture
 status: approved
-version: 1.2.0
+version: 1.3.0
 authority:
   level: official
   confidence: high
@@ -16,9 +16,10 @@ applies_to:
   - admin
   - routes
   - templates
+  - quiz
 
 rule:
-  "The Ask Bible AI capability is packaged as a fully isolated, reusable plugin in `ask_bible_ai/` with zero hard dependencies on host application models or databases. It communicates with any OpenAI-compatible `/v1` endpoint (including self-hosted FreeLLMAPI, local Ollama, Groq Cloud, or OpenAI), incorporates a pluggable scripture grounding interface (`BaseGroundingProvider`) to inject verified scripture verses and citations into prompts to prevent hallucinations, supports Server-Sent Events (SSE) streaming (`POST /stream`), provides automatic bilingual intelligence (English and Tamil), maintains local-first conversational history in an embedded SQLite database (`data/bible_ai_history.sqlite.db`), ships with full session management endpoints and a responsive slide-over chat drawer in both the integrated web portal and standalone embeddable chat interface (`GET /api/ask-ai/ui`), and is fully configurable via `/admin/settings` with runtime hot-swapping and live provider health probing."
+  "The Ask Bible AI capability is packaged as a fully isolated, reusable plugin in `ask_bible_ai/` with zero hard dependencies on host application models or databases. It communicates with any OpenAI-compatible `/v1` endpoint (including self-hosted FreeLLMAPI, local Ollama, Groq Cloud, or OpenAI), incorporates a pluggable scripture grounding interface (`BaseGroundingProvider`) to inject verified scripture verses and citations into prompts to prevent hallucinations, supports Server-Sent Events (SSE) streaming (`POST /stream`), provides automatic bilingual intelligence (English and Tamil), maintains local-first conversational history in an embedded SQLite database (`data/bible_ai_history.sqlite.db`), ships with full session management endpoints and a responsive slide-over chat drawer in both the integrated web portal and standalone embeddable chat interface (`GET /api/ask-ai/ui`), provides downstream AI generation and theological tutoring for the Scripture Quiz engine (`POST /api/quiz/generate-ai`, `POST /api/quiz/explain-ai`), and is fully configurable via `/admin/settings` with runtime hot-swapping and live provider health probing."
 
 do:
   - "Keep core modules (`ask_bible_ai/client.py`, `ask_bible_ai/grounding.py`, `ask_bible_ai/prompts.py`, `ask_bible_ai/service.py`, `ask_bible_ai/history.py`) strictly domain-agnostic so the package can be dropped into any other Python/FastAPI project without modification."
@@ -28,11 +29,12 @@ do:
   - "Expose full REST session management endpoints (`GET /api/ask-ai/sessions`, `POST /api/ask-ai/sessions`, `GET /api/ask-ai/sessions/{id}`, `DELETE /api/ask-ai/sessions/{id}`, `DELETE /api/ask-ai/history`)."
   - "Auto-create conversational sessions upon the first question, derive the session title from the inquiry, and return the `session_id` in response payloads."
   - "Expose both standard JSON question-answering (`POST /api/ask-ai/ask`) and real-time token streaming via Server-Sent Events (`POST /api/ask-ai/stream`) with automatic persistence."
+  - "Power dynamic topic-driven Bible quiz generation (`POST /api/quiz/generate-ai`) and interactive AI Tutor theological explanations (`POST /api/quiz/explain-ai`) using `ask_bible_ai` orchestrator and client capabilities with resilient curated fallbacks."
   - "Provide a resilient built-in simulation mode (`simulation_mode=True`) enabling offline development, automated tests, and graceful fallback when upstream AI services are unreachable."
   - "Mount the plugin cleanly into FastAPI applications via `app.include_router(ask_ai_router, prefix='/api/ask-ai', tags=['ask-bible-ai'])`."
   - "Serve a zero-dependency, self-contained HTML/CSS/JS user interface at `GET /api/ask-ai/ui` with history drawer and session switching for instant testing or iframe embedding."
-  - "Expose full runtime configuration controls on `/admin/settings` with 1-click presets for FreeLLMAPI, Groq, Ollama, OpenAI, and Simulation Mode, protected by `require_admin`."
-  - "Maintain runtime configuration persistence in `data/bible_ai_config.json` with environment variable defaults (`BIBLE_AI_BASE_URL`, `BIBLE_AI_API_KEY`, `BIBLE_AI_MODEL`)."
+  - "Expose full runtime configuration controls on `/admin/settings` with 1-click presets for FreeLLMAPI, Groq, Ollama, OpenAI, Simulation Mode, and AI in Scripture Quiz parameters (`quiz_ai_enabled`, `quiz_ai_default_count`, `quiz_ai_difficulty`), protected by `require_admin`."
+  - "Maintain runtime configuration persistence in `data/bible_ai_config.json` with environment variable defaults (`BIBLE_AI_BASE_URL`, `BIBLE_AI_API_KEY`, `BIBLE_AI_MODEL`, `BIBLE_QUIZ_AI_ENABLED`)."
   - "Ensure `data/bible_ai_history.sqlite.db*` is strictly excluded in `.gitignore` to preserve user conversation privacy."
 
 dont:

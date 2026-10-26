@@ -77,6 +77,10 @@ async def test_quiz_routes():
         assert data_cat["total_available"] >= 18, f"Expected at least 18 questions in {cat}, got {data_cat['total_available']}"
         print(f"✓ Filtered category '{cat}': {data_cat['total_available']} questions available.")
 
+    from ask_bible_ai.config import config as ai_config
+    ai_config.enabled = True
+    ai_config.quiz_ai_enabled = True
+
     scope = {
         "type": "http",
         "method": "GET",
@@ -89,9 +93,108 @@ async def test_quiz_routes():
     page_resp = await quiz_page(req, canon=None)
     html = page_resp.body.decode("utf-8")
     assert "Questions available: 100" in html
-    print("✓ /quiz page renders 'Questions available: 100'.")
+    assert "AI Scripture Quiz Generator" in html
+    assert "Ask AI Tutor for Reflection" in html
+    print("✓ /quiz page renders 'Questions available: 100' and AI Scripture Quiz Generator UI when enabled.")
+
+    # Test that /quiz omits AI Generator when disabled in settings
+    ai_config.quiz_ai_enabled = False
+    page_resp_disabled = await quiz_page(req, canon=None)
+    html_disabled = page_resp_disabled.body.decode("utf-8")
+    assert 'id="ai-quick-topics"' not in html_disabled
+    assert 'id="ai-tutor-trigger-btn"' not in html_disabled
+    print("✓ /quiz page correctly hides AI Quiz sections and Tutor button when quiz_ai_enabled is False.")
+    ai_config.quiz_ai_enabled = True
+
+
+async def test_ai_quiz_features():
+    from starlette.requests import Request
+    from app.main import api_generate_quiz_ai, api_explain_quiz_ai
+    from ask_bible_ai.config import config as ai_config
+    from fastapi import HTTPException
+    import json
+
+    # 1. Test POST /api/quiz/generate-ai with "Parables of Jesus"
+    payload = {
+        "topic": "Parables of Jesus (உவமைகள்)",
+        "count": 5,
+        "difficulty": "medium",
+        "language": "bilingual"
+    }
+    body_bytes = json.dumps(payload).encode("utf-8")
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "path": "/api/quiz/generate-ai",
+        "raw_path": b"/api/quiz/generate-ai",
+        "query_string": b"",
+        "headers": [(b"content-type", b"application/json")],
+    }
+    async def receive():
+        return {"type": "http.request", "body": body_bytes, "more_body": False}
+
+    req = Request(scope, receive)
+    resp = await api_generate_quiz_ai(req)
+    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
+    data = json.loads(resp.body.decode("utf-8"))
+    assert data["status"] == "ok"
+    assert len(data["questions"]) == 5
+    for q in data["questions"]:
+        assert "question_en" in q and "question_ta" in q
+        assert len(q["options_en"]) == 4 and len(q["options_ta"]) == 4
+        assert 0 <= q["correct_index"] <= 3
+        assert "reference" in q and "explanation_en" in q and "explanation_ta" in q
+    print("✓ /api/quiz/generate-ai successfully generated 5 valid bilingual questions on Parables.")
+
+    # 2. Test POST /api/quiz/explain-ai
+    sample_q = data["questions"][0]
+    explain_payload = {
+        "question_en": sample_q["question_en"],
+        "question_ta": sample_q["question_ta"],
+        "options_en": sample_q["options_en"],
+        "options_ta": sample_q["options_ta"],
+        "chosen_index": sample_q["correct_index"],
+        "correct_index": sample_q["correct_index"],
+        "reference": sample_q["reference"],
+        "explanation_en": sample_q["explanation_en"],
+        "explanation_ta": sample_q["explanation_ta"],
+        "language": "bilingual"
+    }
+    explain_body = json.dumps(explain_payload).encode("utf-8")
+    scope_exp = {
+        "type": "http",
+        "method": "POST",
+        "path": "/api/quiz/explain-ai",
+        "raw_path": b"/api/quiz/explain-ai",
+        "query_string": b"",
+        "headers": [(b"content-type", b"application/json")],
+    }
+    async def receive_exp():
+        return {"type": "http.request", "body": explain_body, "more_body": False}
+
+    req_exp = Request(scope_exp, receive_exp)
+    resp_exp = await api_explain_quiz_ai(req_exp)
+    assert resp_exp.status_code == 200
+    exp_data = json.loads(resp_exp.body.decode("utf-8"))
+    assert exp_data["status"] == "ok"
+    assert "tutoring" in exp_data and len(exp_data["tutoring"]) > 20
+    print("✓ /api/quiz/explain-ai returned deep theological reflection with scripture grounding.")
+
+    # 3. Test Configurable Disabling of AI in Quiz
+    ai_config.quiz_ai_enabled = False
+    try:
+        req_disabled = Request(scope, receive)
+        await api_generate_quiz_ai(req_disabled)
+        assert False, "Expected HTTPException 503 when quiz_ai_enabled is False"
+    except HTTPException as e:
+        assert e.status_code == 503
+        print("✓ Verified /api/quiz/generate-ai returns HTTP 503 when disabled in Settings.")
+    finally:
+        ai_config.quiz_ai_enabled = True
+
 
 if __name__ == "__main__":
     test_quiz_dataset()
     import asyncio
     asyncio.run(test_quiz_routes())
+    asyncio.run(test_ai_quiz_features())

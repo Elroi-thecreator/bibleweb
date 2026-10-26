@@ -1,9 +1,9 @@
 id: PROD-QUIZ-001
 type: product_standard
-title: Daily Bible Quiz Generation, Difficulty Scaling & Scoring Standard
+title: Daily Bible Quiz Generation, Difficulty Scaling, AI Scripture Quiz & AI Theological Tutor Standard
 domain: product
 status: approved
-version: 1.0.0
+version: 1.1.0
 authority:
   level: official
   confidence: high
@@ -14,26 +14,37 @@ applies_to:
   - backend
   - frontend
   - quiz
+  - ask_bible_ai
+  - admin
 
 rule:
-  "The Bible Quiz module must generate dynamic, categorized, and multi-difficulty questions (easy, medium, hard) covering Old Testament, New Testament, and Deuterocanonical books, calculating scores with instant feedback and explanatory scripture citations."
+  "The Bible Quiz module must generate dynamic, categorized, and multi-difficulty questions (easy, medium, hard) covering Old Testament, New Testament, and Deuterocanonical books, calculating scores with instant feedback and explanatory scripture citations. In addition to canonical question banks, the module features an AI Scripture Quiz Generator (`POST /api/quiz/generate-ai`) enabling dynamic question generation on custom biblical topics in bilingual English and Tamil, and an interactive 'Ask AI Tutor' feature (`POST /api/quiz/explain-ai`) during gameplay feedback for deep theological reflection. Both AI quiz capabilities are fully configurable in Admin Settings (`quiz_ai_enabled`, `quiz_ai_default_count`, `quiz_ai_difficulty`) and backed by resilient local curated fallbacks."
 
 do:
   - "Categorize quiz questions by difficulty level and biblical period (Gospels, Epistles, Prophets, Pentateuch, Wisdom, Deuterocanon)."
   - "Present 4 multiple-choice options with randomized choice ordering to prevent positional guessing."
   - "Provide instant explanatory feedback citing the exact book, chapter, and verse reference upon answering each question."
+  - "Provide an interactive 'Ask AI Tutor' option in answer feedback to retrieve in-depth theological tutoring and spiritual reflections."
+  - "Provide an AI Scripture Quiz Generator in the quiz lobby with quick biblical topic chips (Parables, Miracles, Prophets, Exodus, Sermon on the Mount, Fruit of the Spirit) and custom topic input."
+  - "Enforce strict schema validation on AI-generated questions (`id`, `category`, `difficulty`, `question_en`, `question_ta`, `options_en`, `options_ta`, `correct_index`, `reference`, `explanation_en`, `explanation_ta`)."
+  - "Implement high-quality local curated question banks in `app/quiz_ai.py` so offline or simulation gameplay is 100% reliable."
+  - "Make AI in Quiz configurable via Admin Settings (`/admin/settings`) with toggle, default question count (3, 5, 10, 15), and difficulty (easy, medium, hard, mixed)."
+  - "Persist quiz AI settings in `data/bible_ai_config.json`, `%LOCALAPPDATA%/HolyBible/config/`, and browser Local Memory (`localStorage`)."
   - "Display a summary score breakdown at the end of the quiz with percentage score, completion badge, and review options."
   - "Support both Daily Challenge mode and customizable Practice mode."
 
 dont:
   - "Do not expose correct answers directly in the unhashed client-side HTML source prior to user submission."
+  - "Do not fail or crash the quiz game if upstream LLM services are offline; always fall back gracefully to the curated question bank."
   - "Do not penalize users for Deuterocanonical questions if they are specifically studying the Protestant canon view."
   - "Do not display ambiguous or poorly translated question stems."
 
 reason:
-  "Gamified scripture quizzes foster engagement, reinforce biblical literacy, and encourage deeper study of sacred texts across diverse reader demographics."
+  "Gamified scripture quizzes and AI-assisted theological tutoring foster active engagement, reinforce biblical literacy, deepen personal spiritual reflection, and encourage deeper study of sacred texts across diverse reader demographics."
 
 related_items:
   - ARCH-DATA-001
+  - ARCH-ADMIN-001
+  - ARCH-AI-001
   - PROD-CANON-001
   - DEV-PY-001
