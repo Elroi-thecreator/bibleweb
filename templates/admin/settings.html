@@ -633,6 +633,135 @@
                 </div>
             </div>
 
+            <!-- Card: Ask Bible AI & LLM Provider Configuration -->
+            <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800 gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">🤖</span>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Ask Bible AI & LLM Provider Settings</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <!-- AI Health Status Pill -->
+                        <span id="ai-admin-status-pill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {% if ai_config.simulation_mode %}bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300{% elif ai_health.status == 'healthy' %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300{% else %}bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300{% endif %} border border-stone-200 dark:border-stone-700">
+                            <span id="ai-admin-status-dot" class="w-2 h-2 rounded-full {% if ai_config.simulation_mode %}bg-purple-500{% elif ai_health.status == 'healthy' %}bg-emerald-500 animate-pulse{% else %}bg-amber-500{% endif %}"></span>
+                            <span id="ai-admin-status-text">
+                                {% if ai_config.simulation_mode %}Simulation Mode{% elif ai_health.status == 'healthy' %}Online ({{ ai_config.provider_name }}){% else %}Standby / Offline{% endif %}
+                            </span>
+                        </span>
+                        <a href="/ask-ai" target="_blank" class="px-2.5 py-1 text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-lg border border-amber-200 dark:border-amber-800 hover:bg-amber-100 transition flex items-center gap-1" title="Launch Ask AI Portal in new tab">
+                            <span>Open Chat</span> <span>↗</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Provider Presets -->
+                <div class="p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-800">
+                    <p class="text-[11px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">1-Click Provider Presets:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="applyAiPreset('freellmapi')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition cursor-pointer">
+                            ⚡ FreeLLMAPI (Local/Self-Hosted)
+                        </button>
+                        <button type="button" onclick="applyAiPreset('groq')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition cursor-pointer">
+                            🚀 Groq Cloud (Free Tier)
+                        </button>
+                        <button type="button" onclick="applyAiPreset('ollama')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition cursor-pointer">
+                            🏠 Ollama (Local & Private)
+                        </button>
+                        <button type="button" onclick="applyAiPreset('openai')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition cursor-pointer">
+                            🌐 OpenAI / Compatible
+                        </button>
+                        <button type="button" onclick="applyAiPreset('simulation')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 hover:border-amber-600 text-stone-700 dark:text-stone-300 transition cursor-pointer">
+                            🧪 Offline Simulation
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <form id="ai-config-form" onsubmit="saveAiConfig(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <!-- Provider Name -->
+                        <div>
+                            <label class="block font-semibold text-stone-700 dark:text-stone-300 mb-1">Provider Identifier</label>
+                            <input type="text" id="ai_provider_name" name="provider_name" value="{{ ai_config.provider_name }}"
+                                   placeholder="e.g. freellmapi, groq, ollama, openai"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-1 focus:ring-amber-600 outline-none">
+                        </div>
+
+                        <!-- Model Name -->
+                        <div>
+                            <label class="block font-semibold text-stone-700 dark:text-stone-300 mb-1">Model Name</label>
+                            <input type="text" id="ai_model" name="model" value="{{ ai_config.model }}"
+                                   placeholder="e.g. gemini-2.0-flash, llama-3.3-70b-versatile, llama3"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-1 focus:ring-amber-600 outline-none font-mono text-[11px]">
+                        </div>
+
+                        <!-- Base URL -->
+                        <div class="md:col-span-2">
+                            <label class="block font-semibold text-stone-700 dark:text-stone-300 mb-1">OpenAI-Compatible Base URL (/v1)</label>
+                            <input type="url" id="ai_base_url" name="base_url" value="{{ ai_config.base_url }}"
+                                   placeholder="http://localhost:3000/v1 or https://api.groq.com/openai/v1"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-1 focus:ring-amber-600 outline-none font-mono text-[11px]">
+                            <p class="text-[10px] text-stone-400 mt-1">FreeLLMAPI defaults to http://localhost:3000/v1. Groq defaults to https://api.groq.com/openai/v1.</p>
+                        </div>
+
+                        <!-- API Key -->
+                        <div class="md:col-span-2">
+                            <label class="block font-semibold text-stone-700 dark:text-stone-300 mb-1">API Key</label>
+                            <input type="password" id="ai_api_key" name="api_key" value="{{ ai_config.api_key }}"
+                                   placeholder="Enter upstream API key (e.g. gsk_... or free-tier for FreeLLMAPI)"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-1 focus:ring-amber-600 outline-none font-mono text-[11px]">
+                            <p class="text-[10px] text-stone-400 mt-1">Stored securely in data/bible_ai_config.json. Leave unchanged to keep the current secret.</p>
+                        </div>
+
+                        <!-- Temperature & Max Tokens -->
+                        <div>
+                            <label class="block font-semibold text-stone-700 dark:text-stone-300 mb-1">Temperature (0.0 - 1.0)</label>
+                            <input type="number" step="0.1" min="0.0" max="1.0" id="ai_temperature" name="temperature" value="{{ ai_config.temperature }}"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-1 focus:ring-amber-600 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-stone-700 dark:text-stone-300 mb-1">Max Grounding Passages</label>
+                            <input type="number" min="1" max="10" id="ai_max_grounding_passages" name="max_grounding_passages" value="{{ ai_config.max_grounding_passages }}"
+                                   class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl focus:ring-1 focus:ring-amber-600 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Toggles -->
+                    <div class="p-3 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200/80 dark:border-stone-800 space-y-2 text-xs">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="ai_enabled" name="enabled" {% if ai_config.enabled %}checked{% endif %} class="rounded text-amber-600">
+                            <span class="font-semibold text-stone-800 dark:text-stone-200">Enable Ask Bible AI Service</span>
+                            <span class="text-[10px] text-stone-400">(If disabled, API returns HTTP 503)</span>
+                        </label>
+
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="ai_enable_grounding" name="enable_grounding" {% if ai_config.enable_grounding %}checked{% endif %} class="rounded text-amber-600">
+                            <span class="font-semibold text-stone-800 dark:text-stone-200">Verified Scripture Grounding (FTS5 Dual-Corpus DB)</span>
+                            <span class="text-[10px] text-stone-400">(Injects real verses into prompt to prevent hallucinations)</span>
+                        </label>
+
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="ai_simulation_mode" name="simulation_mode" {% if ai_config.simulation_mode %}checked{% endif %} class="rounded text-amber-600">
+                            <span class="font-semibold text-purple-700 dark:text-purple-400">Offline Simulation Mode</span>
+                            <span class="text-[10px] text-stone-400">(Runs without external network calls using local mock reflections)</span>
+                        </label>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+                        <button type="button" onclick="testAiConnection()" id="ai-test-btn"
+                                class="py-2 px-4 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                            <span>🧪</span> <span>Test AI Connection</span>
+                        </button>
+                        <button type="submit" id="ai-save-btn"
+                                class="py-2 px-5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+                            <span>💾</span> <span>Save AI Settings</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             <!-- Card: Dual Embedded SQLite Databases -->
             <div class="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
                 <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
@@ -1246,6 +1375,134 @@
 
         // Initialize WhatsApp Gateway Live Status
         fetchAdminWaStatus();
+
+        // ==========================================
+        // Ask Bible AI Admin Configuration Controls
+        // ==========================================
+        function applyAiPreset(preset) {
+            const providerInput = document.getElementById('ai_provider_name');
+            const modelInput = document.getElementById('ai_model');
+            const urlInput = document.getElementById('ai_base_url');
+            const keyInput = document.getElementById('ai_api_key');
+            const simCheckbox = document.getElementById('ai_simulation_mode');
+
+            if (preset === 'freellmapi') {
+                providerInput.value = 'freellmapi';
+                modelInput.value = 'gemini-2.0-flash';
+                urlInput.value = 'http://localhost:3000/v1';
+                keyInput.value = 'free-tier';
+                simCheckbox.checked = false;
+                showToast('⚡ FreeLLMAPI preset applied (Local/Self-hosted Gateway)', 'info');
+            } else if (preset === 'groq') {
+                providerInput.value = 'groq';
+                modelInput.value = 'llama-3.3-70b-versatile';
+                urlInput.value = 'https://api.groq.com/openai/v1';
+                keyInput.value = '';
+                keyInput.placeholder = 'Paste your Groq API key (gsk_...)';
+                simCheckbox.checked = false;
+                showToast('🚀 Groq Cloud preset applied (Ultra-Fast Free Tier)', 'info');
+            } else if (preset === 'ollama') {
+                providerInput.value = 'ollama';
+                modelInput.value = 'llama3';
+                urlInput.value = 'http://localhost:11434/v1';
+                keyInput.value = 'ollama';
+                simCheckbox.checked = false;
+                showToast('🏠 Ollama preset applied (Local & Private)', 'info');
+            } else if (preset === 'openai') {
+                providerInput.value = 'openai';
+                modelInput.value = 'gpt-4o-mini';
+                urlInput.value = 'https://api.openai.com/v1';
+                keyInput.value = '';
+                keyInput.placeholder = 'Paste your OpenAI key (sk-...)';
+                simCheckbox.checked = false;
+                showToast('🌐 OpenAI preset applied', 'info');
+            } else if (preset === 'simulation') {
+                providerInput.value = 'simulation';
+                simCheckbox.checked = true;
+                showToast('🧪 Offline Simulation Mode enabled', 'info');
+            }
+        }
+
+        async function saveAiConfig(e) {
+            e.preventDefault();
+            const btn = document.getElementById('ai-save-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> <span>Saving...</span>';
+
+            const payload = {
+                enabled: document.getElementById('ai_enabled').checked,
+                provider_name: document.getElementById('ai_provider_name').value.trim(),
+                model: document.getElementById('ai_model').value.trim(),
+                base_url: document.getElementById('ai_base_url').value.trim(),
+                api_key: document.getElementById('ai_api_key').value.trim(),
+                temperature: parseFloat(document.getElementById('ai_temperature').value) || 0.3,
+                max_grounding_passages: parseInt(document.getElementById('ai_max_grounding_passages').value) || 4,
+                enable_grounding: document.getElementById('ai_enable_grounding').checked,
+                simulation_mode: document.getElementById('ai_simulation_mode').checked
+            };
+
+            try {
+                const res = await fetch('/admin/api/ai/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message || 'AI configuration saved successfully!', 'success');
+                    testAiConnection(true);
+                } else {
+                    showToast(data.detail || 'Failed to save AI configuration.', 'error');
+                }
+            } catch (err) {
+                showToast('Network error while saving AI configuration: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>💾</span> <span>Save AI Settings</span>';
+            }
+        }
+
+        async function testAiConnection(silent = false) {
+            const btn = document.getElementById('ai-test-btn');
+            const pill = document.getElementById('ai-admin-status-pill');
+            const dot = document.getElementById('ai-admin-status-dot');
+            const text = document.getElementById('ai-admin-status-text');
+
+            if (!silent && btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>⏳</span> <span>Probing Provider...</span>';
+            }
+
+            try {
+                const res = await fetch('/admin/api/ai/test', { method: 'POST' });
+                const data = await res.json();
+                const health = data.health || {};
+
+                if (health.simulation_mode) {
+                    pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border border-purple-200 dark:border-purple-800";
+                    dot.className = "w-2 h-2 rounded-full bg-purple-500";
+                    text.textContent = "Simulation Mode (Offline Mock)";
+                    if (!silent) showToast('Simulation Mode active: Local mock reflections ready.', 'info');
+                } else if (health.status === 'healthy') {
+                    pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800";
+                    dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                    text.textContent = `Online (${health.provider} / ${health.model})`;
+                    if (!silent) showToast(`AI Provider connected! Status: 200 OK (${health.provider})`, 'success');
+                } else {
+                    pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800";
+                    dot.className = "w-2 h-2 rounded-full bg-amber-500";
+                    text.textContent = "Standby / Unreachable";
+                    if (!silent) showToast(`AI Provider probe warning: ${health.message || health.error || 'Endpoint offline'}`, 'warning');
+                }
+            } catch (err) {
+                if (!silent) showToast('Could not reach backend AI test endpoint: ' + err.message, 'error');
+            } finally {
+                if (!silent && btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>🧪</span> <span>Test AI Connection</span>';
+                }
+            }
+        }
     </script>
 </body>
 </html>

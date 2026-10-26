@@ -142,6 +142,10 @@
                     <span>✨</span> <span class="hidden md:inline">Quiz</span>
                 </a>
 
+                <a href="/ask-ai{% if canon %}?canon={{ canon }}{% endif %}" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-800 text-amber-800 dark:text-amber-400 flex items-center gap-1 font-semibold" title="Ask Bible AI / வேதாகம உதவியாளர்">
+                    <span>🤖</span> <span class="hidden md:inline">Ask AI</span>
+                </a>
+
                 <a href="/whatsapp{% if canon %}?canon={{ canon }}{% endif %}" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-stone-800 text-emerald-800 dark:text-emerald-400 flex items-center gap-1 font-semibold" title="WhatsApp Bot & Daily Devotionals">
                     <span>💬</span> <span class="hidden md:inline">WhatsApp</span>
                 </a>
@@ -156,8 +160,11 @@
                 </button>
             </div>
 
-            <!-- Mobile Quick Header Actions (Songs + Search + Settings) -->
+            <!-- Mobile Quick Header Actions (Songs + Search + Ask AI + Settings) -->
             <div class="flex sm:hidden items-center space-x-0.5 text-xs shrink-0">
+                <a href="/ask-ai{% if canon %}?canon={{ canon }}{% endif %}" class="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition" title="Ask Bible AI">
+                    <span class="text-sm">🤖</span>
+                </a>
                 <a href="/songs{% if canon %}?canon={{ canon }}{% endif %}" class="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition" title="Song Lyrics / பாடல் வரிகள்">
                     <span class="text-sm">🎵</span>
                 </a>

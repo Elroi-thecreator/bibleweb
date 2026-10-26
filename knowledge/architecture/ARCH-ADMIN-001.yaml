@@ -3,7 +3,7 @@ type: architecture_standard
 title: Administrator Authentication, Protected Settings & System Telemetry Architecture
 domain: architecture
 status: approved
-version: 1.7.0
+version: 1.8.0
 authority:
   level: official
   confidence: high
@@ -16,29 +16,28 @@ applies_to:
   - security
   - routes
   - templates
+  - ask_bible_ai
 
 rule:
-  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, all administrative management APIs (`/admin/api/*`), and administrative WhatsApp endpoints (`/api/whatsapp/toggle-simulation`, `/api/whatsapp/push-devotional`, `/api/whatsapp/broadcast*`, `/api/whatsapp/queue/*`, `/api/whatsapp/rate-limiter/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons. Administrators can dynamically update, test, and persist runtime settings—including the WhatsApp Gateway Base URL, Session ID, API Key, Simulation Mode, RabbitMQ Queue, and User Rate Limiter & Audio Quotas—via `POST /admin/api/whatsapp/*` with persistent backing in `data/whatsapp_config.json`. The public `/whatsapp` template and `/sync` navigation are completely sanitized of simulation controls, broadcast triggers, and internal network parameters."
+  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, all administrative management APIs (`/admin/api/*`), administrative WhatsApp endpoints (`/api/whatsapp/*`), and administrative Ask Bible AI endpoints (`/admin/api/ai/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons. Administrators can dynamically update, test, and persist runtime settings—including WhatsApp Gateway parameters and Ask Bible AI LLM Provider Settings (Base URL, API Key, Model, Presets, Grounding, and Simulation Mode)—via `POST /admin/api/*` with persistent backing in `data/whatsapp_config.json` and `data/bible_ai_config.json`."
 
 do:
   - "Mount all administrative routes under `/admin` with route-level security guards (`require_admin`)."
+  - "Provide dedicated Ask Bible AI & LLM Provider Configuration on `/admin/settings`: display live health status pill, 1-click provider presets (FreeLLMAPI, Groq Cloud, Ollama, OpenAI, Simulation Mode), editable OpenAI-compatible Base URL (`/v1`), masked API key with secure storage in `data/bible_ai_config.json`, model selector, temperature, max grounding passages, and offline simulation mode toggle."
+  - "Expose protected administrative endpoints `POST /admin/api/ai/config` for runtime AI configuration hot-swapping and `POST /admin/api/ai/test` for live provider reachability probing."
   - "Protect all administrative operations in `whatsapp_gateway/routes/webhook.py` (`toggle-simulation`, `push-devotional`, `broadcast`, `broadcast-all`, `queue/*`, and `rate-limiter/*`) with `require_admin(request)` returning HTTP 401 Unauthorized for unauthenticated callers."
   - "Ensure `require_admin` in `app/admin/auth.py` evaluates both `request.url.path.startswith('/admin/api')` and `request.url.path.startswith('/api/')` as API paths to prevent HTML redirects on JSON endpoints."
   - "Sanitize the public `/whatsapp` page into a user-friendly assistant guide and chat simulator, completely removing simulation toggle buttons, devotional broadcast triggers, subscriber broadcast forms, and internal gateway network endpoints."
   - "Update header navigation links in `/sync` from 'Open WhatsApp Bot Hub' to 'WhatsApp Guide & Chat Simulator'."
   - "Host the live WhatsApp gateway connection status indicator (`gateway-status-pill` and `wa-metric-status-pill`) exclusively within `/admin/settings`, providing administrators with real-time socket connectivity state, simulation mode detection, and automatic telemetry updates via `fetchAdminWaStatus()`, while keeping the public `/whatsapp` page completely free of gateway connection polling."
   - "Redirect public `/settings` to `/admin/settings` to ensure configuration controls are accessible exclusively to authorized administrators."
-  - "Provide interactive runtime configuration on `/admin/settings` to view, edit, and persist the active WhatsApp Provider Plugin (`provider`: `meta_cloud_api`, `wa_akg`, or `simulation`), Meta Cloud API credentials (Phone Number ID, WABA ID, Access Token, Webhook Verification Token, Graph API Version), WA-AKG parameters (`gateway_url`, `session_id`, `api_key`), and Operating Mode (`enable_simulation_mode`)."
-  - "Provide dedicated tabbed provider switching on `/admin/settings` allowing administrators to toggle between Meta WhatsApp Business Cloud API, WA-AKG Baileys Gateway, and In-Browser Simulation Mode without reloading the page, with 1-click copy for both Meta and WA-AKG webhook callback URLs."
-  - "Persist administrative configuration overrides to `data/whatsapp_config.json` while maintaining backward compatibility with environment variable fallbacks (`WA_GATEWAY_URL`, `WA_SESSION_ID`, `WA_API_KEY`)."
-  - "Apply runtime WhatsApp configuration changes immediately to the active `WAClient` instance via `wa_client.update_config(...)` with zero downtime or server restarts."
+  - "Provide interactive runtime configuration on `/admin/settings` to view, edit, and persist the active WhatsApp Provider Plugin (`provider`: `meta_cloud_api`, `wa_akg`, or `simulation`), Meta Cloud API credentials, and WA-AKG parameters."
+  - "Persist administrative configuration overrides to `data/whatsapp_config.json` and `data/bible_ai_config.json` while maintaining backward compatibility with environment variable fallbacks."
   - "Authenticate administrator credentials (`ADMIN_USERNAME`, `ADMIN_PASSWORD`) using `secrets.compare_digest` to eliminate timing attack vulnerabilities."
   - "Sign session tokens with HMAC-SHA256 (`base64(username:timestamp:hmac_signature)`) using `ADMIN_SECRET_KEY` or a cryptographically stable machine seed."
   - "Store admin session tokens in secure `HttpOnly`, `SameSite=Lax` cookies named `bible_admin_session` with a 7-day expiration (604,800s)."
-  - "Provide diagnostic telemetry on `/admin/settings`: server uptime, CPU/memory usage via `psutil`, database health for embedded SQLite databases (`bible.sqlite.db`, `songs.sqlite.db`, `whatsapp_subscribers.sqlite.db`), JSON subscriber backup state (`data/whatsapp_subscribers.json`), and cache metrics."
-  - "Provide instant administrative actions: Purge HTML Cache (`BoundedHTMLCache`), Purge Audio TTS Cache (`BoundedAudioCache`), Toggle WhatsApp Simulation Mode, Ping External Gateway, Manually Trigger Daily Devotional Broadcasts, and Toggle RabbitMQ Task Queue (`/admin/api/whatsapp/queue/toggle`) with live broker reachability testing (`/admin/api/whatsapp/queue/ping`)."
-  - "Provide dedicated RabbitMQ task queue management on `/admin/settings`: display full queue status endpoint URL with copy action (`/api/whatsapp/queue/status`), broker URL configuration with credential masking, live connection state badges, and queue metrics (enqueued, processed, and direct fallback counters)."
-  - "Provide dedicated WhatsApp Rate Limiting & User Quotas management on `/admin/settings`: real-time telemetry grid (active users in 60s sliding window, total requests evaluated, throttled requests count, daily audio quota blocks count), threshold controls (`requests_per_minute`, `daily_audio_limit`, `cooldown_seconds`, `whitelist`), dynamic toggle (`/admin/api/whatsapp/rate-limiter/toggle`), live config updates (`/admin/api/whatsapp/rate-limiter/config`), and instant counter resets (`/admin/api/whatsapp/rate-limiter/reset`)."
+  - "Provide diagnostic telemetry on `/admin/settings`: server uptime, CPU/memory usage via `psutil`, database health for embedded SQLite databases, JSON subscriber backup state, and cache metrics."
+  - "Provide instant administrative actions: Purge HTML Cache, Purge Audio TTS Cache, Toggle WhatsApp Simulation Mode, Ping External Gateway, Manually Trigger Daily Devotional Broadcasts, Toggle RabbitMQ Task Queue, and configure Rate Limiter."
   - "Provide clean session termination via `/admin/logout`, properly clearing the session cookie and redirecting to the login portal."
   - "Execute `scripts/test_admin_settings.py` before releasing administrative changes to ensure 100% coverage of auth guards, session cookies, cache purges, and runtime configuration persistence."
 
@@ -54,9 +53,9 @@ reason:
 related_items:
   - ARCH-SYS-001
   - ARCH-WA-001
+  - ARCH-AI-001
   - DEV-PY-001
   - DEV-TEST-001
   - ADR-005
   - ADR-006
-  - ADR-007
-  - ADR-008
+  - ADR-009

@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Ask Bible AI | வேதாகம அறிவார்ந்த உதவியாளர்{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8 flex flex-col min-h-[calc(100vh-8rem)]">
+
+    <!-- Header Section -->
+    <div class="border-b border-stone-200 dark:border-stone-800 pb-5 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-sm shadow-xs">†</span>
+                <h1 class="text-xl sm:text-2xl font-cinzel font-bold text-stone-900 dark:text-stone-100">Ask Bible AI</h1>
+                <span id="ai-status-pill" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400">Connecting...</span>
+            </div>
+            <p class="font-tamil text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-1">
+                வேதாகம கேள்விகள், உவமைகள், கோட்பாடுகள் மற்றும் இறையியல் ஆலோசனைகளை அறிவார்ந்த முறையில் ஆராயுங்கள்.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="clearChatHistory()" class="px-3 py-1.5 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 transition cursor-pointer flex items-center gap-1.5" title="Clear conversation history">
+                <span>🔄</span> <span>New Chat</span>
+            </button>
+            <a href="/search" class="px-3 py-1.5 rounded-xl text-xs font-medium text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 transition flex items-center gap-1.5">
+                <span>🔍</span> <span>FTS Search</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Chat Messages Scroll Container -->
+    <div id="ai-chat-thread" class="flex-1 space-y-4 overflow-y-auto pr-1 pb-4">
+        <!-- Initial Welcome Bubble -->
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-xs shrink-0 mt-0.5 shadow-xs">†</div>
+            <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl rounded-tl-xs p-4 sm:p-5 shadow-xs max-w-2xl w-full">
+                <p class="font-cinzel font-bold text-sm text-amber-900 dark:text-amber-400 mb-1">Welcome to Ask Bible AI | நல்வரவு</p>
+                <p class="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                    Ask any question regarding Holy Scripture in English or Tamil. Every answer is grounded directly in the verified Catholic (73 Books) and Protestant (66 Books) Biblical corpora.
+                </p>
+
+                <!-- Prompt Suggestions -->
+                <div class="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800/80">
+                    <p class="text-[11px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span>✨</span> <span>Suggested Topics / பரிந்துரைக்கப்பட்ட தலைப்புகள்:</span>
+                    </p>
+                    <div id="ai-suggestions-list" class="flex flex-wrap gap-1.5">
+                        <span class="text-xs text-stone-400">Loading suggestions...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="sticky bottom-3 mt-auto pt-2 bg-stone-50/90 dark:bg-stone-950/90 backdrop-blur-xs">
+        <form id="ai-chat-form" onsubmit="handleSendQuestion(event)" class="relative flex items-center bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 focus-within:border-amber-600 rounded-2xl shadow-sm transition p-1.5">
+            <input type="text" id="ai-prompt-input" 
+                   placeholder="Ask a question about scripture, verses, theology... / கேள்விகளைக் கேளுங்கள்..." 
+                   class="flex-1 px-3 py-2 text-xs sm:text-sm bg-transparent outline-none text-stone-900 dark:text-stone-100 placeholder-stone-400"
+                   autocomplete="off" required>
+            <button type="submit" id="ai-send-btn" 
+                    class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50">
+                <span>Ask</span>
+                <span>→</span>
+            </button>
+        </form>
+        <div class="px-3 pt-1.5 flex justify-between items-center text-[11px] text-stone-500 dark:text-stone-400">
+            <span>Powered by Ask Bible AI Plugin • Bilingual Grounding</span>
+            <span id="ai-model-tag" class="text-amber-800 dark:text-amber-400 font-medium">OpenAI-Compatible</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- Markdown Parser for AI Responses -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+    /* Styling for AI response blocks */
+    .ai-markdown p { margin-bottom: 0.75rem; line-height: 1.85; }
+    .ai-markdown p:last-child { margin-bottom: 0; }
+    .ai-markdown ul { list-style-type: disc; margin-left: 1.25rem; margin-bottom: 0.75rem; }
+    .ai-markdown ol { list-style-type: decimal; margin-left: 1.25rem; margin-bottom: 0.75rem; }
+    .ai-markdown strong { color: #b45309; font-weight: 600; }
+    .dark .ai-markdown strong { color: #f59e0b; }
+    .ai-markdown h3, .ai-markdown h4 { font-family: 'Cinzel', serif; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; color: #92400e; }
+    .dark .ai-markdown h3, .dark .ai-markdown h4 { color: #fbbf24; }
+    .ai-markdown blockquote { border-left: 3px solid #b45309; padding-left: 0.75rem; font-style: italic; margin: 0.5rem 0; }
+</style>
+
+<script>
+    const chatThread = document.getElementById('ai-chat-thread');
+    const promptInput = document.getElementById('ai-prompt-input');
+    const sendButton = document.getElementById('ai-send-btn');
+    const statusPill = document.getElementById('ai-status-pill');
+    const suggestionsList = document.getElementById('ai-suggestions-list');
+    let aiConversationHistory = [];
+
+    // Health Telemetry
+    async function checkAiHealth() {
+        try {
+            const res = await fetch('/api/ask-ai/health');
+            const data = await res.json();
+            if (data.status === 'healthy') {
+                statusPill.textContent = '● AI Ready';
+                statusPill.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400';
+            } else {
+                statusPill.textContent = '● Fallback Synthesis';
+                statusPill.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400';
+            }
+            if (data.model) {
+                document.getElementById('ai-model-tag').textContent = data.model;
+            }
+        } catch(e) {
+            statusPill.textContent = '● Standalone';
+            statusPill.className = 'text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300';
+        }
+    }
+
+    // Load Suggested Questions
+    async function loadAiSuggestions() {
+        try {
+            const res = await fetch('/api/ask-ai/suggestions');
+            const data = await res.json();
+            if (data.suggestions && data.suggestions.length) {
+                suggestionsList.innerHTML = '';
+                data.suggestions.forEach(q => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'text-left text-xs bg-amber-50 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-stone-700 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-stone-700 rounded-lg px-2.5 py-1 transition cursor-pointer';
+                    btn.textContent = q;
+                    btn.onclick = () => {
+                        promptInput.value = q;
+                        handleSendQuestion(new Event('submit'));
+                    };
+                    suggestionsList.appendChild(btn);
+                });
+            }
+        } catch(e) {}
+    }
+
+    function appendUserBubble(text) {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex justify-end';
+        wrap.innerHTML = `
+            <div class="bg-amber-700 text-white rounded-2xl rounded-tr-xs px-4 py-2.5 max-w-xl text-xs sm:text-sm shadow-xs">
+                <p class="leading-relaxed">${escapeHtml(text)}</p>
+            </div>
+        `;
+        chatThread.appendChild(wrap);
+        chatThread.scrollTop = chatThread.scrollHeight;
+    }
+
+    function appendBotBubble(placeholder = 'Searching scriptures and pondering...') {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex items-start gap-3';
+        const msgId = 'bubble-' + Date.now();
+        wrap.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-xs shrink-0 mt-0.5 shadow-xs">†</div>
+            <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl rounded-tl-xs p-4 sm:p-5 shadow-xs max-w-2xl w-full">
+                <div id="${msgId}" class="ai-markdown text-xs sm:text-sm text-stone-800 dark:text-stone-200 leading-relaxed font-serif">
+                    <span class="inline-flex items-center gap-1.5 text-stone-400 italic">
+                        <span class="animate-spin text-amber-700">⏳</span> ${placeholder}
+                    </span>
+                </div>
+                <div id="${msgId}-citations" class="mt-3 pt-2.5 border-t border-stone-100 dark:border-stone-800 hidden"></div>
+            </div>
+        `;
+        chatThread.appendChild(wrap);
+        chatThread.scrollTop = chatThread.scrollHeight;
+        return msgId;
+    }
+
+    async function handleSendQuestion(e) {
+        e.preventDefault();
+        const text = promptInput.value.trim();
+        if (!text) return;
+
+        appendUserBubble(text);
+        promptInput.value = '';
+        promptInput.disabled = true;
+        sendButton.disabled = true;
+
+        const msgId = appendBotBubble();
+        const targetEl = document.getElementById(msgId);
+        const citationsEl = document.getElementById(msgId + '-citations');
+
+        try {
+            const response = await fetch('/api/ask-ai/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: text,
+                    history: aiConversationHistory,
+                    language: 'auto'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let accumulated = '';
+            targetEl.innerHTML = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\\n');
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith('data: ')) {
+                        const raw = trimmed.slice(6);
+                        if (raw === '[DONE]') break;
+                        try {
+                            const parsed = JSON.parse(raw);
+                            if (parsed.token) {
+                                accumulated += parsed.token;
+                                targetEl.innerHTML = marked.parse(accumulated);
+                                chatThread.scrollTop = chatThread.scrollHeight;
+                            }
+                        } catch (err) {}
+                    }
+                }
+            }
+
+            if (!accumulated) {
+                // Non-streaming fallback
+                const fallbackRes = await fetch('/api/ask-ai/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: text, history: aiConversationHistory })
+                });
+                const fbData = await fallbackRes.json();
+                accumulated = fbData.answer || 'No answer available.';
+                targetEl.innerHTML = marked.parse(accumulated);
+
+                if (fbData.citations && fbData.citations.length) {
+                    citationsEl.classList.remove('hidden');
+                    citationsEl.innerHTML = '<span class="text-[10px] uppercase font-bold text-stone-400 dark:text-stone-500">Verified Passages: </span>' + 
+                        fbData.citations.map(c => `<span class="inline-block bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-400 text-[11px] font-medium px-2 py-0.5 rounded border border-amber-200 dark:border-stone-700 mr-1.5 mt-1">${c}</span>`).join('');
+                }
+            }
+
+            aiConversationHistory.push({ role: 'user', content: text });
+            aiConversationHistory.push({ role: 'assistant', content: accumulated });
+
+        } catch (err) {
+            targetEl.innerHTML = `<span class="text-rose-600 dark:text-rose-400 font-semibold">Service Notice: Could not complete AI request (${err.message}).</span>`;
+        } finally {
+            promptInput.disabled = false;
+            sendButton.disabled = false;
+            promptInput.focus();
+            chatThread.scrollTop = chatThread.scrollHeight;
+        }
+    }
+
+    function clearChatHistory() {
+        aiConversationHistory = [];
+        chatThread.innerHTML = '';
+        location.reload();
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>'"]/g, tag => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[tag] || tag));
+    }
+
+    checkAiHealth();
+    loadAiSuggestions();
+</script>
+{% endblock %}

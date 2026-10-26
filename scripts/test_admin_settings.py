@@ -217,18 +217,50 @@ async def run_admin_tests():
         print(f"  ✅ Queue Ping executed with status: {q_ping['status']}")
 
         # -------------------------------------------------------------
-        # 17. Test Admin Logout
+        # 17. Test Ask Bible AI Config Update
         # -------------------------------------------------------------
-        print("\n[17] Testing GET /admin/logout...")
+        print("\n[17] Testing POST /admin/api/ai/config authenticated...")
+        res = await client.post(
+            "/admin/api/ai/config",
+            json={
+                "provider_name": "groq",
+                "base_url": "https://api.groq.com/openai/v1",
+                "model": "llama-3.3-70b-versatile",
+                "simulation_mode": True,
+            },
+            cookies=cookies,
+        )
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        ai_data = res.json()
+        assert ai_data["status"] == "ok"
+        assert ai_data["config"]["provider_name"] == "groq"
+        assert ai_data["config"]["simulation_mode"] is True
+        print("  ✅ Ask Bible AI configuration updated live via Admin API.")
+
+        # -------------------------------------------------------------
+        # 18. Test Ask Bible AI Live Test Endpoint
+        # -------------------------------------------------------------
+        print("\n[18] Testing POST /admin/api/ai/test authenticated...")
+        res = await client.post("/admin/api/ai/test", cookies=cookies)
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        test_data = res.json()
+        assert test_data["status"] == "ok"
+        assert "health" in test_data
+        print(f"  ✅ Ask Bible AI health check executed via Admin API (Status: {test_data['health']['status']}).")
+
+        # -------------------------------------------------------------
+        # 19. Test Admin Logout
+        # -------------------------------------------------------------
+        print("\n[19] Testing GET /admin/logout...")
         res = await client.get("/admin/logout", cookies=cookies)
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
         print("  ✅ Logged out successfully and redirected to login page.")
 
         # -------------------------------------------------------------
-        # 18. Verify Session Invalidation after Logout
+        # 20. Verify Session Invalidation after Logout
         # -------------------------------------------------------------
-        print("\n[18] Testing GET /admin/settings without cookie after logout...")
+        print("\n[20] Testing GET /admin/settings without cookie after logout...")
         res = await client.get("/admin/settings")
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
@@ -248,7 +280,7 @@ async def run_admin_tests():
         config.rabbitmq_url = p.get("rabbitmq_url", config.rabbitmq_url)
 
     print("\n" + "=" * 70)
-    print("🎉 ALL 18 ADMIN SECURITY, SETTINGS & CONFIG TESTS PASSED WITH 100% SUCCESS!")
+    print("🎉 ALL 20 ADMIN SECURITY, SETTINGS & CONFIG TESTS PASSED WITH 100% SUCCESS!")
     print("=" * 70)
 
 

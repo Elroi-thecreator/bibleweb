@@ -30,6 +30,8 @@ from whatsapp_gateway.subscribers import get_active_subscribers, get_subscriber_
 from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
 from whatsapp_gateway.rate_limiter import rate_limiter
 from app.db import DB_PATH, SONGS_DB_PATH
+from ask_bible_ai.config import config as ai_config, save_persisted_config as save_ai_config
+from ask_bible_ai.routes import ai_service
 
 router = APIRouter()
 
@@ -204,6 +206,12 @@ async def admin_settings_page(request: Request):
     from whatsapp_gateway.queue.manager import queue_manager
     queue_status = queue_manager.get_status()
 
+    # 6. Ask Bible AI Plugin Telemetry
+    try:
+        ai_health = await ai_service.health()
+    except Exception as e:
+        ai_health = {"status": "error", "error": str(e)}
+
     return templates.TemplateResponse(
         request=request,
         name="admin/settings.html",
@@ -224,6 +232,8 @@ async def admin_settings_page(request: Request):
             "db_stats": db_stats,
             "queue_status": queue_status,
             "rate_limiter_stats": rate_limiter.get_stats(),
+            "ai_config": ai_config.to_dict(),
+            "ai_health": ai_health,
         },
     )
 
@@ -550,4 +560,101 @@ async def api_reset_wa_rate_limiter(request: Request):
         "status": "ok",
         "message": "WhatsApp Rate Limiter tracking and daily quotas have been reset.",
         "rate_limiter": rate_limiter.get_stats(),
+    }
+
+
+# =====================================================================
+# Ask Bible AI Configuration & Telemetry APIs (Protected by require_admin)
+# =====================================================================
+
+@router.post("/api/ai/config")
+async def api_update_ai_config(request: Request):
+    """
+    Updates and persists Ask Bible AI configuration at runtime.
+    Protected strictly by require_admin.
+    """
+    require_admin(request)
+    try:
+        body = await request.json()
+    except Exception:
+        body = await _parse_form_data(request)
+
+    updates = {}
+
+    if "enabled" in body:
+        val = body["enabled"]
+        if isinstance(val, str):
+            val = val.lower() in ("true", "1", "yes", "on")
+        updates["enabled"] = bool(val)
+
+    if "provider_name" in body and body["provider_name"]:
+        updates["provider_name"] = str(body["provider_name"]).strip()
+
+    if "base_url" in body and body["base_url"]:
+        url = str(body["base_url"]).strip()
+        if not (url.startswith("http://") or url.startswith("https://")):
+            raise HTTPException(status_code=400, detail="Base URL must start with http:// or https://")
+        updates["base_url"] = url
+
+    if "api_key" in body and body["api_key"] is not None:
+        val = str(body["api_key"]).strip()
+        # If masked with ellipsis, keep previous key
+        if "..." not in val:
+            updates["api_key"] = val
+
+    if "model" in body and body["model"]:
+        updates["model"] = str(body["model"]).strip()
+
+    if "temperature" in body and body["temperature"] != "":
+        try:
+            updates["temperature"] = float(body["temperature"])
+        except ValueError:
+            pass
+
+    if "max_tokens" in body and body["max_tokens"] != "":
+        try:
+            updates["max_tokens"] = int(body["max_tokens"])
+        except ValueError:
+            pass
+
+    if "enable_grounding" in body:
+        val = body["enable_grounding"]
+        if isinstance(val, str):
+            val = val.lower() in ("true", "1", "yes", "on")
+        updates["enable_grounding"] = bool(val)
+
+    if "max_grounding_passages" in body and body["max_grounding_passages"] != "":
+        try:
+            updates["max_grounding_passages"] = int(body["max_grounding_passages"])
+        except ValueError:
+            pass
+
+    if "simulation_mode" in body:
+        val = body["simulation_mode"]
+        if isinstance(val, str):
+            val = val.lower() in ("true", "1", "yes", "on")
+        updates["simulation_mode"] = bool(val)
+
+    new_cfg = save_ai_config(updates)
+    ai_service.config = new_cfg
+    ai_service.client.config = new_cfg
+
+    return {
+        "status": "ok",
+        "message": "Ask Bible AI configuration updated successfully!",
+        "config": new_cfg.to_dict(),
+    }
+
+
+@router.post("/api/ai/test")
+async def api_test_ai_connection(request: Request):
+    """
+    Triggers live health check and provider probe for Ask Bible AI.
+    Protected strictly by require_admin.
+    """
+    require_admin(request)
+    health = await ai_service.health()
+    return {
+        "status": "ok",
+        "health": health,
     }

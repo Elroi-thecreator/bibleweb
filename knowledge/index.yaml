@@ -1,8 +1,8 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/bible"
-knowledge_units_count: 22
-last_updated: "2026-10-25"
+knowledge_units_count: 24
+last_updated: "2026-10-26"
 
 knowledge_units:
   architecture:
@@ -21,6 +21,9 @@ knowledge_units:
     - id: ARCH-ADMIN-001
       file: "knowledge/architecture/ARCH-ADMIN-001.yaml"
       title: "Administrator Authentication, Protected Settings & System Telemetry Architecture"
+    - id: ARCH-AI-001
+      file: "knowledge/architecture/ARCH-AI-001.yaml"
+      title: "Decoupled Ask Bible AI Plugin Architecture with Verified Scripture Grounding"
 
   development:
     - id: DEV-PY-001
@@ -78,3 +81,6 @@ knowledge_units:
     - id: ADR-008
       file: "knowledge/decisions/ADR-008.yaml"
       title: "Pluggable WhatsApp Gateway Provider Plugin Architecture Supporting Meta WhatsApp Business Cloud API and WA-AKG Multi-Device Gateway"
+    - id: ADR-009
+      file: "knowledge/decisions/ADR-009.yaml"
+      title: "Decoupled OpenAI-Compatible Plugin Architecture with Pluggable Scripture Grounding Provider for Ask Bible AI"

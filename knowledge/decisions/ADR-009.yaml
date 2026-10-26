@@ -1,0 +1,46 @@
+id: ADR-009
+type: architecture_decision_record
+title: Decoupled OpenAI-Compatible Plugin Architecture with Pluggable Scripture Grounding Provider for Ask Bible AI
+domain: decisions
+status: accepted
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+applies_to:
+  - backend
+  - ask_bible_ai
+  - routes
+
+rule:
+  "Adopt a decoupled, protocol-driven plugin architecture for Ask Bible AI targeting standard OpenAI `/v1` endpoints with an abstract scripture grounding provider interface rather than binding tightly to a single proprietary AI SDK or hardcoded local database."
+
+context:
+  "The application required an intelligent biblical question-answering assistant ('Ask Bible AI') capable of answering theological inquiries, explaining verses, and providing bilingual pastoral reflections in English and Tamil. To ensure zero cost and maximum flexibility, the system needed to work with free-tier gateways (FreeLLMAPI), local offline models (Ollama), fast cloud endpoints (Groq, Gemini), or official APIs, while guaranteeing that the implementation remains a standalone, reusable plugin suitable for other projects without hardcoded coupling to Holy Bible's internal SQLite schema."
+
+decision:
+  "1. Package Ask Bible AI in an isolated top-level directory (`ask_bible_ai/`) with zero dependency on `app/` in its core engine.
+   2. Implement an async OpenAI-compatible client (`OpenAICompatibleClient`) communicating over standard `/v1/chat/completions` REST and SSE streaming protocols.
+   3. Introduce `BaseGroundingProvider` and `GroundingPassage` protocols to decouple scripture context retrieval from LLM prompting, allowing any backend (SQLite, PostgreSQL, Elasticsearch) to plug in.
+   4. Connect the Holy Bible dual-corpus SQLite database via an external adapter (`HolyBibleGroundingAdapter`) utilizing FTS5 full-text search and regex citation matching.
+   5. Provide a built-in offline simulation mode for resilient development, zero-connectivity testing, and CI/CD pipelines.
+   6. Ship a standalone, embeddable web chat UI (`/api/ask-ai/ui`) alongside standard FastAPI router endpoints."
+
+consequences:
+  positive:
+    - "100% reusable across other projects: can be copied and mounted in any FastAPI app in 3 lines of code."
+    - "Free and cost-effective: works with FreeLLMAPI, Ollama, or free Groq/Gemini developer tiers."
+    - "High scripture fidelity: Grounding provider prevents hallucinations by feeding verified verses directly into the prompt context."
+    - "Zero latency streaming: Real-time token delivery via Server-Sent Events (SSE)."
+    - "Offline resilience: Simulation mode keeps test suites and offline environments working without failure."
+  negative:
+    - "Requires an active OpenAI-compatible endpoint (local or remote) for live multi-turn intelligence beyond simulation mode."
+
+related_items:
+  - ARCH-SYS-001
+  - ARCH-AI-001
+  - DEV-PY-001
+  - DEV-TEST-001

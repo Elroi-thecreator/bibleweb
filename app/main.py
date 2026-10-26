@@ -1606,6 +1606,29 @@ from whatsapp_gateway.routes.webhook import router as whatsapp_router
 app.include_router(whatsapp_router, prefix="/api/whatsapp", tags=["whatsapp"])
 
 
+# ---------------------------------------------------------
+# Reusable Decoupled Ask Bible AI Plugin
+# ---------------------------------------------------------
+from ask_bible_ai.routes import router as ask_ai_router
+app.include_router(ask_ai_router, prefix="/api/ask-ai", tags=["ask-bible-ai"])
+
+
+@app.get("/ask-ai", response_class=HTMLResponse)
+@app.get("/ask", response_class=HTMLResponse)
+async def ask_bible_ai_page(request: Request):
+    """Interactive Ask Bible AI Chat Portal with Scripture Grounding."""
+    active_canon = resolve_canon(request)
+    canon_ctx = get_canon_context(active_canon)
+    return templates.TemplateResponse(
+        request=request,
+        name="ask_ai.html",
+        context={
+            **canon_ctx,
+            "page_title": "Ask Bible AI | வேதாகம உதவியாளர்",
+        },
+    )
+
+
 
 @app.get("/whatsapp", response_class=HTMLResponse)
 async def whatsapp_hub_page(request: Request):

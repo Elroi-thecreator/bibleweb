@@ -14,4 +14,5 @@ dist/
 
 data/whatsapp_subscribers.sqlite.db
 data/whatsapp_config.json
+data/bible_ai_config.json
 wa-akg/
