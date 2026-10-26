@@ -13,6 +13,7 @@ Tests:
 import asyncio
 import os
 import sys
+import uuid
 from pathlib import Path
 
 # Add project root to sys.path
@@ -121,12 +122,70 @@ async def run_unit_tests():
     assert len(suggs) >= 3
     print("✓ Starter suggestions verified.")
 
+    print("\n--- [8] Testing Decoupled ChatHistoryStore (Embedded SQLite) ---")
+    import tempfile
+    test_db = Path(tempfile.gettempdir()) / f"test_bible_ai_history_{uuid.uuid4().hex[:8]}.db"
+
+    def cleanup_db(p: Path):
+        for ext in ("", "-wal", "-shm"):
+            f = Path(str(p) + ext)
+            try:
+                if f.exists():
+                    f.unlink()
+            except OSError:
+                pass
+
+    cleanup_db(test_db)
+    from ask_bible_ai.history import ChatHistoryStore
+
+    store = ChatHistoryStore(db_path=test_db)
+    sid = await store.create_session("The Meaning of Hope")
+    assert sid is not None
+    sess = await store.get_session(sid)
+    assert sess["title"] == "The Meaning of Hope"
+
+    # Add messages
+    m1 = await store.add_message(sid, "user", "What is hope?")
+    m2 = await store.add_message(sid, "assistant", "Hope is an anchor for the soul.", citations=["Hebrews 6:19"])
+    assert m1 > 0
+    assert m2 > 0
+
+    msgs = await store.get_messages(sid)
+    assert len(msgs) == 2
+    assert msgs[0]["role"] == "user"
+    assert msgs[1]["role"] == "assistant"
+    assert msgs[1]["citations"] == ["Hebrews 6:19"]
+
+    # List sessions
+    sessions = await store.list_sessions()
+    assert len(sessions) >= 1
+    assert sessions[0]["id"] == sid
+    assert sessions[0]["message_count"] == 2
+
+    # Delete session
+    del_ok = await store.delete_session(sid)
+    assert del_ok is True
+    assert await store.get_session(sid) is None
+    assert len(await store.get_messages(sid)) == 0
+
+    # Auto-creation on add_message
+    new_sid = "custom-test-uuid"
+    await store.add_message(new_sid, "user", "Who built the ark?")
+    auto_sess = await store.get_session(new_sid)
+    assert auto_sess is not None
+    assert "Who built the ark?" in auto_sess["title"]
+
+    await store.clear_all()
+    assert len(await store.list_sessions()) == 0
+    cleanup_db(test_db)
+    print("✓ ChatHistoryStore SQLite session creation, message storage, citations, and deletion verified.")
+
 
 async def run_http_route_tests():
-    print("\n--- [8] Testing FastAPI Endpoints via AsyncClient ---")
+    print("\n--- [9] Testing FastAPI Endpoints via AsyncClient ---")
     from httpx import ASGITransport, AsyncClient
     from app.main import app
-    from ask_bible_ai.routes import ai_service, config as route_config
+    from ask_bible_ai.routes import ai_service, config as route_config, history_store
 
     # Ensure routes use simulation mode for offline test execution
     route_config.simulation_mode = True
@@ -148,33 +207,59 @@ async def run_http_route_tests():
         assert len(res.json()["suggestions"]) > 0
         print("✓ GET /api/ask-ai/suggestions responded HTTP 200.")
 
-        # Ask POST
+        # Ask POST with session_id
         res = await ac.post("/api/ask-ai/ask", json={"query": "Tell me about peace", "language": "en"})
         assert res.status_code == 200
         data = res.json()
         assert data["success"] is True
         assert "answer" in data
-        print("✓ POST /api/ask-ai/ask responded HTTP 200 with grounded answer.")
+        assert "session_id" in data
+        saved_session_id = data["session_id"]
+        print(f"✓ POST /api/ask-ai/ask auto-created session {saved_session_id[:8]}... and returned grounded answer.")
 
-        # Stream POST
-        res = await ac.post("/api/ask-ai/stream", json={"query": "Who is Jesus?", "language": "en"})
+        # Stream POST with existing session_id
+        res = await ac.post("/api/ask-ai/stream", json={"query": "Who is Jesus?", "language": "en", "session_id": saved_session_id})
         assert res.status_code == 200
         assert "text/event-stream" in res.headers["content-type"]
         body_text = res.text
         assert "data: " in body_text
-        print("✓ POST /api/ask-ai/stream responded HTTP 200 with Server-Sent Events.")
+        assert saved_session_id in body_text
+        print("✓ POST /api/ask-ai/stream persisted message in session and emitted Server-Sent Events.")
+
+        # Sessions list
+        res = await ac.get("/api/ask-ai/sessions")
+        assert res.status_code == 200
+        sessions_data = res.json()
+        assert "sessions" in sessions_data
+        assert any(s["id"] == saved_session_id for s in sessions_data["sessions"])
+        print(f"✓ GET /api/ask-ai/sessions listed {len(sessions_data['sessions'])} session(s).")
+
+        # Session detail
+        res = await ac.get(f"/api/ask-ai/sessions/{saved_session_id}")
+        assert res.status_code == 200
+        sess_detail = res.json()
+        assert len(sess_detail["messages"]) >= 4  # 2 from ask + 2 from stream
+        print(f"✓ GET /api/ask-ai/sessions/{{id}} returned {len(sess_detail['messages'])} conversation messages.")
+
+        # Delete session
+        res = await ac.delete(f"/api/ask-ai/sessions/{saved_session_id}")
+        assert res.status_code == 200
+        assert res.json()["deleted"] is True
+        print(f"✓ DELETE /api/ask-ai/sessions/{{id}} successfully removed session.")
 
         # Standalone UI page
         res = await ac.get("/api/ask-ai/ui")
         assert res.status_code == 200
         assert "ASK BIBLE AI" in res.text
-        print("✓ GET /api/ask-ai/ui responded HTTP 200 (Standalone embeddable UI).")
+        assert "history-drawer" in res.text
+        print("✓ GET /api/ask-ai/ui responded HTTP 200 (Standalone embeddable UI with History Drawer).")
 
         # Integrated Web Bible /ask-ai page
         res = await ac.get("/ask-ai")
         assert res.status_code == 200
         assert "Ask Bible AI" in res.text
-        print("✓ GET /ask-ai responded HTTP 200 (Integrated Web Portal).")
+        assert "history-drawer" in res.text
+        print("✓ GET /ask-ai responded HTTP 200 (Integrated Web Portal with History Drawer).")
 
 
 async def main():

@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled Ask Bible AI Plugin Architecture with Verified Scripture Grounding
 domain: architecture
 status: approved
-version: 1.1.0
+version: 1.2.0
 authority:
   level: official
   confidence: high
@@ -18,27 +18,32 @@ applies_to:
   - templates
 
 rule:
-  "The Ask Bible AI capability is packaged as a fully isolated, reusable plugin in `ask_bible_ai/` with zero hard dependencies on host application models or databases. It communicates with any OpenAI-compatible `/v1` endpoint (including self-hosted FreeLLMAPI, local Ollama, Groq Cloud, or OpenAI), incorporates a pluggable scripture grounding interface (`BaseGroundingProvider`) to inject verified scripture verses and citations into prompts to prevent hallucinations, supports Server-Sent Events (SSE) streaming (`POST /stream`), provides automatic bilingual intelligence (English and Tamil), ships with a standalone embeddable chat interface (`GET /api/ask-ai/ui`), and is fully configurable via `/admin/settings` with runtime hot-swapping and live provider health probing."
+  "The Ask Bible AI capability is packaged as a fully isolated, reusable plugin in `ask_bible_ai/` with zero hard dependencies on host application models or databases. It communicates with any OpenAI-compatible `/v1` endpoint (including self-hosted FreeLLMAPI, local Ollama, Groq Cloud, or OpenAI), incorporates a pluggable scripture grounding interface (`BaseGroundingProvider`) to inject verified scripture verses and citations into prompts to prevent hallucinations, supports Server-Sent Events (SSE) streaming (`POST /stream`), provides automatic bilingual intelligence (English and Tamil), maintains local-first conversational history in an embedded SQLite database (`data/bible_ai_history.sqlite.db`), ships with full session management endpoints and a responsive slide-over chat drawer in both the integrated web portal and standalone embeddable chat interface (`GET /api/ask-ai/ui`), and is fully configurable via `/admin/settings` with runtime hot-swapping and live provider health probing."
 
 do:
-  - "Keep core modules (`ask_bible_ai/client.py`, `ask_bible_ai/grounding.py`, `ask_bible_ai/prompts.py`, `ask_bible_ai/service.py`) strictly domain-agnostic so the package can be dropped into any other Python/FastAPI project without modification."
+  - "Keep core modules (`ask_bible_ai/client.py`, `ask_bible_ai/grounding.py`, `ask_bible_ai/prompts.py`, `ask_bible_ai/service.py`, `ask_bible_ai/history.py`) strictly domain-agnostic so the package can be dropped into any other Python/FastAPI project without modification."
   - "Bridge host-specific databases exclusively through decoupled adapters (`ask_bible_ai/adapters/holy_bible_adapter.py`) implementing `BaseGroundingProvider`."
-  - "Wrap all blocking SQLite queries or FTS5 lookups inside grounding adapters in `await asyncio.to_thread(...)` per DEV-PY-001."
-  - "Expose both standard JSON question-answering (`POST /api/ask-ai/ask`) and real-time token streaming via Server-Sent Events (`POST /api/ask-ai/stream`)."
+  - "Wrap all blocking SQLite queries or FTS5 lookups inside grounding adapters and history stores in `await asyncio.to_thread(...)` per DEV-PY-001."
+  - "Persist all user inquiries, assistant responses, and verified citations in a dedicated, thread-safe embedded SQLite database (`data/bible_ai_history.sqlite.db`) using `ChatHistoryStore` with WAL mode and context-managed connection cleanup."
+  - "Expose full REST session management endpoints (`GET /api/ask-ai/sessions`, `POST /api/ask-ai/sessions`, `GET /api/ask-ai/sessions/{id}`, `DELETE /api/ask-ai/sessions/{id}`, `DELETE /api/ask-ai/history`)."
+  - "Auto-create conversational sessions upon the first question, derive the session title from the inquiry, and return the `session_id` in response payloads."
+  - "Expose both standard JSON question-answering (`POST /api/ask-ai/ask`) and real-time token streaming via Server-Sent Events (`POST /api/ask-ai/stream`) with automatic persistence."
   - "Provide a resilient built-in simulation mode (`simulation_mode=True`) enabling offline development, automated tests, and graceful fallback when upstream AI services are unreachable."
   - "Mount the plugin cleanly into FastAPI applications via `app.include_router(ask_ai_router, prefix='/api/ask-ai', tags=['ask-bible-ai'])`."
-  - "Serve a zero-dependency, self-contained HTML/CSS/JS user interface at `GET /api/ask-ai/ui` for instant testing or iframe embedding."
+  - "Serve a zero-dependency, self-contained HTML/CSS/JS user interface at `GET /api/ask-ai/ui` with history drawer and session switching for instant testing or iframe embedding."
   - "Expose full runtime configuration controls on `/admin/settings` with 1-click presets for FreeLLMAPI, Groq, Ollama, OpenAI, and Simulation Mode, protected by `require_admin`."
   - "Maintain runtime configuration persistence in `data/bible_ai_config.json` with environment variable defaults (`BIBLE_AI_BASE_URL`, `BIBLE_AI_API_KEY`, `BIBLE_AI_MODEL`)."
+  - "Ensure `data/bible_ai_history.sqlite.db*` is strictly excluded in `.gitignore` to preserve user conversation privacy."
 
 dont:
   - "Do not import host application databases (`app.db`) or specific models inside the core `ask_bible_ai` engine."
+  - "Do not commit user conversation databases to git repositories."
   - "Do not allow language models to hallucinate scripture verses without grounding context; always retrieve verified scripture passages."
   - "Do not expose raw upstream API keys in plain text; mask credentials in `config.to_dict()`."
-  - "Do not block the asyncio event loop with synchronous network requests or heavy prompt construction."
+  - "Do not block the asyncio event loop with synchronous network requests or synchronous SQLite file operations."
 
 reason:
-  "Strict decoupling enables Ask Bible AI to be maintained as an independent open-source plugin, easily reused in other Python or FastAPI projects, while delivering accurate, hallucination-free scripture explanations across Catholic and Protestant canons in Tamil and English."
+  "Strict decoupling enables Ask Bible AI to be maintained as an independent open-source plugin, easily reused in other Python or FastAPI projects, while delivering accurate, hallucination-free scripture explanations with persistent, private, zero-latency multi-turn conversational history across Catholic and Protestant canons in Tamil and English."
 
 related_items:
   - ARCH-SYS-001
@@ -46,4 +51,5 @@ related_items:
   - ARCH-ADMIN-001
   - DEV-PY-001
   - DEV-TEST-001
+  - ADR-002
   - ADR-009

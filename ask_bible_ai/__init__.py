@@ -13,6 +13,7 @@ from ask_bible_ai.grounding import (
     NullGroundingProvider,
 )
 from ask_bible_ai.service import AskBibleAIService
+from ask_bible_ai.history import ChatHistoryStore, history_store
 from ask_bible_ai.routes import router as ask_ai_router
 
 __all__ = [
@@ -24,5 +25,7 @@ __all__ = [
     "InMemoryGroundingProvider",
     "NullGroundingProvider",
     "AskBibleAIService",
+    "ChatHistoryStore",
+    "history_store",
     "ask_ai_router",
 ]

@@ -176,6 +176,8 @@ class AskBibleAIService:
             except Exception:
                 passages = []
 
+        self.last_citations = [p.reference for p in passages]
+
         system_content = build_system_message(
             custom_prompt=None,
             grounding_passages=passages,

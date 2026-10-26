@@ -3,7 +3,7 @@
 {% block title %}Ask Bible AI | வேதாகம அறிவார்ந்த உதவியாளர்{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8 flex flex-col min-h-[calc(100vh-8rem)]">
+<div class="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8 flex flex-col min-h-[calc(100vh-8rem)] relative">
 
     <!-- Header Section -->
     <div class="border-b border-stone-200 dark:border-stone-800 pb-5 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -18,19 +18,34 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <button onclick="clearChatHistory()" class="px-3 py-1.5 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 transition cursor-pointer flex items-center gap-1.5" title="Clear conversation history">
-                <span>🔄</span> <span>New Chat</span>
+            <button onclick="startNewChat()" class="px-3 py-1.5 rounded-xl text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 transition cursor-pointer flex items-center gap-1.5" title="Start a fresh conversation">
+                <span>✨</span> <span>New Chat</span>
             </button>
-            <a href="/search" class="px-3 py-1.5 rounded-xl text-xs font-medium text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 transition flex items-center gap-1.5">
+            <button onclick="toggleHistoryDrawer(true)" class="px-3 py-1.5 rounded-xl text-xs font-medium text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200/80 dark:border-amber-800 transition cursor-pointer flex items-center gap-1.5" title="View past chat history">
+                <span>💬</span> <span>History</span>
+                <span id="history-badge" class="px-1.5 py-0.2 rounded-full bg-amber-700 text-white text-[10px] font-bold hidden">0</span>
+            </button>
+            <a href="/search" class="px-3 py-1.5 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 transition flex items-center gap-1.5">
                 <span>🔍</span> <span>FTS Search</span>
             </a>
         </div>
     </div>
 
+    <!-- Active Conversation Title Banner (if continuing existing chat) -->
+    <div id="active-session-banner" class="hidden mb-3 px-3 py-1.5 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/60 rounded-xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-300">
+        <div class="flex items-center gap-1.5 truncate pr-2">
+            <span class="text-amber-700 dark:text-amber-400">📖</span>
+            <span class="font-medium truncate" id="active-session-title">Current Topic</span>
+        </div>
+        <button onclick="startNewChat()" class="text-[11px] text-amber-800 dark:text-amber-400 hover:underline shrink-0 cursor-pointer">
+            + New
+        </button>
+    </div>
+
     <!-- Chat Messages Scroll Container -->
     <div id="ai-chat-thread" class="flex-1 space-y-4 overflow-y-auto pr-1 pb-4">
-        <!-- Initial Welcome Bubble -->
-        <div class="flex items-start gap-3">
+        <!-- Initial Welcome Bubble inserted via JS or initial HTML -->
+        <div id="welcome-bubble" class="flex items-start gap-3">
             <div class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-xs shrink-0 mt-0.5 shadow-xs">†</div>
             <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl rounded-tl-xs p-4 sm:p-5 shadow-xs max-w-2xl w-full">
                 <p class="font-cinzel font-bold text-sm text-amber-900 dark:text-amber-400 mb-1">Welcome to Ask Bible AI | நல்வரவு</p>
@@ -72,6 +87,50 @@
 
 </div>
 
+<!-- Sliding Chat History Drawer -->
+<div id="history-drawer-backdrop" 
+     class="fixed inset-0 bg-stone-950/40 backdrop-blur-[2px] z-40 hidden transition-opacity opacity-0"
+     onclick="toggleHistoryDrawer(false)"></div>
+
+<aside id="history-drawer" 
+       class="fixed top-0 right-0 h-full w-full max-w-sm sm:max-w-md bg-white dark:bg-stone-900 border-l border-stone-200 dark:border-stone-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+    <!-- Drawer Header -->
+    <div class="p-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-400 flex items-center justify-center text-xs font-bold font-cinzel">†</span>
+            <div>
+                <h2 class="font-cinzel font-bold text-sm text-stone-900 dark:text-stone-100">Chat History</h2>
+                <p class="font-tamil text-[10px] text-stone-500">கடந்த உரையாடல்கள்</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="startNewChat(); toggleHistoryDrawer(false);" 
+                    class="px-2.5 py-1 text-xs font-medium text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition cursor-pointer flex items-center gap-1"
+                    title="Start fresh conversation">
+                <span>+</span> <span>New Chat</span>
+            </button>
+            <button onclick="toggleHistoryDrawer(false)" 
+                    class="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer text-base leading-none">
+                ✕
+            </button>
+        </div>
+    </div>
+
+    <!-- Sessions Scroll List -->
+    <div id="history-sessions-list" class="flex-1 overflow-y-auto p-3 space-y-2">
+        <div class="text-center py-8 text-stone-400 text-xs">Loading past chats...</div>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="p-3 border-t border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950/60 flex items-center justify-between text-xs">
+        <span id="session-count-label" class="text-stone-500 dark:text-stone-400 text-[11px]">0 conversations saved</span>
+        <button onclick="handleClearAllHistory()" 
+                class="text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:underline cursor-pointer text-[11px] font-medium transition flex items-center gap-1">
+            <span>🗑</span> <span>Clear All</span>
+        </button>
+    </div>
+</aside>
+
 <!-- Markdown Parser for AI Responses -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -94,7 +153,15 @@
     const sendButton = document.getElementById('ai-send-btn');
     const statusPill = document.getElementById('ai-status-pill');
     const suggestionsList = document.getElementById('ai-suggestions-list');
+    const historyBadge = document.getElementById('history-badge');
+    const historySessionsList = document.getElementById('history-sessions-list');
+    const sessionCountLabel = document.getElementById('session-count-label');
+    const activeSessionBanner = document.getElementById('active-session-banner');
+    const activeSessionTitle = document.getElementById('active-session-title');
+
+    let currentSessionId = localStorage.getItem('ask_bible_ai_session_id') || null;
     let aiConversationHistory = [];
+    let cachedSuggestions = [];
 
     // Health Telemetry
     async function checkAiHealth() {
@@ -123,23 +190,260 @@
             const res = await fetch('/api/ask-ai/suggestions');
             const data = await res.json();
             if (data.suggestions && data.suggestions.length) {
-                suggestionsList.innerHTML = '';
-                data.suggestions.forEach(q => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'text-left text-xs bg-amber-50 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-stone-700 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-stone-700 rounded-lg px-2.5 py-1 transition cursor-pointer';
-                    btn.textContent = q;
-                    btn.onclick = () => {
-                        promptInput.value = q;
-                        handleSendQuestion(new Event('submit'));
-                    };
-                    suggestionsList.appendChild(btn);
-                });
+                cachedSuggestions = data.suggestions;
+                renderSuggestions(cachedSuggestions);
             }
         } catch(e) {}
     }
 
+    function renderSuggestions(suggestions) {
+        const container = document.getElementById('ai-suggestions-list');
+        if (!container) return;
+        container.innerHTML = '';
+        suggestions.forEach(q => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'text-left text-xs bg-amber-50 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-stone-700 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-stone-700 rounded-lg px-2.5 py-1 transition cursor-pointer';
+            btn.textContent = q;
+            btn.onclick = () => {
+                promptInput.value = q;
+                handleSendQuestion(new Event('submit'));
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    // Drawer Visibility
+    function toggleHistoryDrawer(open) {
+        const drawer = document.getElementById('history-drawer');
+        const backdrop = document.getElementById('history-drawer-backdrop');
+        if (open) {
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                backdrop.classList.add('opacity-100');
+                drawer.classList.remove('translate-x-full');
+            }, 10);
+            loadSessionsList();
+        } else {
+            backdrop.classList.remove('opacity-100');
+            backdrop.classList.add('opacity-0');
+            drawer.classList.add('translate-x-full');
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        }
+    }
+
+    // Format relative timestamp
+    function formatTimeAgo(isoString) {
+        if (!isoString) return '';
+        try {
+            const d = new Date(isoString.endsWith('Z') ? isoString : isoString + 'Z');
+            const diffMs = Date.now() - d.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours}h ago`;
+            const diffDays = Math.floor(diffHours / 24);
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        } catch(e) {
+            return '';
+        }
+    }
+
+    // Load Sessions List for Drawer
+    async function loadSessionsList() {
+        try {
+            const res = await fetch('/api/ask-ai/sessions?limit=50');
+            if (!res.ok) return;
+            const data = await res.json();
+            const sessions = data.sessions || [];
+
+            // Update badge & count
+            if (sessions.length > 0) {
+                historyBadge.textContent = sessions.length;
+                historyBadge.classList.remove('hidden');
+                sessionCountLabel.textContent = `${sessions.length} conversation${sessions.length > 1 ? 's' : ''} saved`;
+            } else {
+                historyBadge.classList.add('hidden');
+                sessionCountLabel.textContent = '0 conversations saved';
+            }
+
+            if (sessions.length === 0) {
+                historySessionsList.innerHTML = `
+                    <div class="text-center py-12 px-4">
+                        <div class="w-10 h-10 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-400 mx-auto flex items-center justify-center text-lg mb-2">💬</div>
+                        <p class="text-xs font-medium text-stone-600 dark:text-stone-400">No past conversations yet</p>
+                        <p class="text-[11px] text-stone-400 dark:text-stone-500 mt-1">Every scripture question you ask is automatically saved here.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            historySessionsList.innerHTML = '';
+            sessions.forEach(sess => {
+                const isActive = (sess.id === currentSessionId);
+                const item = document.createElement('div');
+                item.className = `group relative p-3 rounded-xl border transition cursor-pointer flex items-start justify-between gap-2 ${
+                    isActive 
+                        ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 shadow-xs' 
+                        : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-800 hover:border-amber-200 dark:hover:border-stone-700 hover:bg-stone-50/50 dark:hover:bg-stone-800/50'
+                }`;
+                
+                const timeStr = formatTimeAgo(sess.updated_at || sess.created_at);
+                const msgCount = sess.message_count || 0;
+
+                item.innerHTML = `
+                    <div class="flex-1 min-w-0 pr-1">
+                        <p class="text-xs font-semibold ${isActive ? 'text-amber-900 dark:text-amber-300' : 'text-stone-800 dark:text-stone-200'} truncate">
+                            ${escapeHtml(sess.title || 'Scripture Inquiry')}
+                        </p>
+                        <div class="flex items-center gap-2 mt-1 text-[10px] text-stone-400 dark:text-stone-500">
+                            <span>${timeStr}</span>
+                            <span>•</span>
+                            <span>${msgCount} msg${msgCount === 1 ? '' : 's'}</span>
+                        </div>
+                    </div>
+                    <button class="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-rose-600 transition cursor-pointer text-xs shrink-0 rounded" 
+                            title="Delete this conversation"
+                            onclick="handleDeleteSession('${sess.id}', event)">
+                        🗑
+                    </button>
+                `;
+
+                item.onclick = (e) => {
+                    if (e.target.closest('button')) return;
+                    loadSession(sess.id);
+                    toggleHistoryDrawer(false);
+                };
+
+                historySessionsList.appendChild(item);
+            });
+
+        } catch(e) {
+            console.warn('Failed loading sessions:', e);
+        }
+    }
+
+    // Load and render specific session
+    async function loadSession(sessionId) {
+        try {
+            const res = await fetch(`/api/ask-ai/sessions/${sessionId}`);
+            if (!res.ok) {
+                // Session deleted or missing
+                startNewChat();
+                return;
+            }
+            const data = await res.json();
+            const sess = data.session;
+            const messages = data.messages || [];
+
+            currentSessionId = sessionId;
+            localStorage.setItem('ask_bible_ai_session_id', currentSessionId);
+
+            // Update banner
+            activeSessionTitle.textContent = sess.title || 'Scripture Inquiry';
+            activeSessionBanner.classList.remove('hidden');
+
+            // Render messages
+            chatThread.innerHTML = '';
+            aiConversationHistory = [];
+
+            messages.forEach(msg => {
+                aiConversationHistory.push({ role: msg.role, content: msg.content });
+                if (msg.role === 'user') {
+                    appendUserBubble(msg.content);
+                } else if (msg.role === 'assistant') {
+                    appendBotBubbleFromHistory(msg.content, msg.citations);
+                }
+            });
+
+            chatThread.scrollTop = chatThread.scrollHeight;
+            loadSessionsList();
+        } catch(e) {
+            console.error('Error loading session:', e);
+            startNewChat();
+        }
+    }
+
+    // Start fresh new chat
+    function startNewChat() {
+        currentSessionId = null;
+        localStorage.removeItem('ask_bible_ai_session_id');
+        aiConversationHistory = [];
+        activeSessionBanner.classList.add('hidden');
+        renderWelcomeScreen();
+        loadSessionsList();
+    }
+
+    // Render Welcome Screen
+    function renderWelcomeScreen() {
+        chatThread.innerHTML = `
+            <div id="welcome-bubble" class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-xs shrink-0 mt-0.5 shadow-xs">†</div>
+                <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl rounded-tl-xs p-4 sm:p-5 shadow-xs max-w-2xl w-full">
+                    <p class="font-cinzel font-bold text-sm text-amber-900 dark:text-amber-400 mb-1">Welcome to Ask Bible AI | நல்வரவு</p>
+                    <p class="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                        Ask any question regarding Holy Scripture in English or Tamil. Every answer is grounded directly in the verified Catholic (73 Books) and Protestant (66 Books) Biblical corpora.
+                    </p>
+
+                    <!-- Prompt Suggestions -->
+                    <div class="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800/80">
+                        <p class="text-[11px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            <span>✨</span> <span>Suggested Topics / பரிந்துரைக்கப்பட்ட தலைப்புகள்:</span>
+                        </p>
+                        <div id="ai-suggestions-list" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        if (cachedSuggestions.length > 0) {
+            renderSuggestions(cachedSuggestions);
+        } else {
+            loadAiSuggestions();
+        }
+    }
+
+    // Delete single session
+    async function handleDeleteSession(sessionId, event) {
+        if (event) event.stopPropagation();
+        if (!confirm('Are you sure you want to delete this conversation?')) return;
+        try {
+            const res = await fetch(`/api/ask-ai/sessions/${sessionId}`, { method: 'DELETE' });
+            if (res.ok) {
+                if (currentSessionId === sessionId) {
+                    startNewChat();
+                } else {
+                    loadSessionsList();
+                }
+            }
+        } catch(e) {
+            console.error('Failed to delete session:', e);
+        }
+    }
+
+    // Clear all history
+    async function handleClearAllHistory() {
+        if (!confirm('Are you sure you want to delete ALL chat history? This cannot be undone.')) return;
+        try {
+            const res = await fetch('/api/ask-ai/history', { method: 'DELETE' });
+            if (res.ok) {
+                startNewChat();
+                toggleHistoryDrawer(false);
+            }
+        } catch(e) {
+            console.error('Failed to clear history:', e);
+        }
+    }
+
     function appendUserBubble(text) {
+        // Hide welcome card once a conversation begins
+        const wb = document.getElementById('welcome-bubble');
+        if (wb) wb.remove();
+
         const wrap = document.createElement('div');
         wrap.className = 'flex justify-end';
         wrap.innerHTML = `
@@ -171,6 +475,29 @@
         return msgId;
     }
 
+    function appendBotBubbleFromHistory(content, citations) {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex items-start gap-3';
+        const msgId = 'bubble-' + Math.random().toString(36).substr(2, 9);
+        wrap.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-xs shrink-0 mt-0.5 shadow-xs">†</div>
+            <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl rounded-tl-xs p-4 sm:p-5 shadow-xs max-w-2xl w-full">
+                <div class="ai-markdown text-xs sm:text-sm text-stone-800 dark:text-stone-200 leading-relaxed font-serif">
+                    ${marked.parse(content || '')}
+                </div>
+                <div id="${msgId}-citations" class="mt-3 pt-2.5 border-t border-stone-100 dark:border-stone-800 ${citations && citations.length ? '' : 'hidden'}">
+                    ${citations && citations.length ? renderCitationTags(citations) : ''}
+                </div>
+            </div>
+        `;
+        chatThread.appendChild(wrap);
+    }
+
+    function renderCitationTags(citations) {
+        return '<span class="text-[10px] uppercase font-bold text-stone-400 dark:text-stone-500">Verified Passages: </span>' + 
+            citations.map(c => `<span class="inline-block bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-400 text-[11px] font-medium px-2 py-0.5 rounded border border-amber-200 dark:border-stone-700 mr-1.5 mt-1">${escapeHtml(c)}</span>`).join('');
+    }
+
     async function handleSendQuestion(e) {
         e.preventDefault();
         const text = promptInput.value.trim();
@@ -192,7 +519,8 @@
                 body: JSON.stringify({
                     query: text,
                     history: aiConversationHistory,
-                    language: 'auto'
+                    language: 'auto',
+                    session_id: currentSessionId
                 })
             });
 
@@ -222,8 +550,18 @@
                                 accumulated += parsed.token;
                                 targetEl.innerHTML = marked.parse(accumulated);
                                 chatThread.scrollTop = chatThread.scrollHeight;
-                            } else if (parsed.error) {
-                                console.warn('Stream notice:', parsed.error);
+                            } else if (parsed.done) {
+                                if (parsed.session_id) {
+                                    currentSessionId = parsed.session_id;
+                                    localStorage.setItem('ask_bible_ai_session_id', currentSessionId);
+                                    activeSessionBanner.classList.remove('hidden');
+                                    activeSessionTitle.textContent = text.slice(0, 50);
+                                    loadSessionsList();
+                                }
+                                if (parsed.citations && parsed.citations.length) {
+                                    citationsEl.classList.remove('hidden');
+                                    citationsEl.innerHTML = renderCitationTags(parsed.citations);
+                                }
                             }
                         } catch (err) {}
                     }
@@ -235,16 +573,27 @@
                 const fallbackRes = await fetch('/api/ask-ai/ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: text, history: aiConversationHistory })
+                    body: JSON.stringify({ 
+                        query: text, 
+                        history: aiConversationHistory,
+                        session_id: currentSessionId 
+                    })
                 });
                 const fbData = await fallbackRes.json();
                 accumulated = fbData.answer || fbData.detail || fbData.error || 'No answer available.';
                 targetEl.innerHTML = marked.parse(accumulated);
 
+                if (fbData.session_id) {
+                    currentSessionId = fbData.session_id;
+                    localStorage.setItem('ask_bible_ai_session_id', currentSessionId);
+                    activeSessionBanner.classList.remove('hidden');
+                    activeSessionTitle.textContent = text.slice(0, 50);
+                    loadSessionsList();
+                }
+
                 if (fbData.citations && fbData.citations.length) {
                     citationsEl.classList.remove('hidden');
-                    citationsEl.innerHTML = '<span class="text-[10px] uppercase font-bold text-stone-400 dark:text-stone-500">Verified Passages: </span>' + 
-                        fbData.citations.map(c => `<span class="inline-block bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-400 text-[11px] font-medium px-2 py-0.5 rounded border border-amber-200 dark:border-stone-700 mr-1.5 mt-1">${c}</span>`).join('');
+                    citationsEl.innerHTML = renderCitationTags(fbData.citations);
                 }
             }
 
@@ -261,19 +610,20 @@
         }
     }
 
-    function clearChatHistory() {
-        aiConversationHistory = [];
-        chatThread.innerHTML = '';
-        location.reload();
-    }
-
     function escapeHtml(str) {
-        return str.replace(/[&<>'"]/g, tag => ({
+        return (str || '').replace(/[&<>'"]/g, tag => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
         }[tag] || tag));
     }
 
+    // Initial sequence on startup
     checkAiHealth();
-    loadAiSuggestions();
+    loadSessionsList();
+
+    if (currentSessionId) {
+        loadSession(currentSessionId);
+    } else {
+        loadAiSuggestions();
+    }
 </script>
 {% endblock %}

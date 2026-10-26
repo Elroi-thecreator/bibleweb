@@ -13,6 +13,7 @@ Can be mounted on ANY FastAPI application with:
 
 import json
 from typing import Any, Dict, List, Optional
+import uuid
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -20,6 +21,7 @@ from pydantic import BaseModel, Field
 from ask_bible_ai.config import config, save_persisted_config
 from ask_bible_ai.service import AskBibleAIService
 from ask_bible_ai.adapters.holy_bible_adapter import HolyBibleGroundingAdapter
+from ask_bible_ai.history import history_store
 
 router = APIRouter()
 
@@ -33,6 +35,11 @@ class AskRequest(BaseModel):
     history: Optional[List[Dict[str, str]]] = Field(default=None, description="Prior conversation messages")
     language: str = Field(default="auto", description="Preferred output language: 'auto', 'en', or 'ta'")
     max_passages: Optional[int] = Field(default=None, ge=1, le=10, description="Maximum grounding passages to retrieve")
+    session_id: Optional[str] = Field(default=None, description="Optional conversational session ID for persistence")
+
+
+class CreateSessionRequest(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=100, description="Optional conversation title")
 
 
 class ConfigUpdateRequest(BaseModel):
@@ -51,18 +58,40 @@ class ConfigUpdateRequest(BaseModel):
 async def ask_bible_endpoint(req: AskRequest):
     """
     Submit a biblical question and receive a grounded, theological answer
-    with exact scripture citations.
+    with exact scripture citations. Automatically persists message history to SQLite.
     """
     if not config.enabled:
         raise HTTPException(status_code=503, detail="Ask Bible AI service is currently disabled in configuration.")
 
+    session_id = req.session_id or str(uuid.uuid4())
+    # 1. Resolve conversation history from database if session_id is given and history is omitted
+    history = req.history
+    if not history and req.session_id:
+        db_messages = await history_store.get_messages(req.session_id, limit=8)
+        if db_messages:
+            history = [{"role": m["role"], "content": m["content"]} for m in db_messages]
+
     try:
         response = await ai_service.ask(
             query=req.query,
-            history=req.history,
+            history=history,
             preferred_language=req.language,
             max_passages=req.max_passages,
         )
+
+        # 2. Persist to chat history database
+        try:
+            await history_store.add_message(session_id, "user", req.query)
+            await history_store.add_message(
+                session_id,
+                "assistant",
+                response["answer"],
+                citations=response.get("citations", []),
+            )
+        except Exception as db_err:
+            print(f"[AskBibleAI] Warning saving ask to history: {db_err}")
+
+        response["session_id"] = session_id
         return JSONResponse(content=response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate answer: {str(e)}")
@@ -72,20 +101,49 @@ async def ask_bible_endpoint(req: AskRequest):
 async def stream_bible_endpoint(req: AskRequest):
     """
     Streams the biblical answer token-by-token using Server-Sent Events (SSE).
+    Persists user inquiry and completed assistant answer to SQLite.
     """
     if not config.enabled:
         raise HTTPException(status_code=503, detail="Ask Bible AI service is currently disabled.")
 
+    session_id = req.session_id or str(uuid.uuid4())
+    history = req.history
+    if not history and req.session_id:
+        db_messages = await history_store.get_messages(req.session_id, limit=8)
+        if db_messages:
+            history = [{"role": m["role"], "content": m["content"]} for m in db_messages]
+
     async def event_generator():
+        accumulated_tokens = []
         try:
             async for token in ai_service.ask_stream(
                 query=req.query,
-                history=req.history,
+                history=history,
                 preferred_language=req.language,
                 max_passages=req.max_passages,
             ):
+                accumulated_tokens.append(token)
                 payload = json.dumps({"token": token}, ensure_ascii=False)
                 yield f"data: {payload}\n\n"
+
+            full_answer = "".join(accumulated_tokens)
+            citations = getattr(ai_service, "last_citations", [])
+
+            # Persist to history database upon completion
+            if full_answer:
+                try:
+                    await history_store.add_message(session_id, "user", req.query)
+                    await history_store.add_message(
+                        session_id, "assistant", full_answer, citations=citations
+                    )
+                except Exception as db_err:
+                    print(f"[AskBibleAI] Warning saving stream to history: {db_err}")
+
+            done_payload = json.dumps(
+                {"done": True, "session_id": session_id, "citations": citations},
+                ensure_ascii=False,
+            )
+            yield f"data: {done_payload}\n\n"
             yield "data: [DONE]\n\n"
         except Exception as e:
             err_payload = json.dumps({"error": str(e)}, ensure_ascii=False)
@@ -100,6 +158,52 @@ async def stream_bible_endpoint(req: AskRequest):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# =====================================================================
+# Chat History & Session Management Endpoints
+# =====================================================================
+
+@router.get("/sessions")
+async def list_chat_sessions(limit: int = Query(50, ge=1, le=100)):
+    """Returns list of past chat sessions with message counts and timestamps."""
+    sessions = await history_store.list_sessions(limit=limit)
+    return {"sessions": sessions}
+
+
+@router.post("/sessions")
+async def create_chat_session(req: Optional[CreateSessionRequest] = None):
+    """Creates a new conversational chat session."""
+    title = req.title if req else None
+    sid = await history_store.create_session(title=title)
+    return {"session_id": sid, "title": title or "New Scripture Inquiry"}
+
+
+@router.get("/sessions/{session_id}")
+async def get_chat_session(session_id: str):
+    """Retrieves session details and full message history."""
+    sess = await history_store.get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="Chat session not found.")
+    messages = await history_store.get_messages(session_id, limit=100)
+    return {
+        "session": sess,
+        "messages": messages,
+    }
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_chat_session(session_id: str):
+    """Deletes a chat session and all its messages."""
+    deleted = await history_store.delete_session(session_id)
+    return {"deleted": deleted, "session_id": session_id}
+
+
+@router.delete("/history")
+async def clear_all_chat_history():
+    """Clears all conversation sessions and messages from the database."""
+    cleared = await history_store.clear_all()
+    return {"cleared": cleared}
 
 
 @router.get("/suggestions")
@@ -140,6 +244,7 @@ async def standalone_ui_page(request: Request):
     """
     Serves a completely standalone, embeddable HTML chat interface.
     Allows testing the plugin out-of-the-box or embedding via iframe into ANY application.
+    Includes persistent SQLite chat history management, multi-turn conversation support, and responsive drawers.
     """
     html_content = """<!DOCTYPE html>
 <html lang="en">
@@ -163,7 +268,7 @@ async def standalone_ui_page(request: Request):
         .prose h3, .prose h4 { font-family: 'Cinzel', serif; color: #78350f; margin-top: 1rem; margin-bottom: 0.5rem; }
     </style>
 </head>
-<body class="bg-stone-50 text-stone-900 min-h-screen flex flex-col">
+<body class="bg-stone-50 text-stone-900 min-h-screen flex flex-col relative">
     <!-- Header -->
     <header class="bg-white border-b border-stone-200 px-4 py-3 sticky top-0 z-10 flex items-center justify-between shadow-xs">
         <div class="flex items-center space-x-3">
@@ -174,16 +279,32 @@ async def standalone_ui_page(request: Request):
             </div>
         </div>
         <div class="flex items-center space-x-2 text-xs">
+            <button onclick="startNewChat()" class="px-2.5 py-1 rounded-lg border border-stone-300 text-stone-700 hover:bg-stone-100 transition cursor-pointer flex items-center gap-1" title="New Chat">
+                <span>✨</span> <span>New</span>
+            </button>
+            <button onclick="toggleHistory(true)" class="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 transition cursor-pointer flex items-center gap-1" title="Past Conversations">
+                <span>💬</span> <span>History</span>
+                <span id="history-badge" class="px-1.5 py-0.2 rounded-full bg-amber-700 text-white text-[10px] font-bold hidden">0</span>
+            </button>
             <span id="status-pill" class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">Checking...</span>
         </div>
     </header>
 
     <!-- Chat Container -->
     <main class="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">
+        <!-- Active Session Banner -->
+        <div id="active-banner" class="hidden mb-3 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-900">
+            <div class="flex items-center gap-1.5 truncate pr-2">
+                <span>📖</span>
+                <span class="font-medium truncate" id="active-title">Current Topic</span>
+            </div>
+            <button onclick="startNewChat()" class="text-[11px] text-amber-800 hover:underline shrink-0 cursor-pointer">+ New</button>
+        </div>
+
         <!-- Messages Area -->
         <div id="chat-messages" class="flex-1 space-y-4 mb-4 overflow-y-auto pb-6">
             <!-- Welcome Bot Message -->
-            <div class="flex items-start gap-3">
+            <div id="welcome-card" class="flex items-start gap-3">
                 <div class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-xs shrink-0 mt-0.5">†</div>
                 <div class="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs max-w-2xl">
                     <p class="font-semibold text-amber-900 text-sm mb-1">Welcome to Ask Bible AI | நல்வரவு</p>
@@ -222,13 +343,43 @@ async def standalone_ui_page(request: Request):
         </div>
     </main>
 
+    <!-- Slide-over History Drawer -->
+    <div id="history-backdrop" class="fixed inset-0 bg-stone-900/40 backdrop-blur-[2px] z-40 hidden transition-opacity opacity-0" onclick="toggleHistory(false)"></div>
+    <aside id="history-drawer" class="fixed top-0 right-0 h-full w-full max-w-sm bg-white border-l border-stone-200 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-4 border-b border-stone-200 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-bold font-cinzel">†</span>
+                <h2 class="font-cinzel font-bold text-sm text-stone-900">Chat History</h2>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button onclick="startNewChat(); toggleHistory(false);" class="px-2.5 py-1 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 cursor-pointer">+ New</button>
+                <button onclick="toggleHistory(false)" class="p-1 text-stone-400 hover:text-stone-700 cursor-pointer text-base leading-none">✕</button>
+            </div>
+        </div>
+        <div id="history-list" class="flex-1 overflow-y-auto p-3 space-y-2">
+            <div class="text-center py-8 text-stone-400 text-xs">Loading past chats...</div>
+        </div>
+        <div class="p-3 border-t border-stone-200 bg-stone-50 flex items-center justify-between text-xs">
+            <span id="session-count-text" class="text-stone-500 text-[11px]">0 chats saved</span>
+            <button onclick="clearAllHistory()" class="text-rose-600 hover:underline cursor-pointer text-[11px] font-medium">Clear All</button>
+        </div>
+    </aside>
+
     <script>
         const chatMessages = document.getElementById('chat-messages');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
         const statusPill = document.getElementById('status-pill');
         const suggestionsBox = document.getElementById('suggestions-box');
+        const historyBadge = document.getElementById('history-badge');
+        const historyList = document.getElementById('history-list');
+        const sessionCountText = document.getElementById('session-count-text');
+        const activeBanner = document.getElementById('active-banner');
+        const activeTitle = document.getElementById('active-title');
+
+        let currentSessionId = localStorage.getItem('ask_bible_ai_standalone_session') || null;
         let conversationHistory = [];
+        let cachedSuggestions = [];
 
         // Check health on load
         async function checkHealth() {
@@ -254,23 +405,189 @@ async def standalone_ui_page(request: Request):
                 const res = await fetch('/api/ask-ai/suggestions');
                 const data = await res.json();
                 if (data.suggestions && data.suggestions.length) {
-                    suggestionsBox.innerHTML = '';
-                    data.suggestions.forEach(q => {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'text-left text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/60 rounded-lg px-2.5 py-1 transition cursor-pointer';
-                        btn.textContent = q;
-                        btn.onclick = () => {
-                            userInput.value = q;
-                            handleSubmit(new Event('submit'));
-                        };
-                        suggestionsBox.appendChild(btn);
-                    });
+                    cachedSuggestions = data.suggestions;
+                    renderSuggestionsBox(cachedSuggestions);
+                }
+            } catch(e) {}
+        }
+
+        function renderSuggestionsBox(items) {
+            const container = document.getElementById('suggestions-box');
+            if (!container) return;
+            container.innerHTML = '';
+            items.forEach(q => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'text-left text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/60 rounded-lg px-2.5 py-1 transition cursor-pointer';
+                btn.textContent = q;
+                btn.onclick = () => {
+                    userInput.value = q;
+                    handleSubmit(new Event('submit'));
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function toggleHistory(open) {
+            const drawer = document.getElementById('history-drawer');
+            const backdrop = document.getElementById('history-backdrop');
+            if (open) {
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    backdrop.classList.add('opacity-100');
+                    drawer.classList.remove('translate-x-full');
+                }, 10);
+                loadSessions();
+            } else {
+                backdrop.classList.remove('opacity-100');
+                backdrop.classList.add('opacity-0');
+                drawer.classList.add('translate-x-full');
+                setTimeout(() => backdrop.classList.add('hidden'), 300);
+            }
+        }
+
+        function formatTimeAgo(isoString) {
+            if (!isoString) return '';
+            try {
+                const d = new Date(isoString.endsWith('Z') ? isoString : isoString + 'Z');
+                const diffMs = Date.now() - d.getTime();
+                const diffMins = Math.floor(diffMs / 60000);
+                if (diffMins < 1) return 'Just now';
+                if (diffMins < 60) return `${diffMins}m ago`;
+                const diffHours = Math.floor(diffMins / 60);
+                if (diffHours < 24) return `${diffHours}h ago`;
+                const diffDays = Math.floor(diffHours / 24);
+                if (diffDays < 7) return `${diffDays}d ago`;
+                return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            } catch(e) { return ''; }
+        }
+
+        async function loadSessions() {
+            try {
+                const res = await fetch('/api/ask-ai/sessions?limit=50');
+                if (!res.ok) return;
+                const data = await res.json();
+                const sessions = data.sessions || [];
+
+                if (sessions.length > 0) {
+                    historyBadge.textContent = sessions.length;
+                    historyBadge.classList.remove('hidden');
+                    sessionCountText.textContent = `${sessions.length} chat${sessions.length > 1 ? 's' : ''} saved`;
+                } else {
+                    historyBadge.classList.add('hidden');
+                    sessionCountText.textContent = '0 chats saved';
+                }
+
+                if (sessions.length === 0) {
+                    historyList.innerHTML = '<div class="text-center py-8 text-stone-400 text-xs">No past conversations yet.</div>';
+                    return;
+                }
+
+                historyList.innerHTML = '';
+                sessions.forEach(sess => {
+                    const isActive = (sess.id === currentSessionId);
+                    const item = document.createElement('div');
+                    item.className = `group p-2.5 rounded-xl border transition cursor-pointer flex items-start justify-between gap-2 ${
+                        isActive ? 'bg-amber-50 border-amber-300' : 'bg-white border-stone-200 hover:bg-stone-50'
+                    }`;
+                    item.innerHTML = `
+                        <div class="flex-1 min-w-0 pr-1">
+                            <p class="text-xs font-semibold ${isActive ? 'text-amber-900' : 'text-stone-800'} truncate">${escapeHtml(sess.title)}</p>
+                            <span class="text-[10px] text-stone-400">${formatTimeAgo(sess.updated_at || sess.created_at)} • ${sess.message_count || 0} msgs</span>
+                        </div>
+                        <button class="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-rose-600 transition cursor-pointer text-xs shrink-0" 
+                                title="Delete" onclick="deleteSession('${sess.id}', event)">🗑</button>
+                    `;
+                    item.onclick = (e) => {
+                        if (e.target.closest('button')) return;
+                        selectSession(sess.id);
+                        toggleHistory(false);
+                    };
+                    historyList.appendChild(item);
+                });
+            } catch(e) {}
+        }
+
+        async function selectSession(sessionId) {
+            try {
+                const res = await fetch(`/api/ask-ai/sessions/${sessionId}`);
+                if (!res.ok) { startNewChat(); return; }
+                const data = await res.json();
+                currentSessionId = sessionId;
+                localStorage.setItem('ask_bible_ai_standalone_session', sessionId);
+
+                activeTitle.textContent = data.session.title || 'Scripture Inquiry';
+                activeBanner.classList.remove('hidden');
+
+                chatMessages.innerHTML = '';
+                conversationHistory = [];
+
+                (data.messages || []).forEach(msg => {
+                    conversationHistory.push({ role: msg.role, content: msg.content });
+                    if (msg.role === 'user') {
+                        appendUserMessage(msg.content);
+                    } else if (msg.role === 'assistant') {
+                        appendBotMessageFromHistory(msg.content, msg.citations);
+                    }
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                loadSessions();
+            } catch(e) { startNewChat(); }
+        }
+
+        function startNewChat() {
+            currentSessionId = null;
+            localStorage.removeItem('ask_bible_ai_standalone_session');
+            conversationHistory = [];
+            activeBanner.classList.add('hidden');
+            chatMessages.innerHTML = `
+                <div id="welcome-card" class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-xs shrink-0 mt-0.5">†</div>
+                    <div class="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs max-w-2xl">
+                        <p class="font-semibold text-amber-900 text-sm mb-1">Welcome to Ask Bible AI | நல்வரவு</p>
+                        <p class="text-xs text-stone-600 leading-relaxed">
+                            Ask any question about the Holy Bible in English or Tamil. Responses are grounded directly in scripture with chapter and verse citations.
+                        </p>
+                        <div class="mt-3 pt-3 border-t border-stone-100">
+                            <p class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Try asking:</p>
+                            <div id="suggestions-box" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            if (cachedSuggestions.length) renderSuggestionsBox(cachedSuggestions);
+            else loadSuggestions();
+            loadSessions();
+        }
+
+        async function deleteSession(sessionId, event) {
+            if (event) event.stopPropagation();
+            if (!confirm('Delete this conversation?')) return;
+            try {
+                const res = await fetch(`/api/ask-ai/sessions/${sessionId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    if (currentSessionId === sessionId) startNewChat();
+                    else loadSessions();
+                }
+            } catch(e) {}
+        }
+
+        async function clearAllHistory() {
+            if (!confirm('Clear all conversation history?')) return;
+            try {
+                const res = await fetch('/api/ask-ai/history', { method: 'DELETE' });
+                if (res.ok) {
+                    startNewChat();
+                    toggleHistory(false);
                 }
             } catch(e) {}
         }
 
         function appendUserMessage(text) {
+            const wc = document.getElementById('welcome-card');
+            if (wc) wc.remove();
+
             const wrap = document.createElement('div');
             wrap.className = 'flex justify-end';
             wrap.innerHTML = `
@@ -302,6 +619,26 @@ async def standalone_ui_page(request: Request):
             return id;
         }
 
+        function appendBotMessageFromHistory(content, citations) {
+            const wrap = document.createElement('div');
+            wrap.className = 'flex items-start gap-3 bot-msg-container';
+            wrap.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-cinzel font-bold text-xs shrink-0 mt-0.5">†</div>
+                <div class="bg-white border border-stone-200 rounded-2xl rounded-tl-xs p-4 shadow-xs max-w-2xl w-full">
+                    <div class="prose text-xs text-stone-800 leading-relaxed font-serif">
+                        ${marked.parse(content || '')}
+                    </div>
+                    ${citations && citations.length ? `
+                        <div class="mt-3 pt-2 border-t border-stone-100">
+                            <span class="text-[10px] uppercase font-bold text-stone-400">Cited Passages: </span>
+                            ${citations.map(c => `<span class="inline-block bg-amber-50 text-amber-800 text-[11px] font-medium px-2 py-0.5 rounded border border-amber-200 mr-1.5 mt-1">${escapeHtml(c)}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            chatMessages.appendChild(wrap);
+        }
+
         async function handleSubmit(e) {
             e.preventDefault();
             const text = userInput.value.trim();
@@ -317,14 +654,14 @@ async def standalone_ui_page(request: Request):
             const citationsEl = document.getElementById(msgId + '-citations');
 
             try {
-                // Try streaming endpoint first
                 const response = await fetch('/api/ask-ai/stream', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         query: text,
                         history: conversationHistory,
-                        language: 'auto'
+                        language: 'auto',
+                        session_id: currentSessionId
                     })
                 });
 
@@ -354,6 +691,19 @@ async def standalone_ui_page(request: Request):
                                     accumulated += parsed.token;
                                     targetEl.innerHTML = marked.parse(accumulated);
                                     chatMessages.scrollTop = chatMessages.scrollHeight;
+                                } else if (parsed.done) {
+                                    if (parsed.session_id) {
+                                        currentSessionId = parsed.session_id;
+                                        localStorage.setItem('ask_bible_ai_standalone_session', currentSessionId);
+                                        activeTitle.textContent = text.slice(0, 50);
+                                        activeBanner.classList.remove('hidden');
+                                        loadSessions();
+                                    }
+                                    if (parsed.citations && parsed.citations.length) {
+                                        citationsEl.classList.remove('hidden');
+                                        citationsEl.innerHTML = '<span class="text-[10px] uppercase font-bold text-stone-400">Cited Passages: </span>' + 
+                                            parsed.citations.map(c => `<span class="inline-block bg-amber-50 text-amber-800 text-[11px] font-medium px-2 py-0.5 rounded border border-amber-200 mr-1.5 mt-1">${escapeHtml(c)}</span>`).join('');
+                                    }
                                 }
                             } catch (err) {}
                         }
@@ -361,20 +711,31 @@ async def standalone_ui_page(request: Request):
                 }
 
                 if (!accumulated) {
-                    // Fallback to standard /ask if stream was empty
                     const fallbackRes = await fetch('/api/ask-ai/ask', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ query: text, history: conversationHistory })
+                        body: JSON.stringify({ 
+                            query: text, 
+                            history: conversationHistory,
+                            session_id: currentSessionId
+                        })
                     });
                     const fbData = await fallbackRes.json();
                     accumulated = fbData.answer || fbData.detail || fbData.error || 'No response generated.';
                     targetEl.innerHTML = marked.parse(accumulated);
 
+                    if (fbData.session_id) {
+                        currentSessionId = fbData.session_id;
+                        localStorage.setItem('ask_bible_ai_standalone_session', currentSessionId);
+                        activeTitle.textContent = text.slice(0, 50);
+                        activeBanner.classList.remove('hidden');
+                        loadSessions();
+                    }
+
                     if (fbData.citations && fbData.citations.length) {
                         citationsEl.classList.remove('hidden');
                         citationsEl.innerHTML = '<span class="text-[10px] uppercase font-bold text-stone-400">Cited Passages: </span>' + 
-                            fbData.citations.map(c => `<span class="inline-block bg-amber-50 text-amber-800 text-[11px] font-medium px-2 py-0.5 rounded border border-amber-200 mr-1.5 mt-1">${c}</span>`).join('');
+                            fbData.citations.map(c => `<span class="inline-block bg-amber-50 text-amber-800 text-[11px] font-medium px-2 py-0.5 rounded border border-amber-200 mr-1.5 mt-1">${escapeHtml(c)}</span>`).join('');
                     }
                 }
 
@@ -392,14 +753,20 @@ async def standalone_ui_page(request: Request):
         }
 
         function escapeHtml(str) {
-            return str.replace(/[&<>'"]/g, tag => ({
+            return (str || '').replace(/[&<>'"]/g, tag => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
             }[tag] || tag));
         }
 
         checkHealth();
-        loadSuggestions();
+        loadSessions();
+        if (currentSessionId) {
+            selectSession(currentSessionId);
+        } else {
+            loadSuggestions();
+        }
     </script>
 </body>
 </html>"""
+    return HTMLResponse(content=html_content)
     return HTMLResponse(content=html_content)
