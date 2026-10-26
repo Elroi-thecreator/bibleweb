@@ -1,0 +1,51 @@
+id: PROD-STUDY-001
+type: product_standard
+title: AI Scripture Study, Chapter Overviews, Historical Context & Verse Exegesis Standard
+domain: product
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: product_team
+
+applies_to:
+  - backend
+  - frontend
+  - reader
+  - ask_bible_ai
+  - admin
+
+rule:
+  "The Scripture Reader module must provide AI-powered chapter overviews, historical context, thematic outlines, and verse-by-verse theological exegesis in bilingual English and Tamil across all biblical books. Chapter overviews (`GET /api/study/chapter-overview`) present author, date, historical background, section outlines, and spiritual takeaways in a sleek collapsible drawer above verses. Verse exegesis (`POST /api/study/verse-exegesis`) provides deep theological exegesis, original language (Koine Greek / Biblical Hebrew) insights with lemmas and roots, cross-references, practical life applications, guided prayers, and seamless handoff to the interactive Bible AI tutor (`/ask?q=...`). Both capabilities are backed by high-fidelity curated fallbacks, LRU memory caching, and are globally configurable via Admin Settings (`study_ai_enabled`)."
+
+do:
+  - "Display a subtle, collapsible 'Chapter Overview & Historical Context' card at the top of `/read/{book_id}/{chapter}` when `study_ai_enabled` is active."
+  - "Provide author identity, composition era, audience, purpose, and central theological themes in bilingual format."
+  - "Provide a 3-part thematic outline segmenting the chapter into coherent passages with bilingual descriptions."
+  - "Include a dedicated '💡' action button on every verse in the reader toolbar that opens the verse exegesis modal."
+  - "Examine original language nuances (Koine Greek / Biblical Hebrew) with key transliterated words, dictionary root lemmas, and clear definitions in English and Tamil."
+  - "Provide relevant scripture cross-references with concise contextual commentary."
+  - "Offer concrete practical daily life applications and heartful guided prayers rooted in the scripture text."
+  - "Provide a direct action link from the exegesis drawer into `/ask?q=...` pre-populating a query for continued conversation with the AI Tutor."
+  - "Implement high-fidelity curated biblical metadata in `app/study_ai.py` so offline or simulation environments function without LLM latency or errors."
+  - "Cache chapter overviews and verse exegesis in-memory on the backend (`_CHAPTER_OVERVIEW_CACHE`, `_VERSE_EXEGESIS_CACHE`) and in the client DOM session (`window._chapterOverviewData`, `window._verseExegesisCache`)."
+  - "Allow administrators to toggle Study AI on/off via `/admin/settings`, persisting settings to `data/bible_ai_config.json`, `%LOCALAPPDATA%/HolyBible/config/`, and browser Local Memory."
+  - "Gracefully hide study UI controls and return HTTP 503 from study endpoints when `study_ai_enabled` is disabled."
+
+dont:
+  - "Do not block or slow down initial page loads on `/read/{book_id}/{chapter}`; study overviews and exegesis must be loaded on-demand via async fetch."
+  - "Do not crash or render empty errors if an LLM API key is absent or rates out; immediately serve curated canonical fallback metadata."
+  - "Do not display AI study actions or buttons when `study_ai_enabled` is switched off in Admin Settings."
+  - "Do not interfere with native verse click-to-listen audio playback, bookmarks, highlighting, or reader shortcuts."
+
+reason:
+  "Deep scripture study requires contextual understanding of historical background, original languages, and theological structure. Seamless inline AI exegesis bridges ancient biblical scholarship and modern devotional discipleship for bilingual believers."
+
+related_items:
+  - ARCH-AI-001
+  - ARCH-ADMIN-001
+  - DEV-PY-001
+  - PROD-CANON-001
+  - PROD-TYPO-001

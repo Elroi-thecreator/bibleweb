@@ -134,6 +134,11 @@ class AskBibleAIConfig(BaseModel):
         default_factory=lambda: os.getenv("BIBLE_QUIZ_AI_DIFFICULTY", "medium")
     )
 
+    # AI Scripture Study & Verse Exegesis Settings
+    study_ai_enabled: bool = Field(
+        default_factory=lambda: os.getenv("BIBLE_STUDY_AI_ENABLED", "true").lower() in ("true", "1", "yes")
+    )
+
     def to_dict(self) -> Dict[str, Any]:
         """Returns safe dictionary representation masking sensitive keys."""
         d = self.model_dump()

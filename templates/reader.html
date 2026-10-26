@@ -170,6 +170,75 @@
     </div>
 
     <!-- Verses Container -->
+    {% if study_ai_enabled %}
+    <!-- AI Chapter Overview & Historical Context -->
+    <div id="chapter-study-card" class="mb-6 bg-gradient-to-r from-amber-50/70 via-stone-50/90 to-orange-50/50 dark:from-stone-900/90 dark:via-stone-900/70 dark:to-stone-900/90 border border-amber-200/80 dark:border-amber-900/40 rounded-2xl p-4 sm:p-5 shadow-xs transition-all duration-300">
+        <div class="flex items-center justify-between cursor-pointer select-none" onclick="toggleChapterOverview()">
+            <div class="flex items-center space-x-3">
+                <span class="w-8 h-8 rounded-xl bg-amber-500/15 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300 flex items-center justify-center text-sm font-bold shadow-xs">
+                    ✨
+                </span>
+                <div>
+                    <h3 class="text-sm font-cinzel font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2">
+                        <span>Chapter Overview & Historical Context</span>
+                        <span class="text-[10px] font-sans font-semibold uppercase tracking-wider px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full border border-amber-300/60 dark:border-amber-800/60">AI Insight</span>
+                    </h3>
+                    <p class="text-xs text-stone-500 dark:text-stone-400 font-tamil notranslate" translate="no">
+                        அதிகார சுருக்கம் & வரலாற்றுப் பின்னணி (Author, Themes & Exegesis)
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button type="button" id="overview-toggle-icon" class="w-7 h-7 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xs transition-transform duration-200">
+                    ▼
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible Content Tray -->
+        <div id="chapter-overview-drawer" class="hidden mt-4 pt-4 border-t border-amber-200/60 dark:border-stone-800 space-y-4">
+            <div id="chapter-overview-loading" class="hidden py-8 text-center text-stone-400 dark:text-stone-500 space-y-2">
+                <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-amber-600 border-t-transparent"></div>
+                <p class="text-xs font-cinzel">Preparing chapter insights...</p>
+            </div>
+            <div id="chapter-overview-content" class="hidden space-y-4">
+                <!-- Meta Pills -->
+                <div class="flex flex-wrap items-center gap-2 pb-1 border-b border-amber-100 dark:border-stone-800/80 text-xs">
+                    <span id="overview-author-badge" class="px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-medium"></span>
+                    <span id="overview-date-badge" class="px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-medium"></span>
+                    <span id="overview-keyverse-badge" class="px-2.5 py-1 rounded-lg bg-amber-100/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 font-semibold border border-amber-300/60 dark:border-amber-800/60"></span>
+                </div>
+
+                <!-- Historical Background -->
+                <div class="p-3.5 bg-white/80 dark:bg-stone-800/50 rounded-xl border border-stone-200/70 dark:border-stone-700/60 space-y-2">
+                    <h4 class="font-bold text-amber-800 dark:text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🏛️</span> Historical Background (வரலாற்றுப் பின்னணி)
+                    </h4>
+                    <p id="overview-hist-en" class="text-stone-700 dark:text-stone-300 text-xs sm:text-sm leading-relaxed"></p>
+                    <p id="overview-hist-ta" class="text-stone-800 dark:text-stone-200 text-xs sm:text-sm leading-relaxed font-tamil notranslate pt-2 border-t border-stone-100 dark:border-stone-700/50" translate="no"></p>
+                </div>
+
+                <!-- Thematic Outline -->
+                <div class="p-3.5 bg-white/80 dark:bg-stone-800/50 rounded-xl border border-stone-200/70 dark:border-stone-700/60 space-y-2.5">
+                    <h4 class="font-bold text-stone-700 dark:text-stone-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <span>📑</span> Thematic Outline (பகுதி பகுதியான சுருக்கம்)
+                    </h4>
+                    <div id="overview-outline-list" class="space-y-2 text-xs"></div>
+                </div>
+
+                <!-- Spiritual Takeaway -->
+                <div class="p-3.5 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/60 dark:border-emerald-900/40 space-y-2">
+                    <h4 class="font-bold text-emerald-800 dark:text-emerald-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🕊️</span> Spiritual & Devotional Takeaway (ஆவிக்குரிய செய்தி)
+                    </h4>
+                    <p id="overview-takeaway-en" class="text-stone-700 dark:text-stone-300 text-xs sm:text-sm leading-relaxed"></p>
+                    <p id="overview-takeaway-ta" class="text-stone-800 dark:text-stone-200 text-xs sm:text-sm leading-relaxed font-tamil notranslate pt-2 border-t border-emerald-200/50 dark:border-emerald-900/30" translate="no"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div id="reader-content" class="space-y-2 sm:space-y-3">
         {% for v in verses %}
         <div id="v{{ v.verse }}" class="verse-item group rounded-xl p-3.5 sm:p-4 hover:bg-white dark:hover:bg-stone-900 border border-transparent hover:border-stone-200 dark:hover:border-stone-800 transition duration-150 cursor-pointer"
@@ -223,6 +292,12 @@
                             class="hover:text-stone-700 dark:hover:text-stone-200 text-xs sm:text-[11px] p-0.5 cursor-pointer" title="Copy verse">
                         📋
                     </button>
+                    {% if study_ai_enabled %}
+                    <button type="button" onclick="openVerseExegesis({{ loop.index0 }}, event)" 
+                            class="verse-exegesis-btn hover:text-amber-600 text-xs sm:text-[11px] p-0.5 cursor-pointer transition hover:scale-110" title="Explain verse (AI Exegesis & Context)">
+                        💡
+                    </button>
+                    {% endif %}
                 </div>
             </div>
 
@@ -388,6 +463,103 @@
         </div>
     </div>
 </div>
+
+{% if study_ai_enabled %}
+<!-- Verse Exegesis Modal / Slide-over Drawer -->
+<div id="verse-exegesis-modal" class="hidden fixed inset-0 bg-stone-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4" onclick="handleExegesisBackdropClick(event)">
+    <div class="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-2xl w-full p-4 sm:p-6 max-h-[90vh] flex flex-col border border-stone-200 dark:border-stone-800 transition-all" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="flex justify-between items-start pb-3 border-b border-stone-100 dark:border-stone-800">
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-xl bg-amber-500/15 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300 flex items-center justify-center text-lg">💡</span>
+                <div>
+                    <h3 id="exegesis-modal-ref" class="font-cinzel font-bold text-base sm:text-lg text-stone-900 dark:text-stone-100 flex items-center gap-2">
+                        Verse Exegesis
+                    </h3>
+                    <p class="text-xs text-stone-500 dark:text-stone-400 font-tamil notranslate" translate="no">
+                        இறையியல் விளக்கம் & மூலமொழி சொல்லாராய்ச்சி
+                    </p>
+                </div>
+            </div>
+            <button type="button" onclick="closeVerseExegesis()" class="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-lg leading-none cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 transition">&times;</button>
+        </div>
+
+        <!-- Verse Text Box -->
+        <div id="exegesis-verse-box" class="my-3 p-3 sm:p-3.5 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-700/60 text-xs sm:text-sm space-y-1.5">
+            <p id="exegesis-verse-en" class="font-english text-stone-800 dark:text-stone-200 italic"></p>
+            <p id="exegesis-verse-ta" class="font-tamil text-stone-900 dark:text-stone-100 notranslate" translate="no"></p>
+        </div>
+
+        <!-- Scrollable Exegesis Content -->
+        <div id="exegesis-modal-body" class="overflow-y-auto flex-1 space-y-4 pr-1 text-xs sm:text-sm">
+            <!-- Loading Indicator -->
+            <div id="exegesis-loading" class="py-10 text-center text-stone-400 dark:text-stone-500 space-y-2">
+                <div class="inline-block animate-spin rounded-full h-7 w-7 border-2 border-amber-600 border-t-transparent"></div>
+                <p class="text-xs font-cinzel">Unfolding theological insights and linguistic roots...</p>
+            </div>
+
+            <!-- Content Container -->
+            <div id="exegesis-content" class="hidden space-y-4">
+                <!-- Literary & Theological Context -->
+                <div class="p-3.5 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900/40 space-y-2">
+                    <h4 class="font-bold text-amber-800 dark:text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <span>📖</span> Context & Exegesis (இறையியல் விளக்கம்)
+                    </h4>
+                    <p id="exegesis-theological-en" class="text-stone-700 dark:text-stone-300 leading-relaxed"></p>
+                    <p id="exegesis-theological-ta" class="text-stone-800 dark:text-stone-200 leading-relaxed font-tamil notranslate pt-2 border-t border-amber-200/40 dark:border-amber-900/30" translate="no"></p>
+                </div>
+
+                <!-- Original Language Terms (Greek / Hebrew) -->
+                <div id="exegesis-original-lang-box" class="p-3.5 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200 dark:border-stone-700/60 space-y-2">
+                    <h4 class="font-bold text-stone-700 dark:text-stone-300 text-xs uppercase tracking-wider flex items-center justify-between">
+                        <span class="flex items-center gap-1.5"><span>🏛️</span> Original Language (<span id="exegesis-lang-name">Hebrew / Greek</span>)</span>
+                        <span class="text-[10px] text-stone-400 font-mono">Linguistic Nuance</span>
+                    </h4>
+                    <div id="exegesis-original-terms" class="space-y-2 text-xs"></div>
+                </div>
+
+                <!-- Cross References -->
+                <div id="exegesis-cross-refs-box" class="p-3.5 bg-stone-50 dark:bg-stone-800/40 rounded-xl border border-stone-200 dark:border-stone-700/60 space-y-2">
+                    <h4 class="font-bold text-stone-700 dark:text-stone-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🔗</span> Scripture Cross-References (ஒத்த வாக்கியங்கள்)
+                    </h4>
+                    <div id="exegesis-cross-refs" class="space-y-1.5 text-xs"></div>
+                </div>
+
+                <!-- Practical Life Application -->
+                <div class="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-2">
+                    <h4 class="font-bold text-emerald-800 dark:text-emerald-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🌱</span> Practical Application (வாழ்வியல் பயன்பாடு)
+                    </h4>
+                    <p id="exegesis-application-en" class="text-stone-700 dark:text-stone-300 leading-relaxed"></p>
+                    <p id="exegesis-application-ta" class="text-stone-800 dark:text-stone-200 leading-relaxed font-tamil notranslate pt-2 border-t border-emerald-200/40 dark:border-emerald-900/30" translate="no"></p>
+                </div>
+
+                <!-- Guided Prayer -->
+                <div class="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900/40 space-y-2">
+                    <h4 class="font-bold text-blue-800 dark:text-blue-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🙏</span> Guided Prayer (ஜெபம்)
+                    </h4>
+                    <p id="exegesis-prayer-en" class="text-stone-700 dark:text-stone-300 italic leading-relaxed"></p>
+                    <p id="exegesis-prayer-ta" class="text-stone-800 dark:text-stone-200 leading-relaxed font-tamil notranslate pt-2 border-t border-blue-200/40 dark:border-blue-900/30 italic" translate="no"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="pt-3 mt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
+            <a id="exegesis-chat-ai-link" href="/ask" target="_blank"
+               class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-xs transition hover:scale-[1.02]">
+                <span>💬</span> <span>Ask AI Tutor More About This Verse</span>
+            </a>
+            <button type="button" onclick="closeVerseExegesis()" 
+                    class="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-semibold cursor-pointer transition">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -585,6 +757,299 @@
         if (header) header.classList.toggle('hidden');
         if (toolbar) toolbar.classList.toggle('top-2');
         showToast("Focus mode toggled");
+    }
+
+    // 4. AI Scripture Study & Verse Exegesis
+    window._chapterOverviewData = null;
+    window._verseExegesisCache = window._verseExegesisCache || {};
+
+    async function toggleChapterOverview() {
+        const drawer = document.getElementById('chapter-overview-drawer');
+        const icon = document.getElementById('overview-toggle-icon');
+        const loading = document.getElementById('chapter-overview-loading');
+        const content = document.getElementById('chapter-overview-content');
+        if (!drawer) return;
+
+        const isOpening = drawer.classList.contains('hidden');
+        if (isOpening) {
+            drawer.classList.remove('hidden');
+            if (icon) icon.style.transform = 'rotate(180deg)';
+            
+            if (!window._chapterOverviewData) {
+                if (loading) loading.classList.remove('hidden');
+                if (content) content.classList.add('hidden');
+                try {
+                    const resp = await fetch(`/api/study/chapter-overview?book_id=${window.CURRENT_BOOK_ID}&chapter=${window.CURRENT_CHAPTER}`);
+                    if (!resp.ok) throw new Error('Failed to load chapter overview');
+                    const data = await resp.json();
+                    window._chapterOverviewData = data;
+                    renderChapterOverview(data);
+                } catch (err) {
+                    console.error('Error fetching chapter overview:', err);
+                    if (content) {
+                        content.classList.remove('hidden');
+                        content.innerHTML = `<div class="p-3 text-xs text-rose-500 bg-rose-50 dark:bg-rose-950/30 rounded-xl border border-rose-200 dark:border-rose-900/40">Unable to load AI chapter overview. Please try again later.</div>`;
+                    }
+                } finally {
+                    if (loading) loading.classList.add('hidden');
+                }
+            } else {
+                if (content) content.classList.remove('hidden');
+            }
+        } else {
+            drawer.classList.add('hidden');
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function renderChapterOverview(data) {
+        const content = document.getElementById('chapter-overview-content');
+        if (!content) return;
+        content.classList.remove('hidden');
+
+        const authorBadge = document.getElementById('overview-author-badge');
+        const authorText = data.author || (data.historical_context?.author_en ? `${data.historical_context.author_en} (${data.historical_context.author_ta || ''})` : 'Biblical Author');
+        if (authorBadge) authorBadge.innerText = `✍️ ${authorText}`;
+
+        const dateBadge = document.getElementById('overview-date-badge');
+        const dateText = data.date_written || data.historical_context?.period || 'Ancient Biblical Era';
+        if (dateBadge) dateBadge.innerText = `📅 ${dateText}`;
+
+        const keyVerseBadge = document.getElementById('overview-keyverse-badge');
+        const themeText = data.historical_context?.central_theme_en || data.title_en || 'Divine Revelation';
+        if (keyVerseBadge) {
+            keyVerseBadge.innerText = `⭐ Theme: ${themeText}`;
+        }
+
+        const histEn = document.getElementById('overview-hist-en');
+        if (histEn) {
+            histEn.innerText = data.historical_context?.en || 
+                (data.historical_context?.audience_purpose_en ? `Audience & Purpose: ${data.historical_context.audience_purpose_en}. Central Theme: ${data.historical_context.central_theme_en || ''}` : '');
+        }
+
+        const histTa = document.getElementById('overview-hist-ta');
+        if (histTa) {
+            histTa.innerText = data.historical_context?.ta || 
+                (data.historical_context?.audience_purpose_ta ? `நோக்கம்: ${data.historical_context.audience_purpose_ta}. மையக் கருத்து: ${data.historical_context.central_theme_ta || ''}` : '');
+        }
+
+        const outlineList = document.getElementById('overview-outline-list');
+        if (outlineList) {
+            outlineList.innerHTML = '';
+            const items = Array.isArray(data.outline) ? data.outline : (Array.isArray(data.key_themes) ? data.key_themes : []);
+            if (items.length > 0) {
+                items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'p-2.5 rounded-lg bg-stone-50 dark:bg-stone-900/60 border border-stone-200/60 dark:border-stone-800 space-y-1';
+                    const titleEn = item.theme_en || item.section || '';
+                    const titleTa = item.theme_ta || '';
+                    const summaryEn = item.summary_en || '';
+                    const summaryTa = item.summary_ta || '';
+                    const verseBadge = item.verses ? `<span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-mono">vv. ${escapeHtml(item.verses)}</span>` : '';
+                    row.innerHTML = `
+                        <div class="flex items-center justify-between font-semibold">
+                            <span class="text-stone-800 dark:text-stone-200 font-cinzel">${escapeHtml(titleEn)}</span>
+                            ${verseBadge}
+                        </div>
+                        ${summaryEn ? `<p class="text-stone-600 dark:text-stone-400 text-xs">${escapeHtml(summaryEn)}</p>` : ''}
+                        ${titleTa ? `<p class="text-stone-700 dark:text-stone-300 text-xs font-tamil notranslate" translate="no">${escapeHtml(titleTa)}</p>` : ''}
+                        ${summaryTa ? `<p class="text-stone-600 dark:text-stone-400 text-xs font-tamil notranslate" translate="no">${escapeHtml(summaryTa)}</p>` : ''}
+                    `;
+                    outlineList.appendChild(row);
+                });
+            }
+        }
+
+        const takeawayEn = document.getElementById('overview-takeaway-en');
+        if (takeawayEn) takeawayEn.innerText = data.spiritual_takeaway?.en || data.theological_takeaway_en || '';
+
+        const takeawayTa = document.getElementById('overview-takeaway-ta');
+        if (takeawayTa) takeawayTa.innerText = data.spiritual_takeaway?.ta || data.theological_takeaway_ta || '';
+    }
+
+    async function openVerseExegesis(verseIndex, event) {
+        if (event) {
+            event.stopPropagation();
+        }
+        const items = document.querySelectorAll('.verse-item');
+        const item = items[verseIndex];
+        if (!item) return;
+
+        const verseNum = parseInt(item.dataset.verse);
+        const verseDisplay = item.dataset.verseDisplay || String(verseNum);
+        const textEn = item.dataset.textEn || item.querySelector('.verse-text-en')?.innerText || '';
+        const textTa = item.dataset.textTa || item.querySelector('.verse-text-ta')?.innerText || '';
+
+        const modal = document.getElementById('verse-exegesis-modal');
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        // Set immediate header and quote preview
+        const refElem = document.getElementById('exegesis-modal-ref');
+        if (refElem) {
+            refElem.innerText = `${window.CURRENT_BOOK_EN} ${window.CURRENT_CHAPTER}:${verseDisplay} • ${window.CURRENT_BOOK_TA} ${window.CURRENT_CHAPTER}:${verseDisplay}`;
+        }
+        const vEn = document.getElementById('exegesis-verse-en');
+        if (vEn) vEn.innerText = textEn;
+        const vTa = document.getElementById('exegesis-verse-ta');
+        if (vTa) vTa.innerText = textTa;
+
+        // Set AI Chat link
+        const chatLink = document.getElementById('exegesis-chat-ai-link');
+        if (chatLink) {
+            const query = `Explain ${window.CURRENT_BOOK_EN} ${window.CURRENT_CHAPTER}:${verseDisplay} in detail with theological and historical context`;
+            chatLink.href = `/ask?q=${encodeURIComponent(query)}`;
+        }
+
+        const cacheKey = `${window.CURRENT_BOOK_ID}:${window.CURRENT_CHAPTER}:${verseNum}`;
+        const loading = document.getElementById('exegesis-loading');
+        const content = document.getElementById('exegesis-content');
+
+        if (window._verseExegesisCache[cacheKey]) {
+            if (loading) loading.classList.add('hidden');
+            renderVerseExegesis(window._verseExegesisCache[cacheKey]);
+            return;
+        }
+
+        if (loading) loading.classList.remove('hidden');
+        if (content) content.classList.add('hidden');
+
+        try {
+            const resp = await fetch('/api/study/verse-exegesis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    book_id: window.CURRENT_BOOK_ID,
+                    book_en: window.CURRENT_BOOK_EN,
+                    book_ta: window.CURRENT_BOOK_TA,
+                    chapter: window.CURRENT_CHAPTER,
+                    verse: verseNum,
+                    verse_text_en: textEn,
+                    verse_text_ta: textTa
+                })
+            });
+            if (!resp.ok) throw new Error('Failed to fetch verse exegesis');
+            const data = await resp.json();
+            window._verseExegesisCache[cacheKey] = data;
+            renderVerseExegesis(data);
+        } catch (err) {
+            console.error('Exegesis error:', err);
+            if (content) {
+                content.classList.remove('hidden');
+                content.innerHTML = `<div class="p-4 text-xs text-rose-500 bg-rose-50 dark:bg-rose-950/30 rounded-xl border border-rose-200 dark:border-rose-900/40">Could not retrieve verse exegesis. Please try again.</div>`;
+            }
+        } finally {
+            if (loading) loading.classList.add('hidden');
+        }
+    }
+
+    function renderVerseExegesis(data) {
+        const content = document.getElementById('exegesis-content');
+        if (!content) return;
+        content.classList.remove('hidden');
+
+        // Context
+        const theoEn = document.getElementById('exegesis-theological-en');
+        if (theoEn) theoEn.innerText = data.literary_and_theological_context?.en || data.literary_context_en || '';
+        const theoTa = document.getElementById('exegesis-theological-ta');
+        if (theoTa) theoTa.innerText = data.literary_and_theological_context?.ta || data.literary_context_ta || '';
+
+        // Original language
+        const langBox = document.getElementById('exegesis-original-lang-box');
+        const langName = document.getElementById('exegesis-lang-name');
+        const termsContainer = document.getElementById('exegesis-original-terms');
+        const terms = data.original_language?.terms || data.original_language_insights || [];
+        const lang = data.original_language?.language || (terms.length > 0 ? terms[0].language : 'Hebrew / Greek');
+        if (langName) langName.innerText = lang || 'Hebrew / Greek';
+        if (termsContainer) {
+            termsContainer.innerHTML = '';
+            if (terms.length > 0) {
+                if (langBox) langBox.classList.remove('hidden');
+                terms.forEach(term => {
+                    const el = document.createElement('div');
+                    el.className = 'p-2 rounded-lg bg-white dark:bg-stone-900/80 border border-stone-200/60 dark:border-stone-800 space-y-1';
+                    const termWord = term.word || '';
+                    const termMeaningEn = term.meaning_en || term.definition || '';
+                    const termMeaningTa = term.meaning_ta || term.explanation_ta || '';
+                    const termRoot = term.lemma ? `<span class="text-[10px] text-stone-400 font-mono">root: ${escapeHtml(term.lemma)}</span>` : '';
+                    el.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-amber-700 dark:text-amber-400 font-mono text-sm">${escapeHtml(termWord)}</span>
+                            ${termRoot}
+                        </div>
+                        <p class="text-stone-700 dark:text-stone-300 text-xs">${escapeHtml(termMeaningEn)}</p>
+                        ${termMeaningTa ? `<p class="text-stone-600 dark:text-stone-400 text-xs font-tamil notranslate" translate="no">${escapeHtml(termMeaningTa)}</p>` : ''}
+                    `;
+                    termsContainer.appendChild(el);
+                });
+            } else if (langBox) {
+                langBox.classList.add('hidden');
+            }
+        }
+
+        // Cross References
+        const crossBox = document.getElementById('exegesis-cross-refs-box');
+        const crossContainer = document.getElementById('exegesis-cross-refs');
+        if (crossContainer) {
+            crossContainer.innerHTML = '';
+            const refs = data.cross_references || [];
+            if (refs.length > 0) {
+                if (crossBox) crossBox.classList.remove('hidden');
+                refs.forEach(ref => {
+                    const el = document.createElement('div');
+                    el.className = 'p-2 rounded-lg bg-white dark:bg-stone-900/80 border border-stone-200/60 dark:border-stone-800 space-y-1';
+                    const refLabel = ref.reference || ref.ref || '';
+                    const expEn = ref.explanation_en || ref.note_en || '';
+                    const expTa = ref.explanation_ta || ref.note_ta || '';
+                    el.innerHTML = `
+                        <span class="font-bold text-stone-800 dark:text-stone-200 font-cinzel">${escapeHtml(refLabel)}</span>
+                        ${expEn ? `<p class="text-stone-600 dark:text-stone-400 text-xs">${escapeHtml(expEn)}</p>` : ''}
+                        ${expTa ? `<p class="text-stone-700 dark:text-stone-300 text-xs font-tamil notranslate" translate="no">${escapeHtml(expTa)}</p>` : ''}
+                    `;
+                    crossContainer.appendChild(el);
+                });
+            } else if (crossBox) {
+                crossBox.classList.add('hidden');
+            }
+        }
+
+        // Application
+        const appEn = document.getElementById('exegesis-application-en');
+        if (appEn) appEn.innerText = data.practical_application?.en || data.spiritual_application_en || '';
+        const appTa = document.getElementById('exegesis-application-ta');
+        if (appTa) appTa.innerText = data.practical_application?.ta || data.spiritual_application_ta || '';
+
+        // Guided Prayer
+        const prayEn = document.getElementById('exegesis-prayer-en');
+        if (prayEn) prayEn.innerText = data.guided_prayer?.en || data.prayer_en || '';
+        const prayTa = document.getElementById('exegesis-prayer-ta');
+        if (prayTa) prayTa.innerText = data.guided_prayer?.ta || data.prayer_ta || '';
+    }
+
+    function closeVerseExegesis() {
+        const modal = document.getElementById('verse-exegesis-modal');
+        if (modal) modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    function handleExegesisBackdropClick(event) {
+        if (event.target.id === 'verse-exegesis-modal') {
+            closeVerseExegesis();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeVerseExegesis();
+        }
+    });
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.innerText = str;
+        return div.innerHTML;
     }
 </script>
 {% endblock %}

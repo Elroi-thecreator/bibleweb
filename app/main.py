@@ -13,6 +13,7 @@ import re
 import sys
 import threading
 import time
+from typing import Any, Dict, List, Optional
 
 START_TIME = time.time()
 
@@ -1051,6 +1052,12 @@ async def reader(
     next_ch = chapter + 1 if chapter < current_book["total_chapters"] else None
     canon_ctx = get_canon_context(active_canon)
 
+    try:
+        from ask_bible_ai.config import config as ai_config
+        study_ai_enabled = bool(ai_config.enabled and ai_config.study_ai_enabled)
+    except Exception:
+        study_ai_enabled = True
+
     resp = templates.TemplateResponse(
         request=request,
         name="reader.html",
@@ -1062,6 +1069,7 @@ async def reader(
             "mode": mode,
             "prev_ch": prev_ch,
             "next_ch": next_ch,
+            "study_ai_enabled": study_ai_enabled,
         },
     )
     if resp.body:
@@ -1338,6 +1346,87 @@ async def api_explain_quiz_ai(request: Request):
     )
 
     return JSONResponse(content=result)
+
+
+# =====================================================================
+# AI Scripture Study: Chapter Overviews & Verse Exegesis APIs
+# =====================================================================
+
+@app.get("/api/study/chapter-overview")
+async def api_chapter_overview(
+    request: Request,
+    book_id: int = Query(..., ge=1, le=100),
+    chapter: int = Query(..., ge=1, le=150),
+    canon: Optional[str] = Query(None),
+):
+    """Retrieves AI-grounded chapter overview, historical context, and thematic outline."""
+    from ask_bible_ai.config import config as ai_config
+    if not (ai_config.enabled and ai_config.study_ai_enabled):
+        raise HTTPException(status_code=503, detail="AI Scripture Study is currently disabled in Settings.")
+
+    active_canon = resolve_canon(request, canon, book_id)
+    book_info = get_book_info(book_id, canon=active_canon)
+    try:
+        verses = (await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)) or []
+    except Exception:
+        verses = []
+
+    from app.study_ai import get_chapter_overview_ai
+    overview = await get_chapter_overview_ai(
+        book_id=book_id,
+        book_name_en=book_info["name_en"],
+        book_name_ta=book_info["name_ta"],
+        chapter=chapter,
+        verses=verses,
+    )
+    return JSONResponse(content=overview)
+
+
+@app.post("/api/study/verse-exegesis")
+async def api_verse_exegesis(request: Request):
+    """Generates theological verse-by-verse exegesis, linguistic root analysis, and cross-references."""
+    from ask_bible_ai.config import config as ai_config
+    if not (ai_config.enabled and ai_config.study_ai_enabled):
+        raise HTTPException(status_code=503, detail="AI Scripture Study is currently disabled in Settings.")
+
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid request body")
+
+    book_id = int(body.get("book_id", 1))
+    chapter = int(body.get("chapter", 1))
+    verse = int(body.get("verse", 1))
+    canon = body.get("canon")
+
+    active_canon = resolve_canon(request, canon, book_id)
+    book_info = get_book_info(book_id, canon=active_canon)
+
+    text_en = str(body.get("text_en") or body.get("verse_text_en") or "")
+    text_ta = str(body.get("text_ta") or body.get("verse_text_ta") or "")
+
+    if not text_en or not text_ta:
+        try:
+            verses = (await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)) or []
+            for v in verses:
+                if v.get("verse") == verse:
+                    text_en = text_en or v.get("text_en", "")
+                    text_ta = text_ta or v.get("text_ta", "")
+                    break
+        except Exception:
+            pass
+
+    from app.study_ai import get_verse_exegesis_ai
+    exegesis = await get_verse_exegesis_ai(
+        book_id=book_id,
+        book_name_en=book_info["name_en"],
+        book_name_ta=book_info["name_ta"],
+        chapter=chapter,
+        verse=verse,
+        text_en=text_en,
+        text_ta=text_ta,
+    )
+    return JSONResponse(content=exegesis)
 
 
 # ==========================================

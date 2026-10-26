@@ -652,6 +652,12 @@ async def api_update_ai_config(request: Request):
         if diff in ("easy", "medium", "hard", "mixed"):
             updates["quiz_ai_difficulty"] = diff
 
+    if "study_ai_enabled" in body:
+        val = body["study_ai_enabled"]
+        if isinstance(val, str):
+            val = val.lower() in ("true", "1", "yes", "on")
+        updates["study_ai_enabled"] = bool(val)
+
     new_cfg = save_ai_config(updates)
     ai_service.config = new_cfg
     ai_service.client.config = new_cfg
