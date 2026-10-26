@@ -341,7 +341,7 @@ async def standalone_ui_page(request: Request):
                     const { done, value } = await reader.read();
                     if (done) break;
                     const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\\n');
+                    const lines = chunk.split(/\r?\n/);
 
                     for (const line of lines) {
                         const trimmed = line.trim();
@@ -368,7 +368,7 @@ async def standalone_ui_page(request: Request):
                         body: JSON.stringify({ query: text, history: conversationHistory })
                     });
                     const fbData = await fallbackRes.json();
-                    accumulated = fbData.answer || 'No response generated.';
+                    accumulated = fbData.answer || fbData.detail || fbData.error || 'No response generated.';
                     targetEl.innerHTML = marked.parse(accumulated);
 
                     if (fbData.citations && fbData.citations.length) {
