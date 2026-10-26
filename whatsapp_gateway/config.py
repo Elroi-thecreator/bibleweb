@@ -10,27 +10,67 @@ Completely standalone with zero dependencies on external application domains.
 
 import json
 from os import getenv
+import os
 from pathlib import Path
 import sys
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-# Cross-platform root directory resolution
-if getattr(sys, "frozen", False):
-    BASE_DIR = Path(getattr(sys, "_MEIPASS", sys.executable)).resolve()
-else:
-    BASE_DIR = Path(__file__).resolve().parent.parent
+# Cross-platform root directory and persistent local machine storage resolution
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-CONFIG_FILE = BASE_DIR / "data" / "whatsapp_config.json"
+
+def _get_persistent_paths(filename: str) -> tuple[Path, Optional[Path]]:
+    """
+    Returns (primary_path, machine_backup_path) for persistent configurations.
+    - If running frozen in PyInstaller, primary is in %LOCALAPPDATA%/HolyBible/config
+      so settings never disappear across builds or restarts.
+    - If running from source, primary is project_root/data, and secondary is %LOCALAPPDATA%/HolyBible/config
+      as an immutable machine-level backup across git cleans or workspace rebuilds.
+    """
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        machine_dir = Path(local_app_data) / "HolyBible" / "config"
+    else:
+        machine_dir = Path.home() / ".holybible" / "config"
+    machine_file = machine_dir / filename
+
+    if getattr(sys, "frozen", False):
+        return machine_file, None
+    else:
+        project_file = PROJECT_ROOT / "data" / filename
+        return project_file, machine_file
+
+
+PRIMARY_CONFIG_FILE, BACKUP_CONFIG_FILE = _get_persistent_paths("whatsapp_config.json")
+CONFIG_FILE = PRIMARY_CONFIG_FILE
 
 
 def load_persisted_config() -> dict:
-    """Reads persistent configuration overrides from data/whatsapp_config.json if available."""
-    if CONFIG_FILE.is_file():
+    """Reads persistent configuration overrides from primary or machine backup location."""
+    primary, secondary = _get_persistent_paths("whatsapp_config.json")
+
+    # 1. Try primary location
+    if primary.is_file():
         try:
-            return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+            return json.loads(primary.read_text(encoding="utf-8"))
         except Exception as e:
             print(f"[WAConfig] Warning reading config file: {e}")
+
+    # 2. Try secondary/machine backup location (survives rebuilds/git cleans)
+    if secondary and secondary.is_file():
+        try:
+            data = json.loads(secondary.read_text(encoding="utf-8"))
+            # Mirror back to primary if writable
+            try:
+                primary.parent.mkdir(parents=True, exist_ok=True)
+                primary.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+            except Exception:
+                pass
+            return data
+        except Exception as e:
+            print(f"[WAConfig] Warning reading machine backup config: {e}")
+
     return {}
 
 
@@ -312,9 +352,15 @@ def save_persisted_config(
         current["web_app_url"] = clean_web
         config.web_app_url = clean_web
 
-    try:
-        CONFIG_FILE.write_text(json.dumps(current, indent=2), encoding="utf-8")
-    except Exception as e:
-        print(f"[WAConfig] Error saving config file: {e}")
+    primary, secondary = _get_persistent_paths("whatsapp_config.json")
+    json_str = json.dumps(current, indent=2)
+
+    for p in (primary, secondary):
+        if p:
+            try:
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(json_str, encoding="utf-8")
+            except Exception as e:
+                print(f"[WAConfig] Error saving config file to {p}: {e}")
 
     return current

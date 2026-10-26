@@ -13,22 +13,61 @@ import sys
 from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 
-# Cross-platform root directory resolution
-if getattr(sys, "frozen", False):
-    ROOT_DIR = Path(getattr(sys, "_MEIPASS", sys.executable)).resolve()
-else:
-    ROOT_DIR = Path(__file__).resolve().parent.parent
+# Cross-platform root directory and persistent local machine storage resolution
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-CONFIG_FILE = ROOT_DIR / "data" / "bible_ai_config.json"
+
+def _get_persistent_paths(filename: str) -> tuple[Path, Optional[Path]]:
+    """
+    Returns (primary_path, machine_backup_path) for persistent configurations.
+    - If running frozen in PyInstaller, primary is in %LOCALAPPDATA%/HolyBible/config
+      so settings never disappear across builds or restarts.
+    - If running from source, primary is project_root/data, and secondary is %LOCALAPPDATA%/HolyBible/config
+      as an immutable machine-level backup across git cleans or workspace rebuilds.
+    """
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        machine_dir = Path(local_app_data) / "HolyBible" / "config"
+    else:
+        machine_dir = Path.home() / ".holybible" / "config"
+    machine_file = machine_dir / filename
+
+    if getattr(sys, "frozen", False):
+        return machine_file, None
+    else:
+        project_file = PROJECT_ROOT / "data" / filename
+        return project_file, machine_file
+
+
+PRIMARY_CONFIG_FILE, BACKUP_CONFIG_FILE = _get_persistent_paths("bible_ai_config.json")
+CONFIG_FILE = PRIMARY_CONFIG_FILE
 
 
 def load_persisted_config() -> Dict[str, Any]:
-    """Reads persistent configuration overrides from data/bible_ai_config.json if available."""
-    if CONFIG_FILE.is_file():
+    """Reads persistent configuration overrides from primary or machine backup location."""
+    primary, secondary = _get_persistent_paths("bible_ai_config.json")
+
+    # 1. Try primary location (project data/ in dev, %LOCALAPPDATA% in frozen)
+    if primary.is_file():
         try:
-            return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+            return json.loads(primary.read_text(encoding="utf-8"))
         except Exception as e:
             print(f"[AskBibleAIConfig] Warning reading config file: {e}")
+
+    # 2. Try secondary/machine backup location (survives rebuilds/git cleans)
+    if secondary and secondary.is_file():
+        try:
+            data = json.loads(secondary.read_text(encoding="utf-8"))
+            # Mirror back to primary if writable
+            try:
+                primary.parent.mkdir(parents=True, exist_ok=True)
+                primary.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+            except Exception:
+                pass
+            return data
+        except Exception as e:
+            print(f"[AskBibleAIConfig] Warning reading machine backup config: {e}")
+
     return {}
 
 
@@ -103,16 +142,21 @@ def get_config() -> AskBibleAIConfig:
 
 
 def save_persisted_config(updates: Dict[str, Any]) -> AskBibleAIConfig:
-    """Persists runtime configuration changes to disk and updates singleton."""
+    """Persists runtime configuration changes to disk and machine backup."""
     global config
     current = load_persisted_config()
     current.update(updates)
 
-    try:
-        CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        CONFIG_FILE.write_text(json.dumps(current, indent=2, ensure_ascii=False), encoding="utf-8")
-    except Exception as e:
-        print(f"[AskBibleAIConfig] Failed to save config to disk: {e}")
+    primary, secondary = _get_persistent_paths("bible_ai_config.json")
+    json_str = json.dumps(current, indent=2, ensure_ascii=False)
+
+    for p in (primary, secondary):
+        if p:
+            try:
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(json_str, encoding="utf-8")
+            except Exception as e:
+                print(f"[AskBibleAIConfig] Failed to save config to {p}: {e}")
 
     config = get_config()
     return config

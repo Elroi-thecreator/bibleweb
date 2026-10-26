@@ -16,13 +16,14 @@ import sys
 from typing import Any, Dict, List, Optional
 import uuid
 
-# Cross-platform root directory resolution
+# Cross-platform root directory and persistent storage resolution
 if getattr(sys, "frozen", False):
-    ROOT_DIR = Path(getattr(sys, "_MEIPASS", sys.executable)).resolve()
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    _base_dir = Path(local_app_data) / "HolyBible" if local_app_data else Path.home() / ".holybible"
+    DEFAULT_HISTORY_DB_PATH = _base_dir / "data" / "bible_ai_history.sqlite.db"
 else:
     ROOT_DIR = Path(__file__).resolve().parent.parent
-
-DEFAULT_HISTORY_DB_PATH = ROOT_DIR / "data" / "bible_ai_history.sqlite.db"
+    DEFAULT_HISTORY_DB_PATH = ROOT_DIR / "data" / "bible_ai_history.sqlite.db"
 
 
 class ChatHistoryStore:

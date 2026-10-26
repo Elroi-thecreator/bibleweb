@@ -153,6 +153,70 @@
             </div>
         </div>
 
+        <!-- Fresh Build Alert Banner (Shown if local memory backup differs from default/blank server state) -->
+        <div id="local-memory-banner" class="hidden p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="flex items-start sm:items-center gap-3">
+                <span class="text-2xl shrink-0">💡</span>
+                <div>
+                    <p class="font-bold text-amber-900 dark:text-amber-300 text-sm">Previous Admin Settings Preserved in Local Memory!</p>
+                    <p class="text-stone-600 dark:text-stone-400 mt-0.5">
+                        A backup from <strong id="local-memory-banner-time" class="text-stone-800 dark:text-stone-200"></strong> was found in your browser. Rebuilding or redeploying resets server memory, but you can restore all custom AI & WhatsApp configurations with one click.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="restoreFromLocalMemory()" class="px-3 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5">
+                    <span>⚡</span> <span>1-Click Restore to Server</span>
+                </button>
+                <button onclick="dismissLocalMemoryBanner()" class="px-2.5 py-2 text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 transition cursor-pointer text-xs">
+                    Dismiss
+                </button>
+            </div>
+        </div>
+
+        <!-- Card: Local Memory & Persistent Configuration -->
+        <div class="bg-white dark:bg-stone-900 rounded-2xl p-5 sm:p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100 dark:border-stone-800">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-400 flex items-center justify-center text-sm font-bold shadow-2xs">💾</span>
+                    <div>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Local Memory & Persistent Backup</h2>
+                        <p class="font-tamil text-xs text-stone-500 dark:text-stone-400">உள்ளூர் நினைவகம் & காப்புப்பிரதி (Survives Rebuilds & Deploys)</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="local-memory-status-pill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
+                        <span id="local-memory-status-dot" class="w-2 h-2 rounded-full bg-stone-400"></span>
+                        <span id="local-memory-status-text">Checking Local Memory...</span>
+                    </span>
+                </div>
+            </div>
+
+            <p class="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+                When the application is rebuilt (e.g. PyInstaller executable, Docker, or Cloud Deploy), server runtime memory is reset to defaults. Your admin settings are automatically stored in your browser's persistent <strong>Local Memory (<code class="text-[11px] bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded font-mono">localStorage</code>)</strong> and mirrored to machine storage (<code class="text-[11px] bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded font-mono">%LOCALAPPDATA%/HolyBible/config</code>). You can snapshot or restore anytime.
+            </p>
+
+            <!-- Action Toolbar -->
+            <div class="flex flex-wrap items-center gap-2.5 pt-1">
+                <button type="button" onclick="saveToLocalMemory()" class="px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                    <span>💾</span> <span>Save All Settings to Local Memory</span>
+                </button>
+                <button type="button" onclick="restoreFromLocalMemory()" class="px-3.5 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-stone-800 dark:text-stone-200 hover:text-amber-900 dark:hover:text-amber-300 border border-stone-300 dark:border-stone-700 hover:border-amber-400 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                    <span>⚡</span> <span>Restore from Local Memory</span>
+                </button>
+                <button type="button" onclick="exportSettingsJson()" class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-xl text-xs font-medium transition flex items-center gap-1.5 cursor-pointer" title="Download backup file to PC">
+                    <span>⬇️</span> <span>Export JSON</span>
+                </button>
+                <label class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-xl text-xs font-medium transition flex items-center gap-1.5 cursor-pointer" title="Import backup JSON file">
+                    <span>⬆️</span> <span>Import JSON</span>
+                    <input type="file" id="import-settings-file" accept=".json" class="hidden" onchange="importSettingsJson(event)">
+                </label>
+                <button type="button" onclick="clearLocalMemory()" class="px-2.5 py-2 text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-medium transition cursor-pointer ml-auto" title="Clear browser local memory backup">
+                    <span>🗑</span> <span>Clear</span>
+                </button>
+            </div>
+        </div>
+
         <!-- 2-Column Responsive Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -975,6 +1039,7 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
+                    saveToLocalMemory(true);
                     showToast('✅ ' + data.message);
                     setTimeout(() => location.reload(), 1000);
                 } else {
@@ -1118,6 +1183,7 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
+                    saveToLocalMemory(true);
                     showToast('✅ ' + data.message);
                     setTimeout(() => location.reload(), 1000);
                 } else {
@@ -1449,6 +1515,7 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
+                    saveToLocalMemory(true);
                     showToast(data.message || 'AI configuration saved successfully!', 'success');
                     testAiConnection(true);
                 } else {
@@ -1503,6 +1570,198 @@
                 }
             }
         }
+
+        // ==========================================
+        // Local Memory (Browser localStorage) Controls
+        // ==========================================
+        const LOCAL_STORAGE_KEY = 'holy_bible_admin_settings_local';
+
+        function getFormSettingsPayload() {
+            return {
+                timestamp: new Date().toISOString(),
+                ai: {
+                    enabled: document.getElementById('ai_enabled') ? document.getElementById('ai_enabled').checked : true,
+                    provider_name: document.getElementById('ai_provider_name') ? document.getElementById('ai_provider_name').value.trim() : 'freellmapi',
+                    model: document.getElementById('ai_model') ? document.getElementById('ai_model').value.trim() : 'gemini-2.0-flash',
+                    base_url: document.getElementById('ai_base_url') ? document.getElementById('ai_base_url').value.trim() : 'http://localhost:3000/v1',
+                    api_key: document.getElementById('ai_api_key') ? document.getElementById('ai_api_key').value.trim() : '',
+                    temperature: document.getElementById('ai_temperature') ? (parseFloat(document.getElementById('ai_temperature').value) || 0.3) : 0.3,
+                    max_grounding_passages: document.getElementById('ai_max_grounding_passages') ? (parseInt(document.getElementById('ai_max_grounding_passages').value) || 4) : 4,
+                    enable_grounding: document.getElementById('ai_enable_grounding') ? document.getElementById('ai_enable_grounding').checked : true,
+                    simulation_mode: document.getElementById('ai_simulation_mode') ? document.getElementById('ai_simulation_mode').checked : false,
+                },
+                whatsapp: {
+                    provider: document.getElementById('wa_selected_provider') ? document.getElementById('wa_selected_provider').value : 'wa_akg',
+                    enable_simulation_mode: document.getElementById('wa_selected_provider') ? document.getElementById('wa_selected_provider').value === 'simulation' : false,
+                    gateway_url: document.getElementById('wa_gateway_url') ? document.getElementById('wa_gateway_url').value.trim() : undefined,
+                    session_id: document.getElementById('wa_session_id') ? document.getElementById('wa_session_id').value.trim() : undefined,
+                    api_key: document.getElementById('wa_api_key') ? document.getElementById('wa_api_key').value.trim() : undefined,
+                    meta_phone_number_id: document.getElementById('wa_meta_phone_number_id') ? document.getElementById('wa_meta_phone_number_id').value.trim() : undefined,
+                    meta_waba_id: document.getElementById('wa_meta_waba_id') ? document.getElementById('wa_meta_waba_id').value.trim() : undefined,
+                    meta_access_token: document.getElementById('wa_meta_access_token') ? document.getElementById('wa_meta_access_token').value.trim() : undefined,
+                    meta_verify_token: document.getElementById('wa_meta_verify_token') ? document.getElementById('wa_meta_verify_token').value.trim() : undefined,
+                    meta_api_version: document.getElementById('wa_meta_api_version') ? document.getElementById('wa_meta_api_version').value.trim() : undefined,
+                }
+            };
+        }
+
+        function saveToLocalMemory(silent = false) {
+            try {
+                const payload = getFormSettingsPayload();
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+                updateLocalMemoryStatusPill();
+                if (!silent) {
+                    showToast('💾 Admin settings safely saved to browser local memory!', 'success');
+                }
+            } catch(e) {
+                if (!silent) {
+                    showToast('Failed to save to local memory: ' + e.message, 'error');
+                }
+            }
+        }
+
+        async function restoreFromLocalMemory() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (!raw) {
+                    showToast('No saved settings found in browser local memory.', 'warning');
+                    return;
+                }
+                const backup = JSON.parse(raw);
+                const res = await fetch('/admin/api/settings/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(backup)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('⚡ All settings restored from local memory and synced to server!', 'success');
+                    dismissLocalMemoryBanner();
+                    setTimeout(() => location.reload(), 900);
+                } else {
+                    showToast('Restore failed: ' + (data.detail || 'Server error'), 'error');
+                }
+            } catch(e) {
+                showToast('Error restoring settings: ' + e.message, 'error');
+            }
+        }
+
+        function dismissLocalMemoryBanner() {
+            const banner = document.getElementById('local-memory-banner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function clearLocalMemory() {
+            if (!confirm('Clear the admin settings backup stored in this browser?')) return;
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            updateLocalMemoryStatusPill();
+            dismissLocalMemoryBanner();
+            showToast('Browser local memory cleared.', 'info');
+        }
+
+        async function exportSettingsJson() {
+            try {
+                const res = await fetch('/admin/api/settings/export');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `holy-bible-admin-settings-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('⬇️ Admin settings exported to JSON file!', 'success');
+            } catch(e) {
+                showToast('Export failed: ' + e.message, 'error');
+            }
+        }
+
+        async function importSettingsJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const res = await fetch('/admin/api/settings/import', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(parsed)
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        saveToLocalMemory(true);
+                        showToast('⬆️ Settings imported from file and applied!', 'success');
+                        setTimeout(() => location.reload(), 900);
+                    } else {
+                        showToast('Import failed: ' + (data.detail || 'Server error'), 'error');
+                    }
+                } catch(err) {
+                    showToast('Malformed JSON file: ' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function updateLocalMemoryStatusPill() {
+            const pill = document.getElementById('local-memory-status-pill');
+            const dot = document.getElementById('local-memory-status-dot');
+            const text = document.getElementById('local-memory-status-text');
+            if (!pill || !dot || !text) return;
+
+            const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (!raw) {
+                pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400 border border-stone-200 dark:border-stone-700";
+                dot.className = "w-2 h-2 rounded-full bg-stone-400";
+                text.textContent = "Local Memory: Empty";
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(raw);
+                const d = new Date(parsed.timestamp);
+                const timeStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800";
+                dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+                text.textContent = `Local Memory: Saved (${timeStr})`;
+            } catch(e) {
+                text.textContent = "Local Memory: Available";
+            }
+        }
+
+        function checkLocalMemoryOnStartup() {
+            updateLocalMemoryStatusPill();
+            const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (!raw) return;
+
+            try {
+                const parsed = JSON.parse(raw);
+                const currentAiProvider = document.getElementById('ai_provider_name') ? document.getElementById('ai_provider_name').value.trim() : '';
+                const currentAiKey = document.getElementById('ai_api_key') ? document.getElementById('ai_api_key').value.trim() : '';
+
+                const savedAi = parsed.ai || {};
+                const hasCustomInLocal = (savedAi.api_key && savedAi.api_key !== 'free-tier') ||
+                                         (savedAi.provider_name && savedAi.provider_name !== 'freellmapi') ||
+                                         (savedAi.base_url && savedAi.base_url !== 'http://localhost:3000/v1');
+
+                const serverIsDefault = (currentAiProvider === 'freellmapi' && (currentAiKey === 'free-tier' || !currentAiKey));
+
+                if (hasCustomInLocal && serverIsDefault) {
+                    const banner = document.getElementById('local-memory-banner');
+                    const timeEl = document.getElementById('local-memory-banner-time');
+                    if (banner && timeEl) {
+                        const d = new Date(parsed.timestamp);
+                        timeEl.textContent = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        banner.classList.remove('hidden');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        checkLocalMemoryOnStartup();
     </script>
 </body>
 </html>

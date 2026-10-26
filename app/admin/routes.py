@@ -658,3 +658,93 @@ async def api_test_ai_connection(request: Request):
         "status": "ok",
         "health": health,
     }
+
+
+# =====================================================================
+# Complete Settings Export & Import APIs (Protected by require_admin)
+# =====================================================================
+
+@router.get("/api/settings/export")
+async def api_export_admin_settings(request: Request):
+    """
+    Exports complete system configuration (AI settings + WhatsApp settings)
+    for persistent local memory backup and migration across builds.
+    Strictly protected by require_admin.
+    """
+    require_admin(request)
+    now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    return {
+        "version": 1,
+        "exported_at": now_iso,
+        "ai": ai_config.model_dump(),
+        "whatsapp": wa_config.model_dump(),
+    }
+
+
+@router.post("/api/settings/import")
+async def api_import_admin_settings(request: Request):
+    """
+    Restores complete system configuration from browser local memory or JSON backup.
+    Applies overrides to AI and WhatsApp runtimes and persists to both local data
+    and machine-level AppData backup. Strictly protected by require_admin.
+    """
+    require_admin(request)
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+    imported_ai = body.get("ai") or {}
+    imported_wa = body.get("whatsapp") or {}
+
+    # 1. Apply and persist AI settings
+    if imported_ai and isinstance(imported_ai, dict):
+        ai_updates = {k: v for k, v in imported_ai.items() if hasattr(ai_config, k)}
+        new_ai = save_ai_config(ai_updates)
+        ai_service.config = new_ai
+        ai_service.client.config = new_ai
+
+    # 2. Apply and persist WhatsApp settings
+    if imported_wa and isinstance(imported_wa, dict):
+        save_persisted_config(
+            provider=imported_wa.get("provider"),
+            gateway_url=imported_wa.get("gateway_url"),
+            session_id=imported_wa.get("session_id"),
+            api_key=imported_wa.get("api_key"),
+            enable_simulation_mode=imported_wa.get("enable_simulation_mode"),
+            meta_phone_number_id=imported_wa.get("meta_phone_number_id"),
+            meta_waba_id=imported_wa.get("meta_waba_id"),
+            meta_access_token=imported_wa.get("meta_access_token"),
+            meta_verify_token=imported_wa.get("meta_verify_token"),
+            meta_app_secret=imported_wa.get("meta_app_secret"),
+            meta_api_version=imported_wa.get("meta_api_version"),
+            queue_enabled=imported_wa.get("queue_enabled"),
+            rabbitmq_url=imported_wa.get("rabbitmq_url"),
+            rate_limit_enabled=imported_wa.get("rate_limit_enabled"),
+            rate_limit_requests_per_minute=imported_wa.get("rate_limit_requests_per_minute"),
+            rate_limit_audio_per_day=imported_wa.get("rate_limit_audio_per_day"),
+            rate_limit_cooldown_seconds=imported_wa.get("rate_limit_cooldown_seconds"),
+            rate_limit_whitelist=imported_wa.get("rate_limit_whitelist"),
+            web_app_url=imported_wa.get("web_app_url"),
+        )
+        wa_client = _get_wa_client()
+        wa_client.update_config(
+            base_url=wa_config.gateway_url,
+            default_session_id=wa_config.session_id,
+            api_key=wa_config.api_key,
+            simulation_mode=wa_config.enable_simulation_mode,
+            provider=wa_config.provider,
+            meta_phone_number_id=wa_config.meta_phone_number_id,
+            meta_waba_id=wa_config.meta_waba_id,
+            meta_access_token=wa_config.meta_access_token,
+            meta_verify_token=wa_config.meta_verify_token,
+            meta_app_secret=wa_config.meta_app_secret,
+            meta_api_version=wa_config.meta_api_version,
+        )
+
+    return {
+        "status": "ok",
+        "message": "All admin settings successfully restored and synced to server!",
+        "ai": ai_config.to_dict(),
+        "whatsapp_provider": getattr(_get_wa_client(), "provider", wa_config.provider),
+    }
