@@ -25,7 +25,7 @@ rule:
 
 do:
   - "Mount all administrative routes under `/admin` with route-level security guards (`require_admin`)."
-  - "Persist all runtime administrative configuration settings to a dedicated, centralized SQLite database (`data/admin_settings.sqlite.db`, table `admin_settings`), resolving to `%LOCALAPPDATA%/HolyBible/data/admin_settings.sqlite.db` in PyInstaller frozen mode so configurations never disappear across executable builds or container redeploys."
+  - "Persist all runtime administrative configuration settings to a dedicated, centralized database: supporting cloud PostgreSQL/Supabase via `DATABASE_URL`/`POSTGRES_URL` or embedded SQLite (`data/admin_settings.sqlite.db`, table `admin_settings`). On serverless platforms (Vercel, AWS Lambda) where `/var/task` is read-only, automatically resolve writable storage to `/tmp/admin_settings.sqlite.db` (hydrated from bundled repository database), and on PyInstaller frozen desktop builds resolve to `%LOCALAPPDATA%/HolyBible/data/admin_settings.sqlite.db` so configurations never disappear across executable builds or container redeploys."
   - "Expose protected administrative endpoint `POST /admin/api/settings/save-all` to atomically persist complete system configurations (AI, WhatsApp, Rate Limiting, and Quotas) directly into the SQLite database in a single transaction."
   - "Expose protected administrative endpoint `GET /admin/api/settings/db-status` for live database connectivity, row count, and size telemetry."
   - "In PyInstaller frozen mode, resolve writable configuration databases and chat history databases directly to `%LOCALAPPDATA%/HolyBible/` rather than the ephemeral `sys._MEIPASS` temp directory."

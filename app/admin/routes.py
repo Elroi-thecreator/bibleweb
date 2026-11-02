@@ -182,14 +182,28 @@ async def admin_settings_page(request: Request):
 
     # 4. Embedded SQLite Database Telemetry
     def _get_db_telemetry():
-        from app.settings_db import get_settings_db_stats
-        settings_stats = get_settings_db_stats()
+        try:
+            from app.settings_db import get_settings_db_stats
+            settings_stats = get_settings_db_stats()
+        except Exception:
+            settings_stats = {"path": "admin_settings.sqlite.db", "size_kb": 0.0, "row_count": 0, "last_updated": None}
 
-        bible_mb = round(os.path.getsize(DB_PATH) / (1024 * 1024), 2) if os.path.exists(DB_PATH) else 0.0
-        songs_mb = round(os.path.getsize(SONGS_DB_PATH) / (1024 * 1024), 2) if os.path.exists(SONGS_DB_PATH) else 0.0
+        try:
+            bible_mb = round(os.path.getsize(DB_PATH) / (1024 * 1024), 2) if os.path.exists(DB_PATH) else 0.0
+        except Exception:
+            bible_mb = 0.0
 
-        sub_db_path = os.path.join(os.path.dirname(DB_PATH), "whatsapp_subscribers.sqlite.db")
-        sub_kb = round(os.path.getsize(sub_db_path) / 1024, 1) if os.path.exists(sub_db_path) else 0.0
+        try:
+            songs_mb = round(os.path.getsize(SONGS_DB_PATH) / (1024 * 1024), 2) if os.path.exists(SONGS_DB_PATH) else 0.0
+        except Exception:
+            songs_mb = 0.0
+
+        try:
+            sub_db_path = os.path.join(os.path.dirname(DB_PATH), "whatsapp_subscribers.sqlite.db")
+            sub_kb = round(os.path.getsize(sub_db_path) / 1024, 1) if os.path.exists(sub_db_path) else 0.0
+        except Exception:
+            sub_db_path = "whatsapp_subscribers.sqlite.db"
+            sub_kb = 0.0
 
         return {
             "bible_path": DB_PATH,
@@ -201,7 +215,7 @@ async def admin_settings_page(request: Request):
             "song_books_count": 13,
             "subscribers_path": sub_db_path,
             "subscribers_size_kb": sub_kb,
-            "settings_path": settings_stats.get("path"),
+            "settings_path": settings_stats.get("path") or "admin_settings.sqlite.db",
             "settings_size_kb": settings_stats.get("size_kb", 0.0),
             "settings_row_count": settings_stats.get("row_count", 0),
             "settings_last_updated": settings_stats.get("last_updated"),

@@ -1,8 +1,13 @@
 """
-Centralized SQLite Database Persistence for System & Admin Settings.
+Centralized Database Persistence for System & Admin Settings.
 Single source of truth for all runtime administrative configurations
 (Ask Bible AI, WhatsApp Gateway, Rate Limiting, Quotas, Study, and Quiz parameters).
-Eliminates ephemeral local JSON file loss and browser LocalStorage reliance.
+
+Supports:
+1. External PostgreSQL / Supabase if DATABASE_URL / POSTGRES_URL is configured.
+2. Embedded SQLite (data/admin_settings.sqlite.db) with seamless /tmp fallback
+   for serverless platforms (Vercel, AWS Lambda) and %LOCALAPPDATA% for PyInstaller desktop.
+Eliminates ephemeral local JSON loss and browser LocalStorage reliance.
 """
 
 from datetime import datetime
@@ -10,36 +15,126 @@ import json
 import logging
 import os
 from pathlib import Path
+import shutil
 import sqlite3
 import sys
+import tempfile
 import threading
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 logger = logging.getLogger("app.settings_db")
 
-# Cross-platform persistent database path resolution (supports dev, server & frozen PyInstaller exe)
-if getattr(sys, "frozen", False):
-    local_app_data = os.environ.get("LOCALAPPDATA")
-    _base_dir = Path(local_app_data) / "HolyBible" if local_app_data else Path.home() / ".holybible"
-    DEFAULT_SETTINGS_DB_PATH = _base_dir / "data" / "admin_settings.sqlite.db"
-else:
-    PROJECT_ROOT = Path(__file__).resolve().parent.parent
-    DEFAULT_SETTINGS_DB_PATH = PROJECT_ROOT / "data" / "admin_settings.sqlite.db"
-
-SETTINGS_DB_PATH = Path(os.getenv("SETTINGS_DATABASE_PATH", str(DEFAULT_SETTINGS_DB_PATH)))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 _lock = threading.Lock()
 _initialized = False
+_using_postgres = False
 
 
-def get_db_connection() -> sqlite3.Connection:
-    """Returns a connection configured with WAL mode and row factory."""
-    SETTINGS_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(SETTINGS_DB_PATH), timeout=15.0, check_same_thread=False)
+def _get_postgres_url() -> Optional[str]:
+    """Retrieves PostgreSQL / Supabase database connection URL if provided."""
+    url = (
+        os.getenv("SETTINGS_DATABASE_URL")
+        or os.getenv("DATABASE_URL")
+        or os.getenv("POSTGRES_URL")
+        or os.getenv("SUPABASE_DATABASE_URL")
+    )
+    if url and (url.startswith("postgres://") or url.startswith("postgresql://")):
+        # SQLAlchemy / psycopg2 compatibility: normalize postgres:// to postgresql://
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://"):]
+        return url
+    return None
+
+
+def _resolve_settings_db_path() -> Path:
+    """
+    Resolves the writable SQLite database path across platforms:
+    - Custom override via SETTINGS_DATABASE_PATH
+    - Frozen PyInstaller desktop app -> %LOCALAPPDATA%/HolyBible/data/admin_settings.sqlite.db
+    - Vercel Serverless / AWS Lambda -> /tmp/admin_settings.sqlite.db (hydrated from bundled data/)
+    - Standard server/local dev -> PROJECT_ROOT / "data" / "admin_settings.sqlite.db"
+    - Read-only filesystem fallback -> /tmp/admin_settings.sqlite.db
+    """
+    custom = os.getenv("SETTINGS_DATABASE_PATH")
+    if custom:
+        return Path(custom)
+
+    # 1. PyInstaller frozen desktop mode
+    if getattr(sys, "frozen", False):
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        base_dir = Path(local_app_data) / "HolyBible" if local_app_data else Path.home() / ".holybible"
+        return base_dir / "data" / "admin_settings.sqlite.db"
+
+    # 2. Vercel Serverless or AWS Lambda environment
+    is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+    if is_serverless:
+        tmp_dir = Path(tempfile.gettempdir())
+        tmp_db = tmp_dir / "admin_settings.sqlite.db"
+        bundled_db = PROJECT_ROOT / "data" / "admin_settings.sqlite.db"
+        if not tmp_db.exists() and bundled_db.exists():
+            try:
+                shutil.copy2(bundled_db, tmp_db)
+            except Exception as e:
+                logger.warning("Could not copy bundled settings db to /tmp: %s", e)
+        return tmp_db
+
+    # 3. Standard local dev / persistent server
+    std_db = PROJECT_ROOT / "data" / "admin_settings.sqlite.db"
+    try:
+        std_db.parent.mkdir(parents=True, exist_ok=True)
+        # Verify write permission
+        test_file = std_db.parent / ".perm_check"
+        test_file.touch()
+        test_file.unlink()
+        return std_db
+    except (OSError, PermissionError):
+        # Fallback to /tmp if read-only filesystem detected
+        tmp_dir = Path(tempfile.gettempdir())
+        tmp_db = tmp_dir / "admin_settings.sqlite.db"
+        bundled_db = PROJECT_ROOT / "data" / "admin_settings.sqlite.db"
+        if not tmp_db.exists() and bundled_db.exists():
+            try:
+                shutil.copy2(bundled_db, tmp_db)
+            except Exception:
+                pass
+        return tmp_db
+
+
+def _get_sqlite_connection() -> sqlite3.Connection:
+    """Returns an SQLite connection configured with journal mode and row factory."""
+    db_path = _resolve_settings_db_path()
+    try:
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+
+    conn = sqlite3.connect(str(db_path), timeout=15.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA synchronous=NORMAL;")
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA synchronous=NORMAL;")
+    except Exception:
+        try:
+            conn.execute("PRAGMA journal_mode=DELETE;")
+        except Exception:
+            pass
     return conn
+
+
+def _get_pg_connection():
+    """Attempts to connect to external PostgreSQL / Supabase cluster."""
+    pg_url = _get_postgres_url()
+    if not pg_url:
+        return None
+    try:
+        import psycopg2
+        import psycopg2.extras
+        conn = psycopg2.connect(pg_url, connect_timeout=5)
+        return conn
+    except Exception as e:
+        logger.warning("PostgreSQL connection failed, falling back to SQLite: %s", e)
+        return None
 
 
 def _seed_initial_settings(conn: sqlite3.Connection) -> None:
@@ -48,9 +143,8 @@ def _seed_initial_settings(conn: sqlite3.Connection) -> None:
     Checks existing JSON files (whatsapp_config.json, bible_ai_config.json) first,
     or falls back to environment variable defaults.
     """
-    project_root = Path(__file__).resolve().parent.parent
-    wa_json = project_root / "data" / "whatsapp_config.json"
-    ai_json = project_root / "data" / "bible_ai_config.json"
+    wa_json = PROJECT_ROOT / "data" / "whatsapp_config.json"
+    ai_json = PROJECT_ROOT / "data" / "bible_ai_config.json"
 
     # 1. Seed WhatsApp settings
     wa_data: Dict[str, Any] = {}
@@ -131,110 +225,159 @@ def _seed_initial_settings(conn: sqlite3.Connection) -> None:
 
 
 def init_settings_db() -> None:
-    """Initializes the admin_settings SQLite database and ensures schema and initial seed."""
-    global _initialized
+    """Initializes admin_settings table across PostgreSQL or SQLite and ensures schema and seed."""
+    global _initialized, _using_postgres
     if _initialized:
         return
 
     with _lock:
         if _initialized:
             return
-        conn = get_db_connection()
+
+        # 1. Try PostgreSQL if available
+        pg_conn = _get_pg_connection()
+        if pg_conn:
+            try:
+                with pg_conn:
+                    with pg_conn.cursor() as cur:
+                        cur.execute("""
+                            CREATE TABLE IF NOT EXISTS admin_settings (
+                                section VARCHAR(128) NOT NULL,
+                                key VARCHAR(128) NOT NULL,
+                                value TEXT NOT NULL,
+                                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                                PRIMARY KEY (section, key)
+                            )
+                        """)
+                        cur.execute("SELECT COUNT(*) FROM admin_settings")
+                        count = cur.fetchone()[0]
+                        if count == 0:
+                            # Seed PostgreSQL from local SQLite or defaults
+                            local_conn = _get_sqlite_connection()
+                            try:
+                                _seed_initial_settings(local_conn)
+                                local_conn.commit()
+                                cursor = local_conn.execute("SELECT section, key, value FROM admin_settings")
+                                for row in cursor.fetchall():
+                                    cur.execute("""
+                                        INSERT INTO admin_settings (section, key, value, updated_at)
+                                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                                        ON CONFLICT (section, key) DO UPDATE SET
+                                            value = EXCLUDED.value,
+                                            updated_at = CURRENT_TIMESTAMP
+                                    """, (row["section"], row["key"], row["value"]))
+                            finally:
+                                local_conn.close()
+                _using_postgres = True
+                _initialized = True
+                return
+            except Exception as e:
+                logger.warning("Error initializing PostgreSQL settings table: %s", e)
+            finally:
+                pg_conn.close()
+
+        # 2. SQLite local / fallback
         try:
-            with conn:
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS admin_settings (
-                        section TEXT NOT NULL,
-                        key TEXT NOT NULL,
-                        value TEXT NOT NULL,
-                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        PRIMARY KEY (section, key)
-                    )
-                """)
-                cursor = conn.execute("SELECT COUNT(*) FROM admin_settings")
-                count = cursor.fetchone()[0]
-                if count == 0:
-                    _seed_initial_settings(conn)
-            _initialized = True
-        finally:
-            conn.close()
+            conn = _get_sqlite_connection()
+            try:
+                with conn:
+                    conn.execute("""
+                        CREATE TABLE IF NOT EXISTS admin_settings (
+                            section TEXT NOT NULL,
+                            key TEXT NOT NULL,
+                            value TEXT NOT NULL,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            PRIMARY KEY (section, key)
+                        )
+                    """)
+                    cursor = conn.execute("SELECT COUNT(*) FROM admin_settings")
+                    count = cursor.fetchone()[0]
+                    if count == 0:
+                        _seed_initial_settings(conn)
+                _initialized = True
+            finally:
+                conn.close()
+        except Exception as sq_err:
+            logger.warning("Error initializing SQLite settings table: %s", sq_err)
 
 
 def get_setting(section: str, key: str, default: Any = None) -> Any:
     """Fetches a single setting from the database, decoding from JSON."""
     init_settings_db()
-    conn = get_db_connection()
-    try:
-        cursor = conn.execute(
-            "SELECT value FROM admin_settings WHERE section = ? AND key = ?",
-            (section, key),
-        )
-        row = cursor.fetchone()
-        if row:
+
+    # Try PostgreSQL first if active
+    if _using_postgres:
+        pg_conn = _get_pg_connection()
+        if pg_conn:
             try:
-                return json.loads(row["value"])
-            except (json.JSONDecodeError, TypeError):
-                return row["value"]
+                with pg_conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT value FROM admin_settings WHERE section = %s AND key = %s",
+                        (section, key),
+                    )
+                    row = cur.fetchone()
+                    if row:
+                        try:
+                            return json.loads(row[0])
+                        except Exception:
+                            return row[0]
+            except Exception as e:
+                logger.warning("Postgres get_setting error: %s", e)
+            finally:
+                pg_conn.close()
+
+    try:
+        conn = _get_sqlite_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT value FROM admin_settings WHERE section = ? AND key = ?",
+                (section, key),
+            )
+            row = cursor.fetchone()
+            if row:
+                try:
+                    return json.loads(row["value"])
+                except Exception:
+                    return row["value"]
+            return default
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.warning("SQLite get_setting error: %s", e)
         return default
-    finally:
-        conn.close()
 
 
 def set_setting(section: str, key: str, value: Any) -> None:
     """Persists a single setting into the database encoded as JSON."""
     init_settings_db()
     val_json = json.dumps(value, ensure_ascii=False)
-    with _lock:
-        conn = get_db_connection()
-        try:
-            with conn:
-                conn.execute(
-                    """
-                    INSERT INTO admin_settings (section, key, value, updated_at)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    ON CONFLICT(section, key) DO UPDATE SET
-                        value = excluded.value,
-                        updated_at = CURRENT_TIMESTAMP
-                    """,
-                    (section, key, val_json),
-                )
-        finally:
-            conn.close()
 
-
-def get_section(section: str) -> Dict[str, Any]:
-    """Retrieves all settings within a section as a dictionary."""
-    init_settings_db()
-    conn = get_db_connection()
-    try:
-        cursor = conn.execute(
-            "SELECT key, value FROM admin_settings WHERE section = ?",
-            (section,),
-        )
-        results: Dict[str, Any] = {}
-        for row in cursor.fetchall():
-            k = row["key"]
-            raw_v = row["value"]
+    if _using_postgres:
+        pg_conn = _get_pg_connection()
+        if pg_conn:
             try:
-                results[k] = json.loads(raw_v)
-            except (json.JSONDecodeError, TypeError):
-                results[k] = raw_v
-        return results
-    finally:
-        conn.close()
+                with pg_conn:
+                    with pg_conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            INSERT INTO admin_settings (section, key, value, updated_at)
+                            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                            ON CONFLICT (section, key) DO UPDATE SET
+                                value = EXCLUDED.value,
+                                updated_at = CURRENT_TIMESTAMP
+                            """,
+                            (section, key, val_json),
+                        )
+            except Exception as e:
+                logger.warning("Postgres set_setting error: %s", e)
+            finally:
+                pg_conn.close()
 
-
-def set_section(section: str, values: Dict[str, Any]) -> None:
-    """Atomically saves multiple settings within a section in a transaction."""
-    if not values:
-        return
-    init_settings_db()
     with _lock:
-        conn = get_db_connection()
         try:
-            with conn:
-                for k, v in values.items():
-                    val_json = json.dumps(v, ensure_ascii=False)
+            conn = _get_sqlite_connection()
+            try:
+                with conn:
                     conn.execute(
                         """
                         INSERT INTO admin_settings (section, key, value, updated_at)
@@ -243,84 +386,284 @@ def set_section(section: str, values: Dict[str, Any]) -> None:
                             value = excluded.value,
                             updated_at = CURRENT_TIMESTAMP
                         """,
-                        (section, k, val_json),
+                        (section, key, val_json),
                     )
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.warning("SQLite set_setting error: %s", e)
+
+
+def get_section(section: str) -> Dict[str, Any]:
+    """Retrieves all settings within a section as a dictionary."""
+    init_settings_db()
+
+    if _using_postgres:
+        pg_conn = _get_pg_connection()
+        if pg_conn:
+            try:
+                with pg_conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT key, value FROM admin_settings WHERE section = %s",
+                        (section,),
+                    )
+                    results: Dict[str, Any] = {}
+                    for row in cur.fetchall():
+                        k = row[0]
+                        raw_v = row[1]
+                        try:
+                            results[k] = json.loads(raw_v)
+                        except Exception:
+                            results[k] = raw_v
+                    if results:
+                        return results
+            except Exception as e:
+                logger.warning("Postgres get_section error: %s", e)
+            finally:
+                pg_conn.close()
+
+    try:
+        conn = _get_sqlite_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT key, value FROM admin_settings WHERE section = ?",
+                (section,),
+            )
+            results: Dict[str, Any] = {}
+            for row in cursor.fetchall():
+                k = row["key"]
+                raw_v = row["value"]
+                try:
+                    results[k] = json.loads(raw_v)
+                except Exception:
+                    results[k] = raw_v
+            return results
         finally:
             conn.close()
+    except Exception as e:
+        logger.warning("SQLite get_section error: %s", e)
+        return {}
+
+
+def set_section(section: str, values: Dict[str, Any]) -> None:
+    """Atomically saves multiple settings within a section."""
+    if not values:
+        return
+    init_settings_db()
+
+    if _using_postgres:
+        pg_conn = _get_pg_connection()
+        if pg_conn:
+            try:
+                with pg_conn:
+                    with pg_conn.cursor() as cur:
+                        for k, v in values.items():
+                            val_json = json.dumps(v, ensure_ascii=False)
+                            cur.execute(
+                                """
+                                INSERT INTO admin_settings (section, key, value, updated_at)
+                                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                                ON CONFLICT (section, key) DO UPDATE SET
+                                    value = EXCLUDED.value,
+                                    updated_at = CURRENT_TIMESTAMP
+                                """,
+                                (section, k, val_json),
+                            )
+            except Exception as e:
+                logger.warning("Postgres set_section error: %s", e)
+            finally:
+                pg_conn.close()
+
+    with _lock:
+        try:
+            conn = _get_sqlite_connection()
+            try:
+                with conn:
+                    for k, v in values.items():
+                        val_json = json.dumps(v, ensure_ascii=False)
+                        conn.execute(
+                            """
+                            INSERT INTO admin_settings (section, key, value, updated_at)
+                            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                            ON CONFLICT(section, key) DO UPDATE SET
+                                value = excluded.value,
+                                updated_at = CURRENT_TIMESTAMP
+                            """,
+                            (section, k, val_json),
+                        )
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.warning("SQLite set_section error: %s", e)
 
 
 def get_all_settings() -> Dict[str, Dict[str, Any]]:
     """Retrieves all settings across all sections grouped by section name."""
     init_settings_db()
-    conn = get_db_connection()
-    try:
-        cursor = conn.execute("SELECT section, key, value FROM admin_settings ORDER BY section, key")
-        grouped: Dict[str, Dict[str, Any]] = {}
-        for row in cursor.fetchall():
-            sec = row["section"]
-            k = row["key"]
-            raw_v = row["value"]
+
+    if _using_postgres:
+        pg_conn = _get_pg_connection()
+        if pg_conn:
             try:
-                val = json.loads(raw_v)
-            except (json.JSONDecodeError, TypeError):
-                val = raw_v
-            if sec not in grouped:
-                grouped[sec] = {}
-            grouped[sec][k] = val
-        return grouped
-    finally:
-        conn.close()
+                with pg_conn.cursor() as cur:
+                    cur.execute("SELECT section, key, value FROM admin_settings ORDER BY section, key")
+                    grouped: Dict[str, Dict[str, Any]] = {}
+                    for row in cur.fetchall():
+                        sec = row[0]
+                        k = row[1]
+                        raw_v = row[2]
+                        try:
+                            val = json.loads(raw_v)
+                        except Exception:
+                            val = raw_v
+                        if sec not in grouped:
+                            grouped[sec] = {}
+                        grouped[sec][k] = val
+                    if grouped:
+                        return grouped
+            except Exception as e:
+                logger.warning("Postgres get_all_settings error: %s", e)
+            finally:
+                pg_conn.close()
+
+    try:
+        conn = _get_sqlite_connection()
+        try:
+            cursor = conn.execute("SELECT section, key, value FROM admin_settings ORDER BY section, key")
+            grouped: Dict[str, Dict[str, Any]] = {}
+            for row in cursor.fetchall():
+                sec = row["section"]
+                k = row["key"]
+                raw_v = row["value"]
+                try:
+                    val = json.loads(raw_v)
+                except Exception:
+                    val = raw_v
+                if sec not in grouped:
+                    grouped[sec] = {}
+                grouped[sec][k] = val
+            return grouped
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.warning("SQLite get_all_settings error: %s", e)
+        return {}
 
 
 def save_all_settings(data: Dict[str, Dict[str, Any]]) -> None:
-    """Atomically saves all sections and their key-value pairs in a single transaction."""
+    """Atomically saves all sections and their key-value pairs."""
     init_settings_db()
+
+    if _using_postgres:
+        pg_conn = _get_pg_connection()
+        if pg_conn:
+            try:
+                with pg_conn:
+                    with pg_conn.cursor() as cur:
+                        for section, values in data.items():
+                            if isinstance(values, dict):
+                                for k, v in values.items():
+                                    val_json = json.dumps(v, ensure_ascii=False)
+                                    cur.execute(
+                                        """
+                                        INSERT INTO admin_settings (section, key, value, updated_at)
+                                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                                        ON CONFLICT (section, key) DO UPDATE SET
+                                            value = EXCLUDED.value,
+                                            updated_at = CURRENT_TIMESTAMP
+                                        """,
+                                        (section, k, val_json),
+                                    )
+            except Exception as e:
+                logger.warning("Postgres save_all_settings error: %s", e)
+            finally:
+                pg_conn.close()
+
     with _lock:
-        conn = get_db_connection()
         try:
-            with conn:
-                for section, values in data.items():
-                    if isinstance(values, dict):
-                        for k, v in values.items():
-                            val_json = json.dumps(v, ensure_ascii=False)
-                            conn.execute(
-                                """
-                                INSERT INTO admin_settings (section, key, value, updated_at)
-                                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                                ON CONFLICT(section, key) DO UPDATE SET
-                                    value = excluded.value,
-                                    updated_at = CURRENT_TIMESTAMP
-                                """,
-                                (section, k, val_json),
-                            )
-        finally:
-            conn.close()
+            conn = _get_sqlite_connection()
+            try:
+                with conn:
+                    for section, values in data.items():
+                        if isinstance(values, dict):
+                            for k, v in values.items():
+                                val_json = json.dumps(v, ensure_ascii=False)
+                                conn.execute(
+                                    """
+                                    INSERT INTO admin_settings (section, key, value, updated_at)
+                                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                                    ON CONFLICT(section, key) DO UPDATE SET
+                                        value = excluded.value,
+                                        updated_at = CURRENT_TIMESTAMP
+                                    """,
+                                    (section, k, val_json),
+                                )
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.warning("SQLite save_all_settings error: %s", e)
 
 
 def get_settings_db_stats() -> Dict[str, Any]:
     """Returns database telemetry: file path, size in KB, total rows, and connection health."""
-    init_settings_db()
-    exists = SETTINGS_DB_PATH.exists()
-    size_kb = round(SETTINGS_DB_PATH.stat().st_size / 1024, 1) if exists else 0.0
-    row_count = 0
-    last_updated = None
+    try:
+        init_settings_db()
+        db_path = _resolve_settings_db_path()
+        exists = db_path.exists()
+        size_kb = round(db_path.stat().st_size / 1024, 1) if exists else 0.0
+        row_count = 0
+        last_updated = None
 
-    if exists:
-        try:
-            conn = get_db_connection()
-            cursor = conn.execute("SELECT COUNT(*), MAX(updated_at) FROM admin_settings")
-            row = cursor.fetchone()
-            if row:
-                row_count = row[0]
-                last_updated = row[1]
-            conn.close()
-        except Exception as e:
-            logger.warning("Error fetching settings db telemetry: %s", e)
+        if _using_postgres:
+            pg_conn = _get_pg_connection()
+            if pg_conn:
+                try:
+                    with pg_conn.cursor() as cur:
+                        cur.execute("SELECT COUNT(*), MAX(updated_at) FROM admin_settings")
+                        row = cur.fetchone()
+                        if row:
+                            row_count = row[0]
+                            last_updated = str(row[1]) if row[1] else None
+                    return {
+                        "path": "PostgreSQL / Supabase (Cloud Cluster)",
+                        "size_kb": size_kb,
+                        "row_count": row_count,
+                        "last_updated": last_updated,
+                        "is_connected": True,
+                        "engine": "postgresql",
+                    }
+                except Exception:
+                    pass
+                finally:
+                    pg_conn.close()
 
-    return {
-        "path": str(SETTINGS_DB_PATH),
-        "size_kb": size_kb,
-        "row_count": row_count,
-        "last_updated": last_updated,
-        "is_connected": True,
-    }
+        if exists:
+            conn = _get_sqlite_connection()
+            try:
+                cursor = conn.execute("SELECT COUNT(*), MAX(updated_at) FROM admin_settings")
+                row = cursor.fetchone()
+                if row:
+                    row_count = row[0]
+                    last_updated = row[1]
+            finally:
+                conn.close()
+
+        return {
+            "path": str(db_path),
+            "size_kb": size_kb,
+            "row_count": row_count,
+            "last_updated": last_updated,
+            "is_connected": True,
+            "engine": "sqlite",
+        }
+    except Exception as e:
+        logger.warning("Error fetching settings db telemetry: %s", e)
+        return {
+            "path": "admin_settings.sqlite.db",
+            "size_kb": 0.0,
+            "row_count": 0,
+            "last_updated": None,
+            "is_connected": False,
+            "engine": "fallback",
+            "error": str(e),
+        }
