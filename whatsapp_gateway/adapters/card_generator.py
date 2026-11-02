@@ -1,7 +1,8 @@
 """
 Devotional Verse of the Day & Scripture Image Card Generator.
 Renders high-resolution 1080x1080 spiritual status cards with dual-language typography,
-ornamental golden borders, and citation banners using Pillow.
+ornamental golden borders, HarfBuzz OpenType complex script shaping (for Tamil ligatures),
+and citation banners using Pillow, uharfbuzz, and freetype-py.
 """
 
 import io
@@ -14,72 +15,92 @@ from PIL import Image, ImageDraw, ImageFont
 
 logger = logging.getLogger("whatsapp_gateway.card_generator")
 
+try:
+    import uharfbuzz as hb
+    import freetype
+    HAS_HARFBUZZ = True
+except ImportError:
+    HAS_HARFBUZZ = False
+    logger.warning("uharfbuzz or freetype-py not available; falling back to basic layout")
 
-def _get_font(font_family: str, size: int) -> ImageFont.ImageFont:
-    """
-    Safely loads TrueType fonts with priority for bundled repository fonts in static/fonts/,
-    falling back to system fonts and default font if needed.
-    """
-    # 1. Resolve project root and static/fonts directory
+
+def _is_tamil(text: str) -> bool:
+    """Detects if string contains Tamil Unicode code points."""
+    return any(0x0B80 <= ord(c) <= 0x0BFF for c in text)
+
+
+def _resolve_font_paths() -> Tuple[Path, Path]:
+    """Resolves font paths for Tamil and English Serif fonts."""
     base_dir = Path(__file__).resolve().parent.parent.parent
     bundled_fonts_dir = base_dir / "static" / "fonts"
 
-    # Also support PyInstaller frozen path
     if hasattr(sys, "_MEIPASS"):
         meipass_fonts = Path(sys._MEIPASS) / "static" / "fonts"
         if meipass_fonts.is_dir():
             bundled_fonts_dir = meipass_fonts
 
-    font_candidates = {
-        "tamil": [
-            bundled_fonts_dir / "NotoSansTamil-Variable.ttf",
-            bundled_fonts_dir / "NotoSansTamil-Bold.ttf",
-            bundled_fonts_dir / "NotoSansTamil-Regular.ttf",
+    # 1. Tamil / Mixed font (supports both Tamil and Latin)
+    font_tamil = bundled_fonts_dir / "NotoSansTamil-Variable.ttf"
+    if not font_tamil.exists():
+        font_tamil = bundled_fonts_dir / "NotoSansTamil-Bold.ttf"
+    if not font_tamil.exists():
+        candidates = [
             "C:/Windows/Fonts/Nirmala.ttf",
             "C:/Windows/Fonts/NirmalaB.ttf",
             "/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf",
-        ],
-        "mixed": [
-            bundled_fonts_dir / "NotoSansTamil-Variable.ttf",
-            bundled_fonts_dir / "NotoSansTamil-Bold.ttf",
-            bundled_fonts_dir / "NotoSansTamil-Regular.ttf",
-            "C:/Windows/Fonts/Nirmala.ttf",
-            "C:/Windows/Fonts/NirmalaB.ttf",
-        ],
-        "serif": [
-            bundled_fonts_dir / "NotoSerif-Regular.ttf",
-            bundled_fonts_dir / "NotoSerif-Bold.ttf",
-            bundled_fonts_dir / "NotoSansTamil-Variable.ttf",
+        ]
+        for c in candidates:
+            if Path(c).exists():
+                font_tamil = Path(c)
+                break
+
+    # 2. English Serif font
+    font_serif = bundled_fonts_dir / "NotoSerif-Regular.ttf"
+    if not font_serif.exists():
+        candidates = [
             "C:/Windows/Fonts/georgia.ttf",
             "C:/Windows/Fonts/georgiab.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-        ],
-        "sans": [
-            bundled_fonts_dir / "NotoSansTamil-Variable.ttf",
-            bundled_fonts_dir / "NotoSansTamil-Regular.ttf",
-            bundled_fonts_dir / "NotoSerif-Regular.ttf",
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/segoeui.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        ],
-    }
+        ]
+        for c in candidates:
+            if Path(c).exists():
+                font_serif = Path(c)
+                break
 
-    candidates = font_candidates.get(font_family, font_candidates["mixed"])
-    for p in candidates:
-        path_obj = Path(p)
-        if path_obj.exists():
-            try:
-                return ImageFont.truetype(str(path_obj), size)
-            except Exception:
-                continue
-
-    try:
-        return ImageFont.truetype("arial.ttf", size)
-    except Exception:
-        return ImageFont.load_default()
+    return font_tamil, font_serif
 
 
-def _wrap_text(text: str, font: ImageFont.ImageFont, max_width: int, draw: ImageDraw.ImageDraw) -> List[str]:
+def _measure_line_width(text: str, font_path: str, font_size: int) -> int:
+    """Measures horizontal advance width of shaped text line."""
+    if not text.strip():
+        return 0
+    if HAS_HARFBUZZ and os.path.exists(font_path):
+        try:
+            with open(font_path, "rb") as f:
+                font_data = f.read()
+            blob = hb.Blob(font_data)
+            hb_face = hb.Face(blob)
+            hb_font = hb.Font(hb_face)
+            hb_font.scale = (font_size * 64, font_size * 64)
+
+            buf = hb.Buffer()
+            buf.add_str(text)
+            if _is_tamil(text):
+                buf.script = "Taml"
+                buf.language = "ta"
+            else:
+                buf.script = "Latn"
+                buf.language = "en"
+            buf.direction = "ltr"
+            hb.shape(hb_font, buf)
+            return sum(pos.x_advance >> 6 for pos in buf.glyph_positions)
+        except Exception:
+            pass
+
+    return len(text) * int(font_size * 0.58)
+
+
+def _wrap_text(text: str, font_path: str, font_size: int, max_width: int) -> List[str]:
     """Wraps text into multiple lines that fit within max_width pixels."""
     words = text.split()
     if not words:
@@ -89,8 +110,7 @@ def _wrap_text(text: str, font: ImageFont.ImageFont, max_width: int, draw: Image
 
     for word in words[1:]:
         test_line = f"{current_line} {word}"
-        bbox = draw.textbbox((0, 0), test_line, font=font)
-        w = bbox[2] - bbox[0]
+        w = _measure_line_width(test_line, font_path, font_size)
         if w <= max_width:
             current_line = test_line
         else:
@@ -98,6 +118,80 @@ def _wrap_text(text: str, font: ImageFont.ImageFont, max_width: int, draw: Image
             current_line = word
     lines.append(current_line)
     return lines
+
+
+def _render_line(
+    canvas: Image.Image,
+    text: str,
+    font_path: str,
+    font_size: int,
+    color: Tuple[int, int, int],
+    y: int,
+    center: bool = True,
+) -> int:
+    """Renders a text line onto the canvas with HarfBuzz OpenType shaping and FreeType rasterization."""
+    width, height = canvas.size
+    if HAS_HARFBUZZ and os.path.exists(font_path):
+        try:
+            face = freetype.Face(font_path)
+            face.set_char_size(font_size * 64)
+
+            with open(font_path, "rb") as f:
+                font_data = f.read()
+            blob = hb.Blob(font_data)
+            hb_face = hb.Face(blob)
+            hb_font = hb.Font(hb_face)
+            hb_font.scale = (font_size * 64, font_size * 64)
+
+            buf = hb.Buffer()
+            buf.add_str(text)
+            if _is_tamil(text):
+                buf.script = "Taml"
+                buf.language = "ta"
+            else:
+                buf.script = "Latn"
+                buf.language = "en"
+            buf.direction = "ltr"
+            hb.shape(hb_font, buf)
+
+            infos = buf.glyph_infos
+            positions = buf.glyph_positions
+
+            total_width = sum(pos.x_advance >> 6 for pos in positions)
+            start_x = (width - total_width) // 2 if center else 50
+            baseline = y + int(font_size * 0.9)
+
+            cur_x = start_x
+            for info, pos in zip(infos, positions):
+                gid = info.codepoint
+                face.load_glyph(gid, freetype.FT_LOAD_RENDER)
+                slot = face.glyph
+                bitmap = slot.bitmap
+
+                gx = cur_x + (pos.x_offset >> 6) + slot.bitmap_left
+                gy = baseline - (pos.y_offset >> 6) - slot.bitmap_top
+
+                if bitmap.width > 0 and bitmap.rows > 0:
+                    glyph_img = Image.frombytes("L", (bitmap.width, bitmap.rows), bytes(bitmap.buffer))
+                    solid = Image.new("RGBA", (bitmap.width, bitmap.rows), color + (255,))
+                    canvas.paste(solid, (gx, gy), glyph_img)
+
+                cur_x += (pos.x_advance >> 6)
+            return total_width
+        except Exception as exc:
+            logger.warning("HarfBuzz text rendering exception (%s); using basic fallback", exc)
+
+    # Fallback to standard Pillow drawing
+    draw = ImageDraw.Draw(canvas)
+    try:
+        fnt = ImageFont.truetype(font_path, font_size)
+    except Exception:
+        fnt = ImageFont.load_default()
+    bbox = draw.textbbox((0, 0), text, font=fnt)
+    w = bbox[2] - bbox[0]
+    start_x = (width - w) // 2 if center else 50
+    draw.text((start_x, y), text, fill=color, font=fnt)
+    return w
 
 
 def generate_verse_card(
@@ -108,9 +202,13 @@ def generate_verse_card(
     height: int = 1080,
 ) -> bytes:
     """
-    Renders an elegant 1080x1080 JPEG scripture card.
-    Perfect for sharing on WhatsApp status, Instagram, or community groups.
+    Renders an elegant 1080x1080 JPEG scripture card with HarfBuzz Tamil shaping,
+    golden ornamental borders, and adaptive vertical centering.
     """
+    p_tamil, p_serif = _resolve_font_paths()
+    font_tamil = str(p_tamil)
+    font_serif = str(p_serif)
+
     # 1. Base canvas with smooth vertical midnight gradient
     img = Image.new("RGB", (width, height), color=(10, 16, 30))
     draw = ImageDraw.Draw(img)
@@ -143,12 +241,8 @@ def generate_verse_card(
     ]:
         draw.rectangle([cx, cy, cx + corner_size, cy + corner_size], outline=gold, width=2)
 
-    # 3. Header: App & Faith Banner (Mixed font supporting both Latin and Tamil)
-    font_header = _get_font("mixed", 22)
-    header_text = "• HOLY BIBLE • பரிசுத்த வேதாகமம் •"
-    h_bbox = draw.textbbox((0, 0), header_text, font=font_header)
-    h_w = h_bbox[2] - h_bbox[0]
-    draw.text(((width - h_w) // 2, margin + 35), header_text, fill=muted_gold, font=font_header)
+    # 3. Header: App & Faith Banner
+    _render_line(img, "• HOLY BIBLE • பரிசுத்த வேதாகமம் •", font_tamil, 22, muted_gold, margin + 35)
 
     flourish_y = margin + 75
     draw.line([(width // 2 - 140, flourish_y), (width // 2 - 20, flourish_y)], fill=gold, width=2)
@@ -164,7 +258,6 @@ def generate_verse_card(
 
     if has_ta and has_en:
         # Dual-language layout
-        # Adaptive font sizing: if verse text is long, use slightly smaller font to fit comfortably
         ta_char_len = len(scripture_ta.strip())
         en_char_len = len(scripture_en.strip())
         is_long = ta_char_len > 120 or en_char_len > 140
@@ -174,16 +267,12 @@ def generate_verse_card(
         lh_ta = 56 if is_long else 62
         lh_en = 44 if is_long else 50
 
-        font_ta = _get_font("tamil", size_ta)
-        font_en = _get_font("serif", size_en)
-        font_ref = _get_font("mixed", 32)
-
-        lines_ta = _wrap_text(scripture_ta.strip(), font_ta, content_width, draw)
+        lines_ta = _wrap_text(scripture_ta.strip(), font_tamil, size_ta, content_width)
         if len(lines_ta) > 7:
             lines_ta = lines_ta[:7]
             lines_ta[-1] += "..."
 
-        lines_en = _wrap_text(f'“{scripture_en.strip()}”', font_en, content_width, draw)
+        lines_en = _wrap_text(f'“{scripture_en.strip()}”', font_serif, size_en, content_width)
         if len(lines_en) > 6:
             lines_en = lines_en[:6]
             lines_en[-1] += "..."
@@ -201,9 +290,7 @@ def generate_verse_card(
 
         # Render Tamil Scripture lines
         for line in lines_ta:
-            bbox = draw.textbbox((0, 0), line, font=font_ta)
-            lw = bbox[2] - bbox[0]
-            draw.text(((width - lw) // 2, y_cursor), line, fill=white, font=font_ta)
+            _render_line(img, line, font_tamil, size_ta, white, y_cursor)
             y_cursor += lh_ta
 
         # Ornate Gold Flourish Divider
@@ -215,32 +302,28 @@ def generate_verse_card(
 
         # Render English Scripture lines
         for line in lines_en:
-            bbox = draw.textbbox((0, 0), line, font=font_en)
-            lw = bbox[2] - bbox[0]
-            draw.text(((width - lw) // 2, y_cursor), line, fill=cream, font=font_en)
+            _render_line(img, line, font_serif, size_en, cream, y_cursor)
             y_cursor += lh_en
 
         # Render Citation
         y_cursor += gap_ref
         ref_display = f"— {ref_text.strip()} —"
-        r_bbox = draw.textbbox((0, 0), ref_display, font=font_ref)
-        rw = r_bbox[2] - r_bbox[0]
-        draw.text(((width - rw) // 2, y_cursor), ref_display, fill=gold, font=font_ref)
+        _render_line(img, ref_display, font_tamil, 32, gold, y_cursor)
 
     else:
-        # Single-language layout (Large prominent font)
+        # Single-language layout
         primary = scripture_ta.strip() if has_ta else scripture_en.strip()
-        is_tamil = has_ta
+        is_tamil_single = has_ta
 
-        font_primary = _get_font("tamil" if is_tamil else "serif", 46)
-        font_ref = _get_font("mixed", 34)
+        font_chosen = font_tamil if is_tamil_single else font_serif
+        size_prim = 44 if len(primary) > 100 else 48
+        lh_prim = 62 if len(primary) > 100 else 68
 
-        lines = _wrap_text(f'“{primary}”', font_primary, content_width, draw)
+        lines = _wrap_text(f'“{primary}”', font_chosen, size_prim, content_width)
         if len(lines) > 8:
             lines = lines[:8]
             lines[-1] += "..."
 
-        lh_prim = 66
         h_prim = len(lines) * lh_prim
         gap_ref = 46
         h_ref = 38
@@ -250,23 +333,16 @@ def generate_verse_card(
         y_cursor = start_y
 
         for line in lines:
-            bbox = draw.textbbox((0, 0), line, font=font_primary)
-            lw = bbox[2] - bbox[0]
-            draw.text(((width - lw) // 2, y_cursor), line, fill=white, font=font_primary)
+            _render_line(img, line, font_chosen, size_prim, white, y_cursor)
             y_cursor += lh_prim
 
         y_cursor += gap_ref
         ref_display = f"— {ref_text.strip()} —"
-        r_bbox = draw.textbbox((0, 0), ref_display, font=font_ref)
-        rw = r_bbox[2] - r_bbox[0]
-        draw.text(((width - rw) // 2, y_cursor), ref_display, fill=gold, font=font_ref)
+        _render_line(img, ref_display, font_tamil, 34, gold, y_cursor)
 
     # 5. Footer: Citation & Web Portal Branding
-    font_sub = _get_font("mixed", 18)
     footer_text = "Daily Bread • Scripture Status Card • elroi-bible.vercel.app"
-    f_bbox = draw.textbbox((0, 0), footer_text, font=font_sub)
-    fw = f_bbox[2] - f_bbox[0]
-    draw.text(((width - fw) // 2, height - margin - 45), footer_text, fill=(150, 165, 185), font=font_sub)
+    _render_line(img, footer_text, font_tamil, 18, (150, 165, 185), height - margin - 45)
 
     # 6. Save to high-quality JPEG
     buffer = io.BytesIO()
