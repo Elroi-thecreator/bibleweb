@@ -92,6 +92,32 @@ class SimulatorClient(WAClient):
         self.captured_replies.append({"type": "text", "text": text, "to": to})
         return SendMessageResponse(success=True, message_id="sim-msg-123", to=to)
 
+    async def send_list(
+        self,
+        to: str,
+        body_text: str,
+        button_text: str = "View menu",
+        sections: Optional[List[Dict[str, Any]]] = None,
+        title: Optional[str] = None,
+        footer_text: Optional[str] = None,
+        fallback_text: Optional[str] = None,
+        session_id: Optional[str] = None,
+        direct_http: bool = False,
+    ) -> SendMessageResponse:
+        record = {
+            "type": "list",
+            "title": title or "🕊️ Holy Bible Assistant",
+            "body": body_text,
+            "button_text": button_text or "View menu",
+            "footer": footer_text or "Bilingual: English & தமிழ்",
+            "sections": sections or [],
+            "text": fallback_text or body_text,
+            "to": to,
+        }
+        self.captured_replies.append(record)
+        self.simulated_outbox.append(record)
+        return SendMessageResponse(success=True, message_id="sim-list-msg-123", to=to, raw=record)
+
     async def send_media(
         self,
         to: str,

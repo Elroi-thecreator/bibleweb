@@ -327,7 +327,28 @@ async def handle_quiz_start(ctx: MessageContext) -> None:
     prompt = "_பதிலளிக்க *1, 2, 3, அல்லது 4* என அனுப்பவும்!_" if is_tamil else "_Reply with *1, 2, 3, or 4* (or *A, B, C, D*) to answer!_"
 
     msg = f"{header}\n\n*{question_text}*\n\n{chr(10).join(option_lines)}\n\n{prompt}"
-    await ctx.reply_text(msg)
+    
+    quiz_sections = [
+        {
+            "title": "விடைகள்" if is_tamil else "Answer Choices",
+            "rows": [
+                {
+                    "id": str(i + 1),
+                    "title": f"{number_emojis[i]} Choice {i + 1}",
+                    "description": str(opt)[:70],
+                }
+                for i, opt in enumerate(options)
+            ],
+        }
+    ]
+    await ctx.reply_list(
+        body_text=f"*{question_text}*\n\n{chr(10).join(option_lines)}",
+        button_text="Select Answer" if not is_tamil else "விடை அளிக்கவும்",
+        sections=quiz_sections,
+        title="❓ வேதாகம வினாடி வினா" if is_tamil else "❓ Daily Bible Trivia",
+        footer_text="Tap to select your answer",
+        fallback_text=msg,
+    )
 
 
 async def handle_quiz_answer(ctx: MessageContext) -> None:
@@ -627,7 +648,29 @@ async def handle_plan_command(ctx: MessageContext) -> None:
             "",
             "_To switch plan, reply e.g. `plan full` or `plan nt`._\n_To view a specific day, reply `plan <day>` (e.g. `plan 50`)._"
         ]
-    await ctx.reply_text("\n".join(lines))
+    full_msg = "\n".join(lines)
+    plan_sections = [
+        {
+            "title": "திட்டங்கள் & செயல்கள்" if is_ta else "Reading Plans & Actions",
+            "rows": [
+                {"id": "done", "title": "✅ வாசிப்பை முடித்தேன்" if is_ta else "✅ Mark Today Complete", "description": "தொடரை அதிகரிக்க" if is_ta else "Advance reading streak by +1"},
+                {"id": "plan full", "title": "📖 முழு வேதாகமம் (365)" if is_ta else "📖 Full Bible (365 Days)", "description": "1,189 அதிகாரங்கள்" if is_ta else "Whole Bible (~3.2 ch/day)"},
+                {"id": "plan nt", "title": "✝️ புதிய ஏற்பாடு (90)" if is_ta else "✝️ New Testament (90 Days)", "description": "மத்தேயு - வெளிப்படுத்தல்" if is_ta else "Matthew to Revelation"},
+                {"id": "plan proverbs", "title": "👑 நீதிமொழிகள் (31)" if is_ta else "👑 Proverbs (31 Days)", "description": "தினசரி 1 அதிகாரம்" if is_ta else "1 chapter daily wisdom"},
+                {"id": "plan psalms", "title": "🕊️ தேறுதலின் சங்கீதங்கள்" if is_ta else "🕊️ Psalms of Comfort", "description": "30 நாட்கள்" if is_ta else "30 days of peaceful psalms"},
+                {"id": "plan deuterocanon", "title": "📜 இரண்டாம் திருமுறை" if is_ta else "📜 Deuterocanonical Books", "description": "கத்தோலிக்க திருமுறை" if is_ta else "Catholic 7 books in 30 days"},
+                {"id": "streak", "title": "🔥 வாசிப்புத் தொடர்" if is_ta else "🔥 Check Streak", "description": "தொடர் நாட்கள்" if is_ta else "Current streak and stats"},
+            ],
+        }
+    ]
+    await ctx.reply_list(
+        body_text=f"📜 *{plan_name}* (Day {curr_day}/{tot_days})\n📖 *{ref_text}*\n\nTap below to mark done or switch plans without typing:",
+        button_text="Plan Options" if not is_ta else "விருப்பங்கள்",
+        sections=plan_sections,
+        title="📅 Reading Plan" if not is_ta else "📅 வாசிப்புத் திட்டம்",
+        footer_text="Holy Bible Plans",
+        fallback_text=full_msg,
+    )
 
 
 async def handle_done_command(ctx: MessageContext) -> None:
@@ -893,6 +936,29 @@ async def handle_reminder_command(ctx: MessageContext) -> None:
                 f"• `remind 9:00 PM` (இரவு 9:00 மணி)\n"
                 f"• `remind off` (நினைவூட்டலை நிறுத்த)"
             )
+            time_sections = [
+                {
+                    "title": "நேர விருப்பங்கள்",
+                    "rows": [
+                        {"id": "remind 5 AM", "title": "🌅 காலை 5:00 மணி", "description": "இயல்புநிலை காலை வசனம்"},
+                        {"id": "remind 6 AM", "title": "🌅 காலை 6:00 மணி", "description": "காலை 6 மணி நினைவூட்டல்"},
+                        {"id": "remind 6:30 AM", "title": "🌅 காலை 6:30 மணி", "description": "காலை 6:30 மணி"},
+                        {"id": "remind 7 AM", "title": "☀️ காலை 7:00 மணி", "description": "காலை 7 மணி நினைவூட்டல்"},
+                        {"id": "remind 8 AM", "title": "☀️ காலை 8:00 மணி", "description": "காலை 8 மணி நினைவூட்டல்"},
+                        {"id": "remind 18:30", "title": "🌆 மாலை 6:30 மணி", "description": "மாலை வேளை தியானம்"},
+                        {"id": "remind 21:00", "title": "🌙 இரவு 9:00 மணி", "description": "இரவு படுக்கைமுன் வசனம்"},
+                        {"id": "remind off", "title": "🛑 நிறுத்த (Disable)", "description": "நினைவூட்டலை நிறுத்த"},
+                    ],
+                }
+            ]
+            await ctx.reply_list(
+                body_text=f"⏰ நடப்பு நினைவூட்டல் நேரம்: *{current_time_display}*\nநேரத்தை மாற்ற கீழே உள்ள Select Time தொடவும்:",
+                button_text="Select Time",
+                sections=time_sections,
+                title="⏰ நினைவூட்டல் நேரம்",
+                footer_text="Holy Bible Devotionals",
+                fallback_text=reply,
+            )
         else:
             reply = (
                 f"⏰ *Your Daily Scripture Reminder: {current_time_display} ({current_time_24})* ☀️\n\n"
@@ -905,7 +971,29 @@ async def handle_reminder_command(ctx: MessageContext) -> None:
                 f"• `remind 05:00` (24-hour format)\n"
                 f"• `remind off` (disable daily reminder)"
             )
-        await ctx.reply_text(reply)
+            time_sections = [
+                {
+                    "title": "Reminder Times",
+                    "rows": [
+                        {"id": "remind 5 AM", "title": "🌅 Morning 5:00 AM", "description": "System default morning devotional"},
+                        {"id": "remind 6 AM", "title": "🌅 Morning 6:00 AM", "description": "Daily 6:00 AM reminder"},
+                        {"id": "remind 6:30 AM", "title": "🌅 Morning 6:30 AM", "description": "Daily 6:30 AM reminder"},
+                        {"id": "remind 7 AM", "title": "☀️ Morning 7:00 AM", "description": "Daily 7:00 AM reminder"},
+                        {"id": "remind 8 AM", "title": "☀️ Morning 8:00 AM", "description": "Daily 8:00 AM reminder"},
+                        {"id": "remind 18:30", "title": "🌆 Evening 6:30 PM", "description": "Evening devotional reminder"},
+                        {"id": "remind 21:00", "title": "🌙 Night 9:00 PM", "description": "Bedtime scripture checkpoint"},
+                        {"id": "remind off", "title": "🛑 Stop Reminders", "description": "Disable daily devotional notifications"},
+                    ],
+                }
+            ]
+            await ctx.reply_list(
+                body_text=f"⏰ Current reminder time: *{current_time_display}*\nTap 'Select Time' below to change your dispatch time without typing:",
+                button_text="Select Time",
+                sections=time_sections,
+                title="⏰ Devotional Reminder",
+                footer_text="Holy Bible Devotionals",
+                fallback_text=reply,
+            )
         return
 
     parsed = parse_reminder_time(clean_arg)
@@ -1181,7 +1269,32 @@ async def handle_help_menu(ctx: MessageContext) -> None:
             "• `lang ta` (தமிழ் மட்டும்), `lang en` (ஆங்கிலம் மட்டும்)\n\n"
             "1️⃣1️⃣ *இணையதள இணைப்பு (Web Bible Sync)* 📱\n"
             "• `sync` அல்லது `link` அல்லது `இணைப்பு` (15 நிமிட குறியீட்டைப் பெற்று இணையதளத்தில் /sync பக்கத்தில் உங்கள் தொடரை இணைக்க)\n\n"
-            "👉 _தொடங்க மேலே உள்ள ஏதேனும் ஒரு எண் (1-11) அல்லது கட்டளையை அனுப்பவும்!_"
+            "👉 _தொடங்க கீழே உள்ள View menu பட்டனைத் தொடவும் அல்லது ஏதேனும் ஒரு எண் (1-11) அனுப்பவும்!_"
+        )
+        sections = [
+            {
+                "title": "வேதாகமச் சேவைகள்",
+                "rows": [
+                    {"id": "1", "title": "📖 வேத வாசிப்பு", "description": "வசனம் அல்லது அதிகாரம் வாசிக்க"},
+                    {"id": "2", "title": "🎧 வேத ஆடியோ", "description": "குரல் பதிவு ஆடியோ கேட்க"},
+                    {"id": "3", "title": "🔍 வசனம் தேடுதல்", "description": "தலைப்பு/வார்த்தையால் தேட"},
+                    {"id": "4", "title": "❓ வினாடி வினா", "description": "4-விடைகள் கொண்ட வேத வினாடி வினா"},
+                    {"id": "5", "title": "🔔 தினசரி வசனம்", "description": "காலை நினைவூட்டல் நேரம் அமைக்க"},
+                    {"id": "6", "title": "🎵 கிறிஸ்தவ பாடல்கள்", "description": "பாடல் வரிகள் & கீர்த்தனைகள்"},
+                    {"id": "7", "title": "📅 வாசிப்புத் திட்டங்கள்", "description": "365-நாள் & 90-நாள் திட்டங்கள்"},
+                    {"id": "8", "title": "🔥 வாசிப்புத் தொடர்", "description": "வாசிப்பை முடிக்க & தொடரறிய"},
+                    {"id": "9", "title": "🖼️ ஸ்டேட்டஸ் படம்", "description": "1080x1080 வசன அட்டை பெற"},
+                    {"id": "11", "title": "📱 இணையதள இணைப்பு", "description": "Web Bible 15 நிமிட இணைப்பு"},
+                ],
+            }
+        ]
+        await ctx.reply_list(
+            body_text="🔍 கீழே உள்ள பட்டியைத் திறந்து நீங்கள் விரும்பும் சேவையைத் தேர்ந்தெடுக்கவும்:",
+            button_text="View menu",
+            sections=sections,
+            title="📁 வேதாகம உதவியாளர்",
+            footer_text="இருமொழி வேதாகமச் சேவை",
+            fallback_text=menu,
         )
     else:
         menu = (
@@ -1220,9 +1333,33 @@ async def handle_help_menu(ctx: MessageContext) -> None:
             "• `lang en` (English only), `lang ta` (Tamil only)\n\n"
             "1️⃣1️⃣ *Web Bible Magic Sync* 📱\n"
             "• `sync` or `link` (get 15-minute code to link reading streak with Web Bible at `/sync`)\n\n"
-            "👉 _Reply with any option number (1-11) or type a command/scripture reference to begin!_"
+            "👉 _Tap 'View menu' below or reply with any option number (1-11) to begin!_"
         )
-    await ctx.reply_text(menu)
+        sections = [
+            {
+                "title": "Bible Services",
+                "rows": [
+                    {"id": "1", "title": "📖 Scripture Reading", "description": "Read any Bible verse or chapter"},
+                    {"id": "2", "title": "🎧 Audio Bible", "description": "Listen to spoken chapter audio clips"},
+                    {"id": "3", "title": "🔍 Scripture Search", "description": "Search verses by topic or keyword"},
+                    {"id": "4", "title": "❓ Daily Bible Quiz", "description": "Interactive 4-choice trivia"},
+                    {"id": "5", "title": "🔔 Daily Devotional", "description": "Morning verses & reminder times"},
+                    {"id": "6", "title": "🎵 Songs & Hymns", "description": "Christian song lyrics & hymn lookup"},
+                    {"id": "7", "title": "📅 Reading Plans", "description": "365-day whole Bible & 90-day NT"},
+                    {"id": "8", "title": "🔥 Habit Streak", "description": "Mark reading done & view streak"},
+                    {"id": "9", "title": "🖼️ Status Image Card", "description": "1080x1080 graphic status card"},
+                    {"id": "11", "title": "📱 Web Bible Sync", "description": "Link with web portal at /sync"},
+                ],
+            }
+        ]
+        await ctx.reply_list(
+            body_text="🔍 Please select a service from the menu below:",
+            button_text="View menu",
+            sections=sections,
+            title="📁 Holy Bible Assistant",
+            footer_text="Bilingual: English & தமிழ்",
+            fallback_text=menu,
+        )
 
 
 async def handle_fallback(ctx: MessageContext) -> None:

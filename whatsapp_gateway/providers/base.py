@@ -63,6 +63,24 @@ class BaseWhatsAppProvider(ABC):
         """
         pass
 
+    async def send_list(
+        self,
+        to: str,
+        body_text: str,
+        button_text: str = "View menu",
+        sections: Optional[List[Dict[str, Any]]] = None,
+        title: Optional[str] = None,
+        footer_text: Optional[str] = None,
+        fallback_text: Optional[str] = None,
+        session_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> SendMessageResponse:
+        """
+        Sends an interactive WhatsApp List Message (with 'View menu' bottom sheet).
+        Defaults to sending fallback_text or body_text if provider does not natively override.
+        """
+        return await self.send_text(to=to, text=fallback_text or body_text, session_id=session_id, **kwargs)
+
     @abstractmethod
     async def ping(self) -> Dict[str, Any]:
         """

@@ -108,7 +108,11 @@ class IncomingWebhookPayload(BaseModel):
         if self.body is not None:
             return self.body.strip()
         if self.data and isinstance(self.data, dict):
-            # 0. WA-AKG simplified fields: content, caption, text
+            # 0. WA-AKG simplified fields: content, caption, text, selectedRowId, selectedButtonId
+            if "selectedRowId" in self.data and self.data["selectedRowId"] is not None:
+                return str(self.data["selectedRowId"]).strip()
+            if "selectedButtonId" in self.data and self.data["selectedButtonId"] is not None:
+                return str(self.data["selectedButtonId"]).strip()
             if "content" in self.data and self.data["content"] is not None:
                 return str(self.data["content"]).strip()
             if "caption" in self.data and self.data["caption"] is not None:
@@ -130,10 +134,28 @@ class IncomingWebhookPayload(BaseModel):
                         caption = msg[media_key].get("caption")
                         if caption:
                             return str(caption).strip()
-                # 4. Buttons / interactive response
+                # 4. Buttons / interactive response (Baileys & Native Flow)
                 if "buttonsResponseMessage" in msg and isinstance(msg["buttonsResponseMessage"], dict):
                     return str(msg["buttonsResponseMessage"].get("selectedButtonId", "")).strip()
                 if "listResponseMessage" in msg and isinstance(msg["listResponseMessage"], dict):
                     single_select = msg["listResponseMessage"].get("singleSelectReply", {})
                     return str(single_select.get("selectedRowId", "")).strip()
+                if "templateButtonReplyMessage" in msg and isinstance(msg["templateButtonReplyMessage"], dict):
+                    return str(msg["templateButtonReplyMessage"].get("selectedId", "")).strip()
+                if "interactiveResponseMessage" in msg and isinstance(msg["interactiveResponseMessage"], dict):
+                    inter = msg["interactiveResponseMessage"]
+                    native_flow = inter.get("nativeFlowResponseMessage", {})
+                    if isinstance(native_flow, dict):
+                        params_raw = native_flow.get("paramsJson")
+                        if params_raw:
+                            try:
+                                import json
+                                params = json.loads(params_raw) if isinstance(params_raw, str) else params_raw
+                                if isinstance(params, dict) and "id" in params:
+                                    return str(params["id"]).strip()
+                            except Exception:
+                                pass
+                    body_obj = inter.get("body", {})
+                    if isinstance(body_obj, dict) and body_obj.get("text"):
+                        return str(body_obj["text"]).strip()
         return ""

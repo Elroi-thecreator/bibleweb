@@ -4,7 +4,7 @@ providing seamless helpers to reply with text or audio, and access session state
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 import re
 
 from whatsapp_gateway.client.client import WAClient
@@ -41,6 +41,27 @@ class MessageContext:
         return await self.client.send_text(
             to=self.sender,
             text=text,
+            session_id=self.session_id,
+        )
+
+    async def reply_list(
+        self,
+        body_text: str,
+        button_text: str = "View menu",
+        sections: Optional[List[Dict[str, Any]]] = None,
+        title: Optional[str] = None,
+        footer_text: Optional[str] = None,
+        fallback_text: Optional[str] = None,
+    ) -> SendMessageResponse:
+        """Reply to the message sender with an interactive WhatsApp list message (with 'View menu' bottom sheet)."""
+        return await self.client.send_list(
+            to=self.sender,
+            body_text=body_text,
+            button_text=button_text,
+            sections=sections or [],
+            title=title,
+            footer_text=footer_text,
+            fallback_text=fallback_text,
             session_id=self.session_id,
         )
 

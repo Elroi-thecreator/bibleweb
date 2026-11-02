@@ -184,6 +184,112 @@ class MetaCloudApiProvider(BaseWhatsAppProvider):
                 error=f"Network exception calling Meta Graph API: {exc}",
             )
 
+    async def send_list(
+        self,
+        to: str,
+        body_text: str,
+        button_text: str = "View menu",
+        sections: Optional[List[Dict[str, Any]]] = None,
+        title: Optional[str] = None,
+        footer_text: Optional[str] = None,
+        fallback_text: Optional[str] = None,
+        session_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> SendMessageResponse:
+        """
+        Sends an interactive WhatsApp List Message via Meta Graph API:
+        POST https://graph.facebook.com/v{version}/{phone_number_id}/messages
+        """
+        clean_recipient = normalize_meta_phone(to)
+        if not clean_recipient:
+            return SendMessageResponse(
+                success=False,
+                error="Recipient phone number could not be resolved to valid digits.",
+            )
+
+        if not self.is_configured:
+            logger.warning("[MetaCloudApi] Credentials not configured; falling back to text.")
+            return await self.send_text(to=to, text=fallback_text or body_text, session_id=session_id)
+
+        url = f"{self.graph_base_url}/{self.phone_number_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
+        }
+
+        # Format sections according to Meta requirements (max 10 rows total)
+        meta_sections = []
+        total_rows = 0
+        for s in (sections or []):
+            rows = []
+            for r in s.get("rows", []):
+                if total_rows >= 10:
+                    break
+                row_dict = {
+                    "id": str(r.get("id") or r.get("rowId") or total_rows + 1),
+                    "title": str(r.get("title", ""))[:24],
+                }
+                desc = str(r.get("description", ""))[:72] if r.get("description") else None
+                if desc:
+                    row_dict["description"] = desc
+                rows.append(row_dict)
+                total_rows += 1
+
+            if rows:
+                meta_sections.append({
+                    "title": str(s.get("title", "Menu"))[:24],
+                    "rows": rows,
+                })
+
+        interactive_dict: Dict[str, Any] = {
+            "type": "list",
+            "body": {
+                "text": body_text[:1024]
+            },
+            "action": {
+                "button": (button_text or "View menu")[:20],
+                "sections": meta_sections,
+            }
+        }
+        if title:
+            interactive_dict["header"] = {
+                "type": "text",
+                "text": title[:60]
+            }
+        if footer_text:
+            interactive_dict["footer"] = {
+                "text": footer_text[:60]
+            }
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": clean_recipient,
+            "type": "interactive",
+            "interactive": interactive_dict,
+        }
+
+        try:
+            resp = await self.http_client.post(url, json=payload, headers=headers)
+            data = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+
+            if resp.status_code >= 400:
+                err_msg = data.get("error", {}).get("message", resp.text)
+                logger.warning("[MetaCloudApi] Send list failed (HTTP %s): %s; falling back to text", resp.status_code, err_msg)
+                return await self.send_text(to=to, text=fallback_text or body_text, session_id=session_id)
+
+            messages = data.get("messages", [])
+            msg_id = messages[0].get("id") if messages else "sent"
+            return SendMessageResponse(
+                success=True,
+                message_id=msg_id,
+                to=to,
+                raw=data,
+            )
+        except Exception as exc:
+            logger.warning("[MetaCloudApi] Exception during send_list: %s; falling back to text", exc)
+            return await self.send_text(to=to, text=fallback_text or body_text, session_id=session_id)
+
     async def _upload_media(
         self,
         file_bytes: bytes,

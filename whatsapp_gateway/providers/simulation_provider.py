@@ -55,6 +55,39 @@ class SimulationProvider(BaseWhatsAppProvider):
             raw=record,
         )
 
+    async def send_list(
+        self,
+        to: str,
+        body_text: str,
+        button_text: str = "View menu",
+        sections: Optional[List[Dict[str, Any]]] = None,
+        title: Optional[str] = None,
+        footer_text: Optional[str] = None,
+        fallback_text: Optional[str] = None,
+        session_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> SendMessageResponse:
+        msg_id = f"sim-{uuid.uuid4().hex[:8]}"
+        record = {
+            "type": "list",
+            "message_id": msg_id,
+            "to": to,
+            "title": title or "🕊️ Holy Bible Assistant",
+            "body": body_text,
+            "button_text": button_text or "View menu",
+            "footer": footer_text or "Bilingual: English & தமிழ்",
+            "sections": sections or [],
+            "text": fallback_text or body_text,
+            "session_id": session_id or "default",
+        }
+        self.simulated_outbox.append(record)
+        return SendMessageResponse(
+            success=True,
+            message_id=msg_id,
+            to=to,
+            raw=record,
+        )
+
     async def send_media(
         self,
         to: str,
@@ -78,6 +111,39 @@ class SimulationProvider(BaseWhatsAppProvider):
             "file_name": file_name,
             "ptt": ptt,
             "bytes_length": len(file_bytes) if file_bytes else (file_path and 100 or 0),
+            "session_id": session_id or "default",
+        }
+        self.simulated_outbox.append(record)
+        return SendMessageResponse(
+            success=True,
+            message_id=msg_id,
+            to=to,
+            raw=record,
+        )
+
+    async def send_list(
+        self,
+        to: str,
+        body_text: str,
+        button_text: str = "View menu",
+        sections: Optional[List[Dict[str, Any]]] = None,
+        title: Optional[str] = None,
+        footer_text: Optional[str] = None,
+        fallback_text: Optional[str] = None,
+        session_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> SendMessageResponse:
+        msg_id = f"sim-{uuid.uuid4().hex[:8]}"
+        record = {
+            "type": "list",
+            "message_id": msg_id,
+            "to": to,
+            "title": title or "🕊️ Holy Bible Assistant",
+            "body": body_text,
+            "button_text": button_text or "View menu",
+            "footer": footer_text or "Bilingual: English & தமிழ்",
+            "sections": sections or [],
+            "text": fallback_text or body_text,
             "session_id": session_id or "default",
         }
         self.simulated_outbox.append(record)

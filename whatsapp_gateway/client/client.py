@@ -319,6 +319,73 @@ class WAClient:
             logger.error("Failed to connect to WA-AKG gateway at %s: %s", endpoint_native, exc)
             raise WAGatewayConnectionError(f"Could not reach WA-AKG: {exc}") from exc
 
+    async def send_list(
+        self,
+        to: str,
+        body_text: str,
+        button_text: str = "View menu",
+        sections: Optional[List[Dict[str, Any]]] = None,
+        title: Optional[str] = None,
+        footer_text: Optional[str] = None,
+        fallback_text: Optional[str] = None,
+        session_id: Optional[str] = None,
+        direct_http: bool = False,
+    ) -> SendMessageResponse:
+        """
+        Send an interactive WhatsApp List Message (with 'View menu' bottom sheet).
+        """
+        target = self._normalize_recipient(to)
+        sess = session_id or self.default_session_id
+        sec_list = sections or []
+
+        if self.simulation_mode:
+            logger.info("[SIMULATION] Dispatching WhatsApp Interactive List to %s: %s", target, body_text[:60])
+            record = {
+                "type": "list",
+                "to": target,
+                "title": title or "🕊️ Holy Bible Assistant",
+                "body": body_text,
+                "button_text": button_text or "View menu",
+                "footer": footer_text or "Bilingual: English & தமிழ்",
+                "sections": sec_list,
+                "text": fallback_text or body_text,
+                "session_id": sess,
+            }
+            self.simulated_outbox.append(record)
+            return SendMessageResponse(
+                success=True,
+                message_id="sim-list-msg-123",
+                to=target,
+                raw=record,
+            )
+
+        if self.provider == "meta_cloud_api":
+            try:
+                return await self.meta_provider.send_list(
+                    to=target,
+                    body_text=body_text,
+                    button_text=button_text,
+                    sections=sec_list,
+                    title=title,
+                    footer_text=footer_text,
+                    session_id=sess,
+                )
+            except Exception as err:
+                logger.warning("[MetaCloudApi] send_list error (%s); falling back to text", err)
+                return await self.send_text(to=target, text=fallback_text or body_text, session_id=sess)
+
+        # Provider: WA-AKG Baileys
+        return await self.wa_akg_provider.send_list(
+            to=target,
+            body_text=body_text,
+            button_text=button_text,
+            sections=sec_list,
+            title=title,
+            footer_text=footer_text,
+            fallback_text=fallback_text,
+            session_id=sess,
+        )
+
     async def send_media(
         self,
         to: str,
