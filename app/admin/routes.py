@@ -182,6 +182,9 @@ async def admin_settings_page(request: Request):
 
     # 4. Embedded SQLite Database Telemetry
     def _get_db_telemetry():
+        from app.settings_db import get_settings_db_stats
+        settings_stats = get_settings_db_stats()
+
         bible_mb = round(os.path.getsize(DB_PATH) / (1024 * 1024), 2) if os.path.exists(DB_PATH) else 0.0
         songs_mb = round(os.path.getsize(SONGS_DB_PATH) / (1024 * 1024), 2) if os.path.exists(SONGS_DB_PATH) else 0.0
 
@@ -198,6 +201,10 @@ async def admin_settings_page(request: Request):
             "song_books_count": 13,
             "subscribers_path": sub_db_path,
             "subscribers_size_kb": sub_kb,
+            "settings_path": settings_stats.get("path"),
+            "settings_size_kb": settings_stats.get("size_kb", 0.0),
+            "settings_row_count": settings_stats.get("row_count", 0),
+            "settings_last_updated": settings_stats.get("last_updated"),
         }
 
     db_stats = await asyncio.to_thread(_get_db_telemetry)
@@ -770,4 +777,128 @@ async def api_import_admin_settings(request: Request):
         "message": "All admin settings successfully restored and synced to server!",
         "ai": ai_config.to_dict(),
         "whatsapp_provider": getattr(_get_wa_client(), "provider", wa_config.provider),
+    }
+
+
+@router.post("/api/settings/save-all")
+async def api_save_all_admin_settings(request: Request):
+    """
+    Saves all administrative configuration settings (Ask Bible AI, WhatsApp Gateway,
+    Rate Limiter, Quotas, and Feature Flags) directly into the centralized SQLite database.
+    Completely eliminates dependency on browser LocalStorage or session cookies.
+    Strictly protected by require_admin.
+    """
+    require_admin(request)
+    try:
+        body = await request.json()
+    except Exception:
+        body = await _parse_form_data(request)
+
+    ai_data = body.get("ai") or {}
+    wa_data = body.get("whatsapp") or {}
+
+    # If incoming body is a flat dictionary from traditional form post
+    if not ai_data and not wa_data:
+        ai_keys = {
+            "enabled", "provider_name", "base_url", "api_key", "model", "temperature",
+            "max_tokens", "enable_grounding", "max_grounding_passages", "simulation_mode",
+            "quiz_ai_enabled", "quiz_ai_default_count", "quiz_ai_difficulty", "study_ai_enabled",
+        }
+        ai_data = {k: v for k, v in body.items() if k in ai_keys or k.startswith("ai_")}
+        wa_data = {k: v for k, v in body.items() if k not in ai_data}
+
+    # 1. Process and persist Ask Bible AI settings
+    if ai_data and isinstance(ai_data, dict):
+        ai_updates = {}
+        for k, v in ai_data.items():
+            clean_k = k[3:] if k.startswith("ai_") else k
+            if hasattr(ai_config, clean_k):
+                ai_updates[clean_k] = v
+
+        if ai_updates:
+            if "enabled" in ai_updates and isinstance(ai_updates["enabled"], str):
+                ai_updates["enabled"] = ai_updates["enabled"].lower() in ("true", "1", "yes", "on")
+            if "simulation_mode" in ai_updates and isinstance(ai_updates["simulation_mode"], str):
+                ai_updates["simulation_mode"] = ai_updates["simulation_mode"].lower() in ("true", "1", "yes", "on")
+            if "quiz_ai_enabled" in ai_updates and isinstance(ai_updates["quiz_ai_enabled"], str):
+                ai_updates["quiz_ai_enabled"] = ai_updates["quiz_ai_enabled"].lower() in ("true", "1", "yes", "on")
+            if "study_ai_enabled" in ai_updates and isinstance(ai_updates["study_ai_enabled"], str):
+                ai_updates["study_ai_enabled"] = ai_updates["study_ai_enabled"].lower() in ("true", "1", "yes", "on")
+            if "enable_grounding" in ai_updates and isinstance(ai_updates["enable_grounding"], str):
+                ai_updates["enable_grounding"] = ai_updates["enable_grounding"].lower() in ("true", "1", "yes", "on")
+            if "temperature" in ai_updates and ai_updates["temperature"] != "":
+                try:
+                    ai_updates["temperature"] = float(ai_updates["temperature"])
+                except ValueError:
+                    pass
+            if "max_tokens" in ai_updates and ai_updates["max_tokens"] != "":
+                try:
+                    ai_updates["max_tokens"] = int(ai_updates["max_tokens"])
+                except ValueError:
+                    pass
+            if "max_grounding_passages" in ai_updates and ai_updates["max_grounding_passages"] != "":
+                try:
+                    ai_updates["max_grounding_passages"] = int(ai_updates["max_grounding_passages"])
+                except ValueError:
+                    pass
+            if "quiz_ai_default_count" in ai_updates and ai_updates["quiz_ai_default_count"] != "":
+                try:
+                    ai_updates["quiz_ai_default_count"] = max(1, min(30, int(ai_updates["quiz_ai_default_count"])))
+                except ValueError:
+                    pass
+            if "quiz_ai_difficulty" in ai_updates and ai_updates["quiz_ai_difficulty"]:
+                diff = str(ai_updates["quiz_ai_difficulty"]).strip().lower()
+                if diff in ("easy", "medium", "hard", "mixed"):
+                    ai_updates["quiz_ai_difficulty"] = diff
+
+            new_ai = save_ai_config(ai_updates)
+            ai_service.config = new_ai
+            ai_service.client.config = new_ai
+
+    # 2. Process and persist WhatsApp settings
+    if wa_data and isinstance(wa_data, dict):
+        wa_updates = {}
+        for k, v in wa_data.items():
+            clean_k = k[3:] if k.startswith("wa_") else k
+            if hasattr(wa_config, clean_k):
+                wa_updates[clean_k] = v
+
+        if wa_updates:
+            save_persisted_config(**wa_updates)
+            wa_client = _get_wa_client()
+            wa_client.update_config(
+                base_url=wa_config.gateway_url,
+                default_session_id=wa_config.session_id,
+                api_key=wa_config.api_key,
+                simulation_mode=wa_config.enable_simulation_mode,
+                provider=wa_config.provider,
+                meta_phone_number_id=wa_config.meta_phone_number_id,
+                meta_waba_id=wa_config.meta_waba_id,
+                meta_access_token=wa_config.meta_access_token,
+                meta_verify_token=wa_config.meta_verify_token,
+                meta_app_secret=wa_config.meta_app_secret,
+                meta_api_version=wa_config.meta_api_version,
+            )
+
+    from app.settings_db import get_settings_db_stats
+    return {
+        "status": "ok",
+        "message": "All admin settings successfully saved to database in one place!",
+        "db_stats": get_settings_db_stats(),
+        "ai": ai_config.to_dict(),
+        "whatsapp": wa_config.model_dump(),
+    }
+
+
+@router.get("/api/settings/db-status")
+async def api_settings_db_status(request: Request):
+    """
+    Returns live database connection status and telemetry for admin settings storage.
+    Strictly protected by require_admin.
+    """
+    require_admin(request)
+    from app.settings_db import get_settings_db_stats
+    return {
+        "status": "ok",
+        "db": get_settings_db_stats(),
     }

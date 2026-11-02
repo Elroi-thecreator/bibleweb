@@ -47,17 +47,30 @@ CONFIG_FILE = PRIMARY_CONFIG_FILE
 
 
 def load_persisted_config() -> dict:
-    """Reads persistent configuration overrides from primary or machine backup location."""
+    """
+    Reads persistent configuration overrides from centralized SQLite database
+    (sole single source of truth), falling back to local files if database is unseeded.
+    """
+    # 1. Primary: Centralized SQLite Database
+    try:
+        from app.settings_db import get_section
+        db_data = get_section("whatsapp")
+        if db_data:
+            return db_data
+    except Exception as e:
+        print(f"[WAConfig] Warning reading from settings database: {e}")
+
+    # 2. Fallback: Loose JSON files (for initial migration / offline fallback)
     primary, secondary = _get_persistent_paths("whatsapp_config.json")
 
-    # 1. Try primary location
+    # Try primary location
     if primary.is_file():
         try:
             return json.loads(primary.read_text(encoding="utf-8"))
         except Exception as e:
             print(f"[WAConfig] Warning reading config file: {e}")
 
-    # 2. Try secondary/machine backup location (survives rebuilds/git cleans)
+    # Try secondary/machine backup location (survives rebuilds/git cleans)
     if secondary and secondary.is_file():
         try:
             data = json.loads(secondary.read_text(encoding="utf-8"))
@@ -352,6 +365,14 @@ def save_persisted_config(
         current["web_app_url"] = clean_web
         config.web_app_url = clean_web
 
+    # 1. Primary: Save to centralized SQLite Database
+    try:
+        from app.settings_db import set_section
+        set_section("whatsapp", current)
+    except Exception as e:
+        print(f"[WAConfig] Error persisting config to database: {e}")
+
+    # 2. Mirror to JSON files for backup/diagnostics
     primary, secondary = _get_persistent_paths("whatsapp_config.json")
     json_str = json.dumps(current, indent=2)
 

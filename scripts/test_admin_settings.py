@@ -301,18 +301,92 @@ async def run_admin_tests():
         save_ai_config({"quiz_ai_enabled": True, "quiz_ai_default_count": 5, "quiz_ai_difficulty": "medium"})
 
         # -------------------------------------------------------------
-        # 21. Test Admin Logout
+        # 21. Test Settings Database Telemetry & Connection Status
         # -------------------------------------------------------------
-        print("\n[21] Testing GET /admin/logout...")
+        print("\n[21] Testing GET /admin/api/settings/db-status authenticated...")
+        res = await client.get("/admin/api/settings/db-status", cookies=cookies)
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        db_status = res.json()
+        assert db_status["status"] == "ok"
+        assert db_status["db"]["is_connected"] is True
+        assert db_status["db"]["row_count"] > 0
+        assert "admin_settings.sqlite.db" in db_status["db"]["path"]
+        print(f"  ✅ Settings database telemetry verified: {db_status['db']['row_count']} rows in {db_status['db']['path']}")
+
+        # -------------------------------------------------------------
+        # 22. Test Unified POST /admin/api/settings/save-all
+        # -------------------------------------------------------------
+        print("\n[22] Testing POST /admin/api/settings/save-all authenticated...")
+        save_all_payload = {
+            "ai": {
+                "provider_name": "groq",
+                "model": "mixtral-8x7b-32768",
+                "temperature": 0.45,
+                "quiz_ai_enabled": True,
+                "quiz_ai_default_count": 7,
+                "quiz_ai_difficulty": "hard",
+            },
+            "whatsapp": {
+                "provider": "simulation",
+                "session_id": "unified-db-session",
+                "rate_limit_requests_per_minute": 25,
+            }
+        }
+        res = await client.post("/admin/api/settings/save-all", json=save_all_payload, cookies=cookies)
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        save_all_res = res.json()
+        assert save_all_res["status"] == "ok"
+        assert save_all_res["ai"]["model"] == "mixtral-8x7b-32768"
+        assert save_all_res["ai"]["quiz_ai_default_count"] == 7
+        assert save_all_res["whatsapp"]["session_id"] == "unified-db-session"
+        assert save_all_res["whatsapp"]["rate_limit_requests_per_minute"] == 25
+        print("  ✅ POST /admin/api/settings/save-all saved all settings to centralized database.")
+
+        # -------------------------------------------------------------
+        # 23. Verify Direct SQLite Table admin_settings Persistence
+        # -------------------------------------------------------------
+        print("\n[23] Verifying SQLite database rows directly in admin_settings table...")
+        from app.settings_db import get_setting, get_section
+        db_model = get_setting("ai", "model")
+        db_quiz_count = get_setting("ai", "quiz_ai_default_count")
+        db_session = get_setting("whatsapp", "session_id")
+        db_rpm = get_setting("whatsapp", "rate_limit_requests_per_minute")
+
+        assert db_model == "mixtral-8x7b-32768", f"Expected mixtral-8x7b-32768, got {db_model}"
+        assert db_quiz_count == 7, f"Expected 7, got {db_quiz_count}"
+        assert db_session == "unified-db-session", f"Expected unified-db-session, got {db_session}"
+        assert db_rpm == 25, f"Expected 25, got {db_rpm}"
+        print("  ✅ Verified direct SQLite persistence in admin_settings table.")
+
+        # -------------------------------------------------------------
+        # 24. Verify Settings Rehydration Survives Singleton Reset (No Default Revert)
+        # -------------------------------------------------------------
+        print("\n[24] Verifying settings persist across fresh reloads (no revert to defaults)...")
+        from ask_bible_ai.config import get_config as get_fresh_ai_cfg
+        from whatsapp_gateway.config import load_persisted_config as get_fresh_wa_cfg
+
+        fresh_ai = get_fresh_ai_cfg()
+        fresh_wa = get_fresh_wa_cfg()
+
+        assert fresh_ai.model == "mixtral-8x7b-32768"
+        assert fresh_ai.quiz_ai_default_count == 7
+        assert fresh_wa.get("session_id") == "unified-db-session"
+        assert fresh_wa.get("rate_limit_requests_per_minute") == 25
+        print("  ✅ Verified settings do NOT get refreshed to defaults on reload.")
+
+        # -------------------------------------------------------------
+        # 25. Test Admin Logout
+        # -------------------------------------------------------------
+        print("\n[25] Testing GET /admin/logout...")
         res = await client.get("/admin/logout", cookies=cookies)
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
         print("  ✅ Logged out successfully and redirected to login page.")
 
         # -------------------------------------------------------------
-        # 22. Verify Session Invalidation after Logout
+        # 26. Verify Session Invalidation after Logout
         # -------------------------------------------------------------
-        print("\n[22] Testing GET /admin/settings without cookie after logout...")
+        print("\n[26] Testing GET /admin/settings without cookie after logout...")
         res = await client.get("/admin/settings")
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
@@ -332,7 +406,7 @@ async def run_admin_tests():
         config.rabbitmq_url = p.get("rabbitmq_url", config.rabbitmq_url)
 
     print("\n" + "=" * 70)
-    print("🎉 ALL 22 ADMIN SECURITY, SETTINGS & CONFIG TESTS PASSED WITH 100% SUCCESS!")
+    print("🎉 ALL 26 ADMIN SECURITY, SETTINGS & DATABASE CONFIG TESTS PASSED WITH 100% SUCCESS!")
     print("=" * 70)
 
 

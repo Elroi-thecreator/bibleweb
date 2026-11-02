@@ -299,6 +299,13 @@ async def lifespan(app: FastAPI):
     # Fast startup verification (pings read-only databases)
     await asyncio.to_thread(check_database_health)
 
+    # Initialize unified admin settings database
+    try:
+        from app.settings_db import init_settings_db
+        await asyncio.to_thread(init_settings_db)
+    except Exception as db_err:
+        print(f"[SettingsDB] Lifespan init warning: {db_err}", flush=True)
+
     # Initialize and start WhatsApp RabbitMQ queue manager (if enabled)
     try:
         from whatsapp_gateway.queue.manager import queue_manager

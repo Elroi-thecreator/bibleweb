@@ -153,67 +153,59 @@
             </div>
         </div>
 
-        <!-- Fresh Build Alert Banner (Shown if local memory backup differs from default/blank server state) -->
-        <div id="local-memory-banner" class="hidden p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div class="flex items-start sm:items-center gap-3">
-                <span class="text-2xl shrink-0">💡</span>
-                <div>
-                    <p class="font-bold text-amber-900 dark:text-amber-300 text-sm">Previous Admin Settings Preserved in Local Memory!</p>
-                    <p class="text-stone-600 dark:text-stone-400 mt-0.5">
-                        A backup from <strong id="local-memory-banner-time" class="text-stone-800 dark:text-stone-200"></strong> was found in your browser. Rebuilding or redeploying resets server memory, but you can restore all custom AI & WhatsApp configurations with one click.
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <button onclick="restoreFromLocalMemory()" class="px-3 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl font-semibold shadow-xs transition cursor-pointer flex items-center gap-1.5">
-                    <span>⚡</span> <span>1-Click Restore to Server</span>
-                </button>
-                <button onclick="dismissLocalMemoryBanner()" class="px-2.5 py-2 text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 transition cursor-pointer text-xs">
-                    Dismiss
-                </button>
-            </div>
-        </div>
-
-        <!-- Card: Local Memory & Persistent Configuration -->
+        <!-- Card: Centralized SQLite Database Persistence -->
         <div class="bg-white dark:bg-stone-900 rounded-2xl p-5 sm:p-6 border border-stone-200 dark:border-stone-800 shadow-xs space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100 dark:border-stone-800">
                 <div class="flex items-center gap-2.5">
-                    <span class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-400 flex items-center justify-center text-sm font-bold shadow-2xs">💾</span>
+                    <span class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-400 flex items-center justify-center text-sm font-bold shadow-2xs">🗄️</span>
                     <div>
-                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Local Memory & Persistent Backup</h2>
-                        <p class="font-tamil text-xs text-stone-500 dark:text-stone-400">உள்ளூர் நினைவகம் & காப்புப்பிரதி (Survives Rebuilds & Deploys)</p>
+                        <h2 class="font-cinzel font-bold text-base text-stone-900 dark:text-stone-100">Centralized Settings Database</h2>
+                        <p class="font-tamil text-xs text-stone-500 dark:text-stone-400">மையப்படுத்தப்பட்ட அமைப்புகள் தரவுத்தளம் (Permanent SQLite Storage — Single Source of Truth)</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span id="local-memory-status-pill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
-                        <span id="local-memory-status-dot" class="w-2 h-2 rounded-full bg-stone-400"></span>
-                        <span id="local-memory-status-text">Checking Local Memory...</span>
+                    <span id="db-settings-status-pill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                        <span id="db-settings-status-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span id="db-settings-status-text">SQLite Database: Connected</span>
                     </span>
                 </div>
             </div>
 
-            <p class="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
-                When the application is rebuilt (e.g. PyInstaller executable, Docker, or Cloud Deploy), server runtime memory is reset to defaults. Your admin settings are automatically stored in your browser's persistent <strong>Local Memory (<code class="text-[11px] bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded font-mono">localStorage</code>)</strong> and mirrored to machine storage (<code class="text-[11px] bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded font-mono">%LOCALAPPDATA%/HolyBible/config</code>). You can snapshot or restore anytime.
-            </p>
+            <div class="p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="space-y-0.5">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-stone-800 dark:text-stone-200">Database File:</span>
+                        <code class="font-mono text-[11px] bg-stone-100 dark:bg-stone-800 px-1.5 py-0.5 rounded text-amber-700 dark:text-amber-400">{{ db_stats.settings_path or 'data/admin_settings.sqlite.db' }}</code>
+                    </div>
+                    <p class="text-[11px] text-stone-500 dark:text-stone-400">
+                        All admin configurations are stored in this database in one place. They are permanent, not session-based, and will never revert to default settings.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3 shrink-0 text-[11px]">
+                    <span class="bg-white dark:bg-stone-800 px-2 py-1 rounded-lg border border-stone-200 dark:border-stone-700 font-mono">
+                        Stored Keys: <strong id="db-settings-row-count">{{ db_stats.settings_row_count or 0 }}</strong>
+                    </span>
+                    <span class="bg-white dark:bg-stone-800 px-2 py-1 rounded-lg border border-stone-200 dark:border-stone-700 font-mono">
+                        Size: <strong id="db-settings-size">{{ db_stats.settings_size_kb or 0.0 }} KB</strong>
+                    </span>
+                </div>
+            </div>
 
             <!-- Action Toolbar -->
             <div class="flex flex-wrap items-center gap-2.5 pt-1">
-                <button type="button" onclick="saveToLocalMemory()" class="px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer">
-                    <span>💾</span> <span>Save All Settings to Local Memory</span>
+                <button type="button" id="save-all-db-btn" onclick="saveAllSettingsToDatabase()" class="px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                    <span>💾</span> <span>Save All Settings to Database</span>
                 </button>
-                <button type="button" onclick="restoreFromLocalMemory()" class="px-3.5 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-stone-800 dark:text-stone-200 hover:text-amber-900 dark:hover:text-amber-300 border border-stone-300 dark:border-stone-700 hover:border-amber-400 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
-                    <span>⚡</span> <span>Restore from Local Memory</span>
+                <button type="button" onclick="reloadFromDatabase()" class="px-3.5 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-stone-800 dark:text-stone-200 hover:text-amber-900 dark:hover:text-amber-300 border border-stone-300 dark:border-stone-700 hover:border-amber-400 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                    <span>🔄</span> <span>Reload from Database</span>
                 </button>
                 <button type="button" onclick="exportSettingsJson()" class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-xl text-xs font-medium transition flex items-center gap-1.5 cursor-pointer" title="Download backup file to PC">
                     <span>⬇️</span> <span>Export JSON</span>
                 </button>
-                <label class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-xl text-xs font-medium transition flex items-center gap-1.5 cursor-pointer" title="Import backup JSON file">
-                    <span>⬆️</span> <span>Import JSON</span>
+                <label class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-xl text-xs font-medium transition flex items-center gap-1.5 cursor-pointer" title="Import backup JSON file directly into SQLite database">
+                    <span>⬆️</span> <span>Import JSON to DB</span>
                     <input type="file" id="import-settings-file" accept=".json" class="hidden" onchange="importSettingsJson(event)">
                 </label>
-                <button type="button" onclick="clearLocalMemory()" class="px-2.5 py-2 text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-medium transition cursor-pointer ml-auto" title="Clear browser local memory backup">
-                    <span>🗑</span> <span>Clear</span>
-                </button>
             </div>
         </div>
 
@@ -936,6 +928,20 @@
                             <span>Active Count: <strong>{{ wa_subscribers_count }}</strong></span>
                         </div>
                     </div>
+
+                    <!-- Admin Settings Database -->
+                    <div class="p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/80 dark:border-stone-800">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-stone-800 dark:text-stone-200">⚙️ Settings DB (admin_settings.sqlite.db)</span>
+                            <span class="font-mono text-[11px] text-stone-500">{{ db_stats.settings_size_kb }} KB</span>
+                        </div>
+                        <p class="font-mono text-[10px] text-stone-400 truncate mb-1.5">{{ db_stats.settings_path }}</p>
+                        <div class="flex gap-4 text-[11px] text-stone-600 dark:text-stone-300">
+                            <span>Settings Table: <strong>Ready</strong></span>
+                            <span>Stored Rows: <strong>{{ db_stats.settings_row_count }} keys</strong></span>
+                            <span>Persistence: <strong>Database Single Source of Truth</strong></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1099,8 +1105,7 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    saveToLocalMemory(true);
-                    showToast('✅ ' + data.message);
+                    showToast('✅ ' + data.message, 'success');
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     showToast('❌ Error: ' + (data.detail || 'Failed to save configuration'), true);
@@ -1243,8 +1248,7 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    saveToLocalMemory(true);
-                    showToast('✅ ' + data.message);
+                    showToast('✅ ' + data.message, 'success');
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     showToast('❌ Error: ' + (data.detail || 'Failed to save configuration'), true);
@@ -1579,8 +1583,7 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    saveToLocalMemory(true);
-                    showToast(data.message || 'AI configuration saved successfully!', 'success');
+                    showToast(data.message || 'AI configuration saved to database successfully!', 'success');
                     testAiConnection(true);
                 } else {
                     showToast(data.detail || 'Failed to save AI configuration.', 'error');
@@ -1636,10 +1639,8 @@
         }
 
         // ==========================================
-        // Local Memory (Browser localStorage) Controls
+        // Centralized SQLite Database Persistence Controls
         // ==========================================
-        const LOCAL_STORAGE_KEY = 'holy_bible_admin_settings_local';
-
         function getFormSettingsPayload() {
             return {
                 timestamp: new Date().toISOString(),
@@ -1673,58 +1674,43 @@
             };
         }
 
-        function saveToLocalMemory(silent = false) {
+        async function saveAllSettingsToDatabase() {
+            const btn = document.getElementById('save-all-db-btn');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>⏳</span> <span>Saving to Database...</span>';
+            }
             try {
                 const payload = getFormSettingsPayload();
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
-                updateLocalMemoryStatusPill();
-                if (!silent) {
-                    showToast('💾 Admin settings safely saved to browser local memory!', 'success');
-                }
-            } catch(e) {
-                if (!silent) {
-                    showToast('Failed to save to local memory: ' + e.message, 'error');
-                }
-            }
-        }
-
-        async function restoreFromLocalMemory() {
-            try {
-                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (!raw) {
-                    showToast('No saved settings found in browser local memory.', 'warning');
-                    return;
-                }
-                const backup = JSON.parse(raw);
-                const res = await fetch('/admin/api/settings/import', {
+                const res = await fetch('/admin/api/settings/save-all', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(backup)
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    showToast('⚡ All settings restored from local memory and synced to server!', 'success');
-                    dismissLocalMemoryBanner();
-                    setTimeout(() => location.reload(), 900);
+                    showToast('💾 All admin settings saved to database successfully in one place!', 'success');
+                    if (data.db_stats) {
+                        updateDatabaseStatusPill(data.db_stats);
+                    }
+                    testAiConnection(true);
                 } else {
-                    showToast('Restore failed: ' + (data.detail || 'Server error'), 'error');
+                    showToast('Save failed: ' + (data.detail || 'Server error'), 'error');
                 }
             } catch(e) {
-                showToast('Error restoring settings: ' + e.message, 'error');
+                showToast('Error saving settings to database: ' + e.message, 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
             }
         }
 
-        function dismissLocalMemoryBanner() {
-            const banner = document.getElementById('local-memory-banner');
-            if (banner) banner.classList.add('hidden');
-        }
-
-        function clearLocalMemory() {
-            if (!confirm('Clear the admin settings backup stored in this browser?')) return;
-            localStorage.removeItem(LOCAL_STORAGE_KEY);
-            updateLocalMemoryStatusPill();
-            dismissLocalMemoryBanner();
-            showToast('Browser local memory cleared.', 'info');
+        function reloadFromDatabase() {
+            showToast('🔄 Reloading all configurations from database...', 'info');
+            setTimeout(() => location.reload(), 500);
         }
 
         async function exportSettingsJson() {
@@ -1761,8 +1747,7 @@
                     });
                     const data = await res.json();
                     if (res.ok) {
-                        saveToLocalMemory(true);
-                        showToast('⬆️ Settings imported from file and applied!', 'success');
+                        showToast('⬆️ Settings imported and saved directly to database!', 'success');
                         setTimeout(() => location.reload(), 900);
                     } else {
                         showToast('Import failed: ' + (data.detail || 'Server error'), 'error');
@@ -1774,62 +1759,37 @@
             reader.readAsText(file);
         }
 
-        function updateLocalMemoryStatusPill() {
-            const pill = document.getElementById('local-memory-status-pill');
-            const dot = document.getElementById('local-memory-status-dot');
-            const text = document.getElementById('local-memory-status-text');
+        function updateDatabaseStatusPill(dbStats) {
+            const pill = document.getElementById('db-settings-status-pill');
+            const dot = document.getElementById('db-settings-status-dot');
+            const text = document.getElementById('db-settings-status-text');
+            const rowEl = document.getElementById('db-settings-row-count');
+            const sizeEl = document.getElementById('db-settings-size');
+
+            if (dbStats) {
+                if (rowEl) rowEl.textContent = dbStats.row_count || 0;
+                if (sizeEl) sizeEl.textContent = (dbStats.size_kb || 0.0) + ' KB';
+            }
+
             if (!pill || !dot || !text) return;
-
-            const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (!raw) {
-                pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400 border border-stone-200 dark:border-stone-700";
-                dot.className = "w-2 h-2 rounded-full bg-stone-400";
-                text.textContent = "Local Memory: Empty";
-                return;
-            }
-
-            try {
-                const parsed = JSON.parse(raw);
-                const d = new Date(parsed.timestamp);
-                const timeStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800";
-                dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-                text.textContent = `Local Memory: Saved (${timeStr})`;
-            } catch(e) {
-                text.textContent = "Local Memory: Available";
-            }
+            pill.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800";
+            dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+            text.textContent = "SQLite Database: Synced & Persistent";
         }
 
-        function checkLocalMemoryOnStartup() {
-            updateLocalMemoryStatusPill();
-            const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (!raw) return;
-
+        async function fetchSettingsDbStatus() {
             try {
-                const parsed = JSON.parse(raw);
-                const currentAiProvider = document.getElementById('ai_provider_name') ? document.getElementById('ai_provider_name').value.trim() : '';
-                const currentAiKey = document.getElementById('ai_api_key') ? document.getElementById('ai_api_key').value.trim() : '';
-
-                const savedAi = parsed.ai || {};
-                const hasCustomInLocal = (savedAi.api_key && savedAi.api_key !== 'free-tier') ||
-                                         (savedAi.provider_name && savedAi.provider_name !== 'freellmapi') ||
-                                         (savedAi.base_url && savedAi.base_url !== 'http://localhost:3000/v1');
-
-                const serverIsDefault = (currentAiProvider === 'freellmapi' && (currentAiKey === 'free-tier' || !currentAiKey));
-
-                if (hasCustomInLocal && serverIsDefault) {
-                    const banner = document.getElementById('local-memory-banner');
-                    const timeEl = document.getElementById('local-memory-banner-time');
-                    if (banner && timeEl) {
-                        const d = new Date(parsed.timestamp);
-                        timeEl.textContent = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        banner.classList.remove('hidden');
+                const res = await fetch('/admin/api/settings/db-status');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.db) {
+                        updateDatabaseStatusPill(data.db);
                     }
                 }
             } catch(e) {}
         }
 
-        checkLocalMemoryOnStartup();
+        fetchSettingsDbStatus();
     </script>
 </body>
 </html>
