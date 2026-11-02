@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.23.0
+version: 1.24.0
 authority:
   level: official
   confidence: high
@@ -35,6 +35,7 @@ do:
   - "Support multi-turn conversations (such as interactive quizzes) via an in-memory session store with automatic TTL expiration."
   - "Provide a simulation mode in `WAClient` (`simulation_mode=True`) enabling automated end-to-end verification without live WhatsApp hardware."
   - "Format outgoing text messages for WA-AKG Baileys engine with native payload structures `{'message': {'text': text}}` at `/messages/{sessionId}/{jid}/send`, falling back gracefully to `/messages/send-text`."
+  - "Expose all WhatsApp services on the public web hub (`/whatsapp`) via a zero-typing interactive console: featuring a primary service selector dropdown, dynamic contextual sub-panels (popular passages, book and chapter selectors, search themes, song titles, reading plans, and reminder times), 1-click execution buttons, 100% clickable command pills across the capabilities reference guide, and in-chat interactive action chips for bot options and trivia quizzes, reducing typable options to a minimal optional fallback."
   - "Dispatch voice notes and media to WA-AKG via `POST /api/messages/{sessionId}/{encodedJid}/media` using `multipart/form-data` with `file`, `type` ('voice' for push-to-talk waveforms or 'audio' for standard playback), and optional `caption`."
   - "Transcode Edge-TTS / gTTS synthesized MP3 audio into WhatsApp-compliant ISO MP4 containers (AAC-LC audio, `.m4a`, `audio/mp4`) with `+faststart` atom via `whatsapp_gateway/audio_converter.py` using bundled `imageio-ffmpeg` or system FFmpeg before dispatching to WA-AKG, preventing ExoPlayer `UnrecognizedInputFormatException` on mobile devices caused by WA-AKG's hardcoded `mimetype: audio/mp4`."
   - "If FFmpeg transcoding is unavailable or fails, automatically fallback to dispatching the MP3 payload with `type: document` and `mimetype: audio/mpeg` so WA-AKG preserves native MP3 MIME types without triggering mobile decoder crashes."

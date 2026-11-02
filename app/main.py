@@ -1813,6 +1813,14 @@ async def whatsapp_hub_page(request: Request):
     canon_ctx = get_canon_context(active_canon)
     from whatsapp_gateway.subscribers import get_subscriber_count
     sub_count = await get_subscriber_count()
+    books_data = [
+        {"id": b[0], "en": b[1], "ta": b[2], "chapters": b[3]}
+        for b in canon_ctx.get("books", [])
+    ]
+    all_books_data = [
+        {"id": b[0], "en": b[1], "ta": b[2], "chapters": b[3]}
+        for b in canon_ctx.get("all_books", [])
+    ]
     return templates.TemplateResponse(
         request=request,
         name="whatsapp.html",
@@ -1820,6 +1828,8 @@ async def whatsapp_hub_page(request: Request):
             **canon_ctx,
             "page_title": "WhatsApp Bible Assistant",
             "subscriber_count": sub_count,
+            "books_json": json.dumps(books_data),
+            "all_books_json": json.dumps(all_books_data),
         },
     )
 

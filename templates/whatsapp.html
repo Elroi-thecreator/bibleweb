@@ -40,7 +40,7 @@
                     <span>Active &amp; Ready</span>
                 </div>
                 <p class="text-xs text-stone-600 dark:text-stone-400 mt-2 leading-relaxed">
-                    Instant scripture lookups, bilingual verses, reading streaks, and interactive trivia right on your messaging app or here in the simulator.
+                    Instant scripture lookups, bilingual verses, reading streaks, and interactive trivia right on your messaging app or here in the interactive console.
                 </p>
                 <div class="mt-3 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -69,7 +69,10 @@
                 </p>
             </div>
             <div class="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-[11px]">
-                <span class="text-stone-500">Send <code class="font-bold text-amber-700 dark:text-amber-400">subscribe</code> on WhatsApp</span>
+                <div class="flex items-center gap-1.5 text-stone-500">
+                    <span>1-Click:</span>
+                    <button type="button" onclick="sendSimCommand('subscribe')" class="px-2 py-0.5 rounded font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 transition cursor-pointer">subscribe</button>
+                </div>
                 <a href="/plans" class="text-amber-700 dark:text-amber-400 font-semibold hover:underline">View Plans &rarr;</a>
             </div>
         </div>
@@ -78,17 +81,23 @@
         <div class="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 rounded-2xl p-5 border border-emerald-200 dark:border-emerald-800/50 shadow-sm flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-400 font-semibold mb-2">
-                    <span class="uppercase tracking-wider">How to Chat</span>
-                    <span>📲 Mobile</span>
+                    <span class="uppercase tracking-wider">Interactive Services</span>
+                    <span>📲 1-Click</span>
                 </div>
-                <h3 class="text-sm font-bold text-stone-900 dark:text-stone-100">Send any message to start</h3>
+                <h3 class="text-sm font-bold text-stone-900 dark:text-stone-100">Select or click to start</h3>
                 <p class="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
-                    Send <code class="font-bold">John 3:16</code>, <code class="font-bold">quiz</code>, <code class="font-bold">streak</code>, or <code class="font-bold">subscribe</code> to your linked WhatsApp number to interact instantly.
+                    Click any service below or pick from the dropdown to interact instantly without manual typing:
                 </p>
+                <div class="flex flex-wrap gap-1.5 mt-2.5">
+                    <button type="button" onclick="sendSimCommand('John 3:16')" class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-300 font-bold hover:bg-emerald-200 transition text-[11px]">John 3:16</button>
+                    <button type="button" onclick="sendSimCommand('quiz')" class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-300 font-bold hover:bg-emerald-200 transition text-[11px]">quiz</button>
+                    <button type="button" onclick="sendSimCommand('streak')" class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-300 font-bold hover:bg-emerald-200 transition text-[11px]">streak</button>
+                    <button type="button" onclick="sendSimCommand('subscribe')" class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-300 font-bold hover:bg-emerald-200 transition text-[11px]">subscribe</button>
+                </div>
             </div>
             <div class="mt-4 pt-3 border-t border-emerald-200/50 dark:border-emerald-800/40 text-[11px] text-emerald-800 dark:text-emerald-400 flex items-center justify-between">
                 <span>Catholic &amp; Protestant Canons</span>
-                <span class="font-bold">Instant Sync</span>
+                <span class="font-bold">Instant 1-Click</span>
             </div>
         </div>
 
@@ -99,131 +108,554 @@
 
         <!-- Left: Interactive Webhook Simulator (7 Cols) -->
         <div class="lg:col-span-7 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-5 shadow-sm flex flex-col">
+            
             <div class="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-stone-800">
                 <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
                     <h2 class="text-sm font-bold uppercase tracking-wider text-stone-800 dark:text-stone-200">Interactive WhatsApp Chat Simulator</h2>
                 </div>
-                <button onclick="clearSimulator()" class="text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 underline">Clear Chat</button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="sendSimCommand('help')" class="text-xs px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 font-semibold hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 transition">📋 Main Menu</button>
+                    <button type="button" onclick="clearSimulator()" class="text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 underline">Clear</button>
+                </div>
             </div>
 
             <!-- Chat Window -->
-            <div id="sim-chat-window" class="flex-1 min-h-[360px] max-h-[460px] overflow-y-auto p-4 space-y-3 bg-[#E5DDD5] dark:bg-[#0B141A] rounded-xl my-4 text-xs font-sans">
+            <div id="sim-chat-window" class="flex-1 min-h-[340px] max-h-[440px] overflow-y-auto p-4 space-y-3 bg-[#E5DDD5] dark:bg-[#0B141A] rounded-xl my-3 text-xs font-sans shadow-inner">
                 <!-- Bot Intro Bubble -->
-                <div class="flex items-start gap-2 max-w-[85%]">
-                    <div class="bg-white dark:bg-[#202C33] text-stone-800 dark:text-stone-100 p-3 rounded-2xl rounded-tl-none shadow-xs space-y-1">
-                        <div class="font-bold text-[11px] text-emerald-700 dark:text-emerald-400">🕊️ Holy Bible Bot</div>
-                        <div class="whitespace-pre-wrap leading-relaxed">Welcome! Try typing a passage like <strong>John 3:16</strong>, <strong>quiz</strong>, <strong>search faith</strong>, or <strong>song Amazing Grace</strong> below to test the webhook in real-time!</div>
+                <div class="flex items-start gap-2 max-w-[90%]">
+                    <div class="bg-white dark:bg-[#202C33] text-stone-800 dark:text-stone-100 p-3.5 rounded-2xl rounded-tl-none shadow-xs space-y-2">
+                        <div class="font-bold text-[11px] text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                            <span>🕊️ Holy Bible Bot</span>
+                            <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 font-normal">Active</span>
+                        </div>
+                        <div class="whitespace-pre-wrap leading-relaxed">
+                            Welcome! Select any service from the dropdown below or tap any clickable action to interact without manual typing.
+                        </div>
+                        <!-- In-bubble Quick Starter Buttons -->
+                        <div class="pt-1 flex flex-wrap gap-1.5">
+                            <button type="button" onclick="sendSimCommand('John 3:16')" class="px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-stone-800 dark:text-stone-200 font-medium transition flex items-center gap-1 text-[11px] border border-stone-200 dark:border-stone-700 cursor-pointer">
+                                <span>📖</span> <span>John 3:16</span>
+                            </button>
+                            <button type="button" onclick="sendSimCommand('quiz')" class="px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-stone-800 dark:text-stone-200 font-medium transition flex items-center gap-1 text-[11px] border border-stone-200 dark:border-stone-700 cursor-pointer">
+                                <span>❓</span> <span>Daily Quiz</span>
+                            </button>
+                            <button type="button" onclick="sendSimCommand('plan')" class="px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-stone-800 dark:text-stone-200 font-medium transition flex items-center gap-1 text-[11px] border border-stone-200 dark:border-stone-700 cursor-pointer">
+                                <span>📅</span> <span>Reading Plan</span>
+                            </button>
+                            <button type="button" onclick="sendSimCommand('streak')" class="px-2 py-1 rounded-md bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-stone-800 dark:text-stone-200 font-medium transition flex items-center gap-1 text-[11px] border border-stone-200 dark:border-stone-700 cursor-pointer">
+                                <span>🔥</span> <span>Streak</span>
+                            </button>
+                        </div>
                         <div class="text-[9px] text-stone-400 text-right">Just now</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Input Bar -->
-            <form onsubmit="handleSimulatorSubmit(event)" class="flex gap-2">
-                <input id="sim-input" type="text" placeholder="Type a command (e.g. John 3:16, quiz, song 2281, யோவான் 3:16)..."
-                       class="flex-1 text-xs bg-stone-100 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-amber-700">
-                <button type="submit" id="btn-sim-send" class="px-5 py-2.5 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1 cursor-pointer">
-                    <span>Send</span> <span>➤</span>
-                </button>
-            </form>
-
-            <!-- Quick Suggestion Pills -->
-            <div class="flex flex-wrap gap-1.5 mt-3 pt-2 text-[11px]">
-                <span class="text-stone-400 self-center">Try:</span>
-                <button type="button" onclick="setSimInput('John 3:16')" class="px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300">John 3:16</button>
-                <button type="button" onclick="setSimInput('Genesis 1:1-3')" class="px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300">Genesis 1:1-3</button>
-                <button type="button" onclick="setSimInput('quiz')" class="px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300">quiz</button>
-                <button type="button" onclick="setSimInput('search grace')" class="px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300">search grace</button>
-                <button type="button" onclick="setSimInput('song 2281')" class="px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300">song 2281</button>
-                <button type="button" onclick="setSimInput('plan')" class="px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300">plan</button>
-                <button type="button" onclick="setSimInput('remind 5 AM')" class="px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300">remind 5 AM</button>
-                <button type="button" onclick="setSimInput('யோவான் 3:16')" class="px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300">யோவான் 3:16</button>
+            <!-- Dynamic Contextual Reply Dock -->
+            <div id="sim-context-dock" class="p-2 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700/60 mb-3 flex items-center gap-1.5 overflow-x-auto text-[11px] transition-all">
+                <span class="text-stone-400 font-semibold shrink-0 flex items-center gap-1">
+                    <span>⚡ Quick 1-Click:</span>
+                </span>
+                <div id="sim-context-buttons" class="flex items-center gap-1.5">
+                    <button type="button" onclick="sendSimCommand('1')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">1. Scripture</button>
+                    <button type="button" onclick="sendSimCommand('2')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">2. Audio</button>
+                    <button type="button" onclick="sendSimCommand('4')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">4. Quiz</button>
+                    <button type="button" onclick="sendSimCommand('7')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">7. Plan</button>
+                    <button type="button" onclick="sendSimCommand('done')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">8. Done</button>
+                    <button type="button" onclick="sendSimCommand('card')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">9. Card</button>
+                </div>
             </div>
+
+            <!-- WhatsApp Services Dropdown & Interactive Console (Zero-Typing Primary Hub) -->
+            <div class="bg-gradient-to-r from-stone-50 to-amber-50/40 dark:from-stone-850 dark:to-stone-900 border border-amber-200/80 dark:border-stone-700 rounded-2xl p-3.5 space-y-3 shadow-xs">
+                
+                <!-- Primary Service Dropdown Selector -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <label for="wa-service-select" class="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-400 shrink-0 flex items-center gap-1.5">
+                        <span>🎯</span> <span>WhatsApp Service:</span>
+                    </label>
+                    <div class="relative flex-1">
+                        <select id="wa-service-select" onchange="switchService(this.value)"
+                                class="w-full text-xs font-semibold bg-white dark:bg-stone-800 border-2 border-amber-300 dark:border-stone-600 text-stone-900 dark:text-stone-100 rounded-xl px-3 py-2 pr-8 focus:outline-none focus:border-amber-600 shadow-2xs transition cursor-pointer appearance-none">
+                            <option value="scripture">📖 1. Scripture Reading (வசன வாசிப்பு)</option>
+                            <option value="audio">🎧 2. Audio Bible Voice Notes (வேத ஆடியோ)</option>
+                            <option value="search">🔍 3. Scripture Keyword Search (வசனம் தேடுதல்)</option>
+                            <option value="quiz">❓ 4. Daily Bible Quiz Trivia (வினாடி வினா)</option>
+                            <option value="reminder">🔔 5. Daily Devotional &amp; Reminder (நினைவூட்டல்)</option>
+                            <option value="songs">🎵 6. Christian Songs &amp; Hymns (பாடல்கள்)</option>
+                            <option value="plans">📅 7. Full Bible Reading Plans (வாசிப்புத் திட்டம்)</option>
+                            <option value="streak">🔥 8. Reading Habit Streak &amp; Done (வாசிப்புத் தொடர்)</option>
+                            <option value="card">🖼️ 9. Status Image Card Generator (ஸ்டேட்டஸ் படம்)</option>
+                            <option value="language">🌐 10. Bilingual Parallel Mode (இருமொழி ஒப்புநோக்கு)</option>
+                            <option value="sync">📱 11. Web Bible 15-Min Magic Sync (இணைப்பு)</option>
+                            <option value="menu">📋 Main Bot Menu &amp; Help (முதன்மைப் பட்டி)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-stone-500">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 1: Scripture Reading -->
+                <div id="panel-scripture" class="service-panel space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="flex items-center justify-between text-[11px] text-stone-500">
+                        <span class="font-medium">Pick a passage from dropdown or select Book &amp; Chapter:</span>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="setScriptureMode('popular')" id="btn-mode-pop" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200">Popular</button>
+                            <button type="button" onclick="setScriptureMode('custom')" id="btn-mode-cust" class="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300">All Books</button>
+                        </div>
+                    </div>
+
+                    <!-- Popular Scripture Passages Dropdown -->
+                    <div id="scripture-pop-container" class="flex gap-2">
+                        <select id="select-pop-passage" class="flex-1 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-600">
+                            <option value="John 3:16">John 3:16 (For God so loved the world)</option>
+                            <option value="Psalm 23">Psalm 23 (The Lord is my shepherd)</option>
+                            <option value="Genesis 1:1-5">Genesis 1:1-5 (Creation of light)</option>
+                            <option value="Romans 8:28">Romans 8:28 (All things work together for good)</option>
+                            <option value="Philippians 4:13">Philippians 4:13 (I can do all things through Christ)</option>
+                            <option value="1 Corinthians 13:4-8">1 Corinthians 13:4-8 (Love is patient, love is kind)</option>
+                            <option value="Matthew 6:9-13">Matthew 6:9-13 (The Lord's Prayer)</option>
+                            <option value="Isaiah 40:31">Isaiah 40:31 (They that wait upon the Lord)</option>
+                            <option value="Proverbs 3:5-6">Proverbs 3:5-6 (Trust in the Lord with all your heart)</option>
+                            <option value="Psalm 91">Psalm 91 (He that dwelleth in the secret place)</option>
+                            <option value="Tobit 4:7">Tobit 4:7 (Catholic Canon: Almsgiving &amp; Mercy)</option>
+                            <option value="Wisdom 3:1-3">Wisdom 3:1-3 (Catholic Canon: Souls of the Righteous)</option>
+                            <option value="யோவான் 3:16">யோவான் 3:16 (தமிழ்: தேவன் தம்முடைய ஒரேபேறான குமாரனை)</option>
+                            <option value="சங்கீதம் 23">சங்கீதம் 23 (தமிழ்: கர்த்தர் என் மேய்ப்பராயிருக்கிறார்)</option>
+                        </select>
+                        <button type="button" onclick="submitScripturePopular()" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <span>📖 Read</span>
+                        </button>
+                    </div>
+
+                    <!-- Custom Book + Chapter Dropdowns -->
+                    <div id="scripture-cust-container" class="hidden grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <select id="select-bible-book" onchange="updateChapterOptions('scripture')" class="sm:col-span-6 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-2.5 py-2 text-stone-800 dark:text-stone-200 focus:outline-none">
+                            <!-- Populated via JavaScript from books_json -->
+                        </select>
+                        <select id="select-bible-chapter" class="sm:col-span-3 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-2.5 py-2 text-stone-800 dark:text-stone-200 focus:outline-none">
+                            <option value="1">Chapter 1</option>
+                        </select>
+                        <button type="button" onclick="submitScriptureCustom()" class="sm:col-span-3 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>📖 Read</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 2: Audio Bible -->
+                <div id="panel-audio" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">Select chapter audio clip (Edge Neural TTS + FastStart M4A):</div>
+                    <div class="flex gap-2">
+                        <select id="select-audio-passage" class="flex-1 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-600">
+                            <option value="audio John 1">audio John 1 (In the beginning was the Word)</option>
+                            <option value="audio Psalm 23">audio Psalm 23 (The Lord is my shepherd)</option>
+                            <option value="audio Romans 8">audio Romans 8 (Life in the Spirit)</option>
+                            <option value="audio Genesis 1">audio Genesis 1 (The Creation)</option>
+                            <option value="audio Matthew 5">audio Matthew 5 (The Sermon on the Mount)</option>
+                            <option value="audio John 3:1-16">audio John 3:1-16 (Nicodemus &amp; Verse 16)</option>
+                            <option value="audio Psalm 91">audio Psalm 91 (God our Protector)</option>
+                            <option value="audio 1 John 1">audio 1 John 1 (Numbered Book: Word of Life)</option>
+                            <option value="audio யோவான் 1">audio யோவான் 1 (தமிழ் குரல் பதிவு)</option>
+                            <option value="audio சங்கீதம் 23">audio சங்கீதம் 23 (தமிழ் குரல் பதிவு)</option>
+                        </select>
+                        <button type="button" onclick="sendSimCommand(document.getElementById('select-audio-passage').value)" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <span>🎧 Listen</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 3: Scripture Search -->
+                <div id="panel-search" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">Select a biblical topic to search across both canons:</div>
+                    <div class="flex gap-2">
+                        <select id="select-search-theme" class="flex-1 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-600">
+                            <option value="search faith">Faith / விசுவாசம் (search faith)</option>
+                            <option value="search love">Love / அன்பு (search love)</option>
+                            <option value="search grace">Grace / கிருபை (search grace)</option>
+                            <option value="search peace">Peace / சமாதானம் (search peace)</option>
+                            <option value="search hope">Hope / நம்பிக்கை (search hope)</option>
+                            <option value="search joy">Joy / மகிழ்ச்சி (search joy)</option>
+                            <option value="search prayer">Prayer / ஜெபம் (search prayer)</option>
+                            <option value="search salvation">Salvation / இரட்சிப்பு (search salvation)</option>
+                            <option value="search forgiveness">Forgiveness / மன்னிப்பு (search forgiveness)</option>
+                            <option value="search strength">Strength / பெலன் (search strength)</option>
+                            <option value="search healing">Healing / சுகம் (search healing)</option>
+                            <option value="search wisdom">Wisdom / ஞானம் (search wisdom)</option>
+                            <option value="search comfort">Comfort / ஆறுதல் (search comfort)</option>
+                            <option value="search eternal life">Eternal Life / நித்திய ஜீவன் (search eternal life)</option>
+                            <option value="search holy spirit">Holy Spirit / பரிசுத்த ஆவி (search holy spirit)</option>
+                            <option value="search அன்பு">தமிழ்: அன்பு (search அன்பு)</option>
+                            <option value="search விசுவாசம்">தமிழ்: விசுவாசம் (search விசுவாசம்)</option>
+                            <option value="search சமாதானம்">தமிழ்: சமாதானம் (search சமாதானம்)</option>
+                        </select>
+                        <button type="button" onclick="sendSimCommand(document.getElementById('select-search-theme').value)" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <span>🔍 Search</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 4: Daily Bible Quiz -->
+                <div id="panel-quiz" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">1-Click Trivia Control (Start quiz and select answer 1, 2, 3, or 4):</div>
+                    <div class="grid grid-cols-2 sm:grid-cols-6 gap-1.5">
+                        <button type="button" onclick="sendSimCommand('quiz')" class="col-span-2 px-3 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>🎯 Start Quiz</span>
+                        </button>
+                        <button type="button" onclick="sendSimCommand('1')" class="px-2 py-2 bg-white dark:bg-stone-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 font-bold rounded-xl text-xs transition cursor-pointer">1️⃣ Choice 1</button>
+                        <button type="button" onclick="sendSimCommand('2')" class="px-2 py-2 bg-white dark:bg-stone-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 font-bold rounded-xl text-xs transition cursor-pointer">2️⃣ Choice 2</button>
+                        <button type="button" onclick="sendSimCommand('3')" class="px-2 py-2 bg-white dark:bg-stone-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 font-bold rounded-xl text-xs transition cursor-pointer">3️⃣ Choice 3</button>
+                        <button type="button" onclick="sendSimCommand('4')" class="px-2 py-2 bg-white dark:bg-stone-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 font-bold rounded-xl text-xs transition cursor-pointer">4️⃣ Choice 4</button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 5: Daily Devotional & Reminders -->
+                <div id="panel-reminder" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">Subscribe or select daily devotional reminder time:</div>
+                    <div class="flex gap-2">
+                        <select id="select-reminder-action" class="flex-1 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-600">
+                            <option value="subscribe">Subscribe to Daily Verses (Default 5:00 AM IST) (subscribe)</option>
+                            <option value="remind 5 AM">Morning 5:00 AM Reminder (remind 5 AM)</option>
+                            <option value="remind 6 AM">Morning 6:00 AM Reminder (remind 6 AM)</option>
+                            <option value="remind 6:30 AM">Morning 6:30 AM Reminder (remind 6:30 AM)</option>
+                            <option value="remind 7 AM">Morning 7:00 AM Reminder (remind 7 AM)</option>
+                            <option value="remind 8 AM">Morning 8:00 AM Reminder (remind 8 AM)</option>
+                            <option value="remind 18:30">Evening 6:30 PM Reminder (remind 18:30)</option>
+                            <option value="remind 21:00">Night 9:00 PM Reminder (remind 21:00)</option>
+                            <option value="remind">Check Current Reminder Status (remind)</option>
+                            <option value="stop">Unsubscribe / Stop Reminders (stop)</option>
+                        </select>
+                        <button type="button" onclick="sendSimCommand(document.getElementById('select-reminder-action').value)" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <span>🔔 Apply</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 6: Christian Songs & Hymns -->
+                <div id="panel-songs" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">Select song title or hymnal number:</div>
+                    <div class="flex gap-2">
+                        <select id="select-song-item" class="flex-1 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-600">
+                            <option value="song 2281">Song 2281: என்ன என் ஆனந்தம் (Enna En Anandham)</option>
+                            <option value="song Amazing Grace">Amazing Grace (அற்புத கிருபை)</option>
+                            <option value="song How Great Thou Art">How Great Thou Art (எத்தனை பெரியவர்)</option>
+                            <option value="song What a Friend">What a Friend We Have in Jesus</option>
+                            <option value="song Blessed Assurance">Blessed Assurance (பாக்கிய நிச்சயம்)</option>
+                            <option value="song Rock of Ages">Rock of Ages (பிளந்த கண்மலையே)</option>
+                            <option value="song It Is Well">It Is Well With My Soul</option>
+                            <option value="song 100">Song 100</option>
+                            <option value="song 500">Song 500</option>
+                            <option value="song 1000">Song 1000</option>
+                            <option value="song 2000">Song 2000</option>
+                        </select>
+                        <button type="button" onclick="sendSimCommand(document.getElementById('select-song-item').value)" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <span>🎵 Fetch</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 7: Full Bible Reading Plans -->
+                <div id="panel-plans" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">Select reading plan, portion, or day lookup:</div>
+                    <div class="flex gap-2">
+                        <select id="select-plan-item" class="flex-1 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-600">
+                            <option value="plan">Today's Assigned Reading (plan)</option>
+                            <option value="plan full">Full Bible in 365 Days (~3.2 ch/day) (plan full)</option>
+                            <option value="plan nt">New Testament in 90 Days (~2.9 ch/day) (plan nt)</option>
+                            <option value="plan proverbs">Proverbs in 31 Days (1 ch/day) (plan proverbs)</option>
+                            <option value="plan psalms">Psalms of Comfort in 30 Days (plan psalms)</option>
+                            <option value="plan deuterocanon">Deuterocanonical Books in 30 Days (plan deuterocanon)</option>
+                            <option value="plan 1">Day 1 Reading (plan 1)</option>
+                            <option value="plan 50">Day 50 Reading (plan 50)</option>
+                            <option value="plan 100">Day 100 Reading (plan 100)</option>
+                            <option value="plan 365">Day 365 Final Day (plan 365)</option>
+                            <option value="திட்டம்">தமிழ்: இன்றைய வாசிப்புத் திட்டம் (திட்டம்)</option>
+                        </select>
+                        <button type="button" onclick="sendSimCommand(document.getElementById('select-plan-item').value)" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <span>📅 View</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 8: Habit Streak & Mark as Done -->
+                <div id="panel-streak" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">1-Click reading habit streak tracking:</div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button type="button" onclick="sendSimCommand('done')" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>✅ Mark Done</span>
+                        </button>
+                        <button type="button" onclick="sendSimCommand('streak')" class="px-3 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>🔥 View Streak</span>
+                        </button>
+                        <button type="button" onclick="sendSimCommand('progress')" class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>📊 Progress Bar</span>
+                        </button>
+                        <button type="button" onclick="sendSimCommand('முடித்தேன்')" class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>🇮🇳 முடித்தேன்</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 9: Status Image Card -->
+                <div id="panel-card" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">Select verse to generate 1080x1080 graphic status card:</div>
+                    <div class="flex gap-2">
+                        <select id="select-card-passage" class="flex-1 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-600">
+                            <option value="card">Today's Verse Status Card (card)</option>
+                            <option value="card John 3:16">John 3:16 Status Card (card John 3:16)</option>
+                            <option value="card Psalm 23">Psalm 23 Status Card (card Psalm 23)</option>
+                            <option value="card Romans 8:28">Romans 8:28 Status Card (card Romans 8:28)</option>
+                            <option value="card Philippians 4:13">Philippians 4:13 Status Card (card Philippians 4:13)</option>
+                            <option value="card Isaiah 40:31">Isaiah 40:31 Status Card (card Isaiah 40:31)</option>
+                            <option value="card Tobit 4:7">Tobit 4:7 Status Card (Catholic Canon) (card Tobit 4:7)</option>
+                            <option value="card யோவான் 3:16">தமிழ்: யோவான் 3:16 அட்டை (card யோவான் 3:16)</option>
+                            <option value="படம்">தமிழ்: இன்றைய வசனப் படம் (படம்)</option>
+                        </select>
+                        <button type="button" onclick="sendSimCommand(document.getElementById('select-card-passage').value)" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <span>🖼️ Generate</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 10: Bilingual Parallel Mode -->
+                <div id="panel-language" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">Select language presentation mode:</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <button type="button" onclick="sendSimCommand('lang both')" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>🌐 Parallel (Both)</span>
+                        </button>
+                        <button type="button" onclick="sendSimCommand('lang ta')" class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>🇮🇳 Tamil Only</span>
+                        </button>
+                        <button type="button" onclick="sendSimCommand('lang en')" class="px-3 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>🇬🇧 English Only</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 11: Web Bible Magic Sync -->
+                <div id="panel-sync" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">Connect your WhatsApp habit streak to the Web Bible portal:</div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <button type="button" onclick="sendSimCommand('sync')" class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                            <span>🔑 Request 15-Minute Sync Code</span>
+                        </button>
+                        <a href="/sync" class="px-4 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1">
+                            <span>🔗 Open /sync Portal</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Sub-Panel 12: Main Bot Menu & Help -->
+                <div id="panel-menu" class="service-panel hidden space-y-2 pt-1 border-t border-amber-100 dark:border-stone-800">
+                    <div class="text-[11px] text-stone-500">Show complete 11-option WhatsApp bot menu:</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button type="button" onclick="sendSimCommand('help')" class="px-3 py-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>📋 Main Menu (English)</span>
+                        </button>
+                        <button type="button" onclick="sendSimCommand('வணக்கம்')" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
+                            <span>🕊️ முதன்மைப் பட்டி (தமிழ்)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reduced / Collapsible Manual Input Bar (For optional custom typing only) -->
+                <div class="pt-2 border-t border-stone-200/60 dark:border-stone-800">
+                    <div class="flex items-center justify-between text-[10px] text-stone-400 mb-1">
+                        <span>Or type custom command if required:</span>
+                        <span class="text-stone-400">Press Enter or ➤</span>
+                    </div>
+                    <form onsubmit="handleSimulatorSubmit(event)" class="flex gap-2">
+                        <input id="sim-input" type="text" placeholder="Type custom command or passage..."
+                               class="flex-1 text-xs bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-amber-700">
+                        <button type="submit" id="btn-sim-send" class="px-4 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <span>Send</span> <span>➤</span>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
         </div>
 
-        <!-- Right: Commands & Capabilities Guide (5 Cols) -->
+        <!-- Right: Commands & Capabilities Guide (5 Cols) with 100% Clickable Interactive Badges -->
         <div class="lg:col-span-5 space-y-4">
             
             <div class="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-5 shadow-sm">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-stone-800 dark:text-stone-200 mb-3 flex items-center gap-1.5">
-                    <span>📖</span> Available Commands Reference
-                </h2>
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                        <span>📖</span> Available Services (1-Click)
+                    </h2>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-semibold">Tap to Run</span>
+                </div>
                 
                 <div class="space-y-3 text-xs">
-                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-                        <div class="font-bold text-stone-900 dark:text-stone-100">Scripture Citations</div>
-                        <div class="text-stone-500 mt-0.5">Send book, chapter, and verses:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">John 3:16 • Psalm 23 • Tobit 4:7 • யோவான் 3:16</div>
-                    </div>
-
-                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-                        <div class="font-bold text-stone-900 dark:text-stone-100">Daily Bible Quiz</div>
-                        <div class="text-stone-500 mt-0.5">Interactive trivia with 1-4 options:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">quiz • trivia • வினாடி</div>
-                    </div>
-
-                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-                        <div class="font-bold text-stone-900 dark:text-stone-100">Scripture Keyword Search</div>
-                        <div class="text-stone-500 mt-0.5">Search across Catholic & Protestant verses:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">search faith • search love • find peace</div>
-                    </div>
-
-                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-                        <div class="font-bold text-stone-900 dark:text-stone-100">Christian Songs & Hymn Lyrics</div>
-                        <div class="text-stone-500 mt-0.5">Lookup lyrics by title or hymn number:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">song 2281 • song Amazing Grace</div>
-                    </div>
-
-                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-                        <div class="font-bold text-stone-900 dark:text-stone-100">Full Bible Reading Plans</div>
-                        <div class="text-stone-500 mt-0.5">Explore 365-day whole Bible & 90-day New Testament schedules:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">plan • plan full • plan nt • plan 50</div>
-                    </div>
-
-                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-                        <div class="font-bold text-stone-900 dark:text-stone-100">Daily Devotional & Reminder (Default 5:00 AM)</div>
-                        <div class="text-stone-500 mt-0.5">Subscribe or set custom morning verse reminder time:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">subscribe • remind • remind 5 AM • remind 6:30 AM • stop</div>
-                    </div>
-
-                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-                        <div class="font-bold text-stone-900 dark:text-stone-100">Audio Scripture Clips</div>
-                        <div class="text-stone-500 mt-0.5">Listen to chapter audio notes:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">audio John 1 • listen Psalm 23</div>
-                    </div>
-
-                    <div class="p-2.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40">
-                        <div class="font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
-                            <span>🔥</span> <span>Reading Habit Streaks &amp; Done</span>
+                    
+                    <!-- 1. Scripture Citations -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-1.5">
+                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                            <span>1. Scripture Citations</span>
+                            <span class="text-[10px] text-stone-400">Protestant &amp; Catholic</span>
                         </div>
-                        <div class="text-stone-500 mt-0.5">Mark daily reading completed &amp; check streak count:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">done • streak • progress • முடித்தேன்</div>
+                        <div class="text-stone-500 text-[11px]">Instant chapter and verse reader:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('John 3:16')" class="cmd-pill">John 3:16</button>
+                            <button type="button" onclick="sendSimCommand('Psalm 23')" class="cmd-pill">Psalm 23</button>
+                            <button type="button" onclick="sendSimCommand('Tobit 4:7')" class="cmd-pill">Tobit 4:7</button>
+                            <button type="button" onclick="sendSimCommand('யோவான் 3:16')" class="cmd-pill">யோவான் 3:16</button>
+                        </div>
                     </div>
 
-                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
-                            <span>🖼️</span> <span>Status Image Card Generator</span>
+                    <!-- 2. Audio Bible -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-1.5">
+                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                            <span>2. Audio Scripture Clips</span>
+                            <span class="text-[10px] text-stone-400">Neural TTS Voice Notes</span>
                         </div>
-                        <div class="text-stone-500 mt-0.5">Get 1080x1080 graphic card for WhatsApp Status:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">card • image • status • படம்</div>
+                        <div class="text-stone-500 text-[11px]">Spoken audio chapters in M4A container:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('audio John 1')" class="cmd-pill">audio John 1</button>
+                            <button type="button" onclick="sendSimCommand('audio Psalm 23')" class="cmd-pill">audio Psalm 23</button>
+                            <button type="button" onclick="sendSimCommand('audio 1 John 1')" class="cmd-pill">audio 1 John 1</button>
+                            <button type="button" onclick="sendSimCommand('audio யோவான் 1')" class="cmd-pill">audio யோவான் 1</button>
+                        </div>
                     </div>
 
-                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
-                            <span>🌐</span> <span>Bilingual Parallel Mode</span>
+                    <!-- 3. Scripture Keyword Search -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-1.5">
+                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                            <span>3. Scripture Keyword Search</span>
+                            <span class="text-[10px] text-stone-400">Dual-Canon Query</span>
                         </div>
-                        <div class="text-stone-500 mt-0.5">Toggle parallel Tamil + English side-by-side verses:</div>
-                        <div class="font-mono text-[11px] text-amber-700 dark:text-amber-400 mt-1">lang both • parallel • lang en • lang ta</div>
+                        <div class="text-stone-500 text-[11px]">Search Old &amp; New Testament verses by theme:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('search faith')" class="cmd-pill">search faith</button>
+                            <button type="button" onclick="sendSimCommand('search love')" class="cmd-pill">search love</button>
+                            <button type="button" onclick="sendSimCommand('search grace')" class="cmd-pill">search grace</button>
+                            <button type="button" onclick="sendSimCommand('search அன்பு')" class="cmd-pill">search அன்பு</button>
+                        </div>
                     </div>
 
-                    <div class="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40">
-                        <div class="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
-                            <span>📱</span> <span>Web Bible 15-Min Magic Sync</span>
+                    <!-- 4. Daily Bible Quiz -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-1.5">
+                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                            <span>4. Daily Bible Quiz</span>
+                            <span class="text-[10px] text-stone-400">4-Choice Trivia</span>
                         </div>
-                        <div class="text-stone-500 mt-0.5">Connect streak &amp; plan with the Web Bible portal:</div>
-                        <div class="font-mono text-[11px] text-emerald-700 dark:text-emerald-400 mt-1">sync • link • இணைப்பு • visit <a href="/sync" class="underline">/sync</a></div>
+                        <div class="text-stone-500 text-[11px]">Interactive questions with instant grading:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('quiz')" class="cmd-pill">quiz</button>
+                            <button type="button" onclick="sendSimCommand('trivia')" class="cmd-pill">trivia</button>
+                            <button type="button" onclick="sendSimCommand('வினாடி')" class="cmd-pill">வினாடி</button>
+                        </div>
                     </div>
+
+                    <!-- 5. Devotionals & Reminder Time -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-1.5">
+                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                            <span>5. Devotionals &amp; Reminder Time</span>
+                            <span class="text-[10px] text-stone-400">Default 5:00 AM</span>
+                        </div>
+                        <div class="text-stone-500 text-[11px]">Subscribe or configure morning dispatch time:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('subscribe')" class="cmd-pill">subscribe</button>
+                            <button type="button" onclick="sendSimCommand('remind')" class="cmd-pill">remind</button>
+                            <button type="button" onclick="sendSimCommand('remind 5 AM')" class="cmd-pill">remind 5 AM</button>
+                            <button type="button" onclick="sendSimCommand('remind 6:30 AM')" class="cmd-pill">remind 6:30 AM</button>
+                            <button type="button" onclick="sendSimCommand('stop')" class="cmd-pill text-rose-700 dark:text-rose-400">stop</button>
+                        </div>
+                    </div>
+
+                    <!-- 6. Christian Songs & Hymns -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-1.5">
+                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                            <span>6. Christian Songs &amp; Hymn Lyrics</span>
+                            <span class="text-[10px] text-stone-400">Decoupled DB</span>
+                        </div>
+                        <div class="text-stone-500 text-[11px]">Retrieve lyrics by title or hymn number:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('song 2281')" class="cmd-pill">song 2281</button>
+                            <button type="button" onclick="sendSimCommand('song Amazing Grace')" class="cmd-pill">song Amazing Grace</button>
+                            <button type="button" onclick="sendSimCommand('song How Great Thou Art')" class="cmd-pill">song How Great</button>
+                        </div>
+                    </div>
+
+                    <!-- 7. Full Bible Reading Plans -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-1.5">
+                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                            <span>7. Full Bible Reading Plans</span>
+                            <span class="text-[10px] text-stone-400">Whole Bible &amp; NT</span>
+                        </div>
+                        <div class="text-stone-500 text-[11px]">365-day whole Bible &amp; 90-day New Testament:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('plan')" class="cmd-pill">plan</button>
+                            <button type="button" onclick="sendSimCommand('plan full')" class="cmd-pill">plan full</button>
+                            <button type="button" onclick="sendSimCommand('plan nt')" class="cmd-pill">plan nt</button>
+                            <button type="button" onclick="sendSimCommand('plan 50')" class="cmd-pill">plan 50</button>
+                        </div>
+                    </div>
+
+                    <!-- 8. Habit Streak & Done -->
+                    <div class="p-2.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 space-y-1.5">
+                        <div class="font-bold text-amber-900 dark:text-amber-300 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5"><span>🔥</span> <span>8. Habit Streaks &amp; Done</span></span>
+                            <span class="text-[10px] text-amber-700 dark:text-amber-400">Milestones</span>
+                        </div>
+                        <div class="text-stone-500 text-[11px]">Mark daily reading complete &amp; check streak count:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('done')" class="cmd-pill-gold">done</button>
+                            <button type="button" onclick="sendSimCommand('streak')" class="cmd-pill-gold">streak</button>
+                            <button type="button" onclick="sendSimCommand('progress')" class="cmd-pill-gold">progress</button>
+                            <button type="button" onclick="sendSimCommand('முடித்தேன்')" class="cmd-pill-gold">முடித்தேன்</button>
+                        </div>
+                    </div>
+
+                    <!-- 9. Status Image Card -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-1.5">
+                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5"><span>🖼️</span> <span>9. Status Card Generator</span></span>
+                            <span class="text-[10px] text-stone-400">1080x1080</span>
+                        </div>
+                        <div class="text-stone-500 text-[11px]">Gold-bordered cards for WhatsApp Status:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('card')" class="cmd-pill">card</button>
+                            <button type="button" onclick="sendSimCommand('card John 3:16')" class="cmd-pill">card John 3:16</button>
+                            <button type="button" onclick="sendSimCommand('image')" class="cmd-pill">image</button>
+                            <button type="button" onclick="sendSimCommand('படம்')" class="cmd-pill">படம்</button>
+                        </div>
+                    </div>
+
+                    <!-- 10. Bilingual Parallel Mode -->
+                    <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-1.5">
+                        <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5"><span>🌐</span> <span>10. Bilingual Parallel Mode</span></span>
+                            <span class="text-[10px] text-stone-400">Tamil + English</span>
+                        </div>
+                        <div class="text-stone-500 text-[11px]">Side-by-side parallel verses:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('lang both')" class="cmd-pill">lang both</button>
+                            <button type="button" onclick="sendSimCommand('parallel')" class="cmd-pill">parallel</button>
+                            <button type="button" onclick="sendSimCommand('lang en')" class="cmd-pill">lang en</button>
+                            <button type="button" onclick="sendSimCommand('lang ta')" class="cmd-pill">lang ta</button>
+                        </div>
+                    </div>
+
+                    <!-- 11. Web Bible Sync -->
+                    <div class="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 space-y-1.5">
+                        <div class="font-bold text-emerald-900 dark:text-emerald-300 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5"><span>📱</span> <span>11. Web Bible Magic Sync</span></span>
+                            <span class="text-[10px] text-emerald-700 dark:text-emerald-400">15-Minute Code</span>
+                        </div>
+                        <div class="text-stone-500 text-[11px]">Connect streak &amp; plan with Web Bible reader:</div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            <button type="button" onclick="sendSimCommand('sync')" class="cmd-pill-emerald">sync</button>
+                            <button type="button" onclick="sendSimCommand('link')" class="cmd-pill-emerald">link</button>
+                            <button type="button" onclick="sendSimCommand('இணைப்பு')" class="cmd-pill-emerald">இணைப்பு</button>
+                            <a href="/sync" class="cmd-pill-emerald underline">visit /sync</a>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -233,25 +665,231 @@
 
 </div>
 
-<!-- Interactive Simulator JavaScript -->
-<script>
-    var SIM_SENDER_JID = "web-simulator@s.whatsapp.net";
+<!-- Embed serialized Bible books metadata for instant client-side dropdown resolution -->
+<script id="bible-books-data" type="application/json">
+{{ books_json | default("[]") | safe }}
+</script>
 
-    function setSimInput(cmd) {
-        document.getElementById("sim-input").value = cmd;
-        document.getElementById("sim-input").focus();
+<style>
+    /* Styling for 1-click command pills */
+    .cmd-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.5rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11px;
+        font-weight: 600;
+        background-color: rgba(245, 245, 244, 0.9);
+        color: #78350f;
+        border: 1px solid #e7e5e4;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+    }
+    .dark .cmd-pill {
+        background-color: rgba(41, 37, 36, 0.7);
+        color: #fbbf24;
+        border-color: #44403c;
+    }
+    .cmd-pill:hover {
+        background-color: #fef3c7;
+        border-color: #f59e0b;
+        transform: translateY(-1px);
+    }
+    .dark .cmd-pill:hover {
+        background-color: rgba(120, 53, 15, 0.4);
+        border-color: #d97706;
     }
 
+    .cmd-pill-gold {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.5rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11px;
+        font-weight: bold;
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fcd34d;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+    }
+    .dark .cmd-pill-gold {
+        background-color: rgba(120, 53, 15, 0.4);
+        color: #fde68a;
+        border-color: #b45309;
+    }
+    .cmd-pill-gold:hover {
+        background-color: #fde68a;
+        transform: translateY(-1px);
+    }
+
+    .cmd-pill-emerald {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.5rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11px;
+        font-weight: bold;
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+    }
+    .dark .cmd-pill-emerald {
+        background-color: rgba(6, 78, 59, 0.4);
+        color: #6ee7b7;
+        border-color: #047857;
+    }
+    .cmd-pill-emerald:hover {
+        background-color: #a7f3d0;
+        transform: translateY(-1px);
+    }
+</style>
+
+<!-- Interactive Simulator & WhatsApp Services JavaScript -->
+<script>
+    var SIM_SENDER_JID = "web-simulator@s.whatsapp.net";
+    var RAW_BOOKS_DATA = [];
+
+    try {
+        var el = document.getElementById("bible-books-data");
+        if (el && el.textContent) {
+            RAW_BOOKS_DATA = JSON.parse(el.textContent);
+        }
+    } catch(e) {
+        console.warn("Could not parse bible books data:", e);
+    }
+
+    // Default book list fallback if json unavailable
+    if (!RAW_BOOKS_DATA || RAW_BOOKS_DATA.length === 0) {
+        RAW_BOOKS_DATA = [
+            {id: 1, en: "Genesis", ta: "ஆதியாகமம்", chapters: 50},
+            {id: 2, en: "Exodus", ta: "யாத்திராகமம்", chapters: 40},
+            {id: 19, en: "Psalms", ta: "சங்கீதம்", chapters: 150},
+            {id: 20, en: "Proverbs", ta: "நீதிமொழிகள்", chapters: 31},
+            {id: 40, en: "Matthew", ta: "மத்தேயு", chapters: 28},
+            {id: 43, en: "John", ta: "யோவான்", chapters: 21},
+            {id: 45, en: "Romans", ta: "ரோமர்", chapters: 16},
+            {id: 50, en: "Philippians", ta: "பிலிப்பியர்", chapters: 4},
+            {id: 66, en: "Revelation", ta: "வெளிப்படுத்தின விசேஷம்", chapters: 22},
+            {id: 67, en: "Tobit", ta: "தோபித்து", chapters: 14}
+        ];
+    }
+
+    // Initialize Book Select Options
+    function populateBookSelect() {
+        var bookSelect = document.getElementById("select-bible-book");
+        if (!bookSelect) return;
+        bookSelect.innerHTML = "";
+        RAW_BOOKS_DATA.forEach(function(b) {
+            var opt = document.createElement("option");
+            opt.value = b.en;
+            opt.textContent = `${b.en} (${b.ta})`;
+            if (b.en === "John") opt.selected = true;
+            bookSelect.appendChild(opt);
+        });
+        updateChapterOptions("scripture");
+    }
+
+    // Update chapter options when book changes
+    function updateChapterOptions(mode) {
+        var bookSelect = document.getElementById("select-bible-book");
+        var chSelect = document.getElementById("select-bible-chapter");
+        if (!bookSelect || !chSelect) return;
+
+        var bookName = bookSelect.value;
+        var bookObj = RAW_BOOKS_DATA.find(function(b) { return b.en === bookName; });
+        var totalCh = (bookObj && bookObj.chapters) ? bookObj.chapters : 50;
+
+        chSelect.innerHTML = "";
+        for (var c = 1; c <= totalCh; c++) {
+            var opt = document.createElement("option");
+            opt.value = c;
+            opt.textContent = `Chapter ${c}`;
+            if (c === 3 && bookName === "John") opt.selected = true;
+            chSelect.appendChild(opt);
+        }
+    }
+
+    // Switch active service panel
+    function switchService(serviceName) {
+        var panels = document.querySelectorAll(".service-panel");
+        panels.forEach(function(p) { p.classList.add("hidden"); });
+
+        var target = document.getElementById("panel-" + serviceName);
+        if (target) {
+            target.classList.remove("hidden");
+        }
+    }
+
+    // Toggle Scripture Popular vs Custom mode
+    function setScriptureMode(mode) {
+        var popContainer = document.getElementById("scripture-pop-container");
+        var custContainer = document.getElementById("scripture-cust-container");
+        var btnPop = document.getElementById("btn-mode-pop");
+        var btnCust = document.getElementById("btn-mode-cust");
+
+        if (mode === "popular") {
+            popContainer.classList.remove("hidden");
+            custContainer.classList.add("hidden");
+            btnPop.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200";
+            btnCust.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300";
+        } else {
+            popContainer.classList.add("hidden");
+            custContainer.classList.remove("hidden");
+            btnCust.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200";
+            btnPop.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300";
+        }
+    }
+
+    // 1-Click submit popular scripture
+    function submitScripturePopular() {
+        var sel = document.getElementById("select-pop-passage");
+        if (sel && sel.value) {
+            sendSimCommand(sel.value);
+        }
+    }
+
+    // 1-Click submit custom scripture
+    function submitScriptureCustom() {
+        var book = document.getElementById("select-bible-book").value;
+        var ch = document.getElementById("select-bible-chapter").value;
+        sendSimCommand(`${book} ${ch}`);
+    }
+
+    // Pre-fill input (compatibility)
+    function setSimInput(cmd) {
+        var input = document.getElementById("sim-input");
+        if (input) {
+            input.value = cmd;
+            input.focus();
+        }
+    }
+
+    // Primary 1-Click execution without typing
+    function sendSimCommand(cmd) {
+        if (!cmd) return;
+        var input = document.getElementById("sim-input");
+        if (input) input.value = cmd;
+        executeSimCommand(cmd);
+    }
+
+    // Clear chat history
     function clearSimulator() {
         var win = document.getElementById("sim-chat-window");
         win.innerHTML = `
-            <div class="flex items-start gap-2 max-w-[85%]">
+            <div class="flex items-start gap-2 max-w-[90%]">
                 <div class="bg-white dark:bg-[#202C33] text-stone-800 dark:text-stone-100 p-3 rounded-2xl rounded-tl-none shadow-xs space-y-1">
                     <div class="font-bold text-[11px] text-emerald-700 dark:text-emerald-400">🕊️ Holy Bible Bot</div>
-                    <div class="whitespace-pre-wrap leading-relaxed">Chat history cleared. Type any scripture or command to begin!</div>
+                    <div class="whitespace-pre-wrap leading-relaxed">Chat history cleared. Select any service from the dropdown above to begin!</div>
                 </div>
             </div>
         `;
+        resetContextDock();
     }
 
     function formatWhatsAppMarkdown(raw) {
@@ -261,8 +899,8 @@
         esc = esc.replace(/\*([^\*]+)\*/g, '<strong>$1</strong>');
         // Italics: _text_ -> <em>text</em>
         esc = esc.replace(/_([^_]+)_/g, '<em>$1</em>');
-        // Monospace: `text` -> <code>text</code>
-        esc = esc.replace(/`([^`]+)`/g, '<code class="bg-stone-200 dark:bg-stone-700 px-1 py-0.5 rounded text-[11px] font-mono">$1</code>');
+        // Monospace: `text` -> <code ...>$1</code>
+        esc = esc.replace(/`([^`]+)`/g, '<code class="bg-stone-200 dark:bg-stone-700 px-1 py-0.5 rounded text-[11px] font-mono cursor-pointer hover:bg-amber-200 transition" onclick="sendSimCommand(\'$1\')">$1</code>');
         return esc;
     }
 
@@ -273,7 +911,7 @@
         div.className = "flex justify-end";
         div.innerHTML = `
             <div class="bg-[#D9FDD3] dark:bg-[#005C4B] text-stone-900 dark:text-stone-100 p-3 rounded-2xl rounded-tr-none shadow-xs max-w-[85%] space-y-1">
-                <div class="whitespace-pre-wrap leading-relaxed">${formatWhatsAppMarkdown(text)}</div>
+                <div class="whitespace-pre-wrap leading-relaxed font-medium">${formatWhatsAppMarkdown(text)}</div>
                 <div class="text-[9px] text-stone-400 dark:text-stone-300 text-right">${time} ✓✓</div>
             </div>
         `;
@@ -281,27 +919,70 @@
         win.scrollTop = win.scrollHeight;
     }
 
+    // Enhance bot bubble with interactive action buttons for options & quizzes
     function appendBotBubble(text, mediaType) {
         var win = document.getElementById("sim-chat-window");
         var time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         var div = document.createElement("div");
-        div.className = "flex items-start gap-2 max-w-[85%]";
+        div.className = "flex items-start gap-2 max-w-[90%]";
         
         var mediaHtml = "";
-        if (mediaType === "audio") {
+        if (mediaType === "audio" || (text && text.includes("Voice note sent"))) {
             mediaHtml = `
-                <div class="flex items-center gap-2 p-2 bg-stone-100 dark:bg-stone-800 rounded-xl mb-1 text-[11px]">
-                    <span>▶️ Voice Note Clip</span>
-                    <span class="text-stone-400">0:15</span>
+                <div class="flex items-center gap-2 p-2.5 bg-stone-100 dark:bg-stone-800 rounded-xl mb-1 text-[11px] border border-stone-200 dark:border-stone-700">
+                    <span class="text-base">▶️</span>
+                    <div class="flex-1">
+                        <div class="font-bold text-stone-800 dark:text-stone-200">Spoken Chapter Voice Note</div>
+                        <div class="text-[10px] text-stone-500">FastStart M4A • Edge Neural Speech</div>
+                    </div>
                 </div>
             `;
         }
 
+        // Detect if reply contains quiz options (1-4) or main menu (1-11)
+        var interactiveChips = "";
+        var isQuiz = (text && (text.includes("Question") || text.includes("வினா") || text.includes("1)") || text.includes("A)")));
+        var isMenu = (text && (text.includes("Options Available") || text.includes("கட்டளையை அனுப்பவும்") || text.includes("Welcome to Holy Bible WhatsApp")));
+
+        if (isQuiz) {
+            interactiveChips = `
+                <div class="pt-2 mt-2 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center gap-1.5">
+                    <span class="text-[10px] text-stone-400 font-semibold">Select Answer:</span>
+                    <button type="button" onclick="sendSimCommand('1')" class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-700 transition">1️⃣ Option 1</button>
+                    <button type="button" onclick="sendSimCommand('2')" class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-700 transition">2️⃣ Option 2</button>
+                    <button type="button" onclick="sendSimCommand('3')" class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-700 transition">3️⃣ Option 3</button>
+                    <button type="button" onclick="sendSimCommand('4')" class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-700 transition">4️⃣ Option 4</button>
+                </div>
+            `;
+            updateContextDockForQuiz();
+        } else if (isMenu) {
+            interactiveChips = `
+                <div class="pt-2 mt-2 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center gap-1.5">
+                    <span class="text-[10px] text-stone-400 font-semibold">Select Service (1-11):</span>
+                    <button type="button" onclick="sendSimCommand('1')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">1. Scripture</button>
+                    <button type="button" onclick="sendSimCommand('2')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">2. Audio</button>
+                    <button type="button" onclick="sendSimCommand('3')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">3. Search</button>
+                    <button type="button" onclick="sendSimCommand('4')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">4. Quiz</button>
+                    <button type="button" onclick="sendSimCommand('5')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">5. Devotional</button>
+                    <button type="button" onclick="sendSimCommand('6')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">6. Songs</button>
+                    <button type="button" onclick="sendSimCommand('7')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">7. Plan</button>
+                    <button type="button" onclick="sendSimCommand('8')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">8. Streak</button>
+                    <button type="button" onclick="sendSimCommand('9')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">9. Card</button>
+                    <button type="button" onclick="sendSimCommand('10')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">10. Parallel</button>
+                    <button type="button" onclick="sendSimCommand('11')" class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-700 hover:bg-amber-100 text-stone-800 dark:text-stone-200 font-bold text-[10px]">11. Sync</button>
+                </div>
+            `;
+            resetContextDock();
+        } else if (text && (text.includes("Chapter") || text.includes("Verses") || text.includes("Day") || text.includes("Plan"))) {
+            updateContextDockForReading();
+        }
+
         div.innerHTML = `
-            <div class="bg-white dark:bg-[#202C33] text-stone-800 dark:text-stone-100 p-3 rounded-2xl rounded-tl-none shadow-xs space-y-1">
+            <div class="bg-white dark:bg-[#202C33] text-stone-800 dark:text-stone-100 p-3.5 rounded-2xl rounded-tl-none shadow-xs space-y-1.5 w-full">
                 <div class="font-bold text-[11px] text-emerald-700 dark:text-emerald-400">🕊️ Holy Bible Bot</div>
                 ${mediaHtml}
                 <div class="whitespace-pre-wrap leading-relaxed">${formatWhatsAppMarkdown(text)}</div>
+                ${interactiveChips}
                 <div class="text-[9px] text-stone-400 text-right">${time}</div>
             </div>
         `;
@@ -309,14 +990,49 @@
         win.scrollTop = win.scrollHeight;
     }
 
-    async function handleSimulatorSubmit(event) {
-        event.preventDefault();
-        var input = document.getElementById("sim-input");
-        var text = input.value.trim();
-        if (!text) return;
+    // Dynamic Context Dock updates
+    function updateContextDockForQuiz() {
+        var container = document.getElementById("sim-context-buttons");
+        if (!container) return;
+        container.innerHTML = `
+            <button type="button" onclick="sendSimCommand('1')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition shadow-xs">1️⃣ Option 1</button>
+            <button type="button" onclick="sendSimCommand('2')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition shadow-xs">2️⃣ Option 2</button>
+            <button type="button" onclick="sendSimCommand('3')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition shadow-xs">3️⃣ Option 3</button>
+            <button type="button" onclick="sendSimCommand('4')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition shadow-xs">4️⃣ Option 4</button>
+            <button type="button" onclick="sendSimCommand('quiz')" class="px-2.5 py-1 rounded-lg bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 text-stone-800 dark:text-stone-200 font-semibold transition">🔄 Next Question</button>
+        `;
+    }
 
-        input.value = "";
+    function updateContextDockForReading() {
+        var container = document.getElementById("sim-context-buttons");
+        if (!container) return;
+        container.innerHTML = `
+            <button type="button" onclick="sendSimCommand('audio John 1')" class="px-2.5 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">🎧 Listen Audio</button>
+            <button type="button" onclick="sendSimCommand('card')" class="px-2.5 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">🖼️ Status Card</button>
+            <button type="button" onclick="sendSimCommand('done')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition shadow-xs">✅ Mark Done</button>
+            <button type="button" onclick="sendSimCommand('streak')" class="px-2.5 py-1 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-bold transition shadow-xs">🔥 Check Streak</button>
+        `;
+    }
+
+    function resetContextDock() {
+        var container = document.getElementById("sim-context-buttons");
+        if (!container) return;
+        container.innerHTML = `
+            <button type="button" onclick="sendSimCommand('1')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">1. Scripture</button>
+            <button type="button" onclick="sendSimCommand('2')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">2. Audio</button>
+            <button type="button" onclick="sendSimCommand('4')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">4. Quiz</button>
+            <button type="button" onclick="sendSimCommand('7')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">7. Plan</button>
+            <button type="button" onclick="sendSimCommand('done')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">8. Done</button>
+            <button type="button" onclick="sendSimCommand('card')" class="px-2 py-1 rounded-lg bg-white dark:bg-stone-700 hover:bg-stone-100 text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-stone-600 font-medium transition shadow-2xs">9. Card</button>
+        `;
+    }
+
+    async function executeSimCommand(text) {
+        if (!text) return;
         appendUserBubble(text);
+
+        var btn = document.getElementById("btn-sim-send");
+        if (btn) btn.disabled = true;
 
         try {
             var res = await fetch("/api/whatsapp/simulate", {
@@ -327,14 +1043,30 @@
             var data = await res.json();
             if (data.replies && data.replies.length > 0) {
                 data.replies.forEach(function(r) {
-                    appendBotBubble(r.text || r.caption || "Audio clip generated", r.media_type);
+                    appendBotBubble(r.text || r.caption || "Audio voice note generated", r.media_type);
                 });
             } else {
                 appendBotBubble("⚠️ No response returned from bot.");
             }
         } catch(e) {
             appendBotBubble("⚠️ Error communicating with simulator backend: " + e.message);
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
+
+    function handleSimulatorSubmit(event) {
+        event.preventDefault();
+        var input = document.getElementById("sim-input");
+        var text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+        executeSimCommand(text);
+    }
+
+    // Initialize on page load
+    document.addEventListener("DOMContentLoaded", function() {
+        populateBookSelect();
+    });
 </script>
 {% endblock %}

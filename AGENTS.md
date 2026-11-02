@@ -75,3 +75,13 @@ Whenever changes are made (e.g. new routes, schema modifications, UI behaviors, 
 1. **Update Relevant Units**: Immediately update the matching YAML files in `knowledge/`.
 2. **Add New Units**: If introducing a new pattern or architectural decision, create a new YAML unit following schema (`id`, `type`, `title`, `domain`, `status`, `version`, `rule`, `do`, `dont`, `reason`, `related_items`).
 3. **Synchronize Index**: Update `knowledge/index.yaml` by incrementing `knowledge_units_count`, updating `last_updated`, and registering the unit.
+
+---
+
+## 5. Active WinGet Package PR Monitoring (Startup Invariant)
+
+- **Active Review PRs**:
+  - `ElroiTheCreator.HolyBible` (PR [#446873](https://github.com/microsoft/winget-pkgs/pull/446873))
+  - `ElroiTheCreator.HolyBibleDesktop` (PR [#460301](https://github.com/microsoft/winget-pkgs/pull/460301))
+- **Startup Protocol**: On start of Antigravity session, server restart, or workspace initialization, run `python scripts/track_winget_prs.py` to inspect the latest PR status and ensure the periodic background tracker (`schedule` tool with cron `0 */6 * * *`) is actively running.
+

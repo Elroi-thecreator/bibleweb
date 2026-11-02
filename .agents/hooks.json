@@ -1,0 +1,12 @@
+{
+  "winget-pr-watcher": {
+    "enabled": true,
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "py -3 \"E:/bible/scripts/track_winget_prs.py\" --hook",
+        "timeout": 30
+      }
+    ]
+  }
+}

@@ -17,3 +17,4 @@ data/whatsapp_config.json
 data/bible_ai_config.json
 data/bible_ai_history.sqlite.db*
 wa-akg/
+.winget_pr_state.json
