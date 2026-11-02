@@ -23,6 +23,7 @@ from whatsapp_gateway.client.models import (
     SendMessageResponse,
 )
 from whatsapp_gateway.providers.meta_cloud_provider import MetaCloudApiProvider
+from whatsapp_gateway.providers.wa_akg_provider import WaAkgProvider
 
 logger = logging.getLogger("whatsapp_gateway.client")
 
@@ -54,6 +55,14 @@ class WAClient:
 
         self._client: Optional[httpx.AsyncClient] = None
         self.simulated_outbox: List[Dict[str, Any]] = []
+
+        # Built-in WA-AKG Baileys Provider delegator
+        self.wa_akg_provider = WaAkgProvider(
+            base_url=self.base_url,
+            default_session_id=self.default_session_id,
+            api_key=self.api_key,
+            timeout=self.timeout,
+        )
 
         # Built-in Meta Cloud API Provider delegator
         self.meta_provider = MetaCloudApiProvider(
@@ -106,6 +115,15 @@ class WAClient:
             self.simulation_mode = bool(simulation_mode)
         if provider is not None:
             self.provider = provider.strip().lower()
+
+        # Update WA-AKG configuration
+        if hasattr(self, "wa_akg_provider"):
+            self.wa_akg_provider.update_config(
+                base_url=self.base_url,
+                default_session_id=self.default_session_id,
+                api_key=self.api_key,
+            )
+            self.wa_akg_provider.timeout = self.timeout
 
         # Update Meta credentials
         self.meta_provider.update_credentials(
