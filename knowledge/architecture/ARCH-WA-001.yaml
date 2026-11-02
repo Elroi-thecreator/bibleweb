@@ -3,7 +3,7 @@ type: architecture_standard
 title: Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture
 domain: architecture
 status: approved
-version: 1.26.0
+version: 1.27.0
 authority:
   level: official
   confidence: high
@@ -55,7 +55,7 @@ do:
   - "Immediately dispatch a progress notice ('⏳ *Processing your audio request...*' / '⏳ *உங்கள் ஆடியோ பதிவு தயாராகிறது...*') upon validating an audio request before initiating Edge-TTS synthesis and FFmpeg transcoding, providing instant visual feedback so users know their audio is being prepared."
   - "Provide complete whole-Bible reading plans in WhatsApp (`plan`, `plan full`, `plan nt`, `plan proverbs`, `plan psalms`, `plan deuterocanon`), featuring a full 365-day canonical Bible reading track covering all 1,189 chapters (~3.2 ch/day) with instant plan switching, individualized start tracking (`plan_start_date` starting at Day 1), and specific day lookups (`plan 50`)."
   - "Track daily reading habit streaks (`done`, `streak`, `progress`, `முடித்தேன்`), automatically calculating consecutive day milestones, managing `streak_count`, `last_read_date`, and JSON-encoded `completed_days` in subscriber records, and rendering visual text progress bars (`[▓▓▓░░░░░░░] 30%`)."
-  - "Generate aesthetic, high-resolution 1080x1080 graphic status cards (`card`, `image`, `status`, `படம்`) via Pillow (`whatsapp_gateway/adapters/card_generator.py`) with radial midnight gradients, dual gold borders, citation banners, and dual-language typography (Nirmala UI / Georgia / Arial) formatted for WhatsApp Status sharing."
+  - "Generate aesthetic, high-resolution 1080x1080 graphic status cards (`card`, `image`, `status`, `படம்`) via Pillow (`whatsapp_gateway/adapters/card_generator.py`) with radial midnight gradients, dual gold borders, citation banners, adaptive vertical centering, and bundled cross-platform Unicode fonts (`static/fonts/NotoSansTamil-Variable.ttf`, `static/fonts/NotoSerif-Regular.ttf`) guaranteeing zero tofu/unprintable character boxes (`□`) across cloud, container, and desktop runtimes."
   - "Support bilingual parallel scripture mode (`lang both`, `parallel`, `lang en`, `lang ta`), presenting side-by-side Tamil and English verses for scripture citations and daily devotional dispatches."
   - "Provide zero-password magic linking synchronization between WhatsApp and the Web Bible app (`sync`, `link`, `/sync`) using ephemeral 15-minute codes (`whatsapp_gateway/sync_store.py`) and REST endpoints (`/api/whatsapp/sync/verify`, `/api/whatsapp/sync/status`, `/api/whatsapp/sync/push-progress`, `/api/whatsapp/sync/request-code`), dynamically targeting active portal URLs (`https://elroi-bible.vercel.app/sync` and `https://elroi-bible.onrender.com/sync` via `web_app_url`)."
   - "Enrich WhatsApp sync responses (`/api/whatsapp/sync/verify`, `/api/whatsapp/sync/status`, `/api/whatsapp/sync/push-progress`) with real-time `today_reading` payload containing `day`, `total_days`, `plan_title_en`, `plan_title_ta`, `ref_en`, `ref_ta`, `book_id`, `chapter`, `read_url`, `already_marked`, and `progress_pct` to enable instant Bible Reader deep-linking (`/read/{book_id}/{chapter}`)."
