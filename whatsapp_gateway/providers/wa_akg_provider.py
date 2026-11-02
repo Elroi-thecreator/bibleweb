@@ -261,99 +261,23 @@ class WaAkgProvider(BaseWhatsAppProvider):
         session_id: Optional[str] = None,
         **kwargs: Any,
     ) -> SendMessageResponse:
-        """Dispatches an interactive list message to WA-AKG Baileys engine."""
+        """
+        Dispatches list message to WA-AKG.
+        NOTE: WhatsApp client software (both Web and Mobile Android/iOS) explicitly
+        blocks unofficial Baileys multi-device companion connections from sending
+        interactiveMessage / nativeFlowMessage (single_select), displaying
+        'This message couldn't load. Open the message on your phone to view it.' on Web
+        and completely dropping/hiding the message on mobile devices.
+        To ensure 100% reliable delivery without loading errors on live WhatsApp,
+        we format and dispatch the clean, structured numbered text menu where users can
+        simply reply with the option number (e.g. 1-11) or command with minimal typing.
+        (For official Meta Business Cloud API accounts, MetaCloudApiProvider dispatches
+        native interactive list messages with 'View menu' and bottom sheets).
+        """
         target = self._normalize_recipient(to)
         sess = session_id or self.default_session_id
-        encoded_jid = urllib.parse.quote(target, safe="")
-
-        baileys_sections = []
-        for s in (sections or []):
-            rows = []
-            for r in s.get("rows", []):
-                rows.append({
-                    "id": str(r.get("id") or r.get("rowId") or ""),
-                    "title": str(r.get("title", "")),
-                    "description": str(r.get("description", "")),
-                })
-            baileys_sections.append({
-                "title": str(s.get("title", "Services")),
-                "rows": rows,
-            })
-
-        # 1. Primary: WA-AKG modern Native Flow interactive endpoint
-        # POST /api/messages/{sessionId}/{jid}/interactive
-        endpoint_interactive = f"{self.base_url}/messages/{sess}/{encoded_jid}/interactive"
-        interactive_payload = {
-            "title": title or "📁 Holy Bible Assistant",
-            "body": body_text,
-            "footer": footer_text or "Bilingual: English & தமிழ்",
-            "header": {
-                "title": title or "📁 Holy Bible Assistant",
-            },
-            "buttons": [
-                {
-                    "type": "single_select",
-                    "title": button_text or "View menu",
-                    "displayText": button_text or "View menu",
-                    "sections": baileys_sections,
-                }
-            ],
-            "action": {
-                "button": button_text or "View menu",
-                "sections": baileys_sections,
-            },
-        }
-
-        try:
-            resp = await self.http_client.post(endpoint_interactive, json=interactive_payload)
-            if resp.status_code < 400:
-                data = resp.json()
-                msg_id = data.get("id") or (data.get("data") or {}).get("key", {}).get("id") or "sent"
-                return SendMessageResponse(
-                    success=True,
-                    message_id=msg_id,
-                    to=target,
-                    raw=data,
-                )
-            logger.warning("WA-AKG /interactive returned HTTP %s: %s; trying /send fallback", resp.status_code, resp.text)
-        except Exception as exc:
-            logger.warning("WA-AKG /interactive endpoint exception (%s); trying /send fallback", exc)
-
-        # 2. Secondary fallback: Baileys listMessage via /send endpoint
-        endpoint_send = f"{self.base_url}/messages/{sess}/{target}/send"
-        list_message = {
-            "text": body_text,
-            "footer": footer_text or "Bilingual: English & தமிழ்",
-            "title": title or "📁 Holy Bible Assistant",
-            "buttonText": button_text or "View menu",
-            "sections": [
-                {
-                    "title": s["title"],
-                    "rows": [
-                        {"title": r["title"], "rowId": r["id"], "description": r["description"]}
-                        for r in s["rows"]
-                    ],
-                }
-                for s in baileys_sections
-            ],
-        }
-
-        try:
-            resp = await self.http_client.post(endpoint_send, json={"message": list_message})
-            if resp.status_code < 400:
-                data = resp.json()
-                return SendMessageResponse(
-                    success=True,
-                    message_id=data.get("id") or data.get("key", {}).get("id") or "sent",
-                    to=target,
-                    raw=data,
-                )
-        except Exception as exc:
-            logger.warning("WA-AKG send_list fallback exception: %s", exc)
-
-        # 3. Final fallback: plain text
-        logger.warning("WA-AKG all interactive list delivery methods failed; falling back to text")
-        return await self.send_text(to=target, text=fallback_text or body_text, session_id=session_id)
+        text_to_send = fallback_text or body_text
+        return await self.send_text(to=target, text=text_to_send, session_id=sess)
 
 
 
