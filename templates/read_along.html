@@ -433,6 +433,54 @@ const bassLevels = [
 ];
 let currentBassIndex = Math.max(0, bassLevels.findIndex(b => b.pitch === (localStorage.getItem('bible_audio_pitch') || '-8Hz')));
 
+function getActiveReadAlongPitch() {
+    const p = localStorage.getItem('bible_audio_pitch');
+    if (p !== null && p !== undefined && p !== '') {
+        return p;
+    }
+    return '-8Hz';
+}
+
+function getActiveReadAlongVoice() {
+    if (currentLanguage === 'ta') {
+        const savedTa = localStorage.getItem('bible_audio_voice_ta');
+        return savedTa || 'ta-LK-KumarNeural';
+    }
+    const savedEn = localStorage.getItem('bible_audio_voice_en');
+    return (!savedEn || savedEn === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : savedEn;
+}
+
+function getReadAlongItemKey(item, targetIdx) {
+    const voice = getActiveReadAlongVoice();
+    const pitch = getActiveReadAlongPitch();
+    if (!item) {
+        if (targetIdx !== undefined && targetIdx >= audioQueue.length) {
+            return `outro_${currentLanguage}_${voice}_${pitch}`;
+        }
+        return `item_${targetIdx}_${currentLanguage}_${voice}_${pitch}`;
+    }
+    const vKey = (item.type === 'title') ? 'title' : (item.verse || '0');
+    return `${item.bookId || 'title'}_${item.chapter || '0'}_${vKey}_${currentLanguage}_${voice}_${pitch}`;
+}
+
+window.syncReadAlongAudioSettings = function(type, value) {
+    if (type === 'pitch') {
+        const idx = bassLevels.findIndex(b => b.pitch === value);
+        if (idx >= 0) {
+            currentBassIndex = idx;
+            updateBassButtons();
+        }
+    }
+    readalongAudioBlobs.clear();
+    readalongDownloadedItems.clear();
+    readalongInFlight.clear();
+    readalongPrefetchQueue = [];
+
+    if (isAudioPlaying && currentQueueIndex < audioQueue.length) {
+        playQueueIndex(currentQueueIndex);
+    }
+};
+
 // Builds the unified playlist (Title announcement -> Verse 1 -> Verse 2 -> etc.)
 function buildAudioQueue() {
     audioQueue = [];
@@ -513,11 +561,9 @@ function prewarmReadAlongItem(index) {
     const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
     if (!cleanAudioText) return;
 
-    const activeVoice = (currentLanguage === 'ta')
-        ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
-        : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
-    const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
-    const itemKey = `${item.bookId || 'title'}_${item.chapter || '0'}_${item.verse || '0'}_${currentLanguage}_${activeVoice}_${activePitch}`;
+    const activeVoice = getActiveReadAlongVoice();
+    const activePitch = getActiveReadAlongPitch();
+    const itemKey = getReadAlongItemKey(item, index);
 
     if (readalongAudioBlobs.has(itemKey) || readalongInFlight.has(itemKey)) return;
 
@@ -666,11 +712,9 @@ async function playQueueIndex(index) {
 
     // Stream audio via endpoint
     const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
-    const activeVoice = (currentLanguage === 'ta')
-        ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
-        : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
-    const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
-    const itemKey = `${item.bookId || 'title'}_${item.chapter || '0'}_${item.verse || '0'}_${currentLanguage}_${activeVoice}_${activePitch}`;
+    const activeVoice = getActiveReadAlongVoice();
+    const activePitch = getActiveReadAlongPitch();
+    const itemKey = getReadAlongItemKey(item, index);
 
     let blobUrl = null;
     if (readalongAudioBlobs.has(itemKey)) {
@@ -832,14 +876,12 @@ async function processReadAlongPrefetchQueue() {
             if (targetIdx >= audioQueue.length) {
                 // Outro blessing
                 const blessingText = currentLanguage === 'ta' ? OUTRO_BLESSING_TA : OUTRO_BLESSING_EN;
-                const outroVoice = (currentLanguage === 'ta')
-                    ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
-                    : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
+                const outroVoice = getActiveReadAlongVoice();
                 const cleanBlessing = (blessingText || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
                 if (!cleanBlessing) continue;
 
-                const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
-                itemKey = `outro_${currentLanguage}_${outroVoice}_${activePitch}`;
+                const activePitch = getActiveReadAlongPitch();
+                itemKey = getReadAlongItemKey(null, targetIdx);
                 itemLabel = 'Outro Blessing';
                 streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanBlessing)}&lang=${currentLanguage}&voice=${encodeURIComponent(outroVoice)}&pitch=${encodeURIComponent(activePitch)}`;
             } else {
@@ -850,12 +892,9 @@ async function processReadAlongPrefetchQueue() {
                 const cleanAudioText = (text || '').replace(/\[[\s\S]*?\]/g, '').replace(/\{[\s\S]*?\}/g, '').replace(/\s+/g, ' ').trim();
                 if (!cleanAudioText) continue;
 
-                const activeVoice = (currentLanguage === 'ta')
-                    ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
-                    : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
-
-                const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
-                itemKey = `${item.bookId}_${item.chapter}_${item.verse || 'title'}_${currentLanguage}_${activeVoice}_${activePitch}`;
+                const activeVoice = getActiveReadAlongVoice();
+                const activePitch = getActiveReadAlongPitch();
+                itemKey = getReadAlongItemKey(item, targetIdx);
                 itemLabel = `${item.ref_en || item.ref_ta || targetIdx}`;
                 streamUrl = `/api/audio/stream?text=${encodeURIComponent(cleanAudioText)}&lang=${currentLanguage}&voice=${encodeURIComponent(activeVoice)}&pitch=${encodeURIComponent(activePitch)}`;
             }
@@ -924,7 +963,8 @@ async function processReadAlongPrefetchQueue() {
                 readalongInFlight.delete(itemKey);
             }
 
-            await new Promise(r => setTimeout(r, 20));
+            // Pacing delay between worker turns to avoid bursting Edge-TTS
+            await new Promise(r => setTimeout(r, 60));
         }
     });
 
@@ -976,7 +1016,9 @@ function cycleAudioBass() {
     const b = bassLevels[currentBassIndex];
     localStorage.setItem('bible_audio_pitch', b.pitch);
     updateBassButtons();
+    readalongAudioBlobs.clear();
     readalongDownloadedItems.clear();
+    readalongInFlight.clear();
     readalongPrefetchQueue = [];
     if (isAudioPlaying && currentQueueIndex < audioQueue.length) {
         playQueueIndex(currentQueueIndex);
@@ -1058,11 +1100,9 @@ function triggerOutroBlessing() {
     outroCard.classList.remove('hidden');
 
     const blessingText = currentLanguage === 'ta' ? OUTRO_BLESSING_TA : OUTRO_BLESSING_EN;
-    const outroVoice = (currentLanguage === 'ta')
-        ? (localStorage.getItem('bible_audio_voice_ta') || 'ta-LK-KumarNeural')
-        : (((!localStorage.getItem('bible_audio_voice_en') || localStorage.getItem('bible_audio_voice_en') === 'en-US-JennyNeural') ? 'en-US-ChristopherNeural' : localStorage.getItem('bible_audio_voice_en')));
-    const activePitch = ((!localStorage.getItem('bible_audio_pitch') || localStorage.getItem('bible_audio_pitch') === '+0Hz') ? '-8Hz' : localStorage.getItem('bible_audio_pitch'));
-    const outroKey = `outro_${currentLanguage}_${outroVoice}_${activePitch}`;
+    const outroVoice = getActiveReadAlongVoice();
+    const activePitch = getActiveReadAlongPitch();
+    const outroKey = getReadAlongItemKey(null, audioQueue.length);
     if (readalongAudioBlobs.has(outroKey)) {
         audioElement.src = readalongAudioBlobs.get(outroKey).blobUrl;
     } else {

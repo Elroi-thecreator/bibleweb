@@ -659,6 +659,9 @@
                     window.bibleAudio.setVoice(voice);
                 }
             }
+            if (typeof window.syncReadAlongAudioSettings === 'function') {
+                window.syncReadAlongAudioSettings('voice', voice);
+            }
             showToast("Voice preference saved! 🎙️");
         }
 
@@ -666,6 +669,9 @@
             localStorage.setItem('bible_audio_pitch', pitch);
             if (window.bibleAudio && typeof window.bibleAudio.setPitch === 'function') {
                 window.bibleAudio.setPitch(pitch);
+            }
+            if (typeof window.syncReadAlongAudioSettings === 'function') {
+                window.syncReadAlongAudioSettings('pitch', pitch);
             }
             showToast("Voice bass & tone saved! 🎵");
         }
@@ -699,7 +705,7 @@
             if (vTa) vTa.value = finalTa;
 
             const savedPitch = localStorage.getItem('bible_audio_pitch');
-            const finalPitch = (!savedPitch || savedPitch === '+0Hz') ? '-8Hz' : savedPitch;
+            const finalPitch = (savedPitch !== null && savedPitch !== undefined && savedPitch !== '') ? savedPitch : '-8Hz';
             if (pEl) pEl.value = finalPitch;
         }
         document.addEventListener('DOMContentLoaded', initAudioVoiceSettings);

@@ -540,10 +540,10 @@ class BibleContinuousAudio {
 
     getEffectivePitch() {
         const p = this.pitch || localStorage.getItem('bible_audio_pitch');
-        if (!p || p === '+0Hz') {
-            return '-8Hz';
+        if (p !== null && p !== undefined && p !== '') {
+            return p;
         }
-        return p;
+        return '-8Hz';
     }
 
     setPitch(pitchValue) {

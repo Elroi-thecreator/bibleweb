@@ -424,6 +424,7 @@ async def custom_unhandled_exception_handler(request: Request, exc: Exception):
 START_TIME = time.time()
 AUDIO_CACHE_SIZE = int(os.getenv("AUDIO_CACHE_SIZE", "200" if os.getenv("RENDER") else "1000"))
 AUDIO_CACHE = BoundedAudioCache(maxsize=AUDIO_CACHE_SIZE, cache_dir=AUDIO_CACHE_DIR)
+AUDIO_SYNTHESIS_SEMAPHORE = asyncio.Semaphore(2)
 
 
 DAILY_VERSE_PROTESTANT = {
@@ -494,6 +495,9 @@ VOICE_CONFIG = {
         "bass": "ta-LK-KumarNeural",
         "base": "ta-LK-KumarNeural",
         "deep": "ta-LK-KumarNeural",
+        "deep_bass": "ta-LK-KumarNeural",
+        "heavy_bass": "ta-LK-KumarNeural",
+        "high_bass": "ta-LK-KumarNeural",
         "valluvar": "ta-IN-ValluvarNeural",
         "anbu": "ta-SG-AnbuNeural",
         "surya": "ta-MY-SuryaNeural",
@@ -509,6 +513,9 @@ VOICE_CONFIG = {
         "bass": "en-US-ChristopherNeural",
         "base": "en-US-ChristopherNeural",
         "deep": "en-US-ChristopherNeural",
+        "deep_bass": "en-US-ChristopherNeural",
+        "heavy_bass": "en-US-ChristopherNeural",
+        "high_bass": "en-US-ChristopherNeural",
         "brian": "en-US-BrianNeural",
         "guy": "en-US-GuyNeural",
         "female": "en-US-JennyNeural",
@@ -518,7 +525,7 @@ VOICE_CONFIG = {
 }
 
 MALE_VOICE_FALLBACKS = {
-    "ta": ["ta-IN-ValluvarNeural", "ta-LK-KumarNeural", "ta-SG-AnbuNeural", "ta-MY-SuryaNeural"],
+    "ta": ["ta-LK-KumarNeural", "ta-IN-ValluvarNeural", "ta-SG-AnbuNeural", "ta-MY-SuryaNeural"],
     "en": ["en-US-ChristopherNeural", "en-US-BrianNeural", "en-US-GuyNeural"],
 }
 
@@ -557,6 +564,7 @@ def normalize_speech_pitch(raw_pitch: str) -> str:
         "warm_bass": "-4Hz",
         "warm": "-4Hz",
         "low": "-5Hz",
+        "low_bass": "-4Hz",
         "bass": "-8Hz",
         "base": "-8Hz",
         "deep": "-8Hz",
@@ -565,6 +573,9 @@ def normalize_speech_pitch(raw_pitch: str) -> str:
         "more_bass": "-10Hz",
         "extra_bass": "-12Hz",
         "heavy_bass": "-12Hz",
+        "heavy": "-12Hz",
+        "high_bass": "-12Hz",
+        "high": "-12Hz",
     }
     if pitch_str in preset_map:
         return preset_map[pitch_str]
@@ -573,11 +584,11 @@ def normalize_speech_pitch(raw_pitch: str) -> str:
     if match:
         val = int(match.group(1))
         return f"{val:+d}Hz"
-    return "+0Hz"
+    return "-8Hz"
 
 
 def resolve_voice_name(lang: str, voice_param: str = None) -> str:
-    """Maps voice alias or parameter to valid neural voice name."""
+    """Maps voice alias or parameter to valid neural voice name with strict language affinity."""
     lang_key = "ta" if lang == "ta" else "en"
     cfg = VOICE_CONFIG.get(lang_key, VOICE_CONFIG["ta"])
     if not voice_param:
@@ -586,7 +597,12 @@ def resolve_voice_name(lang: str, voice_param: str = None) -> str:
     if clean_v in cfg:
         return cfg[clean_v]
     if "neural" in str(voice_param).lower():
-        return str(voice_param).strip()
+        raw_v = str(voice_param).strip()
+        # Ensure voice language prefix matches requested language
+        if raw_v.lower().startswith(f"{lang_key}-"):
+            return raw_v
+        # Voice belongs to different language family, fallback to language default
+        return cfg["default"]
     return cfg["default"]
 
 
@@ -647,21 +663,39 @@ def preprocess_scripture_text(text: str, lang: str = "ta") -> str:
 
 @app.get("/api/audio/stream")
 async def stream_audio(
-    text: str = Query(..., min_length=1),
+    text: Optional[str] = Query(None),
+    book_id: Optional[int] = Query(None),
+    chapter: Optional[int] = Query(None),
+    canon: Optional[str] = Query(None),
     lang: str = Query("ta"),
     voice: str = Query(None),
     rate: str = Query(None),
     pitch: str = Query(None),
 ):
     target_lang = "ta" if lang == "ta" else "en"
+
+    # Support chapter lookup if text is omitted
+    if not text:
+        if book_id and chapter:
+            active_canon = canon or ("catholic" if book_id in CATHOLIC_BOOK_MAP else "protestant")
+            verses = await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)
+            if not verses:
+                raise HTTPException(status_code=404, detail="Chapter verses not found")
+            text_field = "text_ta" if target_lang == "ta" else "text_en"
+            text = " ".join([v.get(text_field, "") for v in verses if v.get(text_field)])
+        else:
+            raise HTTPException(status_code=400, detail="Either 'text' or ('book_id' and 'chapter') must be provided")
+
     clean_text = preprocess_scripture_text(text, target_lang)
     target_voice = resolve_voice_name(target_lang, voice)
     target_rate = normalize_speech_rate(rate)
     target_pitch = normalize_speech_pitch(pitch)
 
-    # If user explicitly requested bass/base alias without specifying pitch, apply deep bass tone
+    # If user explicitly requested bass/base/deep/high_bass alias without specifying pitch, apply deep/heavy bass tone
     if voice and str(voice).strip().lower() in ["bass", "base", "deep", "deep_bass"] and not pitch:
         target_pitch = "-8Hz"
+    elif voice and str(voice).strip().lower() in ["heavy_bass", "high_bass", "heavy", "high", "extra_bass"] and not pitch:
+        target_pitch = "-12Hz"
 
     cache_key = hashlib.md5(f"{target_voice}:{target_rate}:{target_pitch}:{clean_text}".encode("utf-8")).hexdigest()
 
@@ -689,51 +723,57 @@ async def stream_audio(
                 if alt_v not in candidate_voices:
                     candidate_voices.append(alt_v)
 
-        for v_name in candidate_voices:
-            try:
-                communicate = edge_tts.Communicate(
-                    text=clean_text,
-                    voice=v_name,
-                    rate=target_rate,
-                    pitch=target_pitch,
-                )
-                fp = io.BytesIO()
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        fp.write(chunk["data"])
-                audio_bytes = fp.getvalue()
-                if len(audio_bytes) > 0:
-                    AUDIO_CACHE[cache_key] = audio_bytes
-                    return Response(
-                        content=audio_bytes,
-                        media_type="audio/mpeg",
-                        headers={
-                            "Cache-Control": "public, max-age=604800, immutable",
-                            "X-TTS-Engine": "edge-neural",
-                            "X-TTS-Voice": v_name,
-                            "X-TTS-Pitch": target_pitch,
-                        },
-                    )
-            except Exception as neural_err:
-                print(f"[Audio Stream] Edge-TTS error for voice {v_name}: {neural_err}")
+        async with AUDIO_SYNTHESIS_SEMAPHORE:
+            for v_name in candidate_voices:
+                # Retry target voice up to 2 times for transient WebSocket resilience
+                max_retries = 2 if v_name == target_voice else 1
+                for attempt in range(max_retries):
+                    try:
+                        communicate = edge_tts.Communicate(
+                            text=clean_text,
+                            voice=v_name,
+                            rate=target_rate,
+                            pitch=target_pitch,
+                        )
+                        fp = io.BytesIO()
+                        async for chunk in communicate.stream():
+                            if chunk["type"] == "audio":
+                                fp.write(chunk["data"])
+                        audio_bytes = fp.getvalue()
+                        if len(audio_bytes) > 0:
+                            AUDIO_CACHE[cache_key] = audio_bytes
+                            return Response(
+                                content=audio_bytes,
+                                media_type="audio/mpeg",
+                                headers={
+                                    "Cache-Control": "public, max-age=604800, immutable",
+                                    "X-TTS-Engine": "edge-neural",
+                                    "X-TTS-Voice": v_name,
+                                    "X-TTS-Pitch": target_pitch,
+                                },
+                            )
+                    except Exception as neural_err:
+                        print(f"[Audio Stream] Edge-TTS error for voice {v_name} (attempt {attempt+1}/{max_retries}): {neural_err}")
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(0.25)
 
-    # 2. Fallback Engine: gTTS (Ensures zero interruption)
+    # 2. Fallback Engine: gTTS (Emergency fallback only - NEVER poison AUDIO_CACHE)
     try:
         tts = gTTS(text=clean_text, lang=target_lang, slow=False)
         fp = io.BytesIO()
         tts.write_to_fp(fp)
         audio_bytes = fp.getvalue()
 
-        AUDIO_CACHE[cache_key] = audio_bytes
-
+        # IMPORTANT: NEVER cache gTTS fallback into AUDIO_CACHE under the male/bass cache key!
+        # Do not return immutable cache header so browser does not lock in female voice.
         return Response(
             content=audio_bytes,
             media_type="audio/mpeg",
             headers={
-                "Cache-Control": "public, max-age=604800, immutable",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
                 "X-TTS-Engine": "gtts-fallback",
-                "X-TTS-Voice": target_voice,
-                "X-TTS-Pitch": target_pitch,
+                "X-TTS-Voice": "gtts-fallback",
+                "X-TTS-Pitch": "none",
             },
         )
     except Exception as fallback_err:

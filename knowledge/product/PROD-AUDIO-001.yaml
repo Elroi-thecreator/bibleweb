@@ -3,7 +3,7 @@ type: product_standard
 title: Audio Bible Text-to-Speech Engine, Deep Bass Modulation, Concurrent Chapter Prefetching & Persistent Audio Cache Standard
 domain: product
 status: approved
-version: 1.18.0
+version: 1.19.0
 authority:
   level: official
   confidence: high
@@ -25,6 +25,10 @@ do:
   - "Support multi-region Tamil Male voices (India: ta-IN-ValluvarNeural, Sri Lanka: ta-LK-KumarNeural Deep Bass, Singapore: ta-SG-AnbuNeural, Malaysia: ta-MY-SuryaNeural) and Female voice (ta-IN-PallaviNeural)."
   - "Support resonant English voices (en-US-ChristopherNeural Deep Bass, en-US-BrianNeural Warm Baritone, en-US-GuyNeural, en-US-JennyNeural, en-IN-NeerjaNeural)."
   - "Provide dedicated Voice Tone & Bass controls across the persistent Reader Audio Dock (`#audio-pitch-select`), Global Settings Modal (`#setting-audio-pitch`), and Read-Along Prayer mode (`cycleAudioBass()`)."
+  - "Serialize backend synthesis through `AUDIO_SYNTHESIS_SEMAPHORE = asyncio.Semaphore(2)` and retry the requested neural voice up to 2 times to prevent Microsoft Bing WebSocket rate-limiting and connection drops."
+  - "Enforce strict language-voice affinity in `resolve_voice_name` so requesting an English voice with Tamil text or vice versa falls back cleanly to the target language default male voice instead of triggering NoAudioReceived errors."
+  - "Ensure emergency `gTTS` fallback responses set `Cache-Control: no-cache, no-store, must-revalidate` and are strictly excluded from `AUDIO_CACHE[cache_key]` disk persistence to prevent poisoning male/bass cache keys with female flat-pitch audio."
+  - "Synchronize Global Settings Modal voice and pitch changes with Read-Along 100-day plan audio via `window.syncReadAlongAudioSettings`, wiping cached blobs and restarting playback on tone/voice adjustments."
   - "Display compact per-verse audio status indicators identically across all reader modes (`reader.html` `#verse-audio-status-${idx}` and `read_along.html` `#readalong-status-...`) showing Downloading (animated spinner), Ready/Downloaded (emerald checkmark), or Playing (pulsing speaker)."
   - "Preserve both Tamil and English clean verse texts directly on DOM data attributes (`data-text-ta`, `data-text-en`) on every verse element in `reader.html` and `read_along.html` to guarantee flawless audio downloads across all display modes (Bilingual, Tamil only, English only)."
   - "Enable seamless verse click-to-play across both reader interfaces (`reader.html` and `read_along.html`) where clicking the verse number, badge, or verse item immediately streams or replays from local in-memory blob cache."
