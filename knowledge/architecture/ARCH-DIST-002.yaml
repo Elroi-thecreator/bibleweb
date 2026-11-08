@@ -1,9 +1,9 @@
 id: ARCH-DIST-002
 type: architecture_standard
-title: Oracle Cloud Infrastructure (OCI) Free Tier VM Subpath Deployment & URL Prefix Architecture
+title: Oracle Cloud Infrastructure (OCI) Free Tier VM Deployment (Root & Subpath) Architecture
 domain: architecture
 status: approved
-version: 1.0.0
+version: 1.1.0
 authority:
   level: official
   confidence: high
@@ -18,27 +18,30 @@ applies_to:
   - docker
 
 rule:
-  "When hosted on Oracle Cloud Infrastructure (OCI) Always Free VMs behind a reverse proxy (Nginx) under a URL path prefix such as `/bible`, the backend dynamically activates subpath mounting via `URL_PREFIX` or `ROOT_PATH`, ensuring all rendered HTML navigation links, static assets, API queries, and redirects operate seamlessly without hardcoded root collisions, while strictly enforcing a mandatory Zero-Cost ($0) Always Free tier governance check."
+  "When hosted on Oracle Cloud Infrastructure (OCI) Always Free VMs behind Nginx, Holy Bible defaults to primary root hosting at `/` with clean root-relative links and 301 redirection for legacy `/bible` subpath queries, while retaining dynamic `URL_PREFIX` subpath support with guaranteed 100% idempotent URL rewriting, under a mandatory Zero-Cost ($0) Always Free tier governance protocol."
 
 do:
-  - "Support `URL_PREFIX` environment variable (e.g. `URL_PREFIX=/bible`) in `app/main.py`."
-  - "Mount `core_app` under `URL_PREFIX` using FastAPI sub-application mounting on a wrapper app, redirecting `{URL_PREFIX}` to `{URL_PREFIX}/` with HTTP 307."
-  - "Automatically rewrite rendered HTML root-relative attributes (`href`, `src`, `action`), JavaScript `fetch`, and string endpoints in `PrefixedTemplates` before Brotli/Gzip compression and in-memory LRU caching."
+  - "Default to root hosting at `/` on Oracle Cloud VMs (`URL_PREFIX=''` or unset) via `scripts/setup_nginx_root.sh`."
+  - "Configure Nginx with permanent 301 rewrite (`location ~ ^/bible/?(.*)$ { return 301 /$1; }`) ensuring seamless backwards-compatibility for existing `/bible/...` links and bookmarks."
+  - "Support optional `URL_PREFIX` environment variable (e.g. `URL_PREFIX=/bible`) in `app/main.py` using strictly idempotent regex patterns with negative lookahead to prevent `/bible/bible` duplicate prefix corruption."
+  - "Mount `core_app` under `URL_PREFIX` using FastAPI sub-application mounting on a wrapper app, redirecting `{URL_PREFIX}` to `{URL_PREFIX}/` with HTTP 307 when subpath hosting is activated."
+  - "Automatically rewrite rendered HTML root-relative attributes (`href`, `src`, `action`), JavaScript `fetch`, backtick template literals, and string endpoints in `PrefixedTemplates` before Brotli/Gzip compression."
   - "Ensure `BoundedHTMLCache` stores and serves pre-compressed Brotli (`.br`) and Gzip (`.gzip`) buffers containing the active prefix with 0 ms CPU overhead."
   - "Deploy on Oracle Cloud VMs using a managed systemd service (`holybible.service`) running multi-worker Uvicorn (`scripts/run_server.py`) and Nginx reverse proxy with WebSocket/streaming buffering disabled."
   - "Configure Oracle Cloud in-guest host firewall (Ubuntu `iptables` / `netfilter-persistent` and `ufw`, or Oracle Linux `firewalld`) to open TCP ports 80 and 443."
   - "Enforce Oracle Cloud VCN Security List ingress rule configuration for CIDR `0.0.0.0/0` on TCP ports 80 and 443."
   - "Enforce mandatory Zero-Cost ($0) check: on any VM modification or deployment, execute the OCI tenancy audit (`E:\\Oracle\\scripts\\audit_tenancy_resources.py`) to verify that all compute, storage, IP, and networking resources remain 100% within Always Free quotas ($0 cost)."
-  - "Validate subpath deployment integrity across all 10 core routes and redirects using `scripts/test_prefix_deployment.py`."
+  - "Validate deployment integrity across both root and subpath modes using `scripts/test_prefix_deployment.py`."
 
 dont:
   - "Do not break root `/` standalone web or PyWebView desktop execution when `URL_PREFIX` is unset."
+  - "Do not apply non-idempotent regex string replacements that cause `/bible/bible` duplicates on repeat passes."
   - "Do not apply post-compression regex string replacements on Brotli/Gzip encoded response bodies in middleware."
   - "Do not omit Oracle Cloud VCN Security List instructions, as Oracle blocks external ingress at the cloud subnet router level by default."
   - "Never provision paid OCI compute shapes, extra block volumes beyond the 200 GB limit, paid Load Balancers, or NAT gateways that incur recurring costs."
 
 reason:
-  "Allows users to host the Holy Bible application alongside other services, personal sites, or APIs on a single Oracle Cloud Always Free compute instance without path conflicts, while preserving 100% caching and compression performance."
+  "Provides maximum user accessibility by hosting the application natively at root `/` while seamlessly routing legacy subpath traffic, retaining complete architectural flexibility and preserving 100% caching and compression performance."
 
 related_items:
   - ARCH-SYS-001
