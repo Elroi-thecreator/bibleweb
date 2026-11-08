@@ -22,6 +22,7 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        window.URL_PREFIX = "{{ URL_PREFIX or '' }}";
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -504,8 +505,9 @@
 
             // If reading a Deuterocanonical book (>= 67) and switching to Protestant, redirect to Genesis 1
             const pathParts = window.location.pathname.split('/');
-            if (canon === 'protestant' && pathParts[1] === 'read' && parseInt(pathParts[2]) >= 67) {
-                window.location.href = '/read/1/1?mode=bilingual&canon=protestant';
+            const readIdx = pathParts.indexOf('read');
+            if (canon === 'protestant' && readIdx !== -1 && parseInt(pathParts[readIdx + 1]) >= 67) {
+                window.location.href = (window.URL_PREFIX || '') + '/read/1/1?mode=bilingual&canon=protestant';
                 return;
             }
 

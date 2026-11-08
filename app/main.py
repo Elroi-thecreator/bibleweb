@@ -93,36 +93,36 @@ if URL_PREFIX and not URL_PREFIX.startswith("/"):
 
 
 def prefix_html(text: str, prefix: str) -> str:
-    """Rewrites root-relative URLs in rendered HTML to ensure flawless subpath navigation."""
+    """Rewrites root-relative URLs in rendered HTML to ensure flawless subpath navigation.
+    Guaranteed 100% idempotent: running multiple passes will never produce duplicate prefixes.
+    """
     if not prefix:
         return text
-    # 1. HTML attributes (excluding protocol-relative //)
-    text = re.sub(r'href=(["\'])/(?!/)', rf'href=\1{prefix}/', text)
-    text = re.sub(r'src=(["\'])/(?!/)', rf'src=\1{prefix}/', text)
-    text = re.sub(r'action=(["\'])/(?!/)', rf'action=\1{prefix}/', text)
+    clean_p = prefix.strip().strip("/")
+    if not clean_p:
+        return text
+    neg = rf"(?!/|{re.escape(clean_p)}(?:/|[`'\"#?]|$))"
+
+    # 1. HTML attributes (excluding protocol-relative // and already prefixed URLs)
+    text = re.sub(rf'href=([`\'"])/{neg}', rf'href=\1/{clean_p}/', text)
+    text = re.sub(rf'src=([`\'"])/{neg}', rf'src=\1/{clean_p}/', text)
+    text = re.sub(rf'action=([`\'"])/{neg}', rf'action=\1/{clean_p}/', text)
 
     # 2. JavaScript fetch and location
-    text = re.sub(r'fetch\((["\'])/(?!/)', rf'fetch(\1{prefix}/', text)
-    text = re.sub(r'window\.location\.href\s*=\s*(["\'])/(?!/)', rf'window.location.href = \1{prefix}/', text)
+    text = re.sub(rf'fetch\(([`\'"])/{neg}', rf'fetch(\1/{clean_p}/', text)
+    text = re.sub(rf'window\.location\.href\s*=\s*([`\'"])/{neg}', rf'window.location.href = \1/{clean_p}/', text)
 
-    # 3. Quoted API, static, and route paths inside JS strings
-    text = re.sub(r'(["\'])/static/', rf'\1{prefix}/static/', text)
-    text = re.sub(r'(["\'])/api/', rf'\1{prefix}/api/', text)
-    text = re.sub(r'(["\'])/read/', rf'\1{prefix}/read/', text)
-    text = re.sub(r'(["\'])/present/', rf'\1{prefix}/present/', text)
-    text = re.sub(r'(["\'])/read-along/', rf'\1{prefix}/read-along/', text)
-    text = re.sub(r'(["\'])/plans', rf'\1{prefix}/plans', text)
-    text = re.sub(r'(["\'])/quiz', rf'\1{prefix}/quiz', text)
-    text = re.sub(r'(["\'])/songs', rf'\1{prefix}/songs', text)
-    text = re.sub(r'(["\'])/search', rf'\1{prefix}/search', text)
-    text = re.sub(r'(["\'])/admin', rf'\1{prefix}/admin', text)
-    text = re.sub(r'(["\'])/whatsapp', rf'\1{prefix}/whatsapp', text)
-    text = re.sub(r'(["\'])/sync', rf'\1{prefix}/sync', text)
-    text = re.sub(r'(["\'])/ask-ai', rf'\1{prefix}/ask-ai', text)
-    text = re.sub(r'(["\'])/privacy', rf'\1{prefix}/privacy', text)
+    # 3. Quoted API, static, and route paths inside JS strings or HTML attributes
+    routes = (
+        "static/", "api/", "read/", "present/", "read-along/",
+        "plans", "quiz", "songs", "search", "admin", "whatsapp",
+        "sync", "ask-ai", "privacy", "bookmarks", "progress", "book/"
+    )
+    for seg in routes:
+        text = re.sub(rf'([`\'"])/(?!{re.escape(clean_p)}/){re.escape(seg)}', rf'\1/{clean_p}/{seg}', text)
 
     # 4. CSS url()
-    text = re.sub(r'url\((["\']?)/(?!/)', rf'url(\1{prefix}/', text)
+    text = re.sub(rf'url\(([`\'"]?)/{neg}', rf'url(\1/{clean_p}/', text)
     return text
 
 

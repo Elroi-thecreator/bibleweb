@@ -9,7 +9,7 @@ Group=www-data
 WorkingDirectory=/opt/holybible
 Environment="PATH=/opt/holybible/.venv/bin:/usr/local/bin:/usr/bin"
 Environment="PYTHONPATH=/opt/holybible"
-Environment="URL_PREFIX=/bible"
+Environment="URL_PREFIX="
 Environment="HOST=127.0.0.1"
 Environment="PORT=8000"
 Environment="WEB_CONCURRENCY=2"

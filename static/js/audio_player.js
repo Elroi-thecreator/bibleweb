@@ -311,7 +311,8 @@ class BibleContinuousAudio {
 
                 const voice = this.getEffectiveVoice();
                 const pitch = this.getEffectivePitch();
-                const streamUrl = `/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&pitch=${encodeURIComponent(pitch)}`;
+                const pfx = window.URL_PREFIX || '';
+                const streamUrl = `${pfx}/api/audio/stream?lang=${encodeURIComponent(this.lang)}&text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&pitch=${encodeURIComponent(pitch)}`;
 
                 let confirmedBlob = null;
                 for (let attempt = 1; attempt <= this.prefetchRetryLimit; attempt++) {
@@ -716,7 +717,8 @@ class BibleContinuousAudio {
                 rate: this.rate,
                 pitch: this.getEffectivePitch()
             }));
-            window.location.href = `/read/${this.bookId}/${this.nextChapter}?mode=${this.mode}`;
+            const pfx = window.URL_PREFIX || '';
+            window.location.href = `${pfx}/read/${this.bookId}/${this.nextChapter}?mode=${this.mode}`;
         } else {
             this.stop();
             showToast("Reached the end of this book!");

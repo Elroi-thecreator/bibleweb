@@ -9,10 +9,10 @@ APP_DIR="/opt/holybible"
 REPO_URL="https://github.com/Elroi-thecreator/bibleweb.git"
 SERVICE_NAME="holybible"
 APP_USER="www-data"
-URL_PREFIX="/bible"
+URL_PREFIX="${URL_PREFIX:-}"
 
 echo "======================================================================"
-echo " 🕊️ Holy Bible - Oracle Cloud VM Deployment (Subpath: ${URL_PREFIX})"
+echo " 🕊️ Holy Bible - Oracle Cloud VM Deployment (Path: ${URL_PREFIX:-/})"
 echo "======================================================================"
 
 if [[ $EUID -ne 0 ]]; then
@@ -107,9 +107,10 @@ systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}"
 systemctl restart "${SERVICE_NAME}"
 
-# 7. Configure Nginx Reverse Proxy for /bible
-echo "[+] Configuring Nginx reverse proxy under ${URL_PREFIX}..."
-NGINX_CONF_SNIPPET="
+# 7. Configure Nginx Reverse Proxy
+echo "[+] Configuring Nginx reverse proxy..."
+if [ -n "$URL_PREFIX" ]; then
+    NGINX_CONF_SNIPPET="
 location = ${URL_PREFIX} {
     return 301 ${URL_PREFIX}/;
 }
@@ -131,6 +132,30 @@ location ${URL_PREFIX}/ {
     client_max_body_size 25M;
 }
 "
+else
+    NGINX_CONF_SNIPPET="
+# Redirect legacy /bible subpath to root
+location ~ ^/bible/?(.*)$ {
+    return 301 /\$1;
+}
+
+location / {
+    proxy_pass http://127.0.0.1:8000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection \"upgrade\";
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_buffering off;
+    proxy_read_timeout 300s;
+    proxy_connect_timeout 75s;
+    proxy_send_timeout 300s;
+    client_max_body_size 25M;
+}
+"
+fi
 
 # If a default server block exists in sites-available or conf.d:
 if [ -f /etc/nginx/sites-available/default ]; then
