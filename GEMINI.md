@@ -85,3 +85,24 @@ Whenever changes are made (e.g. new routes, schema modifications, UI behaviors, 
   - `ElroiTheCreator.HolyBibleDesktop` (PR [#460301](https://github.com/microsoft/winget-pkgs/pull/460301))
 - **Startup Protocol**: On start of Antigravity session, server restart, or workspace initialization, run `python scripts/track_winget_prs.py` to inspect the latest PR status and ensure the periodic background tracker (`schedule` tool with cron `0 */6 * * *`) is actively running.
 
+---
+
+## 6. Strict Zero-Cost ($0) Always Free Tier Governance Protocol (Mandatory Invariant)
+
+> [!IMPORTANT]
+> **ABSOLUTE ZERO-COST INVARIANT**:
+> Whenever hosting, configuring, or modifying resources on the Oracle Cloud Infrastructure (OCI) VM (`always-free-vm-1` / `129.225.69.57`), you **MUST ALWAYS** guarantee that the tenancy remains **100% Free ($0)**.
+> 
+> **Never** provision paid compute shapes, additional block volumes beyond the 200 GB Always Free limit, paid OCI Load Balancers, NAT Gateways, or paid auxiliary services.
+
+1. **Pre-Change Verification**:
+   - Verify that all services (such as Holy Bible FastAPI, Nginx, or portfolio apps) share the existing Always Free instance (`VM.Standard.A1.Flex`, 2.0/4 OCPUs, 12.0/24 GB RAM) and boot volume (50 GB / 200 GB limit).
+   - Use in-guest reverse proxying (Nginx under subpaths like `/bible/`) instead of provisioning external paid OCI Load Balancers.
+2. **Post-Change Tenancy Audit**:
+   - Immediately after any VM or cloud infrastructure operation, execute the tenancy audit suite:
+     ```powershell
+     E:\Oracle\.venv\Scripts\python.exe E:\Oracle\scripts\audit_tenancy_resources.py
+     ```
+   - Confirm that the audit reports: `PERFECT: 0 cost-incurring resources found! All active resources are 100% within the Always Free tier.`
+
+

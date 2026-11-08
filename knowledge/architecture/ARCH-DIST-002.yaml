@@ -18,7 +18,7 @@ applies_to:
   - docker
 
 rule:
-  "When hosted on Oracle Cloud Infrastructure (OCI) Always Free VMs behind a reverse proxy (Nginx) under a URL path prefix such as `/bible`, the backend dynamically activates subpath mounting via `URL_PREFIX` or `ROOT_PATH`, ensuring all rendered HTML navigation links, static assets, API queries, and redirects operate seamlessly without hardcoded root collisions or breaking standalone desktop/web modes."
+  "When hosted on Oracle Cloud Infrastructure (OCI) Always Free VMs behind a reverse proxy (Nginx) under a URL path prefix such as `/bible`, the backend dynamically activates subpath mounting via `URL_PREFIX` or `ROOT_PATH`, ensuring all rendered HTML navigation links, static assets, API queries, and redirects operate seamlessly without hardcoded root collisions, while strictly enforcing a mandatory Zero-Cost ($0) Always Free tier governance check."
 
 do:
   - "Support `URL_PREFIX` environment variable (e.g. `URL_PREFIX=/bible`) in `app/main.py`."
@@ -28,12 +28,14 @@ do:
   - "Deploy on Oracle Cloud VMs using a managed systemd service (`holybible.service`) running multi-worker Uvicorn (`scripts/run_server.py`) and Nginx reverse proxy with WebSocket/streaming buffering disabled."
   - "Configure Oracle Cloud in-guest host firewall (Ubuntu `iptables` / `netfilter-persistent` and `ufw`, or Oracle Linux `firewalld`) to open TCP ports 80 and 443."
   - "Enforce Oracle Cloud VCN Security List ingress rule configuration for CIDR `0.0.0.0/0` on TCP ports 80 and 443."
+  - "Enforce mandatory Zero-Cost ($0) check: on any VM modification or deployment, execute the OCI tenancy audit (`E:\\Oracle\\scripts\\audit_tenancy_resources.py`) to verify that all compute, storage, IP, and networking resources remain 100% within Always Free quotas ($0 cost)."
   - "Validate subpath deployment integrity across all 10 core routes and redirects using `scripts/test_prefix_deployment.py`."
 
 dont:
   - "Do not break root `/` standalone web or PyWebView desktop execution when `URL_PREFIX` is unset."
   - "Do not apply post-compression regex string replacements on Brotli/Gzip encoded response bodies in middleware."
   - "Do not omit Oracle Cloud VCN Security List instructions, as Oracle blocks external ingress at the cloud subnet router level by default."
+  - "Never provision paid OCI compute shapes, extra block volumes beyond the 200 GB limit, paid Load Balancers, or NAT gateways that incur recurring costs."
 
 reason:
   "Allows users to host the Holy Bible application alongside other services, personal sites, or APIs on a single Oracle Cloud Always Free compute instance without path conflicts, while preserving 100% caching and compression performance."
