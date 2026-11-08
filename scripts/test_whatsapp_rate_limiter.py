@@ -11,7 +11,9 @@ Tests:
 
 import asyncio
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 # Ensure UTF-8 output on Windows consoles
@@ -22,6 +24,12 @@ if hasattr(sys.stderr, "reconfigure"):
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, PROJECT_ROOT)
+
+# Isolate all test database queries and file writes to a temporary directory so that
+# the live/production data/admin_settings.sqlite.db and user settings are NEVER touched or mutated.
+TEST_TEMP_DIR = tempfile.mkdtemp(prefix="holybible_rl_test_")
+TEST_DB_PATH = os.path.join(TEST_TEMP_DIR, "test_admin_settings.sqlite.db")
+os.environ["SETTINGS_DATABASE_PATH"] = TEST_DB_PATH
 
 import httpx
 from app.main import app
@@ -377,6 +385,12 @@ async def run_rate_limiter_tests():
                 f.write(orig_config_content)
             load_persisted_config()
             print("  [Teardown] Original whatsapp_config.json restored.")
+
+        # Clean up isolated test environment
+        if os.environ.get("SETTINGS_DATABASE_PATH") == TEST_DB_PATH:
+            del os.environ["SETTINGS_DATABASE_PATH"]
+        if os.path.exists(TEST_TEMP_DIR):
+            shutil.rmtree(TEST_TEMP_DIR, ignore_errors=True)
 
 
 if __name__ == "__main__":

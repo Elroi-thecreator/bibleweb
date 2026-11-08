@@ -3,7 +3,7 @@ type: architecture_standard
 title: Administrator Authentication, Protected Settings & System Telemetry Architecture
 domain: architecture
 status: approved
-version: 1.11.0
+version: 1.12.0
 authority:
   level: official
   confidence: high
@@ -21,12 +21,15 @@ applies_to:
   - study
 
 rule:
-  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, all administrative management APIs (`/admin/api/*`), administrative WhatsApp endpoints (`/api/whatsapp/*`), and administrative Ask Bible AI endpoints (`/admin/api/ai/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons. Administrators can dynamically update, test, and persist runtime settings—including WhatsApp Gateway parameters, Ask Bible AI LLM Provider Settings (Base URL, API Key, Model, Presets, Grounding, and Simulation Mode), AI in Scripture Quiz parameters (`quiz_ai_enabled`, `quiz_ai_default_count`, `quiz_ai_difficulty`), and AI Scripture Study & Verse Exegesis parameters (`study_ai_enabled`)—via `POST /admin/api/*` and unified `POST /admin/api/settings/save-all` backed by a centralized SQLite database (`data/admin_settings.sqlite.db`) as the sole single source of truth, completely eliminating browser LocalStorage dependency, ephemeral session loss, and accidental refreshes to default settings across server reboots, container rebuilds, and PyInstaller executable repackaging."
+  "The Holy Bible system enforces strict role-based access control on `/admin/settings`, `/settings`, all administrative management APIs (`/admin/api/*`), administrative WhatsApp endpoints (`/api/whatsapp/*`), and administrative Ask Bible AI endpoints (`/admin/api/ai/*`). Non-authenticated requests are immediately blocked with HTTP 401 (for JSON API requests) or redirected via HTTP 303 to `/admin/login` (for browser requests). Administrative sessions must use tamper-proof HMAC-SHA256 signed session tokens stored in HttpOnly, SameSite=Lax cookies, with constant-time password comparisons. Administrators can dynamically update, test, and persist runtime settings—including WhatsApp Gateway parameters, Ask Bible AI LLM Provider Settings (Base URL, API Key, Model, Presets, Grounding, and Simulation Mode), AI in Scripture Quiz parameters (`quiz_ai_enabled`, `quiz_ai_default_count`, `quiz_ai_difficulty`), and AI Scripture Study & Verse Exegesis parameters (`study_ai_enabled`)—via `POST /admin/api/*`, unified `POST /admin/api/settings/save-all`, and on-demand reload `POST /admin/api/settings/reload` backed by a centralized SQLite database (`data/admin_settings.sqlite.db`) as the sole single source of truth. Settings are loaded into active application memory strictly upon app startup/restart, when an administrator saves modifications, or when an administrator explicitly triggers a reload from the database, eliminating all automatic time-to-time background polling, periodic mutations, and test pollution across server reboots, container rebuilds, and PyInstaller executable repackaging."
 
 do:
   - "Mount all administrative routes under `/admin` with route-level security guards (`require_admin`)."
   - "Persist all runtime administrative configuration settings to a dedicated, centralized database: supporting cloud PostgreSQL/Supabase via `DATABASE_URL`/`POSTGRES_URL` or embedded SQLite (`data/admin_settings.sqlite.db`, table `admin_settings`). On serverless platforms (Vercel, AWS Lambda) where `/var/task` is read-only, automatically resolve writable storage to `/tmp/admin_settings.sqlite.db` (hydrated from bundled repository database), and on PyInstaller frozen desktop builds resolve to `%LOCALAPPDATA%/HolyBible/data/admin_settings.sqlite.db` so configurations never disappear across executable builds or container redeploys."
   - "Expose protected administrative endpoint `POST /admin/api/settings/save-all` to atomically persist complete system configurations (AI, WhatsApp, Rate Limiting, and Quotas) directly into the SQLite database in a single transaction."
+  - "Expose protected administrative endpoint `POST /admin/api/settings/reload` to allow administrators to re-read and apply all database settings into running memory on demand without restarting the server."
+  - "Load all persistent administrative settings from the centralized database into in-memory application singletons (`whatsapp_gateway.config.config`, `whatsapp_gateway.routes.webhook._client`, `ask_bible_ai.config.config`, `ask_bible_ai.service.ai_service`) upon application startup in `lifespan(app)` and immediately upon changes saved by an administrator."
+  - "Ensure automated test suites (`scripts/test_admin_settings.py`, `scripts/test_whatsapp_rate_limiter.py`) execute in complete isolation using temporary database paths (`SETTINGS_DATABASE_PATH`), strictly preventing test scripts or background verification from mutating production settings databases or user configuration files."
   - "Expose protected administrative endpoint `GET /admin/api/settings/db-status` for live database connectivity, row count, and size telemetry."
   - "In PyInstaller frozen mode, resolve writable configuration databases and chat history databases directly to `%LOCALAPPDATA%/HolyBible/` rather than the ephemeral `sys._MEIPASS` temp directory."
   - "Expose protected administrative endpoints `GET /admin/api/settings/export` and `POST /admin/api/settings/import` for atomic JSON backup and restore into the centralized SQLite database."
@@ -49,6 +52,8 @@ do:
   - "Execute `scripts/test_admin_settings.py` before releasing administrative changes to ensure 100% coverage of auth guards, session cookies, cache purges, database configuration persistence, and export/import APIs."
 
 dont:
+  - "Do not execute periodic polling, background timers, or automatic time-to-time sync loops that mutate or refresh administrative settings without explicit administrator actions."
+  - "Do not allow test suites to modify production `data/admin_settings.sqlite.db` or `%LOCALAPPDATA%/HolyBible/config`."
   - "Do not rely on client browser LocalStorage (`localStorage`) or session-dependent memory for system configuration persistence."
   - "Do not refresh administrative configurations back to default settings on server restarts or browser session changes."
   - "Do not expose administrative configuration, cache eviction, or broadcast triggers without authentication."

@@ -1,0 +1,45 @@
+id: ARCH-DIST-002
+type: architecture_standard
+title: Oracle Cloud Infrastructure (OCI) Free Tier VM Subpath Deployment & URL Prefix Architecture
+domain: architecture
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: devops_team
+
+applies_to:
+  - backend
+  - deployment
+  - nginx
+  - systemd
+  - docker
+
+rule:
+  "When hosted on Oracle Cloud Infrastructure (OCI) Always Free VMs behind a reverse proxy (Nginx) under a URL path prefix such as `/bible`, the backend dynamically activates subpath mounting via `URL_PREFIX` or `ROOT_PATH`, ensuring all rendered HTML navigation links, static assets, API queries, and redirects operate seamlessly without hardcoded root collisions or breaking standalone desktop/web modes."
+
+do:
+  - "Support `URL_PREFIX` environment variable (e.g. `URL_PREFIX=/bible`) in `app/main.py`."
+  - "Mount `core_app` under `URL_PREFIX` using FastAPI sub-application mounting on a wrapper app, redirecting `{URL_PREFIX}` to `{URL_PREFIX}/` with HTTP 307."
+  - "Automatically rewrite rendered HTML root-relative attributes (`href`, `src`, `action`), JavaScript `fetch`, and string endpoints in `PrefixedTemplates` before Brotli/Gzip compression and in-memory LRU caching."
+  - "Ensure `BoundedHTMLCache` stores and serves pre-compressed Brotli (`.br`) and Gzip (`.gzip`) buffers containing the active prefix with 0 ms CPU overhead."
+  - "Deploy on Oracle Cloud VMs using a managed systemd service (`holybible.service`) running multi-worker Uvicorn (`scripts/run_server.py`) and Nginx reverse proxy with WebSocket/streaming buffering disabled."
+  - "Configure Oracle Cloud in-guest host firewall (Ubuntu `iptables` / `netfilter-persistent` and `ufw`, or Oracle Linux `firewalld`) to open TCP ports 80 and 443."
+  - "Enforce Oracle Cloud VCN Security List ingress rule configuration for CIDR `0.0.0.0/0` on TCP ports 80 and 443."
+  - "Validate subpath deployment integrity across all 10 core routes and redirects using `scripts/test_prefix_deployment.py`."
+
+dont:
+  - "Do not break root `/` standalone web or PyWebView desktop execution when `URL_PREFIX` is unset."
+  - "Do not apply post-compression regex string replacements on Brotli/Gzip encoded response bodies in middleware."
+  - "Do not omit Oracle Cloud VCN Security List instructions, as Oracle blocks external ingress at the cloud subnet router level by default."
+
+reason:
+  "Allows users to host the Holy Bible application alongside other services, personal sites, or APIs on a single Oracle Cloud Always Free compute instance without path conflicts, while preserving 100% caching and compression performance."
+
+related_items:
+  - ARCH-SYS-001
+  - DEV-PY-001
+  - DEV-PERF-001
+  - DEV-TEST-001

@@ -1708,9 +1708,22 @@
             }
         }
 
-        function reloadFromDatabase() {
+        async function reloadFromDatabase() {
             showToast('🔄 Reloading all configurations from database...', 'info');
-            setTimeout(() => location.reload(), 500);
+            try {
+                const res = await fetch('/admin/api/settings/reload', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast('✅ All settings reloaded from database into app!', 'success');
+                    if (data.db) updateDatabaseStatusPill(data.db);
+                    setTimeout(() => location.reload(), 600);
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    showToast('❌ Failed to reload settings: ' + (data.detail || 'Server error'), true);
+                }
+            } catch (err) {
+                showToast('❌ Error connecting to reload endpoint: ' + err.message, true);
+            }
         }
 
         async function exportSettingsJson() {

@@ -1,0 +1,27 @@
+[Unit]
+Description=Holy Bible Production Web Server (FastAPI + Embedded SQLite)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/holybible
+Environment="PATH=/opt/holybible/.venv/bin:/usr/local/bin:/usr/bin"
+Environment="PYTHONPATH=/opt/holybible"
+Environment="URL_PREFIX=/bible"
+Environment="HOST=127.0.0.1"
+Environment="PORT=8000"
+Environment="WEB_CONCURRENCY=2"
+Environment="PAGE_CACHE_SIZE=512"
+Environment="AUDIO_CACHE_SIZE=500"
+
+# Multi-Worker production launcher detecting CPU cores and managing Uvicorn workers
+ExecStart=/opt/holybible/.venv/bin/python scripts/run_server.py --host 127.0.0.1 --port 8000 --workers 2
+
+Restart=always
+RestartSec=3
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

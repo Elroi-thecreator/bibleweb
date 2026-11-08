@@ -6,14 +6,23 @@ and administrative cache/whatsapp management APIs.
 
 import asyncio
 import os
+import shutil
 import sys
+import tempfile
 
 # Support UTF-8 emoji output on Windows consoles
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # Ensure project root is in sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, PROJECT_ROOT)
+
+# Isolate all test database queries and file writes to a temporary directory so that
+# the live/production data/admin_settings.sqlite.db and user settings are NEVER touched or mutated.
+TEST_TEMP_DIR = tempfile.mkdtemp(prefix="holybible_admin_test_")
+TEST_DB_PATH = os.path.join(TEST_TEMP_DIR, "test_admin_settings.sqlite.db")
+os.environ["SETTINGS_DATABASE_PATH"] = TEST_DB_PATH
 
 from httpx import AsyncClient, ASGITransport
 from app.main import app, HTML_PAGE_CACHE, AUDIO_CACHE
@@ -375,18 +384,30 @@ async def run_admin_tests():
         print("  ✅ Verified settings do NOT get refreshed to defaults on reload.")
 
         # -------------------------------------------------------------
-        # 25. Test Admin Logout
+        # 25. Test Explicit POST /admin/api/settings/reload
         # -------------------------------------------------------------
-        print("\n[25] Testing GET /admin/logout...")
+        print("\n[25] Testing POST /admin/api/settings/reload authenticated...")
+        res = await client.post("/admin/api/settings/reload", cookies=cookies)
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+        reload_data = res.json()
+        assert reload_data["status"] == "ok"
+        assert reload_data["ai"]["model"] == "mixtral-8x7b-32768"
+        assert reload_data["whatsapp"]["session_id"] == "unified-db-session"
+        print("  ✅ POST /admin/api/settings/reload successfully reloaded settings into app memory.")
+
+        # -------------------------------------------------------------
+        # 26. Test Admin Logout
+        # -------------------------------------------------------------
+        print("\n[26] Testing GET /admin/logout...")
         res = await client.get("/admin/logout", cookies=cookies)
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
         print("  ✅ Logged out successfully and redirected to login page.")
 
         # -------------------------------------------------------------
-        # 26. Verify Session Invalidation after Logout
+        # 27. Verify Session Invalidation after Logout
         # -------------------------------------------------------------
-        print("\n[26] Testing GET /admin/settings without cookie after logout...")
+        print("\n[27] Testing GET /admin/settings without cookie after logout...")
         res = await client.get("/admin/settings")
         assert res.status_code == 303, f"Expected 303, got {res.status_code}"
         assert "/admin/login" in res.headers["location"]
@@ -405,8 +426,14 @@ async def run_admin_tests():
         config.queue_enabled = p.get("queue_enabled", config.queue_enabled)
         config.rabbitmq_url = p.get("rabbitmq_url", config.rabbitmq_url)
 
+    # Clean up isolated test environment
+    if os.environ.get("SETTINGS_DATABASE_PATH") == TEST_DB_PATH:
+        del os.environ["SETTINGS_DATABASE_PATH"]
+    if os.path.exists(TEST_TEMP_DIR):
+        shutil.rmtree(TEST_TEMP_DIR, ignore_errors=True)
+
     print("\n" + "=" * 70)
-    print("🎉 ALL 26 ADMIN SECURITY, SETTINGS & DATABASE CONFIG TESTS PASSED WITH 100% SUCCESS!")
+    print("🎉 ALL 27 ADMIN SECURITY, SETTINGS & DATABASE CONFIG TESTS PASSED WITH 100% SUCCESS!")
     print("=" * 70)
 
 

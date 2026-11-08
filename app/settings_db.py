@@ -667,3 +667,78 @@ def get_settings_db_stats() -> Dict[str, Any]:
             "engine": "fallback",
             "error": str(e),
         }
+
+
+def load_all_settings_into_app() -> Dict[str, Any]:
+    """
+    Loads all administrative runtime settings from the database and updates the
+    in-memory singletons across the application:
+    - whatsapp_gateway.config.config
+    - whatsapp_gateway.routes.webhook._client (WAClient)
+    - ask_bible_ai.config.config
+    - ask_bible_ai.service.ai_service
+    This is called:
+    1. During app startup / restart (in lifespan).
+    2. When an administrator saves/changes settings (via API or admin portal).
+    3. When the administrator explicitly reloads from the database.
+    Never run on a timer or background loop.
+    """
+    init_settings_db()
+    all_settings = get_all_settings()
+    wa_settings = all_settings.get("whatsapp", {})
+    ai_settings = all_settings.get("ai", {})
+
+    wa_dict: Dict[str, Any] = {}
+    ai_dict: Dict[str, Any] = {}
+
+    # 1. Apply WhatsApp settings to singleton & WAClient
+    try:
+        from whatsapp_gateway.config import config as wa_cfg
+        for k, v in wa_settings.items():
+            if hasattr(wa_cfg, k):
+                setattr(wa_cfg, k, v)
+        wa_dict = wa_cfg.model_dump()
+
+        try:
+            from whatsapp_gateway.routes.webhook import get_client
+            client = get_client()
+            if client:
+                client.update_config(
+                    base_url=wa_cfg.gateway_url,
+                    default_session_id=wa_cfg.session_id,
+                    api_key=wa_cfg.api_key,
+                    simulation_mode=wa_cfg.enable_simulation_mode,
+                    provider=wa_cfg.provider,
+                    meta_phone_number_id=wa_cfg.meta_phone_number_id,
+                    meta_waba_id=wa_cfg.meta_waba_id,
+                    meta_access_token=wa_cfg.meta_access_token,
+                    meta_verify_token=wa_cfg.meta_verify_token,
+                    meta_app_secret=wa_cfg.meta_app_secret,
+                    meta_api_version=wa_cfg.meta_api_version,
+                )
+        except Exception as client_err:
+            logger.debug("Could not update WA client during settings load: %s", client_err)
+    except Exception as wa_err:
+        logger.warning("Error loading WA settings into app: %s", wa_err)
+
+    # 2. Apply Ask Bible AI settings to singleton & AIService
+    try:
+        from ask_bible_ai.config import config as ai_cfg
+        for k, v in ai_settings.items():
+            if hasattr(ai_cfg, k):
+                setattr(ai_cfg, k, v)
+        ai_dict = ai_cfg.to_dict()
+
+        try:
+            from ask_bible_ai.service import ai_service
+            if ai_service:
+                ai_service.config = ai_cfg
+                if hasattr(ai_service, "client") and ai_service.client:
+                    ai_service.client.config = ai_cfg
+        except Exception as ai_svc_err:
+            logger.debug("Could not update AI service during settings load: %s", ai_svc_err)
+    except Exception as ai_err:
+        logger.warning("Error loading AI settings into app: %s", ai_err)
+
+    logger.info("Admin settings loaded into app memory from database")
+    return {"whatsapp": wa_dict, "ai": ai_dict}

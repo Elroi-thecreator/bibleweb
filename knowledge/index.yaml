@@ -1,8 +1,8 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "E:/bible"
-knowledge_units_count: 25
-last_updated: "2026-11-06"
+knowledge_units_count: 26
+last_updated: "2026-11-08"
 
 knowledge_units:
   architecture:
@@ -15,6 +15,9 @@ knowledge_units:
     - id: ARCH-DIST-001
       file: "knowledge/architecture/ARCH-DIST-001.yaml"
       title: "PyInstaller Standalone Windows Executable & WinGet Distribution Pipeline"
+    - id: ARCH-DIST-002
+      file: "knowledge/architecture/ARCH-DIST-002.yaml"
+      title: "Oracle Cloud Infrastructure (OCI) Free Tier VM Subpath Deployment & URL Prefix Architecture"
     - id: ARCH-WA-001
       file: "knowledge/architecture/ARCH-WA-001.yaml"
       title: "Decoupled WhatsApp Gateway & Reusable Bot Engine Architecture"

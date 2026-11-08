@@ -147,10 +147,14 @@ def require_admin(request: Request):
         )
 
     # For browser requests, redirect to admin login with return path
+    URL_PREFIX = os.getenv("URL_PREFIX", os.getenv("ROOT_PATH", "")).strip().rstrip("/")
+    if URL_PREFIX and not URL_PREFIX.startswith("/"):
+        URL_PREFIX = "/" + URL_PREFIX
+    login_base = f"{URL_PREFIX}/admin/login" if URL_PREFIX else "/admin/login"
     next_url = request.url.path
     if request.url.query:
         next_url += f"?{request.url.query}"
-    return RedirectResponse(url=f"/admin/login?next={next_url}", status_code=303)
+    return RedirectResponse(url=f"{login_base}?next={next_url}", status_code=303)
 
 
 # Alias for backward compatibility

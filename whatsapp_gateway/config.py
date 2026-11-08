@@ -23,11 +23,17 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 def _get_persistent_paths(filename: str) -> tuple[Path, Optional[Path]]:
     """
     Returns (primary_path, machine_backup_path) for persistent configurations.
+    - If SETTINGS_DATABASE_PATH override is set (e.g. test isolation), mirrors to test dir only.
     - If running frozen in PyInstaller, primary is in %LOCALAPPDATA%/HolyBible/config
       so settings never disappear across builds or restarts.
     - If running from source, primary is project_root/data, and secondary is %LOCALAPPDATA%/HolyBible/config
       as an immutable machine-level backup across git cleans or workspace rebuilds.
     """
+    custom_db = os.getenv("SETTINGS_DATABASE_PATH")
+    if custom_db:
+        test_dir = Path(custom_db).parent
+        return test_dir / filename, None
+
     local_app_data = os.environ.get("LOCALAPPDATA")
     if local_app_data:
         machine_dir = Path(local_app_data) / "HolyBible" / "config"

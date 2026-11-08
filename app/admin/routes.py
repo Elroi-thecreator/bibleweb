@@ -33,6 +33,10 @@ from app.db import DB_PATH, SONGS_DB_PATH
 from ask_bible_ai.config import config as ai_config, save_persisted_config as save_ai_config
 from ask_bible_ai.routes import ai_service
 
+URL_PREFIX = os.getenv("URL_PREFIX", os.getenv("ROOT_PATH", "")).strip().rstrip("/")
+if URL_PREFIX and not URL_PREFIX.startswith("/"):
+    URL_PREFIX = "/" + URL_PREFIX
+
 router = APIRouter()
 
 
@@ -58,7 +62,8 @@ def _format_uptime(seconds: float) -> str:
 @router.get("/", response_class=HTMLResponse)
 async def admin_root(request: Request):
     """Admin root redirects directly to /admin/settings."""
-    return RedirectResponse(url="/admin/settings", status_code=303)
+    target = f"{URL_PREFIX}/admin/settings" if URL_PREFIX else "/admin/settings"
+    return RedirectResponse(url=target, status_code=303)
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -66,7 +71,8 @@ async def admin_login_page(request: Request, next: Optional[str] = "/admin/setti
     """Renders the Administrator Login page."""
     user = get_authenticated_admin(request)
     if user:
-        return RedirectResponse(url=next or "/admin/settings", status_code=303)
+        default_target = f"{URL_PREFIX}/admin/settings" if URL_PREFIX else "/admin/settings"
+        return RedirectResponse(url=next or default_target, status_code=303)
 
     _, _, _, templates = _get_app_context()
     info_msg = None
@@ -134,7 +140,8 @@ async def admin_login_submit(request: Request):
 @router.post("/logout")
 async def admin_logout(request: Request):
     """Clears the admin session cookie and redirects to login."""
-    response = RedirectResponse(url="/admin/login?msg=logged_out", status_code=303)
+    target = f"{URL_PREFIX}/admin/login?msg=logged_out" if URL_PREFIX else "/admin/login?msg=logged_out"
+    response = RedirectResponse(url=target, status_code=303)
     response.delete_cookie(key=COOKIE_NAME, path="/")
     return response
 
@@ -145,7 +152,15 @@ async def admin_settings_page(request: Request):
     # Enforce admin authentication
     user = get_authenticated_admin(request)
     if not user:
-        return RedirectResponse(url=f"/admin/login?next={request.url.path}", status_code=303)
+        login_url = f"{URL_PREFIX}/admin/login" if URL_PREFIX else "/admin/login"
+        return RedirectResponse(url=f"{login_url}?next={request.url.path}", status_code=303)
+
+    # Ensure in-memory singletons reflect the single source of truth in database
+    try:
+        from app.settings_db import load_all_settings_into_app
+        load_all_settings_into_app()
+    except Exception as e:
+        logger.warning("Could not reload settings before page render: %s", e)
 
     html_cache, audio_cache, start_time, templates = _get_app_context()
     wa_client = _get_wa_client()
@@ -385,6 +400,10 @@ async def api_update_wa_config(request: Request):
             rabbitmq_url=saved.get("rabbitmq_url"),
         )
 
+    # Immediately ensure entire application memory is in sync with database
+    from app.settings_db import load_all_settings_into_app
+    load_all_settings_into_app()
+
     return {
         "status": "ok",
         "message": "WhatsApp Provider & Rate Limiter configuration saved successfully!",
@@ -467,6 +486,8 @@ async def api_toggle_wa_simulation(request: Request):
     new_mode = not wa_client.simulation_mode
     wa_client.simulation_mode = new_mode
     save_persisted_config(enable_simulation_mode=new_mode)
+    from app.settings_db import load_all_settings_into_app
+    load_all_settings_into_app()
     return {
         "status": "ok",
         "simulation_mode": new_mode,
@@ -521,6 +542,8 @@ async def api_toggle_wa_rate_limiter(request: Request):
     require_admin(request)
     new_state = not wa_config.rate_limit_enabled
     save_persisted_config(rate_limit_enabled=new_state)
+    from app.settings_db import load_all_settings_into_app
+    load_all_settings_into_app()
     return {
         "status": "ok",
         "enabled": new_state,
@@ -564,6 +587,9 @@ async def api_update_wa_rate_limiter_config(request: Request):
         rate_limit_cooldown_seconds=cooldown,
         rate_limit_whitelist=whitelist,
     )
+
+    from app.settings_db import load_all_settings_into_app
+    load_all_settings_into_app()
 
     return {
         "status": "ok",
@@ -683,6 +709,9 @@ async def api_update_ai_config(request: Request):
     ai_service.config = new_cfg
     ai_service.client.config = new_cfg
 
+    from app.settings_db import load_all_settings_into_app
+    load_all_settings_into_app()
+
     return {
         "status": "ok",
         "message": "Ask Bible AI configuration updated successfully!",
@@ -785,6 +814,9 @@ async def api_import_admin_settings(request: Request):
             meta_app_secret=wa_config.meta_app_secret,
             meta_api_version=wa_config.meta_api_version,
         )
+
+    from app.settings_db import load_all_settings_into_app
+    load_all_settings_into_app()
 
     return {
         "status": "ok",
@@ -894,13 +926,14 @@ async def api_save_all_admin_settings(request: Request):
                 meta_api_version=wa_config.meta_api_version,
             )
 
-    from app.settings_db import get_settings_db_stats
+    from app.settings_db import load_all_settings_into_app, get_settings_db_stats
+    loaded = load_all_settings_into_app()
     return {
         "status": "ok",
         "message": "All admin settings successfully saved to database in one place!",
         "db_stats": get_settings_db_stats(),
-        "ai": ai_config.to_dict(),
-        "whatsapp": wa_config.model_dump(),
+        "ai": loaded.get("ai", ai_config.to_dict()),
+        "whatsapp": loaded.get("whatsapp", wa_config.model_dump()),
     }
 
 
@@ -915,4 +948,23 @@ async def api_settings_db_status(request: Request):
     return {
         "status": "ok",
         "db": get_settings_db_stats(),
+    }
+
+
+@router.post("/api/settings/reload")
+async def api_reload_admin_settings(request: Request):
+    """
+    Explicitly reloads all runtime settings from database into running application memory.
+    Reloads only on demand or when settings are changed, eliminating periodic/polling updates.
+    Strictly protected by require_admin.
+    """
+    require_admin(request)
+    from app.settings_db import load_all_settings_into_app, get_settings_db_stats
+    loaded = load_all_settings_into_app()
+    return {
+        "status": "ok",
+        "message": "Settings successfully reloaded from database into app memory.",
+        "db": get_settings_db_stats(),
+        "ai": loaded.get("ai", {}),
+        "whatsapp": loaded.get("whatsapp", {}),
     }

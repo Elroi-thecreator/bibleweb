@@ -87,6 +87,44 @@ elif getattr(sys, "frozen", False):
 else:
     AUDIO_CACHE_DIR = BASE_DIR / ".audio_cache"
 
+URL_PREFIX = os.getenv("URL_PREFIX", os.getenv("ROOT_PATH", "")).strip().rstrip("/")
+if URL_PREFIX and not URL_PREFIX.startswith("/"):
+    URL_PREFIX = "/" + URL_PREFIX
+
+
+def prefix_html(text: str, prefix: str) -> str:
+    """Rewrites root-relative URLs in rendered HTML to ensure flawless subpath navigation."""
+    if not prefix:
+        return text
+    # 1. HTML attributes (excluding protocol-relative //)
+    text = re.sub(r'href=(["\'])/(?!/)', rf'href=\1{prefix}/', text)
+    text = re.sub(r'src=(["\'])/(?!/)', rf'src=\1{prefix}/', text)
+    text = re.sub(r'action=(["\'])/(?!/)', rf'action=\1{prefix}/', text)
+
+    # 2. JavaScript fetch and location
+    text = re.sub(r'fetch\((["\'])/(?!/)', rf'fetch(\1{prefix}/', text)
+    text = re.sub(r'window\.location\.href\s*=\s*(["\'])/(?!/)', rf'window.location.href = \1{prefix}/', text)
+
+    # 3. Quoted API, static, and route paths inside JS strings
+    text = re.sub(r'(["\'])/static/', rf'\1{prefix}/static/', text)
+    text = re.sub(r'(["\'])/api/', rf'\1{prefix}/api/', text)
+    text = re.sub(r'(["\'])/read/', rf'\1{prefix}/read/', text)
+    text = re.sub(r'(["\'])/present/', rf'\1{prefix}/present/', text)
+    text = re.sub(r'(["\'])/read-along/', rf'\1{prefix}/read-along/', text)
+    text = re.sub(r'(["\'])/plans', rf'\1{prefix}/plans', text)
+    text = re.sub(r'(["\'])/quiz', rf'\1{prefix}/quiz', text)
+    text = re.sub(r'(["\'])/songs', rf'\1{prefix}/songs', text)
+    text = re.sub(r'(["\'])/search', rf'\1{prefix}/search', text)
+    text = re.sub(r'(["\'])/admin', rf'\1{prefix}/admin', text)
+    text = re.sub(r'(["\'])/whatsapp', rf'\1{prefix}/whatsapp', text)
+    text = re.sub(r'(["\'])/sync', rf'\1{prefix}/sync', text)
+    text = re.sub(r'(["\'])/ask-ai', rf'\1{prefix}/ask-ai', text)
+    text = re.sub(r'(["\'])/privacy', rf'\1{prefix}/privacy', text)
+
+    # 4. CSS url()
+    text = re.sub(r'url\((["\']?)/(?!/)', rf'url(\1{prefix}/', text)
+    return text
+
 
 class CachedPage:
     """Pre-rendered HTML payload with pre-compressed Brotli and Gzip buffers."""
@@ -151,6 +189,12 @@ class BoundedHTMLCache:
         return Response(content=cached.raw, media_type="text/html; charset=utf-8", headers=resp_headers)
 
     def set(self, key: str, value: bytes) -> None:
+        if URL_PREFIX:
+            try:
+                decoded = value.decode("utf-8", errors="replace")
+                value = prefix_html(decoded, URL_PREFIX).encode("utf-8")
+            except Exception as e:
+                print(f"[PrefixMiddleware] Error rewriting body: {e}", flush=True)
         cached_page = CachedPage(value)
         with self._lock:
             if key in self._cache:
@@ -299,12 +343,13 @@ async def lifespan(app: FastAPI):
     # Fast startup verification (pings read-only databases)
     await asyncio.to_thread(check_database_health)
 
-    # Initialize unified admin settings database
+    # Initialize unified admin settings database and load into running app memory
     try:
-        from app.settings_db import init_settings_db
+        from app.settings_db import init_settings_db, load_all_settings_into_app
         await asyncio.to_thread(init_settings_db)
+        await asyncio.to_thread(load_all_settings_into_app)
     except Exception as db_err:
-        print(f"[SettingsDB] Lifespan init warning: {db_err}", flush=True)
+        print(f"[SettingsDB] Lifespan init/load warning: {db_err}", flush=True)
 
     # Initialize and start WhatsApp RabbitMQ queue manager (if enabled)
     try:
@@ -377,14 +422,29 @@ async def security_and_cache_middleware(request: Request, call_next):
     response.headers.setdefault("X-XSS-Protection", "1; mode=block")
 
     # Static assets (JS, CSS, icons, images, fonts) cached aggressively for 7 days
-    if request.url.path.startswith("/static/"):
+    req_path = request.url.path
+    if req_path.startswith("/static/") or (URL_PREFIX and req_path.startswith(f"{URL_PREFIX}/static/")):
         response.headers.setdefault("Cache-Control", "public, max-age=604800, immutable")
 
     return response
 
 
+class PrefixedTemplates(Jinja2Templates):
+    """Custom Jinja2Templates that automatically rewrites URLs when URL_PREFIX is configured."""
+    def TemplateResponse(self, *args, **kwargs):
+        resp = super().TemplateResponse(*args, **kwargs)
+        if URL_PREFIX and resp.body:
+            decoded = resp.body.decode("utf-8", errors="replace")
+            prefixed = prefix_html(decoded, URL_PREFIX).encode("utf-8")
+            resp.body = prefixed
+            resp.headers["content-length"] = str(len(prefixed))
+        return resp
+
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+templates = PrefixedTemplates(directory=str(TEMPLATES_DIR))
+templates.env.globals["URL_PREFIX"] = URL_PREFIX
+templates.env.globals["prefix"] = URL_PREFIX
 
 
 # 3. Custom Branded Exception Handlers
@@ -1627,7 +1687,8 @@ async def api_songs_search(
 
 @app.get("/book/{book_id}/chapter/{chapter}")
 async def legacy_redirect(book_id: int, chapter: int):
-    return RedirectResponse(url=f"/read/{book_id}/{chapter}?mode=bilingual")
+    target = f"{URL_PREFIX}/read/{book_id}/{chapter}?mode=bilingual" if URL_PREFIX else f"/read/{book_id}/{chapter}?mode=bilingual"
+    return RedirectResponse(url=target)
 
 # ==========================================
 # 6. 100-Day Read-Along Plan Routes
@@ -1668,7 +1729,8 @@ def _lookup_book_id(book_str: str):
 
 @app.get("/read-along/plan/{plan_type}")
 async def redirect_plan_to_day(plan_type: str, day: int = 1):
-    return RedirectResponse(url=f"/read-along/plan/{plan_type}/day/{day}")
+    target = f"{URL_PREFIX}/read-along/plan/{plan_type}/day/{day}" if URL_PREFIX else f"/read-along/plan/{plan_type}/day/{day}"
+    return RedirectResponse(url=target)
 
 
 @app.get("/read-along/plan/{plan_type}/day/{day}", response_class=HTMLResponse)
@@ -1909,5 +1971,22 @@ async def settings_redirect(request: Request):
     Redirects /settings directly to /admin/settings,
     strictly enforcing administrator authentication.
     """
-    return RedirectResponse(url="/admin/settings", status_code=303)
+    target = f"{URL_PREFIX}/admin/settings" if URL_PREFIX else "/admin/settings"
+    return RedirectResponse(url=target, status_code=303)
+
+
+# ---------------------------------------------------------
+# Subpath Mounting Wrapper (URL_PREFIX / ROOT_PATH)
+# ---------------------------------------------------------
+if URL_PREFIX:
+    core_app = app
+    wrapper_app = FastAPI(title="Holy Bible - வேதம்", lifespan=lifespan)
+
+    @wrapper_app.get(URL_PREFIX)
+    async def redirect_prefix_root():
+        return RedirectResponse(url=f"{URL_PREFIX}/", status_code=307)
+
+    wrapper_app.mount(URL_PREFIX, core_app)
+    app = wrapper_app
+
 
