@@ -23,7 +23,7 @@ rule:
 do:
   - "Default to root hosting at `/` on Oracle Cloud VMs (`URL_PREFIX=''` or unset) via `scripts/setup_nginx_root.sh`."
   - "Configure Nginx with permanent 301 rewrite (`location ~ ^/bible/?(.*)$ { return 301 /$1; }`) ensuring seamless backwards-compatibility for existing `/bible/...` links and bookmarks."
-  - "Configure Nginx `server_name` to bind both primary custom domains (`pnrs.is-a.dev`) and registered community domains (`elroi.js.org` via JS.ORG CNAME pull request #12966)."
+  - "Configure Nginx `server_name` to bind both primary custom domains (`pnrs.is-a.dev`) and registered community domains (`elroi.js.org` pointing directly to VM IP `129.225.69.57` via JS.ORG pull request #12966)."
   - "Support optional `URL_PREFIX` environment variable (e.g. `URL_PREFIX=/bible`) in `app/main.py` using strictly idempotent regex patterns with negative lookahead to prevent `/bible/bible` duplicate prefix corruption."
   - "Mount `core_app` under `URL_PREFIX` using FastAPI sub-application mounting on a wrapper app, redirecting `{URL_PREFIX}` to `{URL_PREFIX}/` with HTTP 307 when subpath hosting is activated."
   - "Automatically rewrite rendered HTML root-relative attributes (`href`, `src`, `action`), JavaScript `fetch`, backtick template literals, and string endpoints in `PrefixedTemplates` before Brotli/Gzip compression."
