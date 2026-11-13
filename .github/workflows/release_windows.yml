@@ -170,7 +170,7 @@ jobs:
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
             Invoke-WebRequest -Uri $komacUrl -OutFile $komacExe -UseBasicParsing
             $exeUrl = "https://github.com/${{ github.repository }}/releases/download/$env:TAG/HolyBible-Portable.exe"
-            & $komacExe update ElroiTheCreator.HolyBible --version "$env:VERSION" --urls "$exeUrl" --token "$env:WINGET_TOKEN"
+            & $komacExe update ElroiTheCreator.HolyBible --version "$env:VERSION" --urls "$exeUrl" --token "$env:WINGET_TOKEN" --submit
           }
 
       - name: WinGet Token Notice
