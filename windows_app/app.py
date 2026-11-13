@@ -95,9 +95,10 @@ else:
     if PROJECT_ROOT not in sys.path:
         sys.path.insert(0, PROJECT_ROOT)
 
-# 2. Import the exact same FastAPI app
+# 2. Import the exact same FastAPI app & version metadata
 try:
     from app.main import app as fastapi_app
+    from app.version import APP_VERSION, APP_NAME
 except ImportError as err:
     print(f"Error importing core application: {err}")
     print(f"sys.path: {sys.path}")
@@ -171,7 +172,7 @@ def main():
     app_url = f"http://{host}:{port}/"
 
     print("==================================================")
-    print("   Holy Bible (வேதம்) - Windows Desktop App")
+    print(f"   Holy Bible (வேதம்) - Windows Desktop App v{APP_VERSION}")
     print(f"   Local Server: {app_url}")
     print("==================================================")
 
@@ -195,7 +196,7 @@ def main():
         print("Launching native Windows desktop window (Edge WebView2)...")
         try:
             window = webview.create_window(
-                title="Holy Bible - வேதம்",
+                title=f"Holy Bible - வேதம் v{APP_VERSION}",
                 url=app_url,
                 width=1280,
                 height=840,

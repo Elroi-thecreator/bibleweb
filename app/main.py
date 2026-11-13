@@ -69,6 +69,7 @@ from app.db import (
 )
 from app.plans_data import READING_PLANS
 from app.quiz_data import QUIZ_CATEGORIES, QUIZ_QUESTIONS
+from app.version import APP_VERSION, APP_NAME
 
 # Absolute cross-platform path resolution (supports source & frozen PyInstaller exe)
 if getattr(sys, "frozen", False):
@@ -445,6 +446,9 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = PrefixedTemplates(directory=str(TEMPLATES_DIR))
 templates.env.globals["URL_PREFIX"] = URL_PREFIX
 templates.env.globals["prefix"] = URL_PREFIX
+templates.env.globals["app_version"] = APP_VERSION
+templates.env.globals["APP_VERSION"] = APP_VERSION
+templates.env.globals["app_name"] = APP_NAME
 
 
 # 3. Custom Branded Exception Handlers
@@ -850,7 +854,8 @@ async def api_health(deep: bool = Query(False, description="Run database connect
     payload = {
         "status": "ok",
         "uptime_seconds": uptime_sec,
-        "version": "1.1.0",
+        "version": APP_VERSION,
+        "app_name": APP_NAME,
     }
     if deep:
         db_health = await asyncio.to_thread(check_database_health)
@@ -859,6 +864,99 @@ async def api_health(deep: bool = Query(False, description="Run database connect
         payload["status"] = "ok" if all_ok else "degraded"
         return JSONResponse(content=payload, status_code=200 if all_ok else 503)
     return JSONResponse(content=payload, status_code=200)
+
+
+# In-memory update check cache (avoids GitHub API rate limiting)
+_UPDATE_CACHE = {
+    "checked_at": 0.0,
+    "data": None,
+}
+
+
+@app.get("/api/app/check-update")
+async def api_check_update(force: bool = Query(False, description="Bypass cached release metadata")):
+    """Checks GitHub Releases for new Holy Bible versions (Desktop and Web).
+    Caches successful checks for 15 minutes to respect GitHub rate limits.
+    """
+    now = time.time()
+    if not force and _UPDATE_CACHE["data"] and (now - _UPDATE_CACHE["checked_at"] < 900):
+        return JSONResponse(_UPDATE_CACHE["data"])
+
+    repo = "Elroi-thecreator/bibleweb"
+    url = f"https://api.github.com/repos/{repo}/releases/latest"
+    headers = {
+        "User-Agent": f"HolyBible-Desktop/{APP_VERSION}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=4.0) as client:
+            resp = await client.get(url, headers=headers)
+            if resp.status_code == 200:
+                rel = resp.json()
+                latest_tag = rel.get("tag_name", "").lstrip("v")
+
+                def _parse_semver(v_str):
+                    tokens = []
+                    for t in v_str.split("."):
+                        try:
+                            tokens.append(int(t))
+                        except ValueError:
+                            tokens.append(0)
+                    while len(tokens) < 3:
+                        tokens.append(0)
+                    return tuple(tokens[:3])
+
+                has_update = _parse_semver(latest_tag) > _parse_semver(APP_VERSION)
+                download_url = None
+                for asset in rel.get("assets", []):
+                    if asset.get("name") == "HolyBible-Portable.exe":
+                        download_url = asset.get("browser_download_url")
+                        break
+                if not download_url:
+                    download_url = rel.get("html_url") or f"https://github.com/{repo}/releases/latest"
+
+                result = {
+                    "current_version": APP_VERSION,
+                    "latest_version": latest_tag,
+                    "has_update": has_update,
+                    "release_name": rel.get("name") or f"Holy Bible v{latest_tag}",
+                    "release_notes": rel.get("body", ""),
+                    "published_at": rel.get("published_at"),
+                    "html_url": rel.get("html_url") or f"https://github.com/{repo}/releases/latest",
+                    "download_url": download_url,
+                    "winget_package_id": "ElroiTheCreator.HolyBible",
+                    "winget_command": "winget upgrade ElroiTheCreator.HolyBible",
+                    "status": "success",
+                }
+                _UPDATE_CACHE["checked_at"] = now
+                _UPDATE_CACHE["data"] = result
+                return JSONResponse(result)
+            elif resp.status_code == 404:
+                return JSONResponse({
+                    "current_version": APP_VERSION,
+                    "latest_version": APP_VERSION,
+                    "has_update": False,
+                    "status": "up_to_date",
+                    "winget_command": "winget upgrade ElroiTheCreator.HolyBible",
+                })
+            else:
+                return JSONResponse({
+                    "current_version": APP_VERSION,
+                    "latest_version": APP_VERSION,
+                    "has_update": False,
+                    "status": f"rate_limited_or_upstream_{resp.status_code}",
+                    "winget_command": "winget upgrade ElroiTheCreator.HolyBible",
+                })
+    except Exception as exc:
+        return JSONResponse({
+            "current_version": APP_VERSION,
+            "latest_version": APP_VERSION,
+            "has_update": False,
+            "status": "offline",
+            "winget_command": "winget upgrade ElroiTheCreator.HolyBible",
+        })
 
 
 @app.get("/api/system/process-registry")

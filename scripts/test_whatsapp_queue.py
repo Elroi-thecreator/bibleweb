@@ -85,10 +85,13 @@ class TestWhatsAppRabbitMQQueue(unittest.TestCase):
         self.assertIn("queues", st)
         self.assertEqual(st["queues"]["incoming"], DEFAULT_INCOMING_QUEUE)
 
-        # Test config update endpoint
+        # Test config update endpoint (requires admin auth)
+        from app.admin.auth import create_session_token, COOKIE_NAME
+        admin_cookie = {COOKIE_NAME: create_session_token("admin")}
         cfg_resp = self.client.post(
             "/api/whatsapp/queue/config",
             json={"enabled": False, "rabbitmq_url": "amqp://guest:guest@127.0.0.1:5672/"},
+            cookies=admin_cookie,
         )
         self.assertEqual(cfg_resp.status_code, 200)
         cfg_data = cfg_resp.json()

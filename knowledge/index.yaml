@@ -1,8 +1,8 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
-repository_root: "E:/bible"
-knowledge_units_count: 26
-last_updated: "2026-11-08"
+repository_root: "/home/ubuntu/openhand/workspace/bibleweb"
+knowledge_units_count: 27
+last_updated: "2026-11-13"
 
 knowledge_units:
   architecture:
@@ -29,6 +29,9 @@ knowledge_units:
       title: "Decoupled Ask Bible AI Plugin Architecture with Verified Scripture Grounding"
 
   development:
+    - id: DEV-DOC-001
+      file: "knowledge/development/DEV-DOC-001.yaml"
+      title: "Master Project Bible & Repository Mapping Specification Standard"
     - id: DEV-PY-001
       file: "knowledge/development/DEV-PY-001.yaml"
       title: "FastAPI Backend Route Conventions, Async Patterns & Jinja2 Templates"

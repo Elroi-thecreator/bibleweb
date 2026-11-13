@@ -1,0 +1,40 @@
+id: DEV-DOC-001
+type: development_standard
+title: Master Project Bible & Repository Mapping Specification Standard
+domain: development
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+applies_to:
+  - documentation
+  - architecture
+  - repository
+  - knowledge_base
+
+rule:
+  "The Holy Bible system maintains an authoritative, living Master Project Bible (`PROJECT_BIBLE.md`) in the repository root and conversational artifacts, providing an exhaustive cartography that maps every subsystem, directory, script, route, database schema, and test suite to its corresponding GitHub repository paths (`Elroi-thecreator/bibleweb`) and AI-Native Knowledge Base standards (`knowledge/index.yaml`). Any substantive modification to system topology, API routing, database schema, or third-party integrations must be synchronized across both `PROJECT_BIBLE.md` and the master knowledge units."
+
+do:
+  - "Maintain `PROJECT_BIBLE.md` at repository root as the definitive single-source architectural and codebase reference."
+  - "Include full file-by-file cartography mapping each codebase artifact to its corresponding architectural layer and Knowledge Unit."
+  - "Document all public and subrouter endpoints across main web routes, admin APIs, Ask Bible AI, and WhatsApp webhooks."
+  - "Ensure bidirectional traceability between `PROJECT_BIBLE.md`, `knowledge/index.yaml`, and `AGENTS.md`."
+
+dont:
+  - "Do not allow `PROJECT_BIBLE.md` to fall out of sync with new routes, database schema modifications, or distribution pipelines."
+  - "Do not introduce architectural patterns without reflecting their directives in the Project Bible and Knowledge Base."
+
+reason:
+  "A unified Project Bible guarantees complete architectural transparency, rapid developer and AI agent onboarding, deterministic compliance with zero-cost and offline-first invariants, and precise alignment with upstream GitHub releases."
+
+related_items:
+  - ARCH-SYS-001
+  - ARCH-DATA-001
+  - ARCH-DIST-001
+  - DEV-PY-001
+  - DEV-TEST-001

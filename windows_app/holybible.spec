@@ -56,9 +56,20 @@ hidden_imports = [
     "clr_loader",
     "app",
     "app.main",
+    "app.version",
     "app.db",
     "app.quiz_data",
     "app.plans_data",
+    "app.study_ai",
+    "app.quiz_ai",
+    "app.admin",
+    "app.admin.auth",
+    "app.admin.routes",
+    "app.settings_db",
+    "httpx",
+    "psutil",
+    "brotli",
+    "brotli_asgi",
 ]
 
 a = Analysis(

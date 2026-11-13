@@ -37,8 +37,13 @@ async def asgi_request(path: str, query_string: str = "", headers: list = None):
         "headers": [(k.lower().encode(), v.encode()) for k, v in (headers or [])],
     }
     sent = []
+    req_sent = False
     async def receive():
-        return {"type": "http.request"}
+        nonlocal req_sent
+        if not req_sent:
+            req_sent = True
+            return {"type": "http.request", "body": b"", "more_body": False}
+        return {"type": "http.disconnect"}
     async def send(msg):
         sent.append(msg)
     await app(scope, receive, send)

@@ -30,6 +30,7 @@ from whatsapp_gateway.subscribers import get_active_subscribers, get_subscriber_
 from whatsapp_gateway.scheduler.devotional_push import push_daily_devotional
 from whatsapp_gateway.rate_limiter import rate_limiter
 from app.db import DB_PATH, SONGS_DB_PATH
+from app.version import APP_VERSION
 from ask_bible_ai.config import config as ai_config, save_persisted_config as save_ai_config
 from ask_bible_ai.routes import ai_service
 
@@ -179,6 +180,7 @@ async def admin_settings_page(request: Request):
         mem_pct = 0.0
 
     sys_info = {
+        "app_version": APP_VERSION,
         "os_name": platform.system(),
         "platform": platform.platform(),
         "python_version": platform.python_version(),

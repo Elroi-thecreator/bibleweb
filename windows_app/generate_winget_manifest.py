@@ -21,6 +21,15 @@ import shutil
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+if CURRENT_DIR in sys.path:
+    sys.path.remove(CURRENT_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from app.version import APP_VERSION
+
 PACKAGE_ID = "ElroiTheCreator.HolyBible"
 PACKAGE_NAME = "Holy Bible - வேதம்"
 PUBLISHER = "Elroi-thecreator"
@@ -118,10 +127,11 @@ Description: |-
   Holy Bible (வேதம்) is a comprehensive bilingual Tamil and English Holy Bible desktop application.
   Features:
   - Protestant (1871 Tamil Old Version Public Domain + 1769 KJV Public Domain) and Catholic 73-Book (Tamil IRV CC BY-SA 4.0 + 1752 Douay-Rheims Public Domain) dual-corpus support
-  - 100-Day Read-Along Audio Bible with Microsoft Neural TTS
+  - 100-Day Read-Along Audio Bible with Microsoft Neural TTS & Deep Bass modulation
   - Church projector and presenter mode with fullscreen slides
-  - 100 bilingual interactive scripture trivia and quiz questions
-  - Custom reading plans, progress checkoffs, and offline bookmarks
+  - 100 bilingual interactive scripture trivia and AI Scripture Quiz generator
+  - AI Scripture Study with historical context, chapter overviews, and verse exegesis
+  - Custom reading plans, progress checkoffs, offline bookmarks, and in-app auto-update notifications
 Tags:
   - bible
   - tamil-bible
@@ -167,7 +177,7 @@ ManifestVersion: {SCHEMA_VERSION}
 
 def main():
     parser = argparse.ArgumentParser(description="Generate WinGet manifests for Holy Bible desktop app.")
-    parser.add_argument("--version", default="1.0.0", help="Version string (e.g. 1.0.0 or v1.0.0)")
+    parser.add_argument("--version", default=APP_VERSION, help=f"Version string (default: {APP_VERSION})")
     parser.add_argument("--file", default=os.path.join("windows_app", "dist", "HolyBible-Portable.exe"), help="Path to compiled executable")
     parser.add_argument("--output-dir", default=os.path.join("windows_app", "dist", "winget_manifests"), help="Output directory")
     parser.add_argument("--repo", default=REPO_DEFAULT, help="GitHub repository (owner/name)")

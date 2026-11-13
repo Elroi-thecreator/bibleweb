@@ -4,7 +4,7 @@
     "SessionStart": [
       {
         "type": "command",
-        "command": "py -3 \"E:/bible/scripts/track_winget_prs.py\" --hook",
+        "command": "python3 \"/home/ubuntu/openhand/workspace/bibleweb/scripts/track_winget_prs.py\" --hook",
         "timeout": 30
       }
     ]
