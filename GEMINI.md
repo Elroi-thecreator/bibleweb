@@ -81,8 +81,9 @@ Whenever changes are made (e.g. new routes, schema modifications, UI behaviors, 
 ## 5. Active WinGet Package PR Monitoring (Startup Invariant)
 
 - **Active Review PRs**:
-  - `ElroiTheCreator.HolyBible` (PR [#446873](https://github.com/microsoft/winget-pkgs/pull/446873))
-  - `ElroiTheCreator.HolyBibleDesktop` (PR [#460301](https://github.com/microsoft/winget-pkgs/pull/460301))
+  - `ElroiTheCreator.HolyBible` v1.1.0 (PR [#479139](https://github.com/microsoft/winget-pkgs/pull/479139))
+  - `ElroiTheCreator.HolyBible` v1.0.0 (PR [#446873](https://github.com/microsoft/winget-pkgs/pull/446873) - Merged)
+  - `ElroiTheCreator.HolyBibleDesktop` v1.0.0 (PR [#460301](https://github.com/microsoft/winget-pkgs/pull/460301))
 - **Startup Protocol**: On start of Antigravity session, server restart, or workspace initialization, run `python scripts/track_winget_prs.py` to inspect the latest PR status and ensure the periodic background tracker (`schedule` tool with cron `0 */6 * * *`) is actively running.
 
 ---
