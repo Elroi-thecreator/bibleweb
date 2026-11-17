@@ -1,9 +1,9 @@
 id: ARCH-DATA-001
 type: architecture_standard
-title: Embedded Dual-SQLite Architecture (Scripture & Song Lyrics Databases)
+title: Embedded Dual-SQLite Architecture (Scripture, Modular Catholic Thiruviviliam & Song Lyrics Databases)
 domain: architecture
 status: approved
-version: 1.4.0
+version: 1.5.0
 authority:
   level: official
   confidence: high
@@ -17,35 +17,33 @@ applies_to:
   - packaging
 
 rule:
-  "Scripture text and song lyrics are separated into two dedicated, embedded SQLite databases (`data/bible.sqlite.db` for multi-canon scripture supporting both Protestant and dual Catholic Tamil translations: Thiruviviliam in `text_ta_poc` and Indian Revised Version in `text_ta_irv`, and `data/songs.sqlite.db` for Christian songbooks/lyrics). Both utilize thread-local connection pooling with memory-mapped I/O (`PRAGMA mmap_size = 64MB`), dedicated connection resolvers (`get_connection()` and `get_songs_connection()`), in-memory LRU chapter/search caching, SQLite FTS5 full-text indexing, and strict file size budgets under 50 MB to comply with Git repository standards."
+  "Scripture text, optional modular Catholic Thiruviviliam text, and song lyrics are separated into dedicated, embedded SQLite databases (`data/bible.sqlite.db` for multi-canon scripture supporting Protestant 66 books and Catholic IRV 73 books under open licenses, optional `data/thiruviviliam.sqlite.db` dynamically attached via SQLite `ATTACH DATABASE` for authentic Catholic POC 73 books with FTS5 search, and `data/songs.sqlite.db` for Christian songbooks/lyrics). Both utilize thread-local connection pooling with memory-mapped I/O (`PRAGMA mmap_size = 64MB`), dedicated connection resolvers (`get_connection()` and `get_songs_connection()`), in-memory LRU chapter/search caching, SQLite FTS5 full-text indexing, and strict file size budgets under 50 MB to comply with Git repository standards and WinGet Policy 2.2."
 
 do:
-  - "Store all verses in `data/bible.sqlite.db` with composite index `idx_verses_lookup(book_id, chapter, verse)` for sub-millisecond query latency."
-  - "Support configurable Catholic Tamil translations across all 73 books: `text_ta_poc` storing Thiruviviliam (POC) with full Tamil Deuterocanon, and `text_ta_irv` storing Indian Revised Version (IRV Tamil)."
+  - "Store all base scripture in `data/bible.sqlite.db` (47.68 MB) with composite index `idx_verses_lookup(book_id, chapter, verse)` for sub-millisecond query latency, bundling only open-licensed corpora (1871 Tamil Old Version PD, KJV PD, Douay-Rheims 1899 PD, IRV Tamil CC BY-SA 4.0)."
+  - "Decouple Catholic Thiruviviliam (POC — all 73 books with full Tamil Deuterocanon) into a standalone modular database (`data/thiruviviliam.sqlite.db`, 18.4 MB uncompressed with FTS5, 5.0 MB `.gz`) that is dynamically attached as schema `thiru` via `ATTACH DATABASE 'file:{path}?mode=ro' AS thiru;`."
+  - "Support configurable Catholic Tamil translations across all 73 books: when `thiruviviliam.sqlite.db` is present and active, join `thiru.verses` for authentic POC Tamil; when absent or when IRV is selected, fall back to open-licensed `text_ta_poc` (IRV Tamil) and Douay-Rheims English."
   - "Cache read-only SQLite connections in `threading.local()` across worker threads, setting `PRAGMA query_only = ON;`, `PRAGMA mmap_size = 67108864;` (64 MB memory-mapped I/O to address the 47.68 MB database entirely in RAM), and `PRAGMA cache_size = -8000;` to eliminate file open/close syscall overhead."
-  - "Maintain a dedicated SQLite FTS5 virtual table (`verses_fts`) using `content='verses'`, `content_rowid='id'`, `columnsize=0`, and `tokenize='unicode61'` indexing bilingual scripture corpora for sub-millisecond keyword and phrase queries."
+  - "Maintain a dedicated SQLite FTS5 virtual table (`verses_fts`) using `content='verses'`, `content_rowid='id'`, `columnsize=0`, and `tokenize='unicode61'` in `bible.sqlite.db`, and `verses_fts` in `thiruviviliam.sqlite.db` for sub-millisecond Tamil keyword and phrase queries."
   - "Implement two-tier in-memory LRU caching (`functools.lru_cache`) in `app/db.py`: `_fetch_chapter_verses_cached` (maxsize=2048 returning immutable tuples) and `_search_verses_cached` (maxsize=512), returning detached dictionary copies to callers to prevent cache mutation."
-  - "Maintain database file sizes strictly under 50 MB (`bible.sqlite.db` at ~47.68 MB with full FTS5 index, `songs.sqlite.db` at ~7.5 MB) using `PRAGMA page_size = 8192`, eliminating redundant subset indexes, and executing `VACUUM` to prevent GitHub file size threshold warnings."
+  - "Maintain base database file size strictly under 50 MB (`bible.sqlite.db` at ~47.68 MB, `songs.sqlite.db` at ~7.5 MB) using `PRAGMA page_size = 8192`, eliminating redundant subset indexes, and executing `VACUUM` to prevent GitHub file size threshold warnings."
   - "Provide `check_database_health()` and deep verification queries (`SELECT 1 FROM verses LIMIT 1;`) to enable container/orchestration readiness probes."
   - "Store all songbooks and lyrics in `data/songs.sqlite.db` with structured columns for `volume`, `song_number`, `lyrics_bilingual` JSON stanzas, and text search indexes."
-  - "Maintain a modular database architecture: database connection methods (`get_connection()` for Bible and `get_songs_connection()` for Songs) handle independent paths and frozen resolution via `sys._MEIPASS`."
-  - "Bundle both databases in PyInstaller specifications (`windows_app/holybible.spec`) under the `datas` array."
+  - "Maintain a modular database architecture: database connection methods (`get_connection()` for Bible, `get_songs_connection()` for Songs, and dynamic attachment for Thiruviviliam) handle independent paths and frozen resolution via `sys._MEIPASS`."
   - "Support Catholic Deuterocanonical books (Tobit, Judith, 1 & 2 Maccabees, Wisdom, Sirach, Baruch, and additions to Daniel and Esther) with proper canonical flag partitioning."
   - "Use parameterized SQL queries (`?`) for all verse lookups and song keyword searches to eliminate SQL injection vulnerabilities."
   - "Open database connections with read-only URI mode (`file:{path}?mode=ro`, `uri=True`) and `sqlite3.Row` row factories to prevent lock contention across multi-worker processes and avoid generating transient `.db-journal` or `.db-wal` files."
-  - "Provide automated fallback to standard parameterized `LIKE` scans if FTS5 queries encounter syntax errors or non-tokenized expressions."
 
 dont:
+  - "Do not bundle third-party copyrighted Thiruviviliam directly into `bible.sqlite.db`, which would bloat the file to >63 MB (exceeding Git recommended 50 MB limits) and violate WinGet Policy 2.2."
   - "Do not combine song lyrics into `bible.sqlite.db` to prevent database bloat exceeding Git/GitHub recommended thresholds (50 MB)."
   - "Do not open unpooled standalone connections repeatedly inside thread-pool worker tasks without thread-local caching."
-  - "Do not retain redundant partial indexes (e.g., `(book_id, chapter)`) that are strict prefixes of larger composite indexes (e.g., `(book_id, chapter, verse)`)."
   - "Do not mutate cached query objects in memory; always return detached dictionary copies to callers."
   - "Do not execute unparameterized string formatting or SQL concatenation."
-  - "Do not lock the SQLite database with long-running write transactions during user reading sessions."
   - "Do not require an external SQL server (PostgreSQL/MySQL) daemon for standard application startup."
 
 reason:
-  "SQLite provides complete offline availability, zero configuration, zero latency overhead, instant installation, and portability across local and hosted server environments. Combining thread-local connection caching and 64 MB memory mapping with FTS5 indexing provides exceptional read throughput while keeping file sizes strictly beneath Git hosting warning limits."
+  "Decoupling Thiruviviliam into an optional standalone database (`thiruviviliam.sqlite.db`) guarantees that the primary `bible.sqlite.db` remains strictly open-licensed, compliant with WinGet Policy 2.2, and under the 50 MB GitHub warning threshold. SQLite's `ATTACH DATABASE` allows seamless sub-millisecond joins with zero query overhead while providing complete user flexibility."
 
 related_items:
   - ARCH-SYS-001

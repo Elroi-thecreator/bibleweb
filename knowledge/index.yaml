@@ -11,7 +11,7 @@ knowledge_units:
       title: "Unified FastAPI Web Server & PyWebView Desktop Hybrid Architecture"
     - id: ARCH-DATA-001
       file: "knowledge/architecture/ARCH-DATA-001.yaml"
-      title: "Embedded Dual-SQLite Architecture (Scripture & Song Lyrics Databases)"
+      title: "Embedded Dual-SQLite Architecture (Scripture, Modular Catholic Thiruviviliam & Song Lyrics Databases)"
     - id: ARCH-DIST-001
       file: "knowledge/architecture/ARCH-DIST-001.yaml"
       title: "PyInstaller Standalone Windows Executable & WinGet Distribution Pipeline"

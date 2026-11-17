@@ -16,6 +16,32 @@ DB_PATH = os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
 DEFAULT_SONGS_DB_PATH = os.path.join(BASE_DIR, "data", "songs.sqlite.db")
 SONGS_DB_PATH = os.getenv("SONGS_DATABASE_PATH", DEFAULT_SONGS_DB_PATH)
 
+DEFAULT_THIRUVIVILIAM_DB_PATH = os.path.join(BASE_DIR, "data", "thiruviviliam.sqlite.db")
+THIRUVIVILIAM_DB_PATH = os.getenv("THIRUVIVILIAM_DATABASE_PATH", DEFAULT_THIRUVIVILIAM_DB_PATH)
+
+
+def get_thiruviviliam_db_path() -> str:
+    """Returns absolute path to the optional standalone Catholic Thiruviviliam database."""
+    return os.path.abspath(THIRUVIVILIAM_DB_PATH)
+
+
+def _ensure_thiruviviliam_attached(conn) -> bool:
+    """Attaches thiruviviliam.sqlite.db to connection as schema 'thiru' if the file exists."""
+    abs_thiru = get_thiruviviliam_db_path()
+    if not os.path.exists(abs_thiru) or os.path.getsize(abs_thiru) < 1000000:
+        return False
+    try:
+        attached = [row[1] for row in conn.execute("PRAGMA database_list;").fetchall()]
+        if "thiru" in attached:
+            return True
+        try:
+            conn.execute(f"ATTACH DATABASE 'file:{abs_thiru}?mode=ro' AS thiru;")
+        except Exception:
+            conn.execute(f"ATTACH DATABASE '{abs_thiru}' AS thiru;")
+        return True
+    except Exception:
+        return False
+
 import threading
 
 _local_storage = threading.local()
@@ -27,6 +53,7 @@ def get_connection():
     if conn is not None:
         try:
             conn.execute("SELECT 1;")
+            _ensure_thiruviviliam_attached(conn)
             return conn
         except Exception:
             _local_storage.bible_conn = None
@@ -55,6 +82,7 @@ def get_connection():
         conn.execute(f"PRAGMA cache_size = {cache_size};")
     except Exception:
         pass
+    _ensure_thiruviviliam_attached(conn)
     _local_storage.bible_conn = conn
     return conn
 
@@ -473,23 +501,34 @@ def _fetch_chapter_verses_cached(book_id: int, chapter: int, canon: str = "prote
         schema = _resolve_schema(cursor)
         is_catholic = (canon and str(canon).lower() == "catholic") or (book_id >= 67)
         b_info = CATHOLIC_BOOK_MAP.get(book_id, BOOK_MAP.get(book_id, {}))
+        has_thiru = _ensure_thiruviviliam_attached(conn)
 
         if schema["type"] == "single":
-            if is_catholic and (schema.get("has_poc") or schema.get("has_irv")):
+            if is_catholic:
                 use_irv = (catholic_version and str(catholic_version).lower() in ("irv", "tam2017"))
-                if use_irv and schema.get("has_irv"):
-                    ta_sql = f"COALESCE(NULLIF(text_ta_irv, ''), NULLIF(text_ta_poc, ''), {schema['text_ta']})"
+                if not use_irv and has_thiru:
+                    sql = f"""
+                        SELECT v.{schema['verse']} AS verse,
+                               COALESCE(NULLIF(v.text_en_drb, ''), v.{schema['text_en']}) AS text_en,
+                               COALESCE(NULLIF(t.text_ta, ''), NULLIF(v.text_ta_poc, ''), v.{schema['text_ta']}) AS text_ta
+                        FROM {schema['table']} v
+                        LEFT JOIN thiru.verses t 
+                               ON v.{schema['book']} = t.book_id 
+                              AND v.{schema['chapter']} = t.chapter 
+                              AND v.{schema['verse']} = t.verse
+                        WHERE v.{schema['book']} = ? AND v.{schema['chapter']} = ?
+                        ORDER BY v.{schema['verse']} ASC
+                    """
                 else:
-                    ta_sql = f"COALESCE(NULLIF(text_ta_poc, ''), NULLIF(text_ta_irv, ''), {schema['text_ta']})"
-
-                sql = f"""
-                    SELECT {schema['verse']} AS verse,
-                           COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) AS text_en,
-                           {ta_sql} AS text_ta
-                    FROM {schema['table']}
-                    WHERE {schema['book']} = ? AND {schema['chapter']} = ?
-                    ORDER BY {schema['verse']} ASC
-                """
+                    ta_sql = f"COALESCE(NULLIF(v.text_ta_poc, ''), v.{schema['text_ta']})"
+                    sql = f"""
+                        SELECT v.{schema['verse']} AS verse,
+                               COALESCE(NULLIF(v.text_en_drb, ''), v.{schema['text_en']}) AS text_en,
+                               {ta_sql} AS text_ta
+                        FROM {schema['table']} v
+                        WHERE v.{schema['book']} = ? AND v.{schema['chapter']} = ?
+                        ORDER BY v.{schema['verse']} ASC
+                    """
             else:
                 sql = f"""
                     SELECT {schema['verse']} AS verse,
@@ -567,66 +606,115 @@ def _search_verses_cached(query_str: str, canon: str = "protestant", limit: int 
         is_catholic = (canon and str(canon).lower() == "catholic")
         book_map = CATHOLIC_BOOK_MAP if is_catholic else BOOK_MAP
         use_irv = is_catholic and (catholic_version and str(catholic_version).lower() in ("irv", "tam2017"))
+        has_thiru = _ensure_thiruviviliam_attached(conn)
 
         # 1. Fast Path: SQLite FTS5 Indexed Query
-        has_fts = False
-        try:
-            fts_check = cursor.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='verses_fts'").fetchone()
-            has_fts = bool(fts_check)
-        except Exception:
-            has_fts = False
-
         rows = None
-        if has_fts and query_str.strip():
+        if query_str.strip():
             clean_q = query_str.strip().replace('"', '')
             fts_expr = f'"{clean_q}"'
+            is_ascii = all(ord(c) < 128 for c in clean_q)
 
             try:
-                if schema["type"] == "single":
-                    if is_catholic and (schema.get("has_poc") or schema.get("has_irv")):
-                        if use_irv and schema.get("has_irv"):
-                            ta_fts_col = f"COALESCE(NULLIF(v.text_ta_irv, ''), NULLIF(v.text_ta_poc, ''), v.{schema['text_ta']})"
-                        else:
-                            ta_fts_col = f"COALESCE(NULLIF(v.text_ta_poc, ''), NULLIF(v.text_ta_irv, ''), v.{schema['text_ta']})"
-
+                if is_catholic and not use_irv and has_thiru:
+                    if not is_ascii:
+                        # Non-ASCII (Tamil) query: Search Thiruviviliam FTS
+                        sql = f"""
+                            SELECT t.book_id, t.chapter, t.verse,
+                                   COALESCE(NULLIF(v.text_en_drb, ''), v.{schema['text_en']}) AS text_en,
+                                   t.text_ta AS text_ta
+                            FROM thiru.verses_fts
+                            JOIN thiru.verses t ON thiru.verses_fts.rowid = t.rowid
+                            LEFT JOIN {schema['table']} v 
+                                   ON t.book_id = v.{schema['book']} 
+                                  AND t.chapter = v.{schema['chapter']} 
+                                  AND t.verse = v.{schema['verse']}
+                            WHERE verses_fts MATCH ?
+                            ORDER BY t.book_id, t.chapter, t.verse
+                            LIMIT ?
+                        """
+                        rows = cursor.execute(sql, (fts_expr, limit)).fetchall()
+                    if not rows:
+                        # ASCII (English) query or fallback to main FTS
                         sql = f"""
                             SELECT v.{schema['book']} AS book_id,
                                    v.{schema['chapter']} AS chapter,
                                    v.{schema['verse']} AS verse,
                                    COALESCE(NULLIF(v.text_en_drb, ''), v.{schema['text_en']}) AS text_en,
-                                   {ta_fts_col} AS text_ta
+                                   COALESCE(NULLIF(t.text_ta, ''), NULLIF(v.text_ta_poc, ''), v.{schema['text_ta']}) AS text_ta
                             FROM verses_fts f
                             JOIN {schema['table']} v ON f.rowid = v.id
+                            LEFT JOIN thiru.verses t 
+                                   ON v.{schema['book']} = t.book_id 
+                                  AND v.{schema['chapter']} = t.chapter 
+                                  AND v.{schema['verse']} = t.verse
                             WHERE verses_fts MATCH ?
                             ORDER BY v.{schema['book']}, v.{schema['chapter']}, v.{schema['verse']}
                             LIMIT ?
                         """
-                    else:
-                        sql = f"""
-                            SELECT v.{schema['book']} AS book_id,
-                                   v.{schema['chapter']} AS chapter,
-                                   v.{schema['verse']} AS verse,
-                                   v.{schema['text_en']} AS text_en,
-                                   v.{schema['text_ta']} AS text_ta
-                            FROM verses_fts f
-                            JOIN {schema['table']} v ON f.rowid = v.id
-                            WHERE verses_fts MATCH ?
-                            ORDER BY v.{schema['book']}, v.{schema['chapter']}, v.{schema['verse']}
-                            LIMIT ?
-                        """
-                    rows = cursor.execute(sql, (fts_expr, limit)).fetchall()
+                        rows = cursor.execute(sql, (fts_expr, limit)).fetchall()
+                else:
+                    has_fts = False
+                    try:
+                        fts_check = cursor.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='verses_fts'").fetchone()
+                        has_fts = bool(fts_check)
+                    except Exception:
+                        has_fts = False
+
+                    if has_fts:
+                        if schema["type"] == "single":
+                            if is_catholic:
+                                ta_fts_col = f"COALESCE(NULLIF(v.text_ta_poc, ''), v.{schema['text_ta']})"
+                                sql = f"""
+                                    SELECT v.{schema['book']} AS book_id,
+                                           v.{schema['chapter']} AS chapter,
+                                           v.{schema['verse']} AS verse,
+                                           COALESCE(NULLIF(v.text_en_drb, ''), v.{schema['text_en']}) AS text_en,
+                                           {ta_fts_col} AS text_ta
+                                    FROM verses_fts f
+                                    JOIN {schema['table']} v ON f.rowid = v.id
+                                    WHERE verses_fts MATCH ?
+                                    ORDER BY v.{schema['book']}, v.{schema['chapter']}, v.{schema['verse']}
+                                    LIMIT ?
+                                """
+                            else:
+                                sql = f"""
+                                    SELECT v.{schema['book']} AS book_id,
+                                           v.{schema['chapter']} AS chapter,
+                                           v.{schema['verse']} AS verse,
+                                           v.{schema['text_en']} AS text_en,
+                                           v.{schema['text_ta']} AS text_ta
+                                    FROM verses_fts f
+                                    JOIN {schema['table']} v ON f.rowid = v.id
+                                    WHERE verses_fts MATCH ?
+                                    ORDER BY v.{schema['book']}, v.{schema['chapter']}, v.{schema['verse']}
+                                    LIMIT ?
+                                """
+                            rows = cursor.execute(sql, (fts_expr, limit)).fetchall()
             except Exception:
                 rows = None
 
         # 2. Fallback Path: Sequential LIKE Table Scan
         if rows is None:
-            if schema["type"] == "single":
-                if is_catholic and (schema.get("has_poc") or schema.get("has_irv")):
-                    if use_irv and schema.get("has_irv"):
-                        ta_like_col = f"COALESCE(NULLIF(text_ta_irv, ''), NULLIF(text_ta_poc, ''), {schema['text_ta']})"
-                    else:
-                        ta_like_col = f"COALESCE(NULLIF(text_ta_poc, ''), NULLIF(text_ta_irv, ''), {schema['text_ta']})"
-
+            if is_catholic and not use_irv and has_thiru:
+                sql = f"""
+                    SELECT t.book_id, t.chapter, t.verse,
+                           COALESCE(NULLIF(v.text_en_drb, ''), v.{schema['text_en']}) AS text_en,
+                           t.text_ta AS text_ta
+                    FROM thiru.verses t
+                    LEFT JOIN {schema['table']} v 
+                           ON t.book_id = v.{schema['book']} 
+                          AND t.chapter = v.{schema['chapter']} 
+                          AND t.verse = v.{schema['verse']}
+                    WHERE (COALESCE(NULLIF(v.text_en_drb, ''), v.{schema['text_en']}) LIKE ? 
+                           OR t.text_ta LIKE ?)
+                    ORDER BY t.book_id, t.chapter, t.verse
+                    LIMIT ?
+                """
+                rows = cursor.execute(sql, (pattern, pattern, limit)).fetchall()
+            elif schema["type"] == "single":
+                if is_catholic:
+                    ta_like_col = f"COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']})"
                     sql = f"""
                         SELECT {schema['book']} AS book_id,
                                {schema['chapter']} AS chapter,
@@ -718,12 +806,15 @@ def search_verses(query_str: str, canon: str = "protestant", limit: int = 60, ca
 
 
 def is_thiruviviliam_installed() -> bool:
-    """Returns True if the full 73-book Catholic Thiruviviliam text is loaded in the database."""
+    """Returns True if the standalone 73-book Catholic Thiruviviliam database exists and has verses."""
+    abs_thiru = get_thiruviviliam_db_path()
+    if not os.path.exists(abs_thiru) or os.path.getsize(abs_thiru) < 1000000:
+        return False
     try:
         with get_connection() as conn:
-            row = conn.execute(
-                "SELECT 1 FROM verses WHERE book_id = 67 AND LENGTH(TRIM(COALESCE(text_ta_poc, ''))) > 0 LIMIT 1;"
-            ).fetchone()
+            if not _ensure_thiruviviliam_attached(conn):
+                return False
+            row = conn.execute("SELECT 1 FROM thiru.verses WHERE book_id = 67 LIMIT 1;").fetchone()
             return bool(row)
     except Exception:
         return False

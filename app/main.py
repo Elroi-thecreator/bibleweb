@@ -1682,11 +1682,12 @@ async def enable_thiruviviliam_endpoint(request: Request):
     try:
         from scripts.ingest_thiruviviliam import ingest_thiruviviliam
         result = await asyncio.to_thread(ingest_thiruviviliam)
-        # Clear in-memory caches
+        # Clear in-memory caches and refresh connections
         try:
-            from app.db import _fetch_chapter_verses_cached, _search_verses_cached
+            from app.db import _fetch_chapter_verses_cached, _search_verses_cached, close_thread_connections
             _fetch_chapter_verses_cached.cache_clear()
             _search_verses_cached.cache_clear()
+            close_thread_connections()
         except Exception:
             pass
         HTML_PAGE_CACHE.clear()
