@@ -3,7 +3,7 @@ type: product_standard
 title: Multi-Canon (Catholic 73 Books & Protestant 66 Books) Navigation Standard
 domain: product
 status: approved
-version: 1.1.0
+version: 1.2.0
 authority:
   level: official
   confidence: high
@@ -14,21 +14,24 @@ applies_to:
   - backend
   - frontend
   - navigation
+  - settings
 
 rule:
-  "The application must seamlessly support both Catholic (73 books including Deuterocanonical books using Public Domain 1752 Douay-Rheims and CC BY-SA 4.0 Tamil Indian Revised Version) and Protestant (66 books using Public Domain 1871 Tamil Old Version and 1769 KJV) canons, providing clear book selectors, chapter pickers, and parallel verse alignment across English and Tamil."
+  "The application must seamlessly support both Catholic (73 books including Deuterocanonical books using Public Domain 1752 Douay-Rheims, CC BY-SA 4.0 Tamil Indian Revised Version, and user-configurable Thiruviviliam / POC) and Protestant (66 books using Public Domain 1871 Tamil Old Version and 1769 KJV) canons, providing clear book selectors, chapter pickers, Catholic translation configuration in Settings (⚙️), and parallel verse alignment across English and Tamil."
 
 do:
   - "Allow users to switch between Catholic and Protestant canon perspectives without losing reading position."
+  - "Provide user-configurable Catholic Tamil translations in Settings (⚙️): Thiruviviliam (POC — all 73 books with full Tamil Deuterocanon) and Indian Revised Version (IRV Tamil — open-licensed CC BY-SA 4.0)."
+  - "Support on-demand 1-click local hydration and ingestion of Thiruviviliam (`POST /api/settings/enable-thiruviviliam`) into `bible.sqlite.db` while maintaining open-license compliance for distributed desktop packages."
   - "Clearly identify Deuterocanonical books (Tobit, Judith, Wisdom, Sirach, Baruch, 1 & 2 Maccabees) in the book navigation drawer."
-  - "Bundle only verifiably open-licensed (CC BY-SA 4.0 Tamil IRV by Bridge Connectivity Solutions) and Public Domain (1871 Tamil Old Version, 1769 KJV, 1752 Douay-Rheims) scripture corpora with full attribution notices in `LICENSE`, `NOTICE.md`, and `/privacy`."
-  - "Preserve user's last selected canon, translation version, and chapter across sessions using `localStorage`, cookies, and URL query parameters (`canon=...`)."
+  - "Bundle only verifiably open-licensed (CC BY-SA 4.0 Tamil IRV by Bridge Connectivity Solutions) and Public Domain (1871 Tamil Old Version, 1769 KJV, 1752 Douay-Rheims) scripture corpora in distributed packages with full attribution notices in `LICENSE`, `NOTICE.md`, and `/privacy`."
+  - "Preserve user's last selected canon, Catholic translation version (`bible_catholic_version`), and chapter across sessions using `localStorage`, cookies, and URL query parameters (`canon=...`, `catholic_version=...`)."
   - "Preserve the active `canon` query parameter across all search inputs and navigation links (including mobile search triggers and desktop search bars) so the user's selected tradition is not dropped."
   - "Provide fast book and chapter search autocomplete in the navigation header."
 
 dont:
   - "Do not hide or truncate Deuterocanonical books when Catholic canon mode is active."
-  - "Do not bundle copyrighted third-party scripture translations (such as the 2012 Tamil Ecumenical / POC text) without explicit written redistribution authorization."
+  - "Do not bundle copyrighted third-party scripture translations (such as the 2012 Tamil Ecumenical / POC text) in public package distributions without explicit written redistribution authorization; provide user-driven local hydration instead."
   - "Do not break URL deep linking when sharing specific chapter or verse locations."
 
 reason:

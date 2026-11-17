@@ -60,6 +60,7 @@ from app.db import (
     get_books,
     get_chapter_verses,
     search_verses,
+    is_thiruviviliam_installed,
     get_song_books,
     get_song_volumes,
     get_songs_list,
@@ -1147,17 +1148,27 @@ async def status_page():
 
 def resolve_canon(request: Request, canon: str = None, book_id: int = None) -> str:
     """Resolves active canon ('protestant' or 'catholic') from query, current book, or cookie."""
-    if canon and canon.lower() in ("catholic", "protestant"):
+    if canon and isinstance(canon, str) and canon.lower() in ("catholic", "protestant"):
         return canon.lower()
-    if book_id is not None and book_id >= 67:
+    if book_id is not None and isinstance(book_id, int) and book_id >= 67:
         return "catholic"
     cookie_canon = request.cookies.get("bible_canon")
-    if cookie_canon and cookie_canon.lower() in ("catholic", "protestant"):
+    if cookie_canon and isinstance(cookie_canon, str) and cookie_canon.lower() in ("catholic", "protestant"):
         return cookie_canon.lower()
     return "protestant"
 
 
-def get_canon_context(canon: str = "protestant"):
+def resolve_catholic_version(request: Request, catholic_version: str = None) -> str:
+    """Resolves active Catholic Tamil version ('thiruviviliam' or 'irv') from query or cookie."""
+    if catholic_version and isinstance(catholic_version, str) and catholic_version.lower() in ("thiruviviliam", "poc", "irv", "tam2017"):
+        return "irv" if catholic_version.lower() in ("irv", "tam2017") else "thiruviviliam"
+    cookie_ver = request.cookies.get("bible_catholic_version")
+    if cookie_ver and isinstance(cookie_ver, str) and cookie_ver.lower() in ("thiruviviliam", "poc", "irv", "tam2017"):
+        return "irv" if cookie_ver.lower() in ("irv", "tam2017") else "thiruviviliam"
+    return "thiruviviliam"
+
+
+def get_canon_context(canon: str = "protestant", catholic_version: str = "thiruviviliam"):
     """Returns standardized book lists and chapter counts for template contexts."""
     is_catholic = (canon and str(canon).lower() == "catholic")
     canon_name = "catholic" if is_catholic else "protestant"
@@ -1174,6 +1185,8 @@ def get_canon_context(canon: str = "protestant"):
     return {
         "canon": canon_name,
         "is_catholic": is_catholic,
+        "catholic_version": catholic_version,
+        "thiruviviliam_installed": is_thiruviviliam_installed(),
         "books": books,
         "all_books": CATHOLIC_BOOKS,
         "ot_books": ot_books,
@@ -1187,9 +1200,10 @@ def get_canon_context(canon: str = "protestant"):
 
 
 @app.get("/", response_class=HTMLResponse)
-async def landing_page(request: Request, canon: str = Query(None)):
+async def landing_page(request: Request, canon: str = Query(None), catholic_version: str = Query(None)):
     active_canon = resolve_canon(request, canon)
-    cache_key = f"landing:{active_canon}"
+    active_catholic_ver = resolve_catholic_version(request, catholic_version)
+    cache_key = f"landing:{active_canon}:{active_catholic_ver}"
     cached_resp = HTML_PAGE_CACHE.get_response(
         cache_key,
         request,
@@ -1198,7 +1212,7 @@ async def landing_page(request: Request, canon: str = Query(None)):
     if cached_resp is not None:
         return cached_resp
 
-    canon_ctx = get_canon_context(active_canon)
+    canon_ctx = get_canon_context(active_canon, active_catholic_ver)
     resp = templates.TemplateResponse(
         request=request,
         name="landing.html",
@@ -1221,8 +1235,10 @@ async def reader(
     chapter: int,
     mode: str = Query("bilingual"),
     canon: str = Query(None),
+    catholic_version: str = Query(None),
 ):
     active_canon = resolve_canon(request, canon, book_id)
+    active_catholic_ver = resolve_catholic_version(request, catholic_version)
     if book_id not in BOOK_MAP and book_id not in CATHOLIC_BOOK_MAP:
         book_id = 1
     current_book = get_book_info(book_id, canon=active_canon)
@@ -1230,7 +1246,7 @@ async def reader(
         chapter = 1
 
     # Deterministic ETag: scripture text is immutable per version
-    etag = f'"{book_id}-{chapter}-{active_canon}-{mode}-v1"'
+    etag = f'"{book_id}-{chapter}-{active_canon}-{active_catholic_ver}-{mode}-v2"'
     if request.headers.get("if-none-match") == etag:
         return Response(
             status_code=304,
@@ -1238,7 +1254,7 @@ async def reader(
         )
 
     # In-Memory Pre-Rendered & Pre-Compressed Cache lookup (0 CPU Brotli overhead)
-    cache_key = f"read:{book_id}:{chapter}:{active_canon}:{mode}"
+    cache_key = f"read:{book_id}:{chapter}:{active_canon}:{active_catholic_ver}:{mode}"
     cached_resp = HTML_PAGE_CACHE.get_response(
         cache_key,
         request,
@@ -1248,14 +1264,14 @@ async def reader(
         return cached_resp
 
     try:
-        verses = (await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)) or []
+        verses = (await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon, True, active_catholic_ver)) or []
     except Exception as e:
         print(f"Error fetching verses: {e}")
         verses = []
 
     prev_ch = chapter - 1 if chapter > 1 else None
     next_ch = chapter + 1 if chapter < current_book["total_chapters"] else None
-    canon_ctx = get_canon_context(active_canon)
+    canon_ctx = get_canon_context(active_canon, active_catholic_ver)
 
     try:
         from ask_bible_ai.config import config as ai_config
@@ -1286,16 +1302,23 @@ async def reader(
 
 
 @app.get("/present/{book_id}/{chapter}", response_class=HTMLResponse)
-async def presenter_mode(request: Request, book_id: int, chapter: int, canon: str = Query(None)):
+async def presenter_mode(
+    request: Request,
+    book_id: int,
+    chapter: int,
+    canon: str = Query(None),
+    catholic_version: str = Query(None),
+):
     """Church / TV / Projector presentation mode with extra-large bilingual slides."""
     active_canon = resolve_canon(request, canon, book_id)
+    active_catholic_ver = resolve_catholic_version(request, catholic_version)
     if book_id not in BOOK_MAP and book_id not in CATHOLIC_BOOK_MAP:
         book_id = 1
     current_book = get_book_info(book_id, canon=active_canon)
     if chapter < 1 or chapter > current_book["total_chapters"]:
         chapter = 1
 
-    cache_key = f"present:{book_id}:{chapter}:{active_canon}"
+    cache_key = f"present:{book_id}:{chapter}:{active_canon}:{active_catholic_ver}"
     cached_resp = HTML_PAGE_CACHE.get_response(
         cache_key,
         request,
@@ -1304,8 +1327,8 @@ async def presenter_mode(request: Request, book_id: int, chapter: int, canon: st
     if cached_resp is not None:
         return cached_resp
 
-    verses = await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon)
-    canon_ctx = get_canon_context(active_canon)
+    verses = await asyncio.to_thread(get_chapter_verses, book_id, chapter, active_canon, True, active_catholic_ver)
+    canon_ctx = get_canon_context(active_canon, active_catholic_ver)
 
     resp = templates.TemplateResponse(
         request=request,
@@ -1365,10 +1388,16 @@ async def progress_page(request: Request, canon: str = Query(None)):
 
 
 @app.get("/search", response_class=HTMLResponse)
-async def search_page(request: Request, q: str = Query("", description="Search query"), canon: str = Query(None)):
+async def search_page(
+    request: Request,
+    q: str = Query("", description="Search query"),
+    canon: str = Query(None),
+    catholic_version: str = Query(None),
+):
     active_canon = resolve_canon(request, canon)
+    active_catholic_ver = resolve_catholic_version(request, catholic_version)
     clean_q = q.strip() if q else ""
-    cache_key = f"search:{active_canon}:{clean_q}"
+    cache_key = f"search:{active_canon}:{active_catholic_ver}:{clean_q}"
     cached_resp = HTML_PAGE_CACHE.get_response(
         cache_key,
         request,
@@ -1377,8 +1406,8 @@ async def search_page(request: Request, q: str = Query("", description="Search q
     if cached_resp is not None:
         return cached_resp
 
-    canon_ctx = get_canon_context(active_canon)
-    results = (await asyncio.to_thread(search_verses, clean_q, active_canon)) if clean_q else []
+    canon_ctx = get_canon_context(active_canon, active_catholic_ver)
+    results = (await asyncio.to_thread(search_verses, clean_q, active_canon, 60, active_catholic_ver)) if clean_q else []
     # If Protestant mode, filter out Deuterocanonical results (IDs > 66)
     if not canon_ctx["is_catholic"]:
         results = [r for r in results if r["book_id"] <= 66]
@@ -1632,6 +1661,63 @@ async def api_verse_exegesis(request: Request):
         text_ta=text_ta,
     )
     return JSONResponse(content=exegesis)
+
+
+# ==========================================
+# Catholic Tamil Translation Configuration APIs
+# ==========================================
+
+@app.get("/api/settings/catholic-status")
+async def get_catholic_status(request: Request):
+    """Returns availability and active status of Catholic Tamil translations."""
+    return {
+        "thiruviviliam_installed": is_thiruviviliam_installed(),
+        "active_version": resolve_catholic_version(request),
+    }
+
+
+@app.post("/api/settings/enable-thiruviviliam")
+async def enable_thiruviviliam_endpoint(request: Request):
+    """Triggers on-demand local download and ingestion of Thiruviviliam (73-book Catholic POC)."""
+    try:
+        from scripts.ingest_thiruviviliam import ingest_thiruviviliam
+        result = await asyncio.to_thread(ingest_thiruviviliam)
+        # Clear in-memory caches
+        try:
+            from app.db import _fetch_chapter_verses_cached, _search_verses_cached
+            _fetch_chapter_verses_cached.cache_clear()
+            _search_verses_cached.cache_clear()
+        except Exception:
+            pass
+        HTML_PAGE_CACHE.clear()
+        resp = JSONResponse(content={"status": "success", "result": result, "message": "Thiruviviliam successfully enabled!"})
+        resp.set_cookie(key="bible_catholic_version", value="thiruviviliam", max_age=31536000, samesite="lax")
+        return resp
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
+
+@app.post("/api/settings/catholic-version")
+async def set_catholic_version_endpoint(request: Request):
+    """Sets active Catholic Tamil translation ('thiruviviliam' or 'irv')."""
+    try:
+        data = await request.json()
+        version = (data.get("version") or "thiruviviliam").lower()
+    except Exception:
+        version = "thiruviviliam"
+    if version not in ("thiruviviliam", "irv"):
+        version = "thiruviviliam"
+    # Clear in-memory caches
+    try:
+        from app.db import _fetch_chapter_verses_cached, _search_verses_cached
+        _fetch_chapter_verses_cached.cache_clear()
+        _search_verses_cached.cache_clear()
+    except Exception:
+        pass
+    HTML_PAGE_CACHE.clear()
+    resp = JSONResponse(content={"status": "success", "active_version": version})
+    resp.set_cookie(key="bible_catholic_version", value=version, max_age=31536000, samesite="lax")
+    return resp
 
 
 # ==========================================

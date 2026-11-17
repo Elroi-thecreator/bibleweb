@@ -358,6 +358,7 @@ def _resolve_schema(cursor: sqlite3.Cursor):
         en_col_match = next((c for c in ["text_en", "english", "verse_en", "word_en", "kjv", "web", "en"] if c in cols_l), None)
 
         has_poc = "text_ta_poc" in cols_l
+        has_irv = "text_ta_irv" in cols_l
         has_drb = "text_en_drb" in cols_l
 
         if ta_col_match and en_col_match:
@@ -370,6 +371,7 @@ def _resolve_schema(cursor: sqlite3.Cursor):
                 "text_ta": cols[cols_l.index(ta_col_match)],
                 "text_en": cols[cols_l.index(en_col_match)],
                 "has_poc": has_poc,
+                "has_irv": has_irv,
                 "has_drb": has_drb,
             }
 
@@ -392,6 +394,7 @@ def _resolve_schema(cursor: sqlite3.Cursor):
         "text_ta": ta_cols[ta_cols_l.index(next(c for c in ["text", "verse_text", "words"] if c in ta_cols_l))],
         "text_en": en_cols[en_cols_l.index(next(c for c in ["text", "verse_text", "words"] if c in en_cols_l))],
         "has_poc": False,
+        "has_irv": False,
         "has_drb": False,
     }
 
@@ -463,7 +466,7 @@ def group_merged_verses(verses: List[Dict]) -> List[Dict]:
 
 
 @functools.lru_cache(maxsize=2048)
-def _fetch_chapter_verses_cached(book_id: int, chapter: int, canon: str = "protestant", group_merged: bool = True) -> tuple:
+def _fetch_chapter_verses_cached(book_id: int, chapter: int, canon: str = "protestant", group_merged: bool = True, catholic_version: str = "thiruviviliam") -> tuple:
     """Internal cached retriever returning immutable tuple of verse dictionaries."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -472,11 +475,17 @@ def _fetch_chapter_verses_cached(book_id: int, chapter: int, canon: str = "prote
         b_info = CATHOLIC_BOOK_MAP.get(book_id, BOOK_MAP.get(book_id, {}))
 
         if schema["type"] == "single":
-            if is_catholic and schema.get("has_poc"):
+            if is_catholic and (schema.get("has_poc") or schema.get("has_irv")):
+                use_irv = (catholic_version and str(catholic_version).lower() in ("irv", "tam2017"))
+                if use_irv and schema.get("has_irv"):
+                    ta_sql = f"COALESCE(NULLIF(text_ta_irv, ''), NULLIF(text_ta_poc, ''), {schema['text_ta']})"
+                else:
+                    ta_sql = f"COALESCE(NULLIF(text_ta_poc, ''), NULLIF(text_ta_irv, ''), {schema['text_ta']})"
+
                 sql = f"""
                     SELECT {schema['verse']} AS verse,
                            COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) AS text_en,
-                           COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) AS text_ta
+                           {ta_sql} AS text_ta
                     FROM {schema['table']}
                     WHERE {schema['book']} = ? AND {schema['chapter']} = ?
                     ORDER BY {schema['verse']} ASC
@@ -539,15 +548,16 @@ def _fetch_chapter_verses_cached(book_id: int, chapter: int, canon: str = "prote
         return tuple(res)
 
 
-def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", group_merged: bool = True) -> List[Dict]:
+def get_chapter_verses(book_id: int, chapter: int, canon: str = "protestant", group_merged: bool = True, catholic_version: str = "thiruviviliam") -> List[Dict]:
     """Retrieves all verses for a given book and chapter based on canon (Protestant or Catholic), cached in memory."""
     canon_key = str(canon).lower() if canon else "protestant"
-    cached = _fetch_chapter_verses_cached(book_id, chapter, canon_key, group_merged)
+    catholic_key = str(catholic_version).lower() if catholic_version else "thiruviviliam"
+    cached = _fetch_chapter_verses_cached(book_id, chapter, canon_key, group_merged, catholic_key)
     return [dict(v) for v in cached]
 
 
 @functools.lru_cache(maxsize=512)
-def _search_verses_cached(query_str: str, canon: str = "protestant", limit: int = 60) -> tuple:
+def _search_verses_cached(query_str: str, canon: str = "protestant", limit: int = 60, catholic_version: str = "thiruviviliam") -> tuple:
     """Internal cached verse search utilizing SQLite FTS5 index with fallback to LIKE scan."""
     import re
     with get_connection() as conn:
@@ -556,6 +566,7 @@ def _search_verses_cached(query_str: str, canon: str = "protestant", limit: int 
         pattern = f"%{query_str.strip()}%"
         is_catholic = (canon and str(canon).lower() == "catholic")
         book_map = CATHOLIC_BOOK_MAP if is_catholic else BOOK_MAP
+        use_irv = is_catholic and (catholic_version and str(catholic_version).lower() in ("irv", "tam2017"))
 
         # 1. Fast Path: SQLite FTS5 Indexed Query
         has_fts = False
@@ -572,13 +583,18 @@ def _search_verses_cached(query_str: str, canon: str = "protestant", limit: int 
 
             try:
                 if schema["type"] == "single":
-                    if is_catholic and schema.get("has_poc"):
+                    if is_catholic and (schema.get("has_poc") or schema.get("has_irv")):
+                        if use_irv and schema.get("has_irv"):
+                            ta_fts_col = f"COALESCE(NULLIF(v.text_ta_irv, ''), NULLIF(v.text_ta_poc, ''), v.{schema['text_ta']})"
+                        else:
+                            ta_fts_col = f"COALESCE(NULLIF(v.text_ta_poc, ''), NULLIF(v.text_ta_irv, ''), v.{schema['text_ta']})"
+
                         sql = f"""
                             SELECT v.{schema['book']} AS book_id,
                                    v.{schema['chapter']} AS chapter,
                                    v.{schema['verse']} AS verse,
                                    COALESCE(NULLIF(v.text_en_drb, ''), v.{schema['text_en']}) AS text_en,
-                                   COALESCE(NULLIF(v.text_ta_poc, ''), v.{schema['text_ta']}) AS text_ta
+                                   {ta_fts_col} AS text_ta
                             FROM verses_fts f
                             JOIN {schema['table']} v ON f.rowid = v.id
                             WHERE verses_fts MATCH ?
@@ -605,16 +621,21 @@ def _search_verses_cached(query_str: str, canon: str = "protestant", limit: int 
         # 2. Fallback Path: Sequential LIKE Table Scan
         if rows is None:
             if schema["type"] == "single":
-                if is_catholic and schema.get("has_poc"):
+                if is_catholic and (schema.get("has_poc") or schema.get("has_irv")):
+                    if use_irv and schema.get("has_irv"):
+                        ta_like_col = f"COALESCE(NULLIF(text_ta_irv, ''), NULLIF(text_ta_poc, ''), {schema['text_ta']})"
+                    else:
+                        ta_like_col = f"COALESCE(NULLIF(text_ta_poc, ''), NULLIF(text_ta_irv, ''), {schema['text_ta']})"
+
                     sql = f"""
                         SELECT {schema['book']} AS book_id,
                                {schema['chapter']} AS chapter,
                                {schema['verse']} AS verse,
                                COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) AS text_en,
-                               COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) AS text_ta
+                               {ta_like_col} AS text_ta
                         FROM {schema['table']}
                         WHERE (COALESCE(NULLIF(text_en_drb, ''), {schema['text_en']}) LIKE ? 
-                               OR COALESCE(NULLIF(text_ta_poc, ''), {schema['text_ta']}) LIKE ?)
+                               OR {ta_like_col} LIKE ?)
                         ORDER BY {schema['book']}, {schema['chapter']}, {schema['verse']}
                         LIMIT ?
                     """
@@ -685,14 +706,27 @@ def _search_verses_cached(query_str: str, canon: str = "protestant", limit: int 
         return tuple(results)
 
 
-def search_verses(query_str: str, canon: str = "protestant", limit: int = 60) -> List[Dict]:
+def search_verses(query_str: str, canon: str = "protestant", limit: int = 60, catholic_version: str = "thiruviviliam") -> List[Dict]:
     """Performs full-text search across active translation corpora, collapsing merged verse duplicates."""
     clean_q = query_str.strip() if query_str else ""
     if not clean_q:
         return []
     canon_key = str(canon).lower() if canon else "protestant"
-    cached = _search_verses_cached(clean_q, canon_key, limit)
+    catholic_key = str(catholic_version).lower() if catholic_version else "thiruviviliam"
+    cached = _search_verses_cached(clean_q, canon_key, limit, catholic_key)
     return [dict(r) for r in cached]
+
+
+def is_thiruviviliam_installed() -> bool:
+    """Returns True if the full 73-book Catholic Thiruviviliam text is loaded in the database."""
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM verses WHERE book_id = 67 AND LENGTH(TRIM(COALESCE(text_ta_poc, ''))) > 0 LIMIT 1;"
+            ).fetchone()
+            return bool(row)
+    except Exception:
+        return False
 
 
 # =========================================================================

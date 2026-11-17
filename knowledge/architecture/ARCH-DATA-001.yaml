@@ -3,7 +3,7 @@ type: architecture_standard
 title: Embedded Dual-SQLite Architecture (Scripture & Song Lyrics Databases)
 domain: architecture
 status: approved
-version: 1.3.0
+version: 1.4.0
 authority:
   level: official
   confidence: high
@@ -17,10 +17,11 @@ applies_to:
   - packaging
 
 rule:
-  "Scripture text and song lyrics are separated into two dedicated, embedded SQLite databases (`data/bible.sqlite.db` for multi-canon scripture, and `data/songs.sqlite.db` for Christian songbooks/lyrics). Both utilize thread-local connection pooling with memory-mapped I/O (`PRAGMA mmap_size = 64MB`), dedicated connection resolvers (`get_connection()` and `get_songs_connection()`), in-memory LRU chapter/search caching, SQLite FTS5 full-text indexing, and strict file size budgets under 50 MB to comply with Git repository standards."
+  "Scripture text and song lyrics are separated into two dedicated, embedded SQLite databases (`data/bible.sqlite.db` for multi-canon scripture supporting both Protestant and dual Catholic Tamil translations: Thiruviviliam in `text_ta_poc` and Indian Revised Version in `text_ta_irv`, and `data/songs.sqlite.db` for Christian songbooks/lyrics). Both utilize thread-local connection pooling with memory-mapped I/O (`PRAGMA mmap_size = 64MB`), dedicated connection resolvers (`get_connection()` and `get_songs_connection()`), in-memory LRU chapter/search caching, SQLite FTS5 full-text indexing, and strict file size budgets under 50 MB to comply with Git repository standards."
 
 do:
   - "Store all verses in `data/bible.sqlite.db` with composite index `idx_verses_lookup(book_id, chapter, verse)` for sub-millisecond query latency."
+  - "Support configurable Catholic Tamil translations across all 73 books: `text_ta_poc` storing Thiruviviliam (POC) with full Tamil Deuterocanon, and `text_ta_irv` storing Indian Revised Version (IRV Tamil)."
   - "Cache read-only SQLite connections in `threading.local()` across worker threads, setting `PRAGMA query_only = ON;`, `PRAGMA mmap_size = 67108864;` (64 MB memory-mapped I/O to address the 47.68 MB database entirely in RAM), and `PRAGMA cache_size = -8000;` to eliminate file open/close syscall overhead."
   - "Maintain a dedicated SQLite FTS5 virtual table (`verses_fts`) using `content='verses'`, `content_rowid='id'`, `columnsize=0`, and `tokenize='unicode61'` indexing bilingual scripture corpora for sub-millisecond keyword and phrase queries."
   - "Implement two-tier in-memory LRU caching (`functools.lru_cache`) in `app/db.py`: `_fetch_chapter_verses_cached` (maxsize=2048 returning immutable tuples) and `_search_verses_cached` (maxsize=512), returning detached dictionary copies to callers to prevent cache mutation."

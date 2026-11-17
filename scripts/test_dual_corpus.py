@@ -43,11 +43,19 @@ async def run_tests():
     assert "In the beginning God created the heaven" in body_gen_p
     print("✓ Protestant Genesis 1:1 verified (1871 Tamil Old Version + KJV).")
 
-    req_gen_c = make_request("/read/1/1", query="canon=catholic&mode=bilingual")
-    resp_gen_c = await reader(req_gen_c, book_id=1, chapter=1, mode="bilingual", canon="catholic")
-    body_gen_c = resp_gen_c.body.decode("utf-8")
-    assert "ஆதியிலே தேவன் வானத்தையும் பூமியையும் படைத்தார்" in body_gen_c
-    assert "In the beginning God created heaven, and earth." in body_gen_c
+    # Catholic Genesis 1:1 - Thiruviviliam (POC)
+    req_gen_c_thiru = make_request("/read/1/1", query="canon=catholic&mode=bilingual&catholic_version=thiruviviliam")
+    resp_gen_c_thiru = await reader(req_gen_c_thiru, book_id=1, chapter=1, mode="bilingual", canon="catholic", catholic_version="thiruviviliam")
+    body_gen_c_thiru = resp_gen_c_thiru.body.decode("utf-8")
+    assert "தொடக்கத்தில் கடவுள் விண்ணுலகையும்" in body_gen_c_thiru
+    print("✓ Catholic Genesis 1:1 verified (Thiruviviliam / POC).")
+
+    # Catholic Genesis 1:1 - IRV Tamil
+    req_gen_c_irv = make_request("/read/1/1", query="canon=catholic&mode=bilingual&catholic_version=irv")
+    resp_gen_c_irv = await reader(req_gen_c_irv, book_id=1, chapter=1, mode="bilingual", canon="catholic", catholic_version="irv")
+    body_gen_c_irv = resp_gen_c_irv.body.decode("utf-8")
+    assert "ஆதியிலே தேவன் வானத்தையும் பூமியையும் படைத்தார்" in body_gen_c_irv
+    assert "In the beginning God created heaven, and earth." in body_gen_c_irv
     print("✓ Catholic Genesis 1:1 verified (Tamil IRV CC BY-SA 4.0 + Douay-Rheims 1752 Public Domain).")
 
     print("\n=== 3. Testing Psalm 23:1 ===")
@@ -57,10 +65,18 @@ async def run_tests():
     assert "கர்த்தர் என் மேய்ப்பராயிருக்கிறார்" in body_ps_p
     print("✓ Protestant Psalm 23:1 verified (கர்த்தர் என் மேய்ப்பராயிருக்கிறார்).")
 
-    req_ps_c = make_request("/read/19/23", query="canon=catholic&mode=bilingual")
-    resp_ps_c = await reader(req_ps_c, book_id=19, chapter=23, mode="bilingual", canon="catholic")
-    body_ps_c = resp_ps_c.body.decode("utf-8")
-    assert "யெகோவா என் மேய்ப்பராக இருக்கிறார்" in body_ps_c
+    # Catholic Psalm 23:1 - Thiruviviliam
+    req_ps_c_thiru = make_request("/read/19/23", query="canon=catholic&mode=bilingual&catholic_version=thiruviviliam")
+    resp_ps_c_thiru = await reader(req_ps_c_thiru, book_id=19, chapter=23, mode="bilingual", canon="catholic", catholic_version="thiruviviliam")
+    body_ps_c_thiru = resp_ps_c_thiru.body.decode("utf-8")
+    assert "ஆண்டவரே என் ஆயர்" in body_ps_c_thiru
+    print("✓ Catholic Psalm 23:1 verified (Thiruviviliam / POC: ஆண்டவரே என் ஆயர்).")
+
+    # Catholic Psalm 23:1 - IRV Tamil
+    req_ps_c_irv = make_request("/read/19/23", query="canon=catholic&mode=bilingual&catholic_version=irv")
+    resp_ps_c_irv = await reader(req_ps_c_irv, book_id=19, chapter=23, mode="bilingual", canon="catholic", catholic_version="irv")
+    body_ps_c_irv = resp_ps_c_irv.body.decode("utf-8")
+    assert "யெகோவா என் மேய்ப்பராக இருக்கிறார்" in body_ps_c_irv
     print("✓ Catholic Psalm 23:1 verified (Tamil IRV CC BY-SA 4.0).")
 
     print("\n=== 4. Testing John 1:1 ===")
@@ -70,19 +86,21 @@ async def run_tests():
     assert "ஆதியிலே வார்த்தை இருந்தது" in body_jn_p
     print("✓ Protestant John 1:1 verified (1871 Tamil Old Version).")
 
-    req_jn_c = make_request("/read/43/1", query="canon=catholic&mode=bilingual")
-    resp_jn_c = await reader(req_jn_c, book_id=43, chapter=1, mode="bilingual", canon="catholic")
+    # Catholic John 1:1 - Thiruviviliam
+    req_jn_c = make_request("/read/43/1", query="canon=catholic&mode=bilingual&catholic_version=thiruviviliam")
+    resp_jn_c = await reader(req_jn_c, book_id=43, chapter=1, mode="bilingual", canon="catholic", catholic_version="thiruviviliam")
     body_jn_c = resp_jn_c.body.decode("utf-8")
-    assert "ஆரம்பத்திலே வார்த்தை இருந்தது" in body_jn_c
-    print("✓ Catholic John 1:1 verified (Tamil IRV CC BY-SA 4.0).")
+    assert "தொடக்கத்தில் வாக்கு இருந்தது" in body_jn_c
+    print("✓ Catholic John 1:1 verified (Thiruviviliam / POC: தொடக்கத்தில் வாக்கு இருந்தது).")
 
-    print("\n=== 5. Testing Deuterocanon (Tobit 1 - Douay-Rheims 1752 Public Domain) ===")
+    print("\n=== 5. Testing Deuterocanon (Tobit 1 - Thiruviviliam & Douay-Rheims) ===")
     req_tob = make_request("/read/67/1", query="canon=catholic&mode=bilingual")
     resp_tob = await reader(req_tob, book_id=67, chapter=1, mode="bilingual", canon="catholic")
     body_tob = resp_tob.body.decode("utf-8")
     assert "தோபித்து" in body_tob
     assert "Tobias" in body_tob
-    print("✓ Deuterocanon Tobit 1:1 verified (Douay-Rheims 1752 Public Domain).")
+    assert "இது தோபித்தின் கதை" in body_tob
+    print("✓ Deuterocanon Tobit 1:1 verified with full Tamil Thiruviviliam text & Douay-Rheims English.")
 
     print("\n=== 6. Testing Search in Both Canons & Privacy Policy Page ===")
     req_s_p = make_request("/search", query="q=சிருஷ்டித்தார்&canon=protestant")

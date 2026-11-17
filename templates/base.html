@@ -326,8 +326,50 @@
                             data-canon-val="catholic">
                         <span class="text-base mb-1">✝️</span>
                         <span class="font-bold text-xs">Catholic</span>
-                        <span class="text-[10px] text-stone-400">73 Books • IRV / DRB</span>
+                        <span class="text-[10px] text-stone-400">73 Books • POC / IRV</span>
                     </button>
+                </div>
+            </div>
+
+            <!-- Catholic Tamil Translation Configuration Section -->
+            <div id="catholic-translation-section" class="{% if not is_catholic %}hidden{% endif %} space-y-2 mb-4 p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200 dark:border-stone-800 transition-all">
+                <div class="flex justify-between items-center">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Catholic Tamil Translation / மொழிபெயர்ப்பு</label>
+                    <span id="catholic-trans-status-badge" class="text-[10px] text-amber-700 dark:text-amber-400 font-semibold">{% if catholic_version == 'irv' %}IRV Tamil{% else %}திருவிவிலியம் (POC){% endif %}</span>
+                </div>
+                
+                <div class="space-y-2">
+                    <!-- Option 1: Thiruviviliam (POC) -->
+                    <label class="flex items-start gap-2.5 p-2 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-amber-600 bg-white dark:bg-stone-800 cursor-pointer text-xs transition">
+                        <input type="radio" name="catholic_version_radio" id="cath-opt-thiruviviliam" value="thiruviviliam" onchange="setCatholicTranslation('thiruviviliam')" class="mt-0.5 text-amber-700 focus:ring-amber-500">
+                        <div class="flex-1">
+                            <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                                <span>திருவிவிலியம் (Thiruviviliam)</span>
+                                <span id="thiruviviliam-loaded-pill" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold {% if not thiruviviliam_installed %}hidden{% endif %}">✓ 73 Books</span>
+                            </div>
+                            <div class="text-[10px] text-stone-500 leading-tight mt-0.5">Official Catholic translation (TNBCLC / POC) • Full Tamil Deuterocanon</div>
+                        </div>
+                    </label>
+
+                    <!-- Option 2: Indian Revised Version (IRV) -->
+                    <label class="flex items-start gap-2.5 p-2 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-amber-600 bg-white dark:bg-stone-800 cursor-pointer text-xs transition">
+                        <input type="radio" name="catholic_version_radio" id="cath-opt-irv" value="irv" onchange="setCatholicTranslation('irv')" class="mt-0.5 text-amber-700 focus:ring-amber-500">
+                        <div class="flex-1">
+                            <div class="font-bold text-stone-900 dark:text-stone-100 flex items-center justify-between">
+                                <span>இண்டியன் ரிவைஸ்டு வெர்ஸன் (IRV)</span>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 font-bold">CC BY-SA 4.0</span>
+                            </div>
+                            <div class="text-[10px] text-stone-500 leading-tight mt-0.5">Bridge Connectivity Solutions • Open-licensed modern revision</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- 1-Click Install Button if Thiruviviliam not installed -->
+                <div id="thiruviviliam-install-container" class="{% if thiruviviliam_installed %}hidden{% endif %} pt-1">
+                    <button type="button" id="btn-install-thiruviviliam" onclick="installThiruviviliam()" class="w-full py-2 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                        <span>📥</span> <span>Download &amp; Enable Thiruviviliam (1-Click)</span>
+                    </button>
+                    <p class="text-[10px] text-stone-400 mt-1 text-center">Downloads 73-book Catholic corpus once into your local offline database.</p>
                 </div>
             </div>
 
@@ -594,6 +636,84 @@
             if (badge) {
                 badge.innerText = canon === 'catholic' ? 'Catholic (73)' : 'Protestant (66)';
             }
+            const cathSec = document.getElementById('catholic-translation-section');
+            if (cathSec) {
+                if (canon === 'catholic') {
+                    cathSec.classList.remove('hidden');
+                } else {
+                    cathSec.classList.add('hidden');
+                }
+            }
+        }
+
+        function getCatholicTranslation() {
+            return localStorage.getItem('bible_catholic_version') || (document.cookie.match(/(?:^|;\s*)bible_catholic_version=([^;]+)/) || [])[1] || 'thiruviviliam';
+        }
+
+        function setCatholicTranslation(ver) {
+            if (!['thiruviviliam', 'irv'].includes(ver)) ver = 'thiruviviliam';
+            localStorage.setItem('bible_catholic_version', ver);
+            document.cookie = `bible_catholic_version=${ver}; path=/; max-age=31536000; SameSite=Lax`;
+            updateCatholicUI(ver);
+
+            fetch((window.URL_PREFIX || '') + '/api/settings/catholic-version', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({version: ver})
+            }).catch(console.error);
+
+            const activeCanon = getBibleCanon();
+            if (activeCanon === 'catholic') {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('catholic_version', ver);
+                window.location.href = currentUrl.toString();
+            }
+        }
+
+        function updateCatholicUI(ver) {
+            const radThiru = document.getElementById('cath-opt-thiruviviliam');
+            const radIrv = document.getElementById('cath-opt-irv');
+            if (radThiru && radIrv) {
+                radThiru.checked = (ver === 'thiruviviliam');
+                radIrv.checked = (ver === 'irv');
+            }
+            const badge = document.getElementById('catholic-trans-status-badge');
+            if (badge) {
+                badge.innerText = ver === 'irv' ? 'IRV Tamil' : 'திருவிவிலியம் (POC)';
+            }
+        }
+
+        async function installThiruviviliam() {
+            const btn = document.getElementById('btn-install-thiruviviliam');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>⏳</span> <span>Downloading &amp; Ingesting...</span>';
+            }
+            try {
+                const res = await fetch((window.URL_PREFIX || '') + '/api/settings/enable-thiruviviliam', {method: 'POST'});
+                const data = await res.json();
+                if (data.status === 'success') {
+                    setCatholicTranslation('thiruviviliam');
+                    const container = document.getElementById('thiruviviliam-install-container');
+                    const loadedPill = document.getElementById('thiruviviliam-loaded-pill');
+                    if (container) container.classList.add('hidden');
+                    if (loadedPill) loadedPill.classList.remove('hidden');
+                    alert('✓ திருவிவிலியம் (Thiruviviliam) successfully installed and enabled across all 73 Catholic books!');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to install Thiruviviliam'));
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span>📥</span> <span>Download &amp; Enable Thiruviviliam (1-Click)</span>';
+                    }
+                }
+            } catch (err) {
+                alert('Installation failed: ' + err);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>📥</span> <span>Download &amp; Enable Thiruviviliam (1-Click)</span>';
+                }
+            }
         }
 
         // Initialize Canon UI on load
@@ -601,6 +721,8 @@
             try {
                 const activeCanon = getBibleCanon();
                 updateCanonUI(activeCanon);
+                const activeCathVer = getCatholicTranslation();
+                updateCatholicUI(activeCathVer);
                 if (!document.cookie.includes('bible_canon=' + activeCanon)) {
                     document.cookie = `bible_canon=${activeCanon}; path=/; max-age=31536000; SameSite=Lax`;
                 }
