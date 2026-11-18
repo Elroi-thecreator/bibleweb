@@ -19,7 +19,7 @@ rule:
   "The Windows desktop application is packaged as a single portable self-contained executable (`HolyBible-Portable.exe`) via PyInstaller and distributed automatically to GitHub Releases and Microsoft WinGet Package Manager (`ElroiTheCreator.HolyBible`) with centralized application versioning, in-app version and update presentation in Settings, startup update notifications, and full compliance for WinGet Policy 1.5.1 and Policy 2.2."
 
 do:
-  - "Maintain single source of truth for version metadata in `app/version.py` (`APP_VERSION = '1.1.0'`) shared across FastAPI backend, desktop host, templates, `/api/health`, and WinGet manifests."
+  - "Maintain single source of truth for version metadata in `app/version.py` (`APP_VERSION = '1.2.1'`) shared across FastAPI backend, desktop host, templates, `/api/health`, and WinGet manifests."
   - "Display active version badge (`v{{ app_version }}`) in the user Settings modal (`templates/base.html`), Admin Settings (`templates/admin/settings.html`), footer, and PyWebView desktop window title."
   - "Implement in-app update checking via `GET /api/app/check-update` querying GitHub Releases with 15-minute in-memory caching, user-configurable startup update check toggle (`localStorage.bible_auto_update`), on-demand check button, and WinGet command copy button."
   - "Bundle `data/bible.sqlite.db`, `data/songs.sqlite.db`, `templates/`, `static/`, `LICENSE`, `NOTICE.md`, and `PRIVACY.md` as internal datas via `windows_app/holybible.spec` with hidden imports covering all AI and admin modules."

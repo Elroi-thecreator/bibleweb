@@ -1,0 +1,46 @@
+id: ARCH-OFFLINE-001
+type: architecture_standard
+title: Installed WebApp Offline SQLite Wasm & Persistent IndexedDB Storage Architecture
+domain: architecture
+status: approved
+version: 1.0.0
+authority:
+  level: official
+  confidence: high
+owner:
+  team: core_architecture
+
+applies_to:
+  - backend
+  - frontend
+  - static
+  - service_worker
+  - reader
+
+rule:
+  "The Holy Bible webapp supports 100% offline standalone execution exclusively when installed as a PWA / standalone application on mobile or desktop devices. Casual web visitors browsing in standard browser tabs experience zero bandwidth overhead or intrusive download prompts. When running in installed mode (`display-mode: standalone` or `navigator.standalone === true`), the user can download the complete Scripture database (`data/bible.sqlite.db`, ~48 MB) and Hymnal database (`data/songs.sqlite.db`, ~8.2 MB) into IndexedDB persistent storage, queried in-browser with sub-millisecond response latency using official SQLite WebAssembly (`sql-wasm.js` / `sql-wasm.wasm`)."
+
+do:
+  - "Gate all offline database download prompts and automatic preparation strictly behind `isAppInstalled()` detection (`display-mode: standalone` / `navigator.standalone === true` or `appinstalled` event)."
+  - "Stream Scripture (`/api/offline/bible-db`) and Songs (`/api/offline/songs-db`) binary files directly from local storage with `Accept-Ranges: bytes` and `Cache-Control: public, max-age=604800, immutable` headers."
+  - "Store binary database buffers directly in client-side IndexedDB (`holy_bible_offline_db`) rather than standard Service Worker Cache Storage to prevent redundant storage duplication."
+  - "Call `navigator.storage.persist()` upon successful download to safeguard the offline databases from operating system eviction under storage pressure."
+  - "Mount SQLite WebAssembly in-memory from IndexedDB ArrayBuffers using `initSqlJs({ locateFile: ... })` to execute SQL lookups, verse filtering, and searches locally."
+  - "When running offline, intercept reader requests or dropdown navigation in `templates/reader.html` and execute `HolyBibleOffline.renderChapterOffline(bookId, chapter, mode, canon)` to render verses directly into `#reader-content` without requiring network connectivity."
+  - "Expose clear telemetry, storage size metrics, update triggers, and storage clearing controls inside the application Settings Modal (`#offline-storage-settings-section`)."
+
+dont:
+  - "Do not prompt casual website visitors in standard browser tabs to download 50 MB database bundles."
+  - "Do not route binary SQLite database downloads through Service Worker Cache API; IndexedDB must remain the single source of truth for offline SQLite blobs."
+  - "Do not hardcode CDN dependencies for SQLite WebAssembly; always vendor `sql-wasm.js` and `sql-wasm.wasm` inside `static/js/vendor/` to ensure complete offline independence."
+  - "Do not lock UI threads during large database downloads; stream chunks with granular progress reporting."
+
+reason:
+  "Gating offline database installation strictly to installed webapps delivers the optimal balance: regular web visitors experience lightweight, instant server-rendered pages with zero data waste, while mobile home-screen users gain a true native-app experience capable of reading all 73 books and searching hymns in airplane mode or remote areas."
+
+related_items:
+  - ARCH-SYS-001
+  - ARCH-DATA-001
+  - DEV-PY-001
+  - PROD-CANON-001
+  - PROD-SONGS-001

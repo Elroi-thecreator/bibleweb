@@ -1,8 +1,8 @@
 # Holy Bible Master Knowledge Graph & Index
 system_name: HolyBible
 repository_root: "/home/ubuntu/openhand/workspace/bibleweb"
-knowledge_units_count: 27
-last_updated: "2026-11-17"
+knowledge_units_count: 28
+last_updated: "2026-11-18"
 
 knowledge_units:
   architecture:
@@ -12,6 +12,9 @@ knowledge_units:
     - id: ARCH-DATA-001
       file: "knowledge/architecture/ARCH-DATA-001.yaml"
       title: "Embedded Dual-SQLite Architecture (Scripture, Modular Catholic Thiruviviliam & Song Lyrics Databases)"
+    - id: ARCH-OFFLINE-001
+      file: "knowledge/architecture/ARCH-OFFLINE-001.yaml"
+      title: "Installed WebApp Offline SQLite Wasm & Persistent IndexedDB Storage Architecture"
     - id: ARCH-DIST-001
       file: "knowledge/architecture/ARCH-DIST-001.yaml"
       title: "PyInstaller Standalone Windows Executable & WinGet Distribution Pipeline"

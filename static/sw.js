@@ -1,9 +1,13 @@
-const CACHE_NAME = 'bible-app-v3';
+const CACHE_NAME = 'bible-app-v4';
 const STATIC_ASSETS = [
   '/',
+  '/static/manifest.json',
   '/static/js/storage.js',
   '/static/js/audio_player.js',
-  '/static/manifest.json'
+  '/static/js/offline_engine.js',
+  '/static/js/vendor/sql-wasm.js',
+  '/static/icons/icon-192.png',
+  '/static/icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -25,7 +29,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // 1. Do not intercept streaming audio or API endpoints
+  // 1. Do not intercept streaming audio or binary offline database downloads
+  if (url.pathname.startsWith('/api/audio/') || url.pathname.startsWith('/api/offline/')) {
+    return;
+  }
+
+  // 1b. Skip other standard JSON API routes unless cached
   if (url.pathname.startsWith('/api/')) {
     return;
   }
@@ -43,7 +52,13 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           // Offline fallback
-          return caches.match(event.request).then((cached) => cached || caches.match('/'));
+          return caches.match(event.request).then((cached) => {
+            if (cached) return cached;
+            if (url.pathname.startsWith('/read/')) {
+              return caches.match('/read/1/1?mode=bilingual').then((reader) => reader || caches.match('/'));
+            }
+            return caches.match('/');
+          });
         })
     );
     return;

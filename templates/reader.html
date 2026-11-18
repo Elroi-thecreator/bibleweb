@@ -613,10 +613,30 @@
     const urlParams = new URLSearchParams(window.location.search);
     const ACTIVE_PLAN_ID = urlParams.get('plan_id');
 
-    function navigateWithPlan(ch) {
+    async function navigateWithPlan(ch) {
         let dest = `/read/${window.CURRENT_BOOK_ID}/${ch}?mode={{ mode }}`;
         if (ACTIVE_PLAN_ID) dest += `&plan_id=${ACTIVE_PLAN_ID}`;
+        
+        // If offline and local database is ready, hydrate locally without network roundtrip
+        if (!navigator.onLine && window.holyBibleOffline && (await window.holyBibleOffline.hasOfflineData())) {
+            window.CURRENT_CHAPTER = Number(ch);
+            try { history.pushState(null, '', dest); } catch (_) {}
+            await window.holyBibleOffline.renderChapterOffline(window.CURRENT_BOOK_ID, ch, '{{ mode }}', '{{ active_canon }}');
+            const dropdown = document.getElementById('chapter-select-dropdown');
+            if (dropdown) dropdown.value = ch;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
         window.location.href = dest;
+    }
+
+    // Auto-detect offline mode on initial page load
+    if (!navigator.onLine && window.holyBibleOffline) {
+        window.holyBibleOffline.hasOfflineData().then(hasData => {
+            if (hasData) {
+                window.holyBibleOffline.showOfflineToolbarBadge();
+            }
+        });
     }
 
     function preservePlanInLinks() {

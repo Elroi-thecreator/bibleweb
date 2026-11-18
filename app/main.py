@@ -55,6 +55,9 @@ from app.db import (
     CATHOLIC_BOOKS,
     BOOK_MAP,
     CATHOLIC_BOOK_MAP,
+    DB_PATH,
+    SONGS_DB_PATH,
+    THIRUVIVILIAM_DB_PATH,
     get_book_info,
     get_book_map,
     get_books,
@@ -958,6 +961,66 @@ async def api_check_update(force: bool = Query(False, description="Bypass cached
             "status": "offline",
             "winget_command": "winget upgrade ElroiTheCreator.HolyBible",
         })
+
+
+# ==========================================
+# 4b. Installed WebApp Offline Package Endpoints
+# ==========================================
+
+@app.get("/api/offline/info")
+async def api_offline_info():
+    """Returns database sizes, version, and canon structures for installed offline webapps."""
+    bible_size = os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
+    songs_size = os.path.getsize(SONGS_DB_PATH) if os.path.exists(SONGS_DB_PATH) else 0
+    return JSONResponse({
+        "status": "ready",
+        "version": APP_VERSION,
+        "app_name": APP_NAME,
+        "bible_db_size": bible_size,
+        "songs_db_size": songs_size,
+        "total_bytes": bible_size + songs_size,
+        "has_thiruviviliam": os.path.exists(THIRUVIVILIAM_DB_PATH),
+        "protestant_books": [
+            {"id": b[0], "name_en": b[1], "name_ta": b[2], "total_chapters": b[3]}
+            for b in (BIBLE_BOOKS + DEUTEROCANONICAL_BOOKS)
+        ],
+        "catholic_books": [
+            {"id": b[0], "name_en": b[1], "name_ta": b[2], "total_chapters": b[3]}
+            for b in CATHOLIC_BOOKS
+        ]
+    })
+
+
+@app.api_route("/api/offline/bible-db", methods=["GET", "HEAD"])
+async def api_offline_bible_db():
+    """Streams bible.sqlite.db for installed PWA local storage."""
+    if not os.path.exists(DB_PATH):
+        raise HTTPException(status_code=404, detail="Scripture database not found")
+    return FileResponse(
+        path=DB_PATH,
+        filename="bible.sqlite.db",
+        media_type="application/vnd.sqlite3",
+        headers={
+            "Cache-Control": "public, max-age=604800, immutable",
+            "Accept-Ranges": "bytes",
+        }
+    )
+
+
+@app.api_route("/api/offline/songs-db", methods=["GET", "HEAD"])
+async def api_offline_songs_db():
+    """Streams songs.sqlite.db for installed PWA local storage."""
+    if not os.path.exists(SONGS_DB_PATH):
+        raise HTTPException(status_code=404, detail="Songs database not found")
+    return FileResponse(
+        path=SONGS_DB_PATH,
+        filename="songs.sqlite.db",
+        media_type="application/vnd.sqlite3",
+        headers={
+            "Cache-Control": "public, max-age=604800, immutable",
+            "Accept-Ranges": "bytes",
+        }
+    )
 
 
 @app.get("/api/system/process-registry")

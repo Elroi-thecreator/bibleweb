@@ -481,6 +481,14 @@
                 </div>
             </div>
 
+            <!-- Offline App Storage & Database (Only Active for Installed WebApps) -->
+            <div id="offline-storage-settings-section" class="space-y-2 mb-4">
+                <label class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">Offline Mode & Database / ஆஃப்லைன் தரவுத்தளம்</label>
+                <div id="offline-storage-settings-box">
+                    <!-- Populated dynamically by HolyBibleOffline.updateSettingsUI() -->
+                </div>
+            </div>
+
             <!-- Application Version & Updates Section -->
             <div class="space-y-2 mb-4 p-3 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200 dark:border-stone-800">
                 <div class="flex justify-between items-center">
@@ -594,6 +602,7 @@
     </script>
 
     <script src="/static/js/storage.js?v=6.5"></script>
+    <script src="/static/js/offline_engine.js?v=1.0"></script>
     <script>
         function toggleSettingsModal() {
             const modal = document.getElementById('settings-modal');
