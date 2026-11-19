@@ -12,6 +12,16 @@ except Exception:
     SSL_CONTEXT = ssl._create_unverified_context()
 
 TOKEN = os.environ.get('GITHUB_TOKEN') or os.environ.get('GH_TOKEN') or ''
+if not TOKEN:
+    try:
+        import subprocess
+        remote = subprocess.check_output(['git', 'remote', 'get-url', 'origin'], text=True).strip()
+        if '@github.com' in remote and '://' in remote:
+            userinfo = remote.split('://')[1].split('@github.com')[0]
+            if userinfo:
+                TOKEN = userinfo
+    except Exception:
+        pass
 HEADERS = {
     'User-Agent': 'WinGet-PR-Tracker'
 }
@@ -20,7 +30,7 @@ if TOKEN:
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATE_FILE = os.path.join(ROOT_DIR, '.winget_pr_state.json')
-PR_LIST = [483836, 483260, 482252, 479139, 460301, 446873]
+PR_LIST = [484027, 483836, 483260, 482252, 479139, 460301, 446873]
 
 def fetch_json(url):
     req = urllib.request.Request(url, headers=HEADERS)
