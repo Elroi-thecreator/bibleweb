@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release Tag (e.g. v1.2.1)'
+        description: 'Release Tag (e.g. v1.2.2)'
         required: false
-        default: 'v1.2.1'
+        default: 'v1.2.2'
       is_prerelease:
         description: 'Mark as pre-release'
         type: boolean
@@ -43,7 +43,7 @@ jobs:
         run: |
           $tag = "${{ github.event.inputs.tag_name }}"
           if (-not $tag) { $tag = "${{ github.ref_name }}" }
-          if (-not $tag -or $tag -eq "main") { $tag = "v1.2.1" }
+          if (-not $tag -or $tag -eq "main") { $tag = "v1.2.2" }
           $version = $tag.TrimStart("v")
           echo "TAG=$tag" >> $env:GITHUB_ENV
           echo "VERSION=$version" >> $env:GITHUB_ENV

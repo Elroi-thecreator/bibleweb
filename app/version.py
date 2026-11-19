@@ -8,6 +8,6 @@ Single source of truth for version metadata across:
 - Automated WinGet Package Distribution
 """
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 APP_VERSION = __version__
 APP_NAME = "Holy Bible - வேதம்"
