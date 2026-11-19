@@ -437,6 +437,9 @@ async def security_and_cache_middleware(request: Request, call_next):
 class PrefixedTemplates(Jinja2Templates):
     """Custom Jinja2Templates that automatically rewrites URLs when URL_PREFIX is configured."""
     def TemplateResponse(self, *args, **kwargs):
+        context = kwargs.get("context")
+        if context is not None and "is_desktop" not in context:
+            context["is_desktop"] = bool(os.getenv("HOLY_BIBLE_DESKTOP") == "1" or getattr(sys, "frozen", False))
         resp = super().TemplateResponse(*args, **kwargs)
         if URL_PREFIX and resp.body:
             decoded = resp.body.decode("utf-8", errors="replace")
@@ -453,6 +456,7 @@ templates.env.globals["prefix"] = URL_PREFIX
 templates.env.globals["app_version"] = APP_VERSION
 templates.env.globals["APP_VERSION"] = APP_VERSION
 templates.env.globals["app_name"] = APP_NAME
+templates.env.globals["is_desktop"] = bool(os.getenv("HOLY_BIBLE_DESKTOP") == "1" or getattr(sys, "frozen", False))
 
 
 # 3. Custom Branded Exception Handlers
@@ -539,6 +543,16 @@ DAILY_VERSE = DAILY_VERSE_PROTESTANT
 async def google_site_verification():
     """Serves the Google Search Console / OAuth domain verification token."""
     return "google-site-verification: google032292dfbea249aa.html"
+
+
+@app.get("/googlelhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA.html", response_class=PlainTextResponse)
+async def google_site_verification_html():
+    return "google-site-verification: googlelhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA.html"
+
+
+@app.get("/google-site-verification=lhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA", response_class=PlainTextResponse)
+async def google_site_verification_token():
+    return "google-site-verification=lhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA"
 
 
 # ==========================================
@@ -1046,18 +1060,22 @@ exit
         with open(bat_path, "w", encoding="utf-8") as f:
             f.write(bat_content)
 
-        creationflags = 0
-        if hasattr(subprocess, "CREATE_NEW_CONSOLE"):
-            creationflags |= subprocess.CREATE_NEW_CONSOLE
-
-        subprocess.Popen(
-            ["cmd.exe", "/c", bat_path],
-            creationflags=creationflags,
-            close_fds=True,
-        )
+        # Launch detached visible command prompt window running the updater batch script
+        try:
+            os.startfile(bat_path)
+        except Exception:
+            creationflags = 0
+            if hasattr(subprocess, "CREATE_NEW_CONSOLE"):
+                creationflags |= subprocess.CREATE_NEW_CONSOLE
+            subprocess.Popen(
+                ["cmd.exe", "/c", "start", "Holy Bible Updater", bat_path],
+                shell=True,
+                creationflags=creationflags,
+                close_fds=True,
+            )
 
         loop = asyncio.get_running_loop()
-        loop.call_later(0.8, lambda: os._exit(0))
+        loop.call_later(0.6, lambda: os._exit(0))
         return JSONResponse({
             "status": "upgrading",
             "message": "WinGet upgrade started. Closing application...",

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="google" content="notranslate">
+    <!-- Google Site Verification -->
+    <meta name="google-site-verification" content="lhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA">
     <title>{% block title %}வேதம் | Holy Bible{% endblock %}</title>
 
     <!-- PWA Manifest & Browser Meta -->
@@ -500,27 +502,30 @@
                 
                 <div class="flex items-center justify-between text-xs pt-1">
                     <span class="text-stone-700 dark:text-stone-300 font-medium">Holy Bible (வேதம்)</span>
-                    <span id="settings-update-status" class="text-[10px] text-stone-400 font-medium">Checking...</span>
+                    <span id="settings-update-status" class="text-[10px] text-stone-400 font-medium font-mono">v{{ app_version }}</span>
                 </div>
 
-                <!-- Auto update checkbox toggle -->
-                <div class="pt-2 border-t border-stone-200/60 dark:border-stone-800/60 flex items-center justify-between gap-2">
-                    <label for="setting-auto-update-toggle" class="text-[11px] text-stone-600 dark:text-stone-300 font-medium cursor-pointer flex-1">
-                        Check for updates when opening app
-                    </label>
-                    <input type="checkbox" id="setting-auto-update-toggle" onchange="toggleAutoUpdatePreference(this.checked)" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer" checked>
-                </div>
+                <!-- Desktop-Only Update Controls (Strictly hidden on WebApp) -->
+                <div class="desktop-only-update space-y-2 pt-2 hidden">
+                    <!-- Auto update checkbox toggle -->
+                    <div class="pt-2 border-t border-stone-200/60 dark:border-stone-800/60 flex items-center justify-between gap-2">
+                        <label for="setting-auto-update-toggle" class="text-[11px] text-stone-600 dark:text-stone-300 font-medium cursor-pointer flex-1">
+                            Check for updates when opening app
+                        </label>
+                        <input type="checkbox" id="setting-auto-update-toggle" onchange="toggleAutoUpdatePreference(this.checked)" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer" checked>
+                    </div>
 
-                <!-- Manual Check Button & WinGet Prompt -->
-                <div class="pt-2 flex items-center gap-2">
-                    <button type="button" id="btn-manual-check-update" onclick="manualCheckForUpdates()" class="flex-1 py-1.5 px-3 bg-white dark:bg-stone-700 rounded-lg text-xs font-semibold border border-stone-300 dark:border-stone-600 hover:border-amber-600 text-stone-700 dark:text-stone-200 flex items-center justify-center gap-1.5 cursor-pointer transition">
-                        <span id="manual-update-icon">🔄</span> <span id="manual-update-text">Check for Updates</span>
-                    </button>
-                    <button type="button" id="btn-settings-winget" onclick="triggerWinGetUpgrade()" title="WinGet Upgrade" class="py-1.5 px-2.5 bg-stone-100 dark:bg-stone-800 rounded-lg text-[11px] font-mono font-semibold border border-stone-300 dark:border-stone-600 hover:border-amber-600 text-stone-600 dark:text-stone-300 cursor-pointer">
-                        winget 📋
-                    </button>
-                </div>
-                <div id="settings-update-banner" class="hidden mt-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 space-y-1.5">
+                    <!-- Manual Check Button & WinGet Trigger -->
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="btn-manual-check-update" onclick="manualCheckForUpdates()" class="flex-1 py-1.5 px-3 bg-white dark:bg-stone-700 rounded-lg text-xs font-semibold border border-stone-300 dark:border-stone-600 hover:border-amber-600 text-stone-700 dark:text-stone-200 flex items-center justify-center gap-1.5 cursor-pointer transition">
+                            <span id="manual-update-icon">🔄</span> <span id="manual-update-text">Check for Updates</span>
+                        </button>
+                        <button type="button" id="btn-settings-winget" onclick="triggerWinGetUpgrade()" title="Close app, open command prompt, upgrade, and reopen" class="py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer shadow-xs transition">
+                            <span>⚡ Upgrade (WinGet)</span>
+                        </button>
+                    </div>
+                    <div id="settings-update-banner" class="hidden mt-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 space-y-1.5">
+                    </div>
                 </div>
             </div>
 
@@ -563,8 +568,8 @@
         </div>
     </div>
 
-    <!-- Application Update Available Floating Notification -->
-    <div id="app-update-notification-modal" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92vw] bg-white dark:bg-stone-900 border border-amber-500/80 shadow-2xl rounded-2xl p-4 animate-in fade-in slide-in-from-bottom duration-200">
+    <!-- Application Update Available Floating Notification (DESKTOP ONLY) -->
+    <div id="app-update-notification-modal" class="desktop-only-update hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92vw] bg-white dark:bg-stone-900 border border-amber-500/80 shadow-2xl rounded-2xl p-4 animate-in fade-in slide-in-from-bottom duration-200">
         <div class="flex items-start justify-between gap-3">
             <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 text-base shadow-xs">
                 🚀
@@ -576,12 +581,12 @@
                 </div>
                 <p id="update-modal-desc" class="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">A new version of Holy Bible is available with latest updates.</p>
                 <div class="mt-2.5 flex items-center gap-2 flex-wrap">
-                    <a id="update-modal-download-btn" href="#" target="_blank" class="py-1.5 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs">
-                        <span>⬇️ Download Update (.exe)</span>
-                    </a>
-                    <button type="button" id="update-modal-winget-btn" onclick="triggerWinGetUpgrade()" class="py-1.5 px-2.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-lg text-[11px] font-mono font-medium border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 transition cursor-pointer">
-                        winget upgrade 📋
+                    <button type="button" id="update-modal-winget-btn" onclick="triggerWinGetUpgrade()" class="py-1.5 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+                        <span>⚡ Close App & Upgrade (WinGet)</span>
                     </button>
+                    <a id="update-modal-download-btn" href="#" target="_blank" class="py-1.5 px-2.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-lg text-[11px] font-semibold text-stone-700 dark:text-stone-300 transition">
+                        <span>⬇️ Manual Download</span>
+                    </a>
                     <button type="button" onclick="dismissUpdateNotification()" class="py-1.5 px-2 text-[11px] text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 font-medium cursor-pointer">
                         Later
                     </button>
@@ -592,17 +597,22 @@
     </div>
 
     <!-- WinGet Upgrading & Reopening Desktop Overlay -->
-    <div id="winget-upgrading-overlay" class="hidden fixed inset-0 bg-stone-950/85 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center text-white text-center p-6 animate-in fade-in duration-200">
+    <div id="winget-upgrading-overlay" class="hidden fixed inset-0 bg-stone-950/90 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center text-white text-center p-6 animate-in fade-in duration-200">
         <div class="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-3xl mb-4 animate-bounce">⚡</div>
-        <h2 class="text-xl font-bold font-cinzel mb-2">Upgrading Holy Bible...</h2>
+        <h2 class="text-xl font-bold font-cinzel mb-2">Closing & Launching WinGet Upgrade...</h2>
         <p class="text-xs text-stone-300 max-w-sm mb-4 leading-relaxed">
-            The application will now close to release file locks. WinGet will execute the upgrade in a dedicated terminal and automatically reopen Holy Bible when finished.
+            The application will now close to release executable file locks. An updater command prompt will open, execute <code class="bg-stone-800 px-1.5 py-0.5 rounded text-amber-300 font-mono">winget upgrade</code>, and automatically reopen Holy Bible when finished.
         </p>
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900 border border-stone-700 text-amber-300 text-[11px] font-mono shadow-inner">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>Closing app & executing WinGet upgrade...</span>
+            <span>Opening command prompt & closing application...</span>
         </div>
     </div>
+
+    <!-- Host Desktop Execution Indicator -->
+    <script>
+        window.IS_DESKTOP_HOST = {{ is_desktop | default(false) | tojson }};
+    </script>
 
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -922,49 +932,33 @@
         document.addEventListener('DOMContentLoaded', initAudioVoiceSettings);
 
         // ==========================================
-        // Application Auto-Update & Version Handling
+        // Application Auto-Update & Version Handling (Desktop Only)
         // ==========================================
         const CURRENT_APP_VERSION = "{{ app_version }}";
+
+        function isWindowsDesktopApp() {
+            // 1. Injected by backend when running inside desktop host / PyInstaller frozen binary
+            if (window.IS_DESKTOP_HOST === true) return true;
+            // 2. Running inside Microsoft Edge WebView2 (PyWebView host)
+            if (typeof window.pywebview !== 'undefined') return true;
+            // 3. Desktop query parameter or session flag
+            if (new URLSearchParams(window.location.search).get('client') === 'desktop') {
+                try { sessionStorage.setItem('holy_bible_desktop_host', '1'); } catch(e) {}
+                return true;
+            }
+            try {
+                if (sessionStorage.getItem('holy_bible_desktop_host') === '1') return true;
+            } catch(e) {}
+            return false;
+        }
 
         function toggleAutoUpdatePreference(enabled) {
             localStorage.setItem('bible_auto_update', enabled ? 'true' : 'false');
             showToast(enabled ? "Auto update check on startup enabled! 🔄" : "Auto update check on startup disabled");
         }
 
-        function isNativeDesktopClient() {
-            const host = window.location.hostname;
-            return host === '127.0.0.1' || host === 'localhost' || host === '::1';
-        }
-
-        function copyWinGetCommand() {
-            const cmd = "winget upgrade ElroiTheCreator.HolyBible";
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(cmd).then(() => {
-                    showToast("📋 Copied: " + cmd);
-                }).catch(() => {
-                    prompt("Copy WinGet Upgrade Command:", cmd);
-                });
-            } else {
-                prompt("Copy WinGet Upgrade Command:", cmd);
-            }
-        }
-
         async function triggerWinGetUpgrade() {
-            // For remote web clients, fallback gracefully to copying the winget CLI command
-            if (!isNativeDesktopClient()) {
-                copyWinGetCommand();
-                return;
-            }
-
-            const confirmed = confirm(
-                "⚡ Upgrade Holy Bible via WinGet?\n\n" +
-                "1. The application will close to release executable file locks.\n" +
-                "2. WinGet will execute the upgrade in a dedicated terminal.\n" +
-                "3. The updated Holy Bible application will automatically reopen once complete.\n\n" +
-                "Do you wish to proceed?"
-            );
-            if (!confirmed) return;
-
+            // Render full-screen desktop upgrade overlay
             const overlay = document.getElementById('winget-upgrading-overlay');
             if (overlay) overlay.classList.remove('hidden');
 
@@ -979,34 +973,9 @@
                     alert("WinGet Upgrade failed: " + (data.detail || res.statusText));
                     return;
                 }
-                console.log("WinGet upgrade initiated:", data);
+                console.log("WinGet upgrade launched:", data);
             } catch (err) {
-                console.debug("WinGet upgrade fetch complete or app terminated:", err);
-            }
-        }
-
-        function updateWinGetButtonsUI() {
-            const isDesktop = isNativeDesktopClient();
-            const settingsBtn = document.getElementById('btn-settings-winget');
-            const modalBtn = document.getElementById('update-modal-winget-btn');
-            if (isDesktop) {
-                if (settingsBtn) {
-                    settingsBtn.innerHTML = `⚡ Upgrade (WinGet)`;
-                    settingsBtn.title = "Close app, execute WinGet upgrade, and reopen";
-                }
-                if (modalBtn) {
-                    modalBtn.innerHTML = `⚡ Upgrade & Reopen (WinGet)`;
-                    modalBtn.title = "Close app, execute WinGet upgrade, and reopen";
-                }
-            } else {
-                if (settingsBtn) {
-                    settingsBtn.innerHTML = `winget 📋`;
-                    settingsBtn.title = "Copy WinGet command";
-                }
-                if (modalBtn) {
-                    modalBtn.innerHTML = `winget upgrade 📋`;
-                    modalBtn.title = "Copy WinGet command";
-                }
+                console.debug("WinGet upgrade fetch completed or application closing:", err);
             }
         }
 
@@ -1016,6 +985,12 @@
         }
 
         async function checkForAppUpdates(silent = true) {
+            // Strict Invariant: Version update popup and checks must ONLY occur in the Windows desktop app!
+            // In the webapp, users are accessing a hosted server; never show desktop update popups.
+            if (!isWindowsDesktopApp()) {
+                return;
+            }
+
             const statusEl = document.getElementById('settings-update-status');
             const bannerEl = document.getElementById('settings-update-banner');
             const iconEl = document.getElementById('manual-update-icon');
@@ -1043,26 +1018,23 @@
                     }
                     if (bannerEl) {
                         bannerEl.classList.remove('hidden');
-                        const isDesktop = isNativeDesktopClient();
-                        const wingetBtnText = isDesktop ? '⚡ Upgrade & Reopen (WinGet)' : 'winget 📋';
-                        const wingetBtnTitle = isDesktop ? 'Close app, execute WinGet upgrade, and reopen' : 'Copy WinGet command';
                         bannerEl.innerHTML = `
                             <div class="flex items-center justify-between font-bold text-xs text-amber-900 dark:text-amber-200">
                                 <span>🎉 New Version Available: v${latest}</span>
                             </div>
                             <p class="text-[10px] text-stone-600 dark:text-stone-300">Current: v${data.current_version || CURRENT_APP_VERSION}. An updated portable executable is available.</p>
                             <div class="pt-1 flex gap-2">
-                                <a href="${data.download_url}" target="_blank" class="flex-1 py-1 px-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded text-[11px] font-bold text-center">
-                                    Download Update (.exe)
-                                </a>
-                                <button type="button" onclick="triggerWinGetUpgrade()" title="${wingetBtnTitle}" class="py-1 px-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-[10px] font-semibold cursor-pointer flex items-center gap-1 shadow-xs">
-                                    ${wingetBtnText}
+                                <button type="button" onclick="triggerWinGetUpgrade()" title="Close app, open command prompt, upgrade, and reopen" class="py-1 px-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-[10px] font-semibold cursor-pointer flex items-center gap-1 shadow-xs">
+                                    ⚡ Close & Upgrade (WinGet)
                                 </button>
+                                <a href="${data.download_url}" target="_blank" class="py-1 px-2.5 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 text-stone-800 dark:text-stone-200 rounded text-[10px] font-bold text-center">
+                                    Manual Download
+                                </a>
                             </div>
                         `;
                     }
 
-                    // Show top-level floating banner on startup if not dismissed for this version
+                    // Show top-level floating banner on startup ONLY in the Windows desktop app
                     const notif = document.getElementById('app-update-notification-modal');
                     const badge = document.getElementById('update-modal-badge');
                     const desc = document.getElementById('update-modal-desc');
@@ -1100,7 +1072,19 @@
         }
 
         function initAppUpdateSettings() {
-            updateWinGetButtonsUI();
+            // Webapp: Immediately remove the update modal and hide desktop update controls
+            if (!isWindowsDesktopApp()) {
+                const notif = document.getElementById('app-update-notification-modal');
+                if (notif) notif.remove();
+                document.querySelectorAll('.desktop-only-update').forEach(el => el.classList.add('hidden'));
+                const statusEl = document.getElementById('settings-update-status');
+                if (statusEl) statusEl.textContent = `v${CURRENT_APP_VERSION}`;
+                return;
+            }
+
+            // Desktop App: Show desktop update controls and check for updates
+            document.querySelectorAll('.desktop-only-update').forEach(el => el.classList.remove('hidden'));
+
             const toggle = document.getElementById('setting-auto-update-toggle');
             const autoUpdatePref = localStorage.getItem('bible_auto_update');
             const isEnabled = autoUpdatePref !== 'false'; // default: true

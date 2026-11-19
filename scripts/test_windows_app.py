@@ -105,15 +105,18 @@ def run_desktop_host_tests():
         assert upgrade_data["status"] in ("upgrading", "simulated")
         print(f"✓ WinGet Upgrade Endpoint verified from desktop loopback: status={upgrade_data['status']}")
 
-    # 6c. Verify Landing page contains WinGet upgrading overlay & trigger script
+    # 6c. Verify Landing page contains WinGet upgrading overlay, desktop isolation & trigger script
     landing_url = f"{base_url}/"
     with urllib.request.urlopen(landing_url) as resp:
         landing_html = resp.read().decode("utf-8")
         assert "winget-upgrading-overlay" in landing_html, "winget-upgrading-overlay missing in base template"
         assert "triggerWinGetUpgrade" in landing_html, "triggerWinGetUpgrade function missing"
+        assert "isWindowsDesktopApp" in landing_html, "isWindowsDesktopApp function missing"
+        assert "desktop-only-update" in landing_html, "desktop-only-update CSS class missing"
         assert "btn-settings-winget" in landing_html, "btn-settings-winget missing"
         assert "update-modal-winget-btn" in landing_html, "update-modal-winget-btn missing"
-        print("✓ WinGet Desktop UI overlay, buttons, and triggerWinGetUpgrade verified in landing page HTML")
+        assert "IS_DESKTOP_HOST" in landing_html, "IS_DESKTOP_HOST missing"
+        print("✓ WinGet Desktop UI overlay, desktop-only guards, buttons, and triggerWinGetUpgrade verified in landing page HTML")
 
     # 6d. Verify Remote access to /api/app/winget-upgrade is rejected (HTTP 403)
     from fastapi.testclient import TestClient

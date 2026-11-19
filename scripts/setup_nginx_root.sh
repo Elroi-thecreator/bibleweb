@@ -12,7 +12,23 @@ location ~ ^/bible/?(.*)$ {
     return 301 /$1;
 }
 
-# 2. Main Holy Bible FastAPI Application Proxy
+# 2. Google Search Console Site Verification (Temporary)
+location = /google-site-verification=lhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA {
+    default_type text/plain;
+    return 200 "google-site-verification=lhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA\n";
+}
+
+location = /googlelhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA.html {
+    default_type text/html;
+    return 200 "google-site-verification: googlelhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA.html\n";
+}
+
+location = /google-site-verification=lhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA.html {
+    default_type text/html;
+    return 200 "google-site-verification: google-site-verification=lhNgNv8UtvvFhU68w6Dc63w4DETZXfgsTt_VaYW5AFA.html\n";
+}
+
+# 3. Main Holy Bible FastAPI Application Proxy
 location / {
     proxy_pass http://127.0.0.1:8000;
     proxy_http_version 1.1;

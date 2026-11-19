@@ -19,6 +19,9 @@ import socket
 import threading
 import urllib.request
 
+# Explicitly flag desktop host environment across process tree
+os.environ["HOLY_BIBLE_DESKTOP"] = "1"
+
 def _get_log_file():
     try:
         log_dir = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "HolyBible")
@@ -169,7 +172,7 @@ def main():
     """Main desktop entry point."""
     host = "127.0.0.1"
     port = find_available_port(8000)
-    app_url = f"http://{host}:{port}/"
+    app_url = f"http://{host}:{port}/?client=desktop"
 
     print("==================================================")
     print(f"   Holy Bible (வேதம்) - Windows Desktop App v{APP_VERSION}")
