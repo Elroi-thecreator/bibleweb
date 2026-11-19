@@ -81,7 +81,7 @@ Whenever changes are made (e.g. new routes, schema modifications, UI behaviors, 
 ## 5. Active WinGet Package PR Monitoring (Startup Invariant)
 
 - **Active Review PRs**:
-  - `ElroiTheCreator.HolyBible` v1.2.2 (PR [#483836](https://github.com/microsoft/winget-pkgs/pull/483836) - Open / Validation in progress)
+  - `ElroiTheCreator.HolyBible` v1.2.2 (PR [#483836](https://github.com/microsoft/winget-pkgs/pull/483836) - Merged)
   - `ElroiTheCreator.HolyBible` v1.2.1 (PR [#483260](https://github.com/microsoft/winget-pkgs/pull/483260) - Merged)
   - `ElroiTheCreator.HolyBible` v1.2.0 (PR [#482252](https://github.com/microsoft/winget-pkgs/pull/482252) - Merged)
   - `ElroiTheCreator.HolyBible` v1.1.0 (PR [#479139](https://github.com/microsoft/winget-pkgs/pull/479139) - Merged)
