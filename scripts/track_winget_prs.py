@@ -30,7 +30,7 @@ if TOKEN:
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATE_FILE = os.path.join(ROOT_DIR, '.winget_pr_state.json')
-PR_LIST = [484027, 483836, 483260, 482252, 479139, 460301, 446873]
+PR_LIST = [484118, 484027, 483836, 483260, 482252, 479139, 460301, 446873]
 
 def fetch_json(url):
     req = urllib.request.Request(url, headers=HEADERS)
