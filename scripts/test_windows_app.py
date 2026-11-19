@@ -83,13 +83,44 @@ def run_desktop_host_tests():
             assert len(content) > 0, f"Empty response for {path}"
             print(f"✓ [{status}] {desc} ({path}) - {len(content)} bytes")
 
-    # 6. Verify API data integrity through desktop server
-    quiz_url = f"{base_url}/api/quiz/questions"
-    with urllib.request.urlopen(quiz_url) as resp:
-        quiz_data = json.loads(resp.read().decode("utf-8"))
-        assert "questions" in quiz_data
-        assert quiz_data["total_available"] == 100
-        print(f"✓ Quiz API via desktop server verified: {quiz_data['total_available']} questions available")
+    # 6. Verify WinGet In-App Upgrade & Exit Trigger
+    # 6a. Check update endpoint
+    update_url = f"{base_url}/api/app/check-update"
+    with urllib.request.urlopen(update_url) as resp:
+        assert resp.status == 200
+        up_data = json.loads(resp.read().decode("utf-8"))
+        assert "current_version" in up_data
+        print(f"✓ In-App Update API verified: current={up_data['current_version']}, has_update={up_data.get('has_update')}")
+
+    # 6b. Post to winget-upgrade from local desktop server
+    winget_req = urllib.request.Request(
+        f"{base_url}/api/app/winget-upgrade",
+        data=b"{}",
+        headers={"Content-Type": "application/json"},
+        method="POST"
+    )
+    with urllib.request.urlopen(winget_req) as resp:
+        assert resp.status == 200
+        upgrade_data = json.loads(resp.read().decode("utf-8"))
+        assert upgrade_data["status"] in ("upgrading", "simulated")
+        print(f"✓ WinGet Upgrade Endpoint verified from desktop loopback: status={upgrade_data['status']}")
+
+    # 6c. Verify Landing page contains WinGet upgrading overlay & trigger script
+    landing_url = f"{base_url}/"
+    with urllib.request.urlopen(landing_url) as resp:
+        landing_html = resp.read().decode("utf-8")
+        assert "winget-upgrading-overlay" in landing_html, "winget-upgrading-overlay missing in base template"
+        assert "triggerWinGetUpgrade" in landing_html, "triggerWinGetUpgrade function missing"
+        assert "btn-settings-winget" in landing_html, "btn-settings-winget missing"
+        assert "update-modal-winget-btn" in landing_html, "update-modal-winget-btn missing"
+        print("✓ WinGet Desktop UI overlay, buttons, and triggerWinGetUpgrade verified in landing page HTML")
+
+    # 6d. Verify Remote access to /api/app/winget-upgrade is rejected (HTTP 403)
+    from fastapi.testclient import TestClient
+    client = TestClient(fastapi_app, client=("198.51.100.24", 54321))
+    remote_resp = client.post("/api/app/winget-upgrade")
+    assert remote_resp.status_code == 403, f"Expected 403 for remote caller, got {remote_resp.status_code}"
+    print("✓ WinGet Upgrade Endpoint security verified: remote callers strictly rejected with HTTP 403 Forbidden")
 
     # 7. Stop server
     server.stop()

@@ -3,7 +3,7 @@ type: architecture_standard
 title: PyInstaller Standalone Windows Executable & WinGet Distribution Pipeline
 domain: architecture
 status: approved
-version: 1.5.0
+version: 1.6.0
 authority:
   level: official
   confidence: high
@@ -16,12 +16,14 @@ applies_to:
   - distribution
 
 rule:
-  "The Windows desktop application is packaged as a single portable self-contained executable (`HolyBible-Portable.exe`) via PyInstaller and distributed automatically to GitHub Releases and Microsoft WinGet Package Manager (`ElroiTheCreator.HolyBible`) with centralized application versioning, in-app version and update presentation in Settings, startup update notifications, and full compliance for WinGet Policy 1.5.1 and Policy 2.2."
+  "The Windows desktop application is packaged as a single portable self-contained executable (`HolyBible-Portable.exe`) via PyInstaller and distributed automatically to GitHub Releases and Microsoft WinGet Package Manager (`ElroiTheCreator.HolyBible`) with centralized application versioning, in-app version and update presentation in Settings, startup update notifications, in-app automated WinGet upgrade execution (`POST /api/app/winget-upgrade`) that closes the app to release file locks and automatically reopens Holy Bible upon completion, and full compliance for WinGet Policy 1.5.1 and Policy 2.2."
 
 do:
   - "Maintain single source of truth for version metadata in `app/version.py` (`APP_VERSION = '1.2.1'`) shared across FastAPI backend, desktop host, templates, `/api/health`, and WinGet manifests."
   - "Display active version badge (`v{{ app_version }}`) in the user Settings modal (`templates/base.html`), Admin Settings (`templates/admin/settings.html`), footer, and PyWebView desktop window title."
   - "Implement in-app update checking via `GET /api/app/check-update` querying GitHub Releases with 15-minute in-memory caching, user-configurable startup update check toggle (`localStorage.bible_auto_update`), on-demand check button, and WinGet command copy button."
+  - "Provide automated desktop WinGet upgrade trigger via `POST /api/app/winget-upgrade` restricted strictly to loopback callers (`127.0.0.1`, `localhost`, `::1`); spawns a detached console script `%TEMP%\\holybible_winget_upgrade.bat` that waits for process termination, executes `winget upgrade ElroiTheCreator.HolyBible`, and automatically reopens Holy Bible via WinGet links or executable path."
+  - "Terminate the desktop application process cleanly (`os._exit(0)`) after returning the JSON upgrade response to release Windows executable file locks (`0x80070020` sharing violation prevention)."
   - "Bundle `data/bible.sqlite.db`, `data/songs.sqlite.db`, `templates/`, `static/`, `LICENSE`, `NOTICE.md`, and `PRIVACY.md` as internal datas via `windows_app/holybible.spec` with hidden imports covering all AI and admin modules."
   - "Include `pywebview`, `uvicorn`, `fastapi`, and all third-party dependencies inside the one-file binary bundle."
   - "Handle `--noconsole` mode safely by wrapping `sys.stdout` and `sys.stderr` with a dummy `SafeStream` and setting `log_config=None` in `uvicorn.Config` to prevent `AttributeError: 'NoneType' object has no attribute 'isatty'`."

@@ -86,7 +86,8 @@ class InMemoryGroundingProvider(BaseGroundingProvider):
         language: str = "auto",
         max_passages: int = 4,
     ) -> List[GroundingPassage]:
-        query_words = set(query.lower().split())
+        query_words = {w.strip("?,.:;!\"'()").lower() for w in query.split()}
+        query_words.discard("")
         matched = []
         for p in self.passages:
             text = f"{p.reference} {p.text_en or ''} {p.text_ta or ''}".lower()

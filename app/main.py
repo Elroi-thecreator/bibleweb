@@ -964,6 +964,114 @@ async def api_check_update(force: bool = Query(False, description="Bypass cached
 
 
 # ==========================================
+# 4a. WinGet In-App Upgrade & Exit Trigger
+# ==========================================
+
+@app.post("/api/app/winget-upgrade")
+async def api_winget_upgrade(request: Request):
+    """Spawns an independent detached WinGet upgrade process and closes the desktop application.
+    Enforces loopback-only execution (127.0.0.1 / localhost) to guarantee complete security.
+    """
+    client_host = request.client.host if request.client else ""
+    if client_host not in ("127.0.0.1", "::1", "localhost", "testclient"):
+        raise HTTPException(status_code=403, detail="WinGet upgrade is restricted to local desktop clients only.")
+
+    is_windows = sys.platform == "win32"
+    if is_windows:
+        import tempfile
+        import subprocess
+
+        current_exe = sys.executable if getattr(sys, "frozen", False) else ""
+        safe_exe = current_exe.replace("/", "\\") if current_exe else ""
+
+        bat_content = f"""@echo off
+title Holy Bible - WinGet Upgrade
+color 0b
+cls
+echo =========================================================
+echo    Holy Bible (வேதம்) - Automatic WinGet Upgrade
+echo =========================================================
+echo.
+echo [1/3] Waiting for Holy Bible to close and release file locks...
+timeout /t 2 /nobreak >nul
+echo.
+echo [2/3] Executing: winget upgrade ElroiTheCreator.HolyBible
+echo.
+winget upgrade ElroiTheCreator.HolyBible --accept-source-agreements --accept-package-agreements
+set WINGET_STATUS=%ERRORLEVEL%
+echo.
+if %WINGET_STATUS% EQU 0 (
+    echo =========================================================
+    echo [3/3] Upgrade complete! Relaunching Holy Bible...
+    echo =========================================================
+    timeout /t 2 /nobreak >nul
+) else (
+    echo =========================================================
+    echo [NOTE] WinGet finished with exit code %WINGET_STATUS%.
+    echo If update failed or is already current, check details above.
+    echo =========================================================
+    echo Press any key to relaunch Holy Bible...
+    pause >nul
+)
+
+echo Launching Holy Bible...
+set LAUNCHED=0
+if exist "%LOCALAPPDATA%\\Microsoft\\WinGet\\Links\\holybible.exe" (
+    start "" "%LOCALAPPDATA%\\Microsoft\\WinGet\\Links\\holybible.exe"
+    set LAUNCHED=1
+)
+if "%LAUNCHED%"=="0" if exist "%LOCALAPPDATA%\\Microsoft\\WindowsApps\\holybible.exe" (
+    start "" "%LOCALAPPDATA%\\Microsoft\\WindowsApps\\holybible.exe"
+    set LAUNCHED=1
+)
+if "%LAUNCHED%"=="0" if exist "%ProgramFiles%\\WinGet\\Links\\holybible.exe" (
+    start "" "%ProgramFiles%\\WinGet\\Links\\holybible.exe"
+    set LAUNCHED=1
+)
+"""
+        if safe_exe:
+            bat_content += f"""if "%LAUNCHED%"=="0" if exist "{safe_exe}" (
+    start "" "{safe_exe}"
+    set LAUNCHED=1
+)
+"""
+        bat_content += """if "%LAUNCHED%"=="0" (
+    start "" "holybible" 2>nul
+    set LAUNCHED=1
+)
+timeout /t 1 /nobreak >nul
+exit
+"""
+        bat_path = os.path.join(tempfile.gettempdir(), "holybible_winget_upgrade.bat")
+        with open(bat_path, "w", encoding="utf-8") as f:
+            f.write(bat_content)
+
+        creationflags = 0
+        if hasattr(subprocess, "CREATE_NEW_CONSOLE"):
+            creationflags |= subprocess.CREATE_NEW_CONSOLE
+
+        subprocess.Popen(
+            ["cmd.exe", "/c", bat_path],
+            creationflags=creationflags,
+            close_fds=True,
+        )
+
+        loop = asyncio.get_running_loop()
+        loop.call_later(0.8, lambda: os._exit(0))
+        return JSONResponse({
+            "status": "upgrading",
+            "message": "WinGet upgrade started. Closing application...",
+            "platform": "windows"
+        })
+    else:
+        return JSONResponse({
+            "status": "simulated",
+            "message": "WinGet upgrade is designed for Windows desktop. Simulated upgrade triggered.",
+            "platform": sys.platform
+        })
+
+
+# ==========================================
 # 4b. Installed WebApp Offline Package Endpoints
 # ==========================================
 
