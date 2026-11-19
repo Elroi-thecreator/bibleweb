@@ -35,19 +35,24 @@ PACKAGE_NAME = "Holy Bible - வேதம்"
 PUBLISHER = "Elroi-thecreator"
 REPO_DEFAULT = "Elroi-thecreator/bibleweb"
 SCHEMA_VERSION = "1.6.0"
-COMMAND_ALIASES = [
-    "holybible",
-    "elroibible",
+# Note: WinGet policy enforces "ExceededCommandsLimit: Only zero or one value for Commands may be specified for InstallerType portable."
+PORTABLE_COMMAND = "holybible"
+DISCOVERABILITY_TAGS = [
+    "audio-bible",
     "bible",
+    "christianity",
+    "elroi-bible",
+    "elroibible",
+    "english-bible",
+    "englishbible",
+    "holy-bible",
+    "holybible",
+    "scripture",
+    "tamil-bible",
+    "tamilbible",
+    "thiruviviliam",
     "vedham",
     "vetham",
-    "tamilbible",
-    "englishbible",
-    "thiruviviliam",
-    "holy-bible",
-    "elroi-bible",
-    "tamil-bible",
-    "english-bible",
 ]
 
 
@@ -104,7 +109,7 @@ ManifestType: version
 ManifestVersion: {SCHEMA_VERSION}
 """
 
-    commands_yaml = "\n".join(f"  - {cmd}" for cmd in COMMAND_ALIASES)
+    tags_yaml = "\n".join(f"  - {tag_name}" for tag_name in DISCOVERABILITY_TAGS)
 
     # 2. Installer Manifest (<PackageIdentifier>.installer.yaml)
     installer_yaml_content = f"""# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.{SCHEMA_VERSION}.schema.json
@@ -113,7 +118,7 @@ PackageIdentifier: {PACKAGE_ID}
 PackageVersion: {clean_version}
 InstallerType: portable
 Commands:
-{commands_yaml}
+  - {PORTABLE_COMMAND}
 Installers:
   - Architecture: x64
     InstallerUrl: {installer_url}
@@ -149,13 +154,7 @@ Description: |-
   - AI Scripture Study with historical context, chapter overviews, and verse exegesis
   - Custom reading plans, progress checkoffs, offline bookmarks, and in-app auto-update notifications
 Tags:
-  - bible
-  - tamil-bible
-  - scripture
-  - christianity
-  - holy-bible
-  - audio-bible
-  - vedham
+{tags_yaml}
 ReleaseNotesUrl: https://github.com/{repo}/releases/tag/{tag}
 ManifestType: defaultLocale
 ManifestVersion: {SCHEMA_VERSION}
